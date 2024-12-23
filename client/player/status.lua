@@ -18,7 +18,7 @@ if not Config.Disable.Status then
             end
         end
 
-        values.healthBar = math.floor((GetEntityHealth(ESX.PlayerData.ped) - 100) / (GetEntityMaxHealth(ESX.PlayerData.ped) - 100) * 100)
+        values.healthBar = math.floor((GetEntityHealth(ESX.PlayerData.ped) - 100) / 100 * 100)
         values.armorBar = GetPedArmour(ESX.PlayerData.ped)
         values.drinkBar = thirst
         values.foodBar = hunger
