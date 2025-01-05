@@ -7,7 +7,9 @@ function HUD:SetHudColor()
 end
 
 function HUD:Start(xPlayer)
-    while not ESX.PlayerLoaded do Wait(0) end
+    while not ESX.PlayerLoaded do
+        Wait(0)
+    end
 
     if not xPlayer then
         xPlayer = ESX.GetPlayerData()
