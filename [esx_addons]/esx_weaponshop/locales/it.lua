@@ -1,0 +1,16 @@
+Locales ['it'] = {
+    ["license_shop_title"] = "Vendita Porto D\' Armi",
+    ["weapon_shop_menu_title"] = "Armeria",
+    ["weapon_shop_menu_description"] = "Compra Armi",
+    ["menu_cancel"] = "Annulla",
+    ['buy_license'] = 'acquistare porto il d\'armi?',
+    ['yes'] = '%si',
+    ['no'] = 'no',
+    ['weapon_bought'] = 'acquistato per $%s',
+    ['not_enough_black'] = 'non hai ~r~abbastanza soldi sporchi',
+    ['not_enough'] = 'non hai ~r~abbastanza soldi',
+    ['already_owned'] = 'Hai già quest\' arma!',
+    ['shop_menu_title'] = 'Ammu-Nation',
+    ['shop_menu_prompt'] = 'premere [%s] per accedere al negozio',
+    ['map_blip'] = 'Ammu-Nation',
+  }
