@@ -1,0 +1,11 @@
+.moneyTextColor {
+  color: var(--money-text-color);
+}
+
+.bankTextColor {
+  color: var(--bank-text-color);
+}
+
+.jobTextColor {
+  color: var(--job-text-color);
+}

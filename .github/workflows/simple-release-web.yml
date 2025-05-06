@@ -1,0 +1,35 @@
+name: Simple Web Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionNumber:
+        description: 'Version Number'
+        required: false
+        default: ''
+      zipName:
+        description: 'Zip Name'
+        required: true
+        default: 'esx_hud'
+      web:
+        description: 'Web'
+        required: false
+        default: 'true'
+      excludeOptions:
+          type: string
+          description: Separate the files or folders that you do not want to see in the release with a comma. 
+          required: false
+      fxmanifestPath:
+          type: string
+          description: Specify fxmanifest path if fxmanifest is not in the root folder.
+          required: false
+          default: 'fxmanifest.lua'
+jobs:
+  simple-create-release:
+    uses: esx-framework/.github/.github/workflows/simple-release-web.yml@main
+    with:
+      zipName: ${{ github.event.inputs.zipName }}
+      web: ${{ github.event.inputs.web }}
+      versionNumber: ${{ github.event.inputs.versionNumber }}
+      excludeOptions: ${{ github.event.inputs.excludeOptions }}
+      fxmanifestPath: ${{ github.events.inputs.fxmanifestPath }}
