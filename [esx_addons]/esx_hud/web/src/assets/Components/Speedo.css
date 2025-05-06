@@ -1,0 +1,236 @@
+:root {
+  --segment-color: #eee;
+  --segment-progress-color: green;
+  --number-color: #eee;
+  --danger-color: #ff113a;
+  --danger-progress-color: pink;
+  --number-danger-color: #da0b64;
+  --speedo-progress-color: orange;
+  --damage-progress-color: #1be70d;
+  --speedo-all-texts: #ff113a;
+  --engine-icon-color: #fec32c;
+  --tempomat-icon-color: #fec32c;
+  --light-icon-color: #fec32c;
+  --door-icon-color: #fec32c;
+  --fuel-icon-color: white;
+  --fuel-level-color: pink;
+  --mileage-level-color: green;
+  --unit-color: red;
+  --current-speed-color: pink;
+  --left-right-index-color: #00b065;
+  --damage-icon-color: white;
+  --speedo-background-color: rgba(0, 0, 0, 0.5);
+  --speedo-outer-circle-color: #242222;
+  --speedo-nooble-color: #48a3cb;
+  --speedo-nooble-container: #1f2937;
+  --speedo-scale-size: 0.9;
+  --speedo-seatbelt-icon-color: #d22b2b;
+}
+
+/* SVG DONT'T TOUCH PLEASE THANK YOU */
+.circleBackground {
+  stroke: #eee;
+  opacity: 0.3;
+  stroke-width: 6;
+  fill: transparent;
+}
+
+.circleProgress {
+  stroke: var(--speedo-progress-color);
+  stroke-width: 6;
+  stroke-dashoffset: 10;
+  fill: transparent;
+}
+
+/*SMALL CIRCLE SVG LEFT SIDE*/
+.backgroundPartCircle {
+  stroke: #eee;
+  opacity: 0.3;
+  stroke-width: 4;
+  fill: transparent;
+}
+
+.progressPartCircle {
+  stroke: var(--damage-progress-color);
+  stroke-width: 4;
+  /*stroke-dasharray: 0 160;*/
+  fill: transparent;
+}
+
+.dashesPartCircle {
+  stroke: white;
+  stroke-width: 4;
+  stroke-dasharray: 2 34;
+  stroke-dashoffset: -17;
+  fill: none;
+}
+
+.nob {
+  width: 15px;
+  height: 4px;
+  background: var(--segment-color);
+}
+
+.midNob {
+  width: 5px;
+  border-radius: 50%;
+  height: 5px;
+}
+
+.numb {
+  color: var(--number-color);
+  text-align: left;
+  overflow: hidden;
+  opacity: 0.5;
+  font-size: 17px;
+  font-weight: bold;
+}
+
+.numb,
+.nob {
+  position: absolute;
+  transition: 0.5s all ease-in;
+}
+
+.nob.bright {
+  background: var(--segment-progress-color) !important;
+}
+.nob.brightDanger {
+  background: var(--danger-progress-color) !important;
+}
+
+.numb.bright {
+  background: var(--segment-progress-color);
+}
+
+.nob.danger {
+  background: var(--danger-color);
+}
+
+.numb.danger {
+  color: var(--number-danger-color);
+}
+
+.slideOut {
+  transform: translateY(200%) scale(var(--speedo-scale-size)) !important;
+}
+
+.main-container {
+  transform-origin: bottom right;
+  transform: scale(var(--speedo-scale-size));
+  transition: 0.5s all ease-in;
+  height: 300px;
+}
+
+.template-main-container {
+  /*top: 110px;*/
+  /*left: 74%;*/
+  /*position: absolute;*/
+  transform: scale(0.8);
+  height: 300px;
+  transition: 0.5s all ease-in;
+}
+
+.main-container2 {
+  position: relative;
+  top: 49.95%;
+  left: 49.05%;
+  transform: translate(-50%, -50%);
+  background: var(--speedo-background-color);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 14px 3px #000;
+  border: 5px solid var(--speedo-outer-circle-color);
+}
+
+.textColor {
+  color: var(--speedo-all-texts);
+}
+
+.blinkerOn {
+  fill-opacity: 1;
+  fill: var(--left-right-index-color);
+}
+
+.blink {
+  transition: all 0.1s !important;
+}
+
+/*SPEEDO COLORS*/
+
+#fuelIcon {
+  fill: var(--fuel-icon-color);
+}
+
+.seatbeltIconColor {
+  fill: var(--speedo-seatbelt-icon-color);
+}
+
+.indexColor {
+  fill: var(--left-right-index-color);
+}
+
+.damageStatusIcon {
+  fill: var(--damage-icon-color);
+}
+
+.tempomatIcon {
+  fill: var(--tempomat-icon-color);
+}
+
+.doorIcon {
+  fill: var(--door-icon-color);
+}
+
+.lightIcon {
+  stroke: var(--light-icon-color);
+}
+
+.engineIcon {
+  fill: var(--engine-icon-color);
+}
+
+.mileageTextColor {
+  color: var(--mileage-level-color);
+}
+
+.unitTextColor {
+  color: var(--unit-color);
+}
+
+.fuelTextColor {
+  color: var(--fuel-level-color);
+}
+
+.currentSpeedTextColor {
+  color: var(--current-speed-color);
+}
+
+/*Speedo Noble*/
+
+.speedoNoobleContainer {
+  background: var(--speedo-nooble-container);
+}
+
+.speedNobe {
+  position: absolute;
+  width: 100%;
+  transition: all 0.3s;
+  height: 5px;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  transform-origin: 50% 50%;
+  /* transform: rotate(-48deg); */
+}
+
+.speedNobe div {
+  background: var(--speedo-nooble-color);
+  position: absolute;
+  height: 100%;
+  top: 0px;
+  width: 165px;
+  left: 28px;
+  border-radius: 80% 6px 6px 80%;
+}

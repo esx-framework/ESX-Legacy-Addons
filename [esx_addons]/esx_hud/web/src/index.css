@@ -1,0 +1,96 @@
+@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap");
+
+@font-face {
+  font-family: "Gilroy";
+  src: url("./assets/font/Gilroy-ExtraBold.otf");
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .flex-col-status {
+    @apply flex flex-col absolute bottom-10 left-7 transition-opacity;
+  }
+  .center-statuses {
+    @apply flex flex-col absolute bottom-[50%] translate-y-[50%] left-[1%] transition-opacity;
+  }
+
+  .flex-status {
+    @apply flex flex absolute bottom-52 left-7;
+  }
+
+  .template-speedo {
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
+  }
+
+  .speedo {
+    @apply absolute bottom-4 right-8;
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border: 0;
+}
+
+body {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Rajdhani", sans-serif;
+  user-select: none;
+  color: white;
+}
+
+.form-check-input:checked[type="checkbox"] {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+}
+
+.form-radio-check-input:checked[type="radio"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22-4 -4 8 8%22%3E%3Ccircle r=%222%22 fill=%22%23fff%22/%3E%3C/svg%3E");
+}
+
+input[type="checkbox"] {
+  vertical-align: middle;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 8px;
+  border-radius: 15px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #1e2122;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.bodyPicker {
+  position: absolute;
+  top: 100px;
+  left: 100px;
+}
+
+.slideDown {
+  transform: translateY(0px);
+}
+
+.slideUp {
+  transform: translateY(-100%);
+}
