@@ -1,0 +1,24 @@
+{
+  "name": "vite-template-solid",
+  "version": "0.1",
+  "description": "",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.4.19",
+    "tailwindcss": "^3.2.4",
+    "vite": "^3.0.9",
+    "vite-plugin-solid": "^2.3.0"
+  },
+  "dependencies": {
+    "@simonwep/pickr": "^1.8.2",
+    "@solidjs/router": "^0.5.1",
+    "solid-js": "^1.5.1"
+  }
+}
