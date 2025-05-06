@@ -1,0 +1,16 @@
+Locales ['nl'] = {
+  ["license_shop_title"] = "Licentie Winkel",
+  ["weapon_shop_menu_title"] = "Wapen winkel",
+  ["weapon_shop_menu_description"] = "Koop wapens",
+  ["menu_cancel"] = "Annuleer",
+  ['buy_license'] = 'Wil je een wapen vergunning kopen ?',
+  ['yes'] = '%s',
+  ['no'] = 'Nee',
+  ['weapon_bought'] = 'gekocht voor €%s',
+  ['not_enough_black'] = 'Je hebt niet genoeg zwart geld',
+  ['not_enough'] = 'je hebt niet genoeg geld',
+  ['already_owned'] = 'je hebt dit wapen al!',
+  ['shop_menu_title'] = 'Wapen winkel',
+  ['shop_menu_prompt'] = 'druk op [%s] om de Wapen winkel te gebruiken.',
+  ['map_blip'] = 'Wapen winkel',
+}
