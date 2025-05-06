@@ -1,0 +1,16 @@
+Locales ['hu'] = {
+  ["license_shop_title"] = "License Shop",
+  ["weapon_shop_menu_title"] = "Weapon Shop",
+  ["weapon_shop_menu_description"] = "Buy Weapons",
+  ["menu_cancel"] = "Cancel",
+  ['buy_license'] = 'Veszel fegyver engedélyt?',
+  ['yes'] = '%s',
+  ['no'] = 'Igen',
+  ['weapon_bought'] = 'Megvetted ennyiért: %s$',
+  ['not_enough_black'] = 'Nincsen elég pénzed',
+  ['not_enough'] = 'Nincsen elég pénzed',
+  ['already_owned'] = 'Van már ilyened!',
+  ['shop_menu_title'] = 'Fegyverbolt',
+  ['shop_menu_prompt'] = 'Nyomj [%s] hogy megnézd a kinálatot',
+  ['map_blip'] = 'Fegyverbolt',
+}
