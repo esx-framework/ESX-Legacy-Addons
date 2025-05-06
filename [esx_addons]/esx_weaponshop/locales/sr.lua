@@ -1,0 +1,16 @@
+Locales ['sr'] = {
+  ["license_shop_title"] = "Prodavnica Licenci",
+  ["weapon_shop_menu_title"] = "Oružarnica",
+  ["weapon_shop_menu_description"] = "Kupi Oružje",
+  ["menu_cancel"] = "Otkaži",
+  ['buy_license'] = 'Kupi dozvolu za oružje?',
+  ['yes'] = '%s',
+  ['no'] = 'Ne',
+  ['weapon_bought'] = 'kupljeno za $%s',
+  ['not_enough_black'] = 'Nemaš dovoljno prljavog novca',
+  ['not_enough'] = 'Nemaš dovoljno novca',
+  ['already_owned'] = 'Već poseduješ to oružje!',
+  ['shop_menu_title'] = 'Oružarnica',
+  ['shop_menu_prompt'] = 'Pritisni [%s] da pristupiš Oružarnici',
+  ['map_blip'] = 'Oruzarnica',
+}
