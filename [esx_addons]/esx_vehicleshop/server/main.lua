@@ -16,7 +16,8 @@ CreateThread(function()
 end)
 
 function RemoveOwnedVehicle(plate)
-	MySQL.update('DELETE FROM owned_vehicles WHERE plate = ?', {plate})
+	local affectedRows = MySQL.update.await('DELETE FROM owned_vehicles WHERE plate = ?', {plate})
+	return affectedRows > 0
 end
 
 AddEventHandler('onResourceStart', function(resourceName)
@@ -262,8 +263,7 @@ ESX.RegisterServerCallback('esx_vehicleshop:giveBackVehicle', function(source, c
 		function()
 			MySQL.insert('INSERT INTO cardealer_vehicles (vehicle, price) VALUES (?, ?)', {result.vehicle, result.base_price})
 
-			RemoveOwnedVehicle(plate)
-			cb(true)
+			cb(RemoveOwnedVehicle(plate))
 		end)
 	end)
 end)
@@ -292,22 +292,31 @@ ESX.RegisterServerCallback('esx_vehicleshop:resellVehicle', function(source, cb,
 			MySQL.single('SELECT * FROM owned_vehicles WHERE owner = ? AND plate = ?', {xPlayer.identifier, plate},
 			function(result)
 				if not result then -- does the owner match?
+					print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell a vehicle that is not owned - ^5%s^7!'):format(source, plate))
 					return
 				end
+
 				local vehicle = json.decode(result.vehicle)
 
 				if vehicle.model ~= model then
 					print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Vehicle With Invalid Model - ^5%s^7!'):format(source, model))
-					return cb(false)
+					cb(false)
+					return
 				end
 				if vehicle.plate ~= plate then
 					print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Vehicle With Invalid Plate - ^5%s^7!'):format(source, plate))
-					return cb(false)
+					cb(false)
+					return
 				end
 
-				xPlayer.addMoney(resellPrice, "Sold Vehicle")
-				RemoveOwnedVehicle(plate)
-				cb(true)
+				if RemoveOwnedVehicle(plate) then
+					xPlayer.addMoney(resellPrice, "Sold Vehicle")
+					cb(true)
+				else
+					print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell a vehicle that is not owned - ^5%s^7!'):format(source, plate))
+					cb(false)
+				end
+
 			end)
 		end)
 	end
