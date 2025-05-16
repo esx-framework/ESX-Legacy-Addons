@@ -770,6 +770,7 @@ CreateThread(function()
 end)
 
 -- Key controls
+local isReselling = false
 CreateThread(function()
 	while true do
 		Wait(0)
@@ -793,23 +794,35 @@ CreateThread(function()
 				elseif CurrentAction == 'reseller_menu' then
 					OpenResellerMenu()
 				elseif CurrentAction == 'give_back_vehicle' then
-					ESX.TriggerServerCallback('esx_vehicleshop:giveBackVehicle', function(isRentedVehicle)
-						if isRentedVehicle then
-							ESX.Game.DeleteVehicle(CurrentActionData.vehicle)
-							ESX.ShowNotification(TranslateCap('delivered'))
-						else
-							ESX.ShowNotification(TranslateCap('not_rental'))
-						end
-					end, ESX.Math.Trim(GetVehicleNumberPlateText(CurrentActionData.vehicle)))
+					if not isReselling then
+						isReselling = true
+						ESX.TriggerServerCallback('esx_vehicleshop:giveBackVehicle', function(isRentedVehicle)
+							if isRentedVehicle then
+								ESX.Game.DeleteVehicle(CurrentActionData.vehicle)
+								ESX.ShowNotification(TranslateCap('delivered'))
+							else
+								ESX.ShowNotification(TranslateCap('not_rental'))
+							end
+							isReselling = false
+						end, ESX.Math.Trim(GetVehicleNumberPlateText(CurrentActionData.vehicle)))
+					end
 				elseif CurrentAction == 'resell_vehicle' then
-					ESX.TriggerServerCallback('esx_vehicleshop:resellVehicle', function(vehicleSold)
-						if vehicleSold then
-							ESX.Game.DeleteVehicle(CurrentActionData.vehicle)
-							ESX.ShowNotification(TranslateCap('vehicle_sold_for', CurrentActionData.label, ESX.Math.GroupDigits(CurrentActionData.price)))
-						else
-							ESX.ShowNotification(TranslateCap('not_yours'))
-						end
-					end, CurrentActionData.plate, CurrentActionData.model)
+					if not isReselling then
+						isReselling = true
+						ESX.TriggerServerCallback('esx_vehicleshop:resellVehicle', function(vehicleSold)
+							if vehicleSold then
+								ESX.Game.DeleteVehicle(CurrentActionData.vehicle)
+								ESX.ShowNotification(TranslateCap('vehicle_sold_for', CurrentActionData.label, ESX.Math.GroupDigits(CurrentActionData.price)))
+							else
+								ESX.ShowNotification(TranslateCap('not_yours'))
+							end
+
+							CurrentAction = nil
+							CurrentActionData = {}
+							CurrentActionMsg = nil
+							isReselling = false
+						end, CurrentActionData.plate, CurrentActionData.model)
+					end
 				elseif CurrentAction == 'boss_actions_menu' then
 					OpenBossActionsMenu()
 				end
