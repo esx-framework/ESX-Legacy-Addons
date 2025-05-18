@@ -12,4 +12,5 @@ Locales["tr"] = {
     latestVersion = "Şu anda en son sürümü kullanıyorsunuz!",
     needUpdateResource = "En son sürümü indirmeniz gerekiyor! Şu anda eski bir sürümü kullanıyorsunuz!",
     errorGetCurrentVersion = "Geçerli sürümü alırken bir hata oluştu!",
+    job_off_duty = " (Görev dışı)",
 }

@@ -14,4 +14,5 @@ Locales["hu"] = {
     yourVersion = "Jelenlegi verziód: ",
     needUpdateResource = "Elavult a verziód töltsd le a legújabbat!",
     errorGetCurrentVersion = "Hiba történt a verzió lekérdezés közben!",
+    job_off_duty = " (Szabadnapos)",
 }

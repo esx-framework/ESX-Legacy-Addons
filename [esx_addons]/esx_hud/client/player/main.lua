@@ -4,13 +4,14 @@ function HUD:GetJobLabel()
     if not ESX.PlayerData.job then
         return
     end
+
     if ESX.PlayerData.job.name == "unemployed" then
         return ESX.PlayerData.job.label
     end
 
-    return string.format("%s - %s", ESX.PlayerData.job.label, ESX.PlayerData.job.grade_label)
+    local dutySuffix = ESX.PlayerData.job.onDuty and "" or Translate("job_off_duty")
+    return string.format("%s - %s %s", ESX.PlayerData.job.label, ESX.PlayerData.job.grade_label, dutySuffix)
 end
-
 function HUD:GetLocation()
     local PPos = GetEntityCoords(ESX.PlayerData.ped)
     local streetHash = GetStreetNameAtCoord(PPos.x, PPos.y, PPos.z)

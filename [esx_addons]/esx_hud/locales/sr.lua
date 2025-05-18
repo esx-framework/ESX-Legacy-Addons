@@ -12,4 +12,5 @@ Locales["sr"] = {
     latestVersion = "Vi koristite poslednju verziju!",
     needUpdateResource = "Morate preuzeti najnoviju verziju. Trenutno koristite staru verziju.",
     errorGetCurrentVersion = "Došlo je do greške prilikom provere trenutne verzije resursa!",
+    job_off_duty = " (Van dužnosti)",
 }

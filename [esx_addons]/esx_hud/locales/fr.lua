@@ -12,4 +12,5 @@ Locales["fr"] = {
     latestVersion = "Vous utilisez la dernière version!",
     needUpdateResource = "Vous devez télécharger la dernière version! Vous utilisez actuellement une ancienne version!",
     errorGetCurrentVersion = "Une erreur s'est produite lors de la tentative d'obtention de la version actuelle!",
+    job_off_duty = " (Hors service)",
 }

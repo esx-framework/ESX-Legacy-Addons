@@ -12,4 +12,5 @@ Locales["nl"] = {
     latestVersion = "Je gebruikt de laatste versie !",
     needUpdateResource = "Je bent een oude versie aan het gebruiken ! download de nieuwste versie !",
     errorGetCurrentVersion = "Er is een error ontstaan tijdens het ophalen van de huidige versie !",
+    job_off_duty = " (Niet in dienst)",
 }

@@ -12,4 +12,5 @@ Locales["fi"] = {
     latestVersion = "Käytät uusinta versiota!",
     needUpdateResource = "Sinun on ladattava uusin versio! Käytät tällä hetkellä vanhaa versiota!",
     errorGetCurrentVersion = "Virhe yritettäessä saada nykyinen versio!",
+    job_off_duty = " (Vapaalla)",
 }
