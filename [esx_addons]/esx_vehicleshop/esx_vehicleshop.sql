@@ -329,7 +329,7 @@ INSERT INTO `vehicles` (name, model, price, category) VALUES
 	('Z190', 'z190', 900000, 'sportsclassics'),
 	('Viseris', 'viseris', 875000, 'sportsclassics'),
 	('Autarch', 'autarch', 1955000, 'super'),
-	('Comet 5', 'comet5', 1145000, 'sports'), 
+	('Comet SR', 'comet5', 1145000, 'sports'), 
 	('Neon', 'neon', 1500000, 'sports'),
 	('Revolter', 'revolter', 1610000, 'sports'),
 	('Sentinel3', 'sentinel3', 650000, 'sports'),
