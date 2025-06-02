@@ -1,4 +1,4 @@
-HUD.VersionCheckURL = "https://api.github.com/repos/esx-framework/esx-hud/releases/latest"
+HUD.VersionCheckURL = "https://api.github.com/repos/esx-framework/ESX-Legacy-Addons/releases/latest"
 
 function HUD:ErrorHandle(msg)
     print(("[^1ERROR^7] ^3esx_hud^7: %s"):format(msg))
