@@ -183,22 +183,38 @@ end, false,{help = TranslateCap("admin_desc")})
 
 -- Buy Property
 ESX.RegisterServerCallback("esx_property:buyProperty", function(source, cb, PropertyId)
-  local xPlayer = ESX.GetPlayerFromId(source)
-  local Price = Properties[PropertyId].Price
-  if xPlayer.getAccount("bank").money >= Price then
-    xPlayer.removeAccountMoney("bank", Price, "Bought Property")
-    Properties[PropertyId].Owner = xPlayer.identifier
-    Properties[PropertyId].OwnerName = xPlayer.getName()
-    Properties[PropertyId].Owned = true
-    Log("Property Bought", 65280, {{name = "**Property Name**", value = Properties[PropertyId].Name, inline = true},
-                                   {name = "**Price**", value = ESX.Math.GroupDigits(Price), inline = true},
-                                   {name = "**Player**", value = xPlayer.getName(), inline = true}}, 1)
-    TriggerClientEvent("esx_property:syncProperties", -1, Properties)
-    if Config.OxInventory then
-      exports.ox_inventory:RegisterStash("property-" .. PropertyId, Properties[PropertyId].Name, 15, 100000, xPlayer.identifier)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    local Price = Properties[PropertyId].Price
+    local canAfford = xPlayer.getAccount("bank").money >= Price
+
+    if canAfford then
+        xPlayer.removeAccountMoney("bank", Price, "Bought Property")
+        Properties[PropertyId].Owner = xPlayer.identifier
+        Properties[PropertyId].OwnerName = xPlayer.getName()
+        Properties[PropertyId].Owned = true
+
+        Log("Property Bought", 65280, {{
+            name = "**Property Name**",
+            value = Properties[PropertyId].Name,
+            inline = true
+        }, {
+            name = "**Price**",
+            value = ESX.Math.GroupDigits(Price),
+            inline = true
+        }, {
+            name = "**Player**",
+            value = xPlayer.getName(),
+            inline = true
+        }}, 1)
+
+        TriggerClientEvent("esx_property:syncProperties", -1, Properties)
+
+        if Config.OxInventory then
+            exports.ox_inventory:RegisterStash("property-" .. PropertyId, Properties[PropertyId].Name, 15, 100000, xPlayer.identifier)
+        end
     end
-  end
-  cb(xPlayer.getAccount("bank").money >= Price)
+
+    cb(canAfford)
 end)
 
 ESX.RegisterServerCallback("esx_property:attemptSellToPlayer", function(source, cb, PropertyId, PlayerId)
