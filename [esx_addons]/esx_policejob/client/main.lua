@@ -409,7 +409,7 @@ function OpenIdentityCardMenu(player)
 
 		if Config.EnableESXIdentity then
 			elements[#elements+1] = {icon = "fas fa-user", title = TranslateCap('sex', TranslateCap(data.sex))}
-			elements[#elements+1] = {icon = "fas fa-user", title = TranslateCap('sex', TranslateCap(data.sex))}
+			elements[#elements+1] = {icon = "fas fa-user", title = TranslateCap('dob', TranslateCap(data.dob))}
 			elements[#elements+1] = {icon = "fas fa-user", title = TranslateCap('height', data.height)}
 		end
 
