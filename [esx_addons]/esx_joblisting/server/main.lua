@@ -10,8 +10,7 @@ function getJobs()
 end
 
 ESX.RegisterServerCallback('esx_joblisting:getJobsList', function(source, cb)
-  local jobs = getJobs()
-  cb(jobs)
+  cb(getJobs())
 end)
 
 function IsJobAvailable(job)
@@ -21,35 +20,31 @@ function IsJobAvailable(job)
 end
 
 function IsNearCentre(player)
-  local Ped = GetPlayerPed(player)
-  local PedCoords = GetEntityCoords(Ped)
-  local Zones = Config.Zones
-  local Close = false
+    local Ped = GetPlayerPed(player)
+    local PedCoords = GetEntityCoords(Ped)
 
-  for i = 1, #Config.Zones, 1 do
-    local distance = #(PedCoords - Config.Zones[i])
+    for i = 1, #Config.Zones, 1 do
+        local distance = #(PedCoords - Config.Zones[i])
 
-    if distance < Config.DrawDistance then
-      Close = true
+        if distance < Config.DrawDistance then
+            return true
+        end
     end
-  end
-
-  return Close
+    return false
 end
 
 RegisterServerEvent('esx_joblisting:setJob')
 AddEventHandler('esx_joblisting:setJob', function(job)
-  local source = source
-  local xPlayer = ESX.GetPlayerFromId(source)
-  local jobs = getJobs()
-
-  if xPlayer and IsNearCentre(source) and IsJobAvailable(job) then
-    if ESX.DoesJobExist(job, 0) then
-      xPlayer.setJob(job, 0)
-    else
-      print("[^1ERROR^7] Tried Setting User ^5".. source .. "^7 To Invalid Job - ^5"..job .."^7!")
+    local source = source
+    local xPlayer = ESX.GetPlayerFromId(source)
+    local jobs = getJobs()
+    if not ESX.DoesJobExist(job, 0) then
+        print("[^1ERROR^7] Tried Setting User ^5" .. source .. "^7 To Invalid Job - ^5" .. job .. "^7!")
+        return
     end
-  else 
-    print("[^3WARNING^7] User ^5".. source .. "^7 Attempted to Exploit ^5`esx_joblisting:setJob`^7!")
-  end
+    if xPlayer and IsJobAvailable(job) and IsNearCentre(source) then
+        xPlayer.setJob(job, 0)
+    else
+        print("[^3WARNING^7] User ^5" .. source .. "^7 Attempted to Exploit ^5`esx_joblisting:setJob`^7!")
+    end
 end)
