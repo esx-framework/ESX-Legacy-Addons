@@ -20,7 +20,7 @@ end)
 
 AddEventHandler('esx:playerDropped', function(src)
     src = tostring(src)
-	local playersCount = #GetPlayers()
+	local playersCount = #ESX.GetExtendedPlayers()
     if Customs[src] then
         for k, v in pairs(Customs[src]) do
             local entity = NetworkGetEntityFromNetworkId(v.netId)
@@ -38,7 +38,7 @@ end)
 
 RegisterNetEvent('esx_lscustom:buyMod', function(price)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	price = tonumber(price)
 
   if not xPlayer then return print('^3[WARNING]^0 The player could\'nt be found.') end
@@ -72,7 +72,7 @@ end)
 
 RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netId)
 	local src = tostring(source)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
   if not vehicleProps then return print('^3[WARNING]^0 The vehicle Props could\'nt be found.') end
   if not vehicleProps.plate then return print('^3[WARNING]^0 The vehicle plate could\'nt be found.') end

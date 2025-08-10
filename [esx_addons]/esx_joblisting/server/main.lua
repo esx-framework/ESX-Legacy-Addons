@@ -36,7 +36,7 @@ end
 RegisterServerEvent('esx_joblisting:setJob')
 AddEventHandler('esx_joblisting:setJob', function(job)
     local source = source
-    local xPlayer = ESX.GetPlayerFromId(source)
+    local xPlayer = ESX.Player(source)
     local jobs = getJobs()
     if not ESX.DoesJobExist(job, 0) then
         print("[^1ERROR^7] Tried Setting User ^5" .. source .. "^7 To Invalid Job - ^5" .. job .. "^7!")
