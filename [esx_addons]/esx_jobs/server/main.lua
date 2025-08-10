@@ -7,7 +7,7 @@ CreateThread(function()
 
 		for playerId,data in pairs(playersWorking) do
 			Wait(0)
-			local xPlayer = ESX.GetPlayerFromId(playerId)
+			local xPlayer = ESX.Player(playerId)
 
 			-- is player still online?
 			if xPlayer then
@@ -74,7 +74,7 @@ end)
 
 RegisterServerEvent('esx_jobs:startWork', function(zoneIndex, zoneKey)
 	if not playersWorking[source] then
-		local xPlayer = ESX.GetPlayerFromId(source)
+		local xPlayer = ESX.Player(source)
 
 		if xPlayer then
 			local jobObject = Config.Jobs[xPlayer.job.name]
@@ -102,7 +102,7 @@ RegisterServerEvent('esx_jobs:stopWork', function()
 end)
 
 RegisterNetEvent('esx_jobs:caution', function(cautionType, cautionAmount, spawnPoint, vehicle)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	if cautionType == 'take' then
 		if cautionAmount <= Config.MaxCaution and cautionAmount >= 0 then

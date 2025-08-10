@@ -41,7 +41,7 @@ end)
 
 RegisterServerEvent('esx_society:checkSocietyBalance')
 AddEventHandler('esx_society:checkSocietyBalance', function(society)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	local society = GetSociety(society)
 
 	if xPlayer.job.name ~= society.name then
@@ -62,7 +62,7 @@ AddEventHandler('esx_society:withdrawMoney', function(societyName, amount)
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to withdraw from non-existing society - ^5%s^7!'):format(source, societyName))
 		return
 	end
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	amount = ESX.Math.Round(tonumber(amount))
 	if xPlayer.job.name ~= society.name then
 		return print(('[^3WARNING^7] Player ^5%s^7 attempted to withdraw from society - ^5%s^7!'):format(source, society.name))
@@ -82,7 +82,7 @@ end)
 RegisterServerEvent('esx_society:depositMoney')
 AddEventHandler('esx_society:depositMoney', function(societyName, amount)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	local society = GetSociety(societyName)
 	if not society then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to deposit to non-existing society - ^5%s^7!'):format(source, societyName))
@@ -107,7 +107,7 @@ end)
 RegisterServerEvent('esx_society:washMoney')
 AddEventHandler('esx_society:washMoney', function(society, amount)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	local account = xPlayer.getAccount('black_money')
 	amount = ESX.Math.Round(tonumber(amount))
 
@@ -265,9 +265,9 @@ ESX.RegisterServerCallback('esx_society:getJob', function(source, cb, society)
 end)
 
 ESX.RegisterServerCallback('esx_society:setJob', function(source, cb, identifier, job, grade, actionType)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	local isBoss = Config.BossGrades[xPlayer.job.grade_name]
-	local xTarget = ESX.GetPlayerFromIdentifier(identifier)
+	local xTarget = ESX.Player(identifier)
 
 	if not isBoss then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to setJob for Player ^5%s^7!'):format(source, xTarget.source))
@@ -300,7 +300,7 @@ end)
 
 
 ESX.RegisterServerCallback('esx_society:setJobSalary', function(source, cb, job, grade, salary)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	if xPlayer.job.name == job and Config.BossGrades[xPlayer.job.grade_name] then
 		if salary <= Config.MaxSalary then
@@ -329,7 +329,7 @@ ESX.RegisterServerCallback('esx_society:setJobSalary', function(source, cb, job,
 end)
 
 ESX.RegisterServerCallback('esx_society:setJobLabel', function(source, cb, job, grade, label)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	if xPlayer.job.name == job and Config.BossGrades[xPlayer.job.grade_name] then
 			MySQL.update('UPDATE job_grades SET label = ? WHERE job_name = ? AND grade = ?', {label, job, grade},
@@ -394,7 +394,7 @@ ESX.RegisterServerCallback('esx_society:isBoss', function(source, cb, job)
 end)
 
 function isPlayerBoss(playerId, job)
-	local xPlayer = ESX.GetPlayerFromId(playerId)
+	local xPlayer = ESX.Player(playerId)
 
 	if xPlayer.job.name == job and Config.BossGrades[xPlayer.job.grade_name] then
 		return true
@@ -408,7 +408,7 @@ function WashMoneyCRON(d, h, m)
 	MySQL.query('SELECT * FROM society_moneywash', function(result)
 		for i=1, #result, 1 do
 			local society = GetSociety(result[i].society)
-			local xPlayer = ESX.GetPlayerFromIdentifier(result[i].identifier)
+			local xPlayer = ESX.Player(result[i].identifier)
 
 			-- add society money
 			TriggerEvent('esx_addonaccount:getSharedAccount', society.account, function(account)
