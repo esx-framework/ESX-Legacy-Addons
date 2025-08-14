@@ -69,12 +69,12 @@ end)
 AddEventHandler('esx:playerLoaded', function(playerId, xPlayer)
 	for i=1, #DataStoresIndex, 1 do
 		local name = DataStoresIndex[i]
-		local dataStore = GetDataStore(name, xPlayer.identifier)
+		local dataStore = GetDataStore(name, xPlayer.getIdentifier())
 
 		if not dataStore then
-			MySQL.insert('INSERT INTO datastore_data (name, owner, data) VALUES (?, ?, ?)', {name, xPlayer.identifier, '{}'})
+			MySQL.insert('INSERT INTO datastore_data (name, owner, data) VALUES (?, ?, ?)', {name, xPlayer.getIdentifier(), '{}'})
 
-			DataStores[name][#DataStores[name] + 1] = CreateDataStore(name, xPlayer.identifier, {})
+			DataStores[name][#DataStores[name] + 1] = CreateDataStore(name, xPlayer.getIdentifier(), {})
 		end
 	end
 end)
