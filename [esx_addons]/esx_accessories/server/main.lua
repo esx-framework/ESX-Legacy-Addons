@@ -1,6 +1,6 @@
 RegisterServerEvent('esx_accessories:pay')
 AddEventHandler('esx_accessories:pay', function()
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	xPlayer.removeMoney(Config.Price, "Accessory Purchase")
 	TriggerClientEvent('esx:showNotification', source, TranslateCap('you_paid', ESX.Math.GroupDigits(Config.Price)))
@@ -9,9 +9,9 @@ end)
 RegisterServerEvent('esx_accessories:save')
 AddEventHandler('esx_accessories:save', function(skin, accessory)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
-	TriggerEvent('esx_datastore:getDataStore', 'user_' .. string.lower(accessory), xPlayer.identifier, function(store)
+	TriggerEvent('esx_datastore:getDataStore', 'user_' .. string.lower(accessory), xPlayer.getIdentifier(), function(store)
 		store.set('has' .. accessory, true)
 
 		local itemSkin = {}
@@ -25,9 +25,9 @@ AddEventHandler('esx_accessories:save', function(skin, accessory)
 end)
 
 ESX.RegisterServerCallback('esx_accessories:get', function(source, cb, accessory)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
-	TriggerEvent('esx_datastore:getDataStore', 'user_' .. string.lower(accessory), xPlayer.identifier, function(store)
+	TriggerEvent('esx_datastore:getDataStore', 'user_' .. string.lower(accessory), xPlayer.getIdentifier(), function(store)
 		local hasAccessory = (store.get('has' .. accessory) and store.get('has' .. accessory) or false)
 		local skin = (store.get('skin') and store.get('skin') or {})
 
@@ -37,7 +37,7 @@ ESX.RegisterServerCallback('esx_accessories:get', function(source, cb, accessory
 end)
 
 ESX.RegisterServerCallback('esx_accessories:checkMoney', function(source, cb)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	cb(xPlayer.getMoney() >= Config.Price)
 end)
