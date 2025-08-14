@@ -119,7 +119,7 @@ RegisterNetEvent('esx_taxijob:putStockItems', function(itemName, count)
 end)
 
 ESX.RegisterServerCallback('esx_taxijob:getPlayerInventory', function(source, cb)
-    local xPlayer = ESX.GetPlayerFromId(source)
+    local xPlayer = ESX.Player(source)
     local items = xPlayer.getInventory(true)
 
     cb({
