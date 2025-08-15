@@ -36,9 +36,9 @@ AddEventHandler('esx_ambulancejob:revive', function(playerId)
 				end
 				local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
 
-				for _, xPlayer in pairs(Ambulance) do
-					if xPlayer.getJob().name == 'ambulance' then
-						xPlayer.triggerEvent('esx_ambulancejob:PlayerNotDead', playerId)
+				for _, xPlayers in pairs(Ambulance) do
+					if xPlayers.getJob().name == 'ambulance' then
+						xPlayers.triggerEvent('esx_ambulancejob:PlayerNotDead', playerId)
 					end
 				end
 				deadPlayers[playerId] = nil
@@ -226,7 +226,8 @@ end)
 
 ESX.RegisterServerCallback('esx_ambulancejob:buyJobVehicle', function(source, cb, vehicleProps, type)
 	local xPlayer = ESX.Player(source)
-	local price = getPriceFromHash(vehicleProps.model, xPlayer.getJob().grade_name, type)
+	local job = xPlayer.getJob()
+	local price = getPriceFromHash(vehicleProps.model, job.grade_name, type)
 
 	-- vehicle model not found
 	if price == 0 then
@@ -236,7 +237,7 @@ ESX.RegisterServerCallback('esx_ambulancejob:buyJobVehicle', function(source, cb
 			xPlayer.removeMoney(price, "Job Vehicle Purchase")
 
 			MySQL.insert('INSERT INTO owned_vehicles (owner, vehicle, plate, type, job, `stored`) VALUES (?, ?, ?, ?, ?, ?)',
-				{ xPlayer.getIdentifier(), json.encode(vehicleProps), vehicleProps.plate, type, xPlayer.getJob().name, true },
+				{ xPlayer.getIdentifier(), json.encode(vehicleProps), vehicleProps.plate, type, job.name, true },
 				function(rowsChanged)
 					cb(true)
 				end)
@@ -248,13 +249,14 @@ end)
 
 ESX.RegisterServerCallback('esx_ambulancejob:storeNearbyVehicle', function(source, cb, plates)
 	local xPlayer = ESX.Player(source)
-
+	local job = xPlayer.getJob()
+	local identifier = xPlayer.getIdentifier()
 	local plate = MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE owner = ? AND plate IN (?) AND job = ?',
-		{ xPlayer.getIdentifier(), plates, xPlayer.getJob().name })
+		{ identifier, plates, job.name })
 
 	if plate then
 		MySQL.update('UPDATE owned_vehicles SET `stored` = true WHERE owner = ? AND plate = ? AND job = ?',
-			{ xPlayer.getIdentifier(), plate, xPlayer.getJob().name },
+			{ identifier, plate, job.name },
 			function(rowsChanged)
 				if rowsChanged == 0 then
 					cb(false)
