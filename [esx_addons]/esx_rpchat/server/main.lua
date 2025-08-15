@@ -68,7 +68,7 @@ RegisterCommand('msg', function(source, args, user)
 end,false)
 
 function GetRealPlayerName(playerId)
-	local xPlayer = ESX.GetPlayerFromId(playerId)
+	local xPlayer = ESX.Player(playerId)
 
 	if xPlayer then
 		if Config.EnableESXIdentity then

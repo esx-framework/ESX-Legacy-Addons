@@ -85,7 +85,7 @@ end
 
 RegisterNetEvent('esx_license:addLicense')
 AddEventHandler('esx_license:addLicense', function(target, licenseType, cb)
-	local xPlayer = ESX.GetPlayerFromId(target)
+	local xPlayer = ESX.Player(target)
 	if xPlayer then
 		if isValidLicense(licenseType) then
 			AddLicense(xPlayer.getIdentifier(), licenseType, cb)
@@ -97,10 +97,10 @@ end)
 
 RegisterNetEvent('esx_license:removeLicense')
 AddEventHandler('esx_license:removeLicense', function(target, licenseType, cb)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	if xPlayer then 
 		if Config.allowedJobs[xPlayer.getJob().name] then
-			local xTarget = ESX.GetPlayerFromId(target)
+			local xTarget = ESX.Player(target)
 			if xTarget then
 				RemoveLicense(xTarget.getIdentifier(), licenseType, cb)
 			end
@@ -115,14 +115,14 @@ AddEventHandler('esx_license:getLicense', function(licenseType, cb)
 end)
 
 AddEventHandler('esx_license:getLicenses', function(target, cb)
-	local xPlayer = ESX.GetPlayerFromId(target)
+	local xPlayer = ESX.Player(target)
 	if xPlayer then
 		GetLicenses(xPlayer.getIdentifier(), cb)
 	end
 end)
 
 AddEventHandler('esx_license:checkLicense', function(target, licenseType, cb)
-	local xPlayer = ESX.GetPlayerFromId(target)
+	local xPlayer = ESX.Player(target)
 	if xPlayer then
 		CheckLicense(xPlayer.getIdentifier(), licenseType, cb)
 	end
@@ -133,21 +133,21 @@ AddEventHandler('esx_license:getLicensesList', function(cb)
 end)
 
 ESX.RegisterServerCallback('esx_license:getLicense', function(source, cb, licenseType)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	if xPlayer then
 		GetLicense(licenseType, cb)
 	end
 end)
 
 ESX.RegisterServerCallback('esx_license:getLicenses', function(source, cb, target)
-	local xPlayer = ESX.GetPlayerFromId(target)
+	local xPlayer = ESX.Player(target)
 	if xPlayer then
 		GetLicenses(xPlayer.getIdentifier(), cb)
 	end
 end)
 
 ESX.RegisterServerCallback('esx_license:checkLicense', function(source, cb, target, licenseType)
-	local xPlayer = ESX.GetPlayerFromId(target)
+	local xPlayer = ESX.Player(target)
 	if xPlayer then
 		CheckLicense(xPlayer.getIdentifier(), licenseType, cb)
 	end

@@ -1,5 +1,5 @@
 local function handleItemUsage(itemName, itemConfig, source)
-    local xPlayer = ESX.GetPlayerFromId(source)
+    local xPlayer = ESX.Player(source)
     if itemConfig.remove then
         xPlayer.removeInventoryItem(itemName, 1)
     end
