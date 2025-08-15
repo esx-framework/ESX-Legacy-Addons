@@ -131,7 +131,7 @@ function revivePlayer(closestPlayer)
 	ESX.TriggerServerCallback('esx_ambulancejob:getItemAmount', function(quantity)
 		if quantity > 0 then
 			local closestPlayerPed = GetPlayerPed(closestPlayer)
-			local closestPlayerSrc = GetPlayerServerId(NetworkGetPlayerIndexFromPed(closestPlayerPed))
+			local closestPlayerSrc = GetPlayerServerId(closestPlayer)
 
 			if Player(closestPlayerSrc).state.isDead then
 				local playerPed = PlayerPedId()
