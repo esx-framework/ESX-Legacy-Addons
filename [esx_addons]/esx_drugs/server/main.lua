@@ -26,19 +26,19 @@ AddEventHandler('esx_drugs:sellDrug', function(itemName, amount)
 	local xPlayer = ESX.Player(source)
 	local price = Config.DrugDealerItems[itemName]
 	local xItem = xPlayer.getInventoryItem(itemName)
-
+	local identifier = xPlayer.getIdentifier()
 	-- If this fails its 99% a mod-menu, the variables client sided are setup to provide the exact right arguments
 	if type(amount) ~= 'number' or type(itemName) ~= 'string' then
-		print(('esx_drugs: %s attempted to sell with invalid input type!'):format(xPlayer.getIdentifier()))
+		print(('esx_drugs: %s attempted to sell with invalid input type!'):format(identifier))
 		FoundExploiter(xPlayer.src,'SellDrugs Event Trigger')
 		return
 	end
 	if not price then
-		print(('esx_drugs: %s attempted to sell an invalid drug!'):format(xPlayer.getIdentifier()))
+		print(('esx_drugs: %s attempted to sell an invalid drug!'):format(identifier))
 		return
 	end
 	if amount < 0 then
-		print(('esx_drugs: %s attempted to sell an minus amount!'):format(xPlayer.getIdentifier()))
+		print(('esx_drugs: %s attempted to sell an minus amount!'):format(identifier))
 		return
 	end
 	if xItem == nil or xItem.count < amount then
