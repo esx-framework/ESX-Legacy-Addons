@@ -103,10 +103,10 @@ end)
 
 RegisterNetEvent('esx_jobs:caution', function(cautionType, cautionAmount, spawnPoint, vehicle)
 	local xPlayer = ESX.Player(source)
-
+	local identifier = xPlayer.getIdentifier()
 	if cautionType == 'take' then
 		if cautionAmount <= Config.MaxCaution and cautionAmount >= 0 then
-			TriggerEvent('esx_addonaccount:getAccount', 'caution', xPlayer.getIdentifier(), function(account)
+			TriggerEvent('esx_addonaccount:getAccount', 'caution', identifier, function(account)
 				if xPlayer.getAccount('bank').money >= cautionAmount then
 					xPlayer.removeAccountMoney('bank', cautionAmount, "Caution Fine")
 					account.addMoney(cautionAmount)
@@ -119,7 +119,7 @@ RegisterNetEvent('esx_jobs:caution', function(cautionType, cautionAmount, spawnP
 		end
 	elseif cautionType == 'give_back' then
 		if cautionAmount <= 1 and cautionAmount > 0 then
-			TriggerEvent('esx_addonaccount:getAccount', 'caution', xPlayer.getIdentifier(), function(account)
+			TriggerEvent('esx_addonaccount:getAccount', 'caution', identifier, function(account)
 				local caution = account.money
 				local toGive = ESX.Math.Round(caution * cautionAmount)
 	
