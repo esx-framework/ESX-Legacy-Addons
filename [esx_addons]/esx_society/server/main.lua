@@ -185,16 +185,16 @@ ESX.RegisterServerCallback('esx_society:getEmployees', function(source, cb, soci
 		if Config.EnableESXIdentity and name == GetPlayerName(xPlayer.source) then
 			name = xPlayer.get('firstName') .. ' ' .. xPlayer.get('lastName')
 		end
-
+		local job = xPlayer.getJob()
 		table.insert(employees, {
 			name = name,
 			identifier = xPlayer.getIdentifier(),
 			job = {
 				name = society,
-				label = xPlayer.getJob().label,
-				grade = xPlayer.getJob().grade,
-				grade_name = xPlayer.getJob().grade_name,
-				grade_label = xPlayer.getJob().grade_label
+				label = job.label,
+				grade = job.grade,
+				grade_name = job.grade_name,
+				grade_label = job.grade_label
 			}
 		})
 	end
@@ -301,8 +301,8 @@ end)
 
 ESX.RegisterServerCallback('esx_society:setJobSalary', function(source, cb, job, grade, salary)
 	local xPlayer = ESX.Player(source)
-
-	if xPlayer.getJob().name == job and Config.BossGrades[xPlayer.getJob().grade_name] then
+	local playerJob = xPlayer.getJob()
+	if playerJob.name == job and Config.BossGrades[playerJob.grade_name] then
 		if salary <= Config.MaxSalary then
 			MySQL.update('UPDATE job_grades SET salary = ? WHERE job_name = ? AND grade = ?', {salary, job, grade},
 			function(rowsChanged)
@@ -330,8 +330,8 @@ end)
 
 ESX.RegisterServerCallback('esx_society:setJobLabel', function(source, cb, job, grade, label)
 	local xPlayer = ESX.Player(source)
-
-	if xPlayer.getJob().name == job and Config.BossGrades[xPlayer.getJob().grade_name] then
+	local playerJob = xPlayer.getJob()
+	if playerJob.name == job and Config.BossGrades[playerJob.grade_name] then
 			MySQL.update('UPDATE job_grades SET label = ? WHERE job_name = ? AND grade = ?', {label, job, grade},
 			function(rowsChanged)
 				Jobs[job].grades[tostring(grade)].label = label
@@ -395,8 +395,8 @@ end)
 
 function isPlayerBoss(playerId, job)
 	local xPlayer = ESX.Player(playerId)
-
-	if xPlayer.getJob().name == job and Config.BossGrades[xPlayer.getJob().grade_name] then
+	local playerJob = xPlayer.getJob()
+	if playerJob.name == job and Config.BossGrades[playerJob.grade_name] then
 		return true
 	else
 		print(('esx_society: %s attempted open a society boss menu!'):format(xPlayer.getIdentifier()))
