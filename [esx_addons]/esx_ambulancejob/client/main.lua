@@ -73,6 +73,27 @@ function OnPlayerDeath()
   isDead = true
   StartDeathLoop() 
   StartDistressSignal()
+
+  if Config.DeathAnim.enabled then
+    local coords = GetEntityCoords(ESX.PlayerData.ped)
+    NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, 0.0, 0.0, false)
+    ESX.Streaming.RequestAnimDict(Config.DeathAnim.dict)
+    TaskPlayAnim(ESX.PlayerData.ped, Config.DeathAnim.dict, Config.DeathAnim.name, Config.DeathAnim.fadeIn, Config.DeathAnim.fadeOut,
+      -1, Config.DeathAnim.flags, Config.DeathAnim.playbackRate, false, false, false)
+    FreezeEntityPosition(ESX.PlayerData.ped, true)
+
+    Citizen.CreateThreadNow(function()
+      while ESX.PlayerData.dead do
+        if not IsEntityPlayingAnim(ESX.PlayerData.ped, Config.DeathAnim.dict, Config.DeathAnim.name, 3) then
+          TaskPlayAnim(ESX.PlayerData.ped, Config.DeathAnim.dict, Config.DeathAnim.name, Config.DeathAnim.fadeIn, Config.DeathAnim.fadeOut,
+            -1, Config.DeathAnim.flags, Config.DeathAnim.playbackRate, false, false, false)
+        end
+        Wait(0)
+      end
+      RemoveAnimDict(Config.DeathAnim.dict)
+    end)
+
+  end
 end
 
 RegisterNetEvent('esx_ambulancejob:useItem')
@@ -323,6 +344,10 @@ function RespawnPed(ped, coords, heading)
   NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, heading, true, false)
   SetPlayerInvincible(ped, false)
   ClearPedBloodDamage(ped)
+
+  if Config.DeathAnim.enabled then
+    FreezeEntityPosition(ped, false)
+  end
 
   TriggerEvent('esx_basicneeds:resetStatus')
   TriggerServerEvent('esx:onPlayerSpawn')
