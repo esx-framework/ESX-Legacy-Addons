@@ -67,14 +67,15 @@ AddEventHandler('esx_datastore:getSharedDataStore', function(name, cb)
 end)
 
 AddEventHandler('esx:playerLoaded', function(playerId, xPlayer)
+	local identifier = xPlayer.getIdentifier()
 	for i=1, #DataStoresIndex, 1 do
 		local name = DataStoresIndex[i]
-		local dataStore = GetDataStore(name, xPlayer.getIdentifier())
+		local dataStore = GetDataStore(name, identifier)
 
 		if not dataStore then
-			MySQL.insert('INSERT INTO datastore_data (name, owner, data) VALUES (?, ?, ?)', {name, xPlayer.getIdentifier(), '{}'})
+			MySQL.insert('INSERT INTO datastore_data (name, owner, data) VALUES (?, ?, ?)', {name, identifier, '{}'})
 
-			DataStores[name][#DataStores[name] + 1] = CreateDataStore(name, xPlayer.getIdentifier(), {})
+			DataStores[name][#DataStores[name] + 1] = CreateDataStore(name, identifier, {})
 		end
 	end
 end)
