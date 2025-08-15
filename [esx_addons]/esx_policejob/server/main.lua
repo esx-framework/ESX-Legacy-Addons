@@ -162,12 +162,12 @@ ESX.RegisterServerCallback('esx_policejob:getOtherPlayerData', function(source, 
 	if notify then
 		xPlayer.showNotification(TranslateCap('being_searched'))
 	end
-
+	local job = xPlayer.getJob()
 	if xPlayer then
 		local data = {
 			name = xPlayer.getName(),
-			job = xPlayer.getJob().label,
-			grade = xPlayer.getJob().grade_label,
+			job = job.label,
+			grade = job.grade_label,
 			inventory = xPlayer.getInventory(),
 			accounts = xPlayer.getAccounts(),
 			weapons = xPlayer.getLoadout()
@@ -361,7 +361,8 @@ end)
 
 ESX.RegisterServerCallback('esx_policejob:buyJobVehicle', function(source, cb, vehicleProps, type)
 	local xPlayer = ESX.Player(source)
-	local price = getPriceFromHash(vehicleProps.model, xPlayer.getJob().grade_name, type)
+	local job = xPlayer.getJob()
+	local price = getPriceFromHash(vehicleProps.model, job.grade_name, type)
 
 	-- vehicle model not found
 	if price == 0 then
@@ -371,7 +372,7 @@ ESX.RegisterServerCallback('esx_policejob:buyJobVehicle', function(source, cb, v
 		if xPlayer.getMoney() >= price then
 			xPlayer.removeMoney(price, "Job Vehicle Bought")
 
-			MySQL.insert('INSERT INTO owned_vehicles (owner, vehicle, plate, type, job, `stored`) VALUES (?, ?, ?, ?, ?, ?)', { xPlayer.getIdentifier(), json.encode(vehicleProps), vehicleProps.plate, type, xPlayer.getJob().name, true},
+			MySQL.insert('INSERT INTO owned_vehicles (owner, vehicle, plate, type, job, `stored`) VALUES (?, ?, ?, ?, ?, ?)', { xPlayer.getIdentifier(), json.encode(vehicleProps), vehicleProps.plate, type, job.name, true},
 			function (rowsChanged)
 				cb(true)
 			end)
@@ -383,11 +384,12 @@ end)
 
 ESX.RegisterServerCallback('esx_policejob:storeNearbyVehicle', function(source, cb, plates)
 	local xPlayer = ESX.Player(source)
-
-	local plate = MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE owner = ? AND plate IN (?) AND job = ?', {xPlayer.getIdentifier(), plates, xPlayer.getJob().name})
+	local job = xPlayer.getJob()
+	local identifier = xPlayer.getIdentifier()
+	local plate = MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE owner = ? AND plate IN (?) AND job = ?', {identifier, plates, job.name})
 
 	if plate then
-		MySQL.update('UPDATE owned_vehicles SET `stored` = true WHERE owner = ? AND plate = ? AND job = ?', {xPlayer.getIdentifier(), plate, xPlayer.getJob().name},
+		MySQL.update('UPDATE owned_vehicles SET `stored` = true WHERE owner = ? AND plate = ? AND job = ?', {identifier, plate, job.name},
 		function(rowsChanged)
 			if rowsChanged == 0 then
 				cb(false)
