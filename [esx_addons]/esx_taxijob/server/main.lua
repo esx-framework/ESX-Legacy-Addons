@@ -12,8 +12,8 @@ TriggerEvent('esx_society:registerSociety', 'taxi', 'Taxi', 'society_taxi', 'soc
 RegisterNetEvent('esx_taxijob:success', function()
     local xPlayer = ESX.Player(source)
     local timeNow = os.clock()
-    
-    if xPlayer.getJob().name ~= 'taxi' then
+    local job = xPlayer.getJob()
+    if job.name ~= 'taxi' then
         print(('[^3WARNING^7] Player ^5%s^7 attempted to ^5esx_taxijob:success^7 (cheating)'):format(source))
         return
     end
@@ -23,7 +23,7 @@ RegisterNetEvent('esx_taxijob:success', function()
 
         local total = math.random(Config.NPCJobEarnings.min, Config.NPCJobEarnings.max)
 
-        if xPlayer.getJob().grade >= 3 then
+        if job.grade >= 3 then
             total = total * 2
         end
 
