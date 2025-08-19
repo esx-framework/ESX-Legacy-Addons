@@ -9,6 +9,20 @@ Config.LoadIpl                    = true -- Disable if you're using fivem-ipl or
 
 Config.Locale = GetConvar('esx:locale', 'en')
 
+-- Prevents desync on dead players by skipping ragdoll.
+-- Players are revived instantly and play an animation instead.
+-- Note: Natives like "IsPedFatallyInjured" will no longer work reliably.
+-- Use Player(src).state.isDead for death checks.
+Config.DeathAnim = {
+    enabled = true,
+    dict = "misslamar1dead_body",
+    name = "dead_idle",
+	fadeIn = 10.0,
+	fadeOut = 10.0,
+	flags = 1|2|8,
+	playbackRate = 1.0
+}
+
 Config.DistressBlip = {
 	Sprite = 310,
 	Color = 48,
