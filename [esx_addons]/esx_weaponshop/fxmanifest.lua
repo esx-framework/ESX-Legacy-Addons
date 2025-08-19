@@ -5,6 +5,7 @@ game 'gta5'
 description 'Adds a way for players to buy weapons'
 lua54 'yes'
 version '1.0'
+legacyversion '1.13.3'
 
 shared_scripts {
 	'@es_extended/imports.lua',
