@@ -7,7 +7,7 @@ CreateThread(function()
 
 		for playerId,data in pairs(playersWorking) do
 			Wait(0)
-			local xPlayer = ESX.GetPlayerFromId(playerId)
+			local xPlayer = ESX.Player(playerId)
 
 			-- is player still online?
 			if xPlayer then
@@ -74,10 +74,10 @@ end)
 
 RegisterServerEvent('esx_jobs:startWork', function(zoneIndex, zoneKey)
 	if not playersWorking[source] then
-		local xPlayer = ESX.GetPlayerFromId(source)
+		local xPlayer = ESX.Player(source)
 
 		if xPlayer then
-			local jobObject = Config.Jobs[xPlayer.job.name]
+			local jobObject = Config.Jobs[xPlayer.getJob().name]
 
 			if jobObject then
 				local jobZone = jobObject.Zones[zoneKey]
@@ -102,16 +102,16 @@ RegisterServerEvent('esx_jobs:stopWork', function()
 end)
 
 RegisterNetEvent('esx_jobs:caution', function(cautionType, cautionAmount, spawnPoint, vehicle)
-	local xPlayer = ESX.GetPlayerFromId(source)
-
+	local xPlayer = ESX.Player(source)
+	local identifier = xPlayer.getIdentifier()
 	if cautionType == 'take' then
 		if cautionAmount <= Config.MaxCaution and cautionAmount >= 0 then
-			TriggerEvent('esx_addonaccount:getAccount', 'caution', xPlayer.identifier, function(account)
+			TriggerEvent('esx_addonaccount:getAccount', 'caution', identifier, function(account)
 				if xPlayer.getAccount('bank').money >= cautionAmount then
 					xPlayer.removeAccountMoney('bank', cautionAmount, "Caution Fine")
 					account.addMoney(cautionAmount)
 					xPlayer.showNotification(TranslateCap('bank_deposit_taken', ESX.Math.GroupDigits(cautionAmount)))
-					TriggerClientEvent('esx_jobs:spawnJobVehicle', xPlayer.source, spawnPoint, vehicle)
+					TriggerClientEvent('esx_jobs:spawnJobVehicle', xPlayer.src, spawnPoint, vehicle)
 				else
 					xPlayer.showNotification(TranslateCap('caution_afford', ESX.Math.GroupDigits(cautionAmount)))
 				end
@@ -119,7 +119,7 @@ RegisterNetEvent('esx_jobs:caution', function(cautionType, cautionAmount, spawnP
 		end
 	elseif cautionType == 'give_back' then
 		if cautionAmount <= 1 and cautionAmount > 0 then
-			TriggerEvent('esx_addonaccount:getAccount', 'caution', xPlayer.identifier, function(account)
+			TriggerEvent('esx_addonaccount:getAccount', 'caution', identifier, function(account)
 				local caution = account.money
 				local toGive = ESX.Math.Round(caution * cautionAmount)
 	
