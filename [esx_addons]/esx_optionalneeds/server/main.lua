@@ -1,6 +1,6 @@
 ESX.RegisterUsableItem('beer', function(source)
 
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	xPlayer.removeInventoryItem('beer', 1)
 
