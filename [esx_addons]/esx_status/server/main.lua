@@ -12,7 +12,7 @@ end)
 ---@param src number
 ---@param reason string
 AddEventHandler('esx:playerDropped', function(src, reason)
-	local xPlayer = ESX.GetPlayerFromId(src)
+	local xPlayer = ESX.Player(src)
 	if not xPlayer then
 		return
 	end
@@ -25,7 +25,7 @@ end)
 ---@param statusName string
 ---@param cb function|table
 AddEventHandler('esx_status:getStatus', function(src, statusName, cb)
-	local xPlayer = ESX.GetPlayerFromId(src)
+	local xPlayer = ESX.Player(src)
 	if not xPlayer then
 		return
 	end
@@ -40,7 +40,7 @@ end)
 
 ---@param status table
 RegisterNetEvent('esx_status:update', function(status)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	if not xPlayer then
 		return
 	end
