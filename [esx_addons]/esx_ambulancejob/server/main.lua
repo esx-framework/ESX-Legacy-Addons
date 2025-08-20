@@ -43,8 +43,9 @@ AddEventHandler('esx_ambulancejob:revive', function(playerId)
     end
     xTarget.triggerEvent('esx_ambulancejob:revive')
     isDeadState(xTarget.src, false)
-    for _, ambulance in pairs(ESX.GetExtendedPlayers("job", "ambulance")) do
-        ambulance.triggerEvent('esx_ambulancejob:PlayerNotDead', playerId)
+	local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
+	for _, xPlayers in pairs(Ambulance) do
+        xPlayers.triggerEvent('esx_ambulancejob:PlayerNotDead', playerId)
     end
     deadPlayers[playerId] = nil
 end)
@@ -57,11 +58,8 @@ AddEventHandler('txAdmin:events:healedPlayer', function(eventData)
 	if deadPlayers[eventData.id] then
 		TriggerClientEvent('esx_ambulancejob:revive', eventData.id)
 		local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-
-		for _, xPlayer in pairs(Ambulance) do
-			if xPlayer.getJob().name == 'ambulance' then
-				xPlayer.triggerEvent('esx_ambulancejob:PlayerNotDead', eventData.id)
-			end
+		for _, xPlayers in pairs(Ambulance) do
+			xPlayers.triggerEvent('esx_ambulancejob:PlayerNotDead', eventData.id)
 		end
 		deadPlayers[eventData.id] = nil
 	end
@@ -71,11 +69,10 @@ RegisterNetEvent('esx:onPlayerDeath')
 AddEventHandler('esx:onPlayerDeath', function(data)
 	local source = source
 	deadPlayers[source] = 'dead'
-	local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
 	isDeadState(source, true)
-
-	for _, xPlayer in pairs(Ambulance) do
-		xPlayer.triggerEvent('esx_ambulancejob:PlayerDead', source)
+	local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
+	for _, xPlayers in pairs(Ambulance) do
+		xPlayers.triggerEvent('esx_ambulancejob:PlayerDead', source)
 	end
 end)
 
@@ -93,9 +90,8 @@ AddEventHandler('esx_ambulancejob:onPlayerDistress', function()
 	if deadPlayers[source] then
 		deadPlayers[source] = 'distress'
 		local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-
-		for _, xPlayer in pairs(Ambulance) do
-			xPlayer.triggerEvent('esx_ambulancejob:PlayerDistressed', source, injuredCoords)
+		for _, xPlayers in pairs(Ambulance) do
+			xPlayers.triggerEvent('esx_ambulancejob:PlayerDistressed', source, injuredCoords)
 		end
 	end
 end)
@@ -107,9 +103,8 @@ AddEventHandler('esx:onPlayerSpawn', function()
 		deadPlayers[source] = nil
 		isDeadState(source, false)
 		local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-
-		for _, xPlayer in pairs(Ambulance) do
-			xPlayer.triggerEvent('esx_ambulancejob:PlayerNotDead', source)
+		for _, xPlayers in pairs(Ambulance) do
+			xPlayers.triggerEvent('esx_ambulancejob:PlayerNotDead', source)
 		end
 	end
 end)
@@ -119,11 +114,8 @@ AddEventHandler('esx:playerDropped', function(playerId, reason)
 		deadPlayers[playerId] = nil
 		isDeadState(playerId, false)
 		local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-
-		for _, xPlayer in pairs(Ambulance) do
-			if xPlayer.getJob().name == 'ambulance' then
-				xPlayer.triggerEvent('esx_ambulancejob:PlayerNotDead', playerId)
-			end
+		for _, xPlayers in pairs(Ambulance) do
+			xPlayers.triggerEvent('esx_ambulancejob:PlayerNotDead', playerId)
 		end
 	end
 end)
@@ -371,10 +363,9 @@ AddEventHandler('esx_ambulancejob:setDeathStatus', function(isDead)
 			
 		if not isDead then
 			local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-			for _, xPlayer in pairs(Ambulance) do
-				xPlayer.triggerEvent('esx_ambulancejob:PlayerNotDead', source)
+			for _, xPlayers in pairs(Ambulance) do
+				xPlayers.triggerEvent('esx_ambulancejob:PlayerNotDead', source)
 			end
 		end
 	end
-
 end)
