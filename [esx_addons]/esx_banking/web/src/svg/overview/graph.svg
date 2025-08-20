@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 250" preserveAspectRatio="none">
+  <!-- Grid lines -->
+  <line x1="0" y1="200" x2="600" y2="200" stroke="#3A3A3A" stroke-width="1" />
+  <line x1="0" y1="150" x2="600" y2="150" stroke="#3A3A3A" stroke-width="1" />
+  <line x1="0" y1="100" x2="600" y2="100" stroke="#3A3A3A" stroke-width="1" />
+  <line x1="0" y1="50" x2="600" y2="50" stroke="#3A3A3A" stroke-width="1" />
+  
+  <!-- Line graph with gradient -->
+  <defs>
+    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#4CAF50;stop-opacity:0" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Area under the line -->
+  <path d="M0,180 L85,160 L170,140 L255,120 L340,100 L425,80 L510,60 L510,200 L0,200 Z" 
+        fill="url(#lineGradient)" />
+  
+  <!-- Main line -->
+  <path d="M0,180 C28,170 57,165 85,160 C113,155 142,147 170,140 C198,133 227,125 255,120 C283,115 312,107 340,100 C368,93 397,85 425,80 C453,75 482,67 510,60" 
+        fill="none" 
+        stroke="#4CAF50" 
+        stroke-width="2.5"
+        stroke-linecap="round" />
+  
+  <!-- Data points with glow effect -->
+  <circle cx="0" cy="180" r="3" fill="#4CAF50" filter="url(#glow)" />
+  <circle cx="85" cy="160" r="3" fill="#4CAF50" filter="url(#glow)" />
+  <circle cx="170" cy="140" r="3" fill="#4CAF50" filter="url(#glow)" />
+  <circle cx="255" cy="120" r="3" fill="#4CAF50" filter="url(#glow)" />
+  <circle cx="340" cy="100" r="3" fill="#4CAF50" filter="url(#glow)" />
+  <circle cx="425" cy="80" r="3" fill="#4CAF50" filter="url(#glow)" />
+  <circle cx="510" cy="60" r="3" fill="#4CAF50" filter="url(#glow)" />
+</svg> 
