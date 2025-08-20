@@ -64,7 +64,7 @@ function PropertiesRefresh()
         Properties[i].positions.Storage = nil
       end
     end
-    local Players = ESX.GetExtendedPlayers()
+    local Players = ESX.ExtendedPlayers()
     Log("ESX-Property Loaded", 11141375, {{name = "Property Count", value = #Properties, inline = true},
                                                {name = "OX Inventory", value = Config.OxInventory and "Enabled" or "Disabled", inline = true}}, 1)
     for _, xPlayer in pairs(Players) do
