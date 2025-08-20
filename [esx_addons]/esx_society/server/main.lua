@@ -1,3 +1,4 @@
+
 local Jobs = setmetatable({}, {__index = function(_, key)
 	return ESX.GetJobs()[key]
 end
@@ -177,24 +178,27 @@ end)
 ESX.RegisterServerCallback('esx_society:getEmployees', function(source, cb, society)
 	local employees = {}
 
-	local xPlayers = ESX.GetExtendedPlayers('job', society)
+	local xPlayers = ESX.ExtendedPlayers('job', society)
+
 	for i=1, #(xPlayers) do 
 		local xPlayer = xPlayers[i]
 
-		local name = xPlayer.name
-		if Config.EnableESXIdentity and name == GetPlayerName(xPlayer.src) then
-			name = xPlayer.get('firstName') .. ' ' .. xPlayer.get('lastName')
+		local name = xPlayer.getName()
+		if Config.EnableESXIdentity and name == GetPlayerName(xPlayer.getSource()) then
+			name = xPlayer.getFirstName() .. ' ' .. xPlayer.getLastName()
 		end
+
+		local job = xPlayer.getJob()
 
 		table.insert(employees, {
 			name = name,
-			identifier = xPlayer.identifier,
+			identifier = xPlayer.getIdentifier(),
 			job = {
 				name = society,
-				label = xPlayer.job.label,
-				grade = xPlayer.job.grade,
-				grade_name = xPlayer.job.grade_name,
-				grade_label = xPlayer.job.grade_label
+				label = job.label,
+				grade = job.grade,
+				grade_name = job.grade_name,
+				grade_label = job.grade_label
 			}
 		})
 	end
@@ -309,10 +313,9 @@ ESX.RegisterServerCallback('esx_society:setJobSalary', function(source, cb, job,
 				Jobs[job].grades[tostring(grade)].salary = salary
 				ESX.RefreshJobs()
 				Wait(1)
-				local xPlayers = ESX.GetExtendedPlayers('job', job)
+				local xPlayers = ESX.ExtendedPlayers('job', job)
 				for _, xTarget in pairs(xPlayers) do
-
-					if xTarget.job.grade == grade then
+					if xTarget.getJob().grade == grade then
 						xTarget.setJob(job, grade)
 					end
 				end
@@ -337,10 +340,9 @@ ESX.RegisterServerCallback('esx_society:setJobLabel', function(source, cb, job, 
 				Jobs[job].grades[tostring(grade)].label = label
 				ESX.RefreshJobs()
 				Wait(1)
-				local xPlayers = ESX.GetExtendedPlayers('job', job)
+				local xPlayers = ESX.ExtendedPlayers('job', job)
 				for _, xTarget in pairs(xPlayers) do
-
-					if xTarget.job.grade == grade then
+					if xTarget.getJob().grade == grade then
 						xTarget.setJob(job, grade)
 					end
 				end
@@ -357,13 +359,13 @@ ESX.RegisterServerCallback('esx_society:getOnlinePlayers', function(source, cb)
 	if getOnlinePlayers == false and onlinePlayers == nil then -- Prevent multiple xPlayer loops from running in quick succession
 		getOnlinePlayers, onlinePlayers = true, {}
 		
-		local xPlayers = ESX.GetExtendedPlayers() -- Returns all xPlayers
+		local xPlayers = ESX.ExtendedPlayers() -- Returns all xPlayers
 		for _, xPlayer in pairs(xPlayers) do
 			table.insert(onlinePlayers, {
-				source = xPlayer.source,
-				identifier = xPlayer.identifier,
-				name = xPlayer.name,
-				job = xPlayer.job
+				source = xPlayer.src,
+				identifier = xPlayer.getIdentifier(),
+				name = xPlayer.getName(),
+				job = xPlayer.getJob()
 			})
 		end 
 		cb(onlinePlayers)
