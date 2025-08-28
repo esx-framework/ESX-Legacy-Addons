@@ -5,7 +5,7 @@ game 'gta5'
 description 'Adds the ability to customise your clothing'
 
 version '1.0'
-legacyversion '1.9.1'
+legacyversion '1.13.3'
 
 lua54 'yes'
 

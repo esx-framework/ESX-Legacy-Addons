@@ -5,7 +5,7 @@ lua54 'yes'
 description 'A basic duty system for Jobs'
 
 version '1.0'
-legacyversion '1.9.1'
+legacyversion '1.13.3'
 
 shared_script '@es_extended/imports.lua'
 

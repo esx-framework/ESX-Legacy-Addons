@@ -5,7 +5,7 @@ game 'gta5'
 description 'Allows players to buy a boat'
 lua54 'yes'
 version '1.0'
-legacyversion '1.9.1'
+legacyversion '1.13.3'
 
 shared_script '@es_extended/imports.lua'
 
