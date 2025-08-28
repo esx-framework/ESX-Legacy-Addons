@@ -184,8 +184,8 @@ ESX.RegisterServerCallback('esx_society:getEmployees', function(source, cb, soci
 		local xPlayer = xPlayers[i]
 
 		local name = xPlayer.getName()
-		if Config.EnableESXIdentity and name == GetPlayerName(xPlayer.getSource()) then
-			name = xPlayer.getFirstName() .. ' ' .. xPlayer.getLastName()
+		if Config.EnableESXIdentity and name == GetPlayerName(xPlayer.src) then
+			name = xPlayer.get('firstName') .. ' ' .. xPlayer.get('lastName')
 		end
 
 		local job = xPlayer.getJob()
