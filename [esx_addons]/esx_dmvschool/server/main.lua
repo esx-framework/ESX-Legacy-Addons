@@ -1,5 +1,5 @@
 ESX.RegisterServerCallback('esx_dmvschool:canYouPay', function(source, cb, type)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	if xPlayer.getMoney() >= Config.Prices[type] then
 		xPlayer.removeMoney(Config.Prices[type], "DMV Purchase")
