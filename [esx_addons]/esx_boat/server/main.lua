@@ -13,19 +13,19 @@ MySQL.ready(function()
 end)
 
 ESX.RegisterServerCallback('esx_boat:buyBoat', function(source, cb, vehicleProps)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	local price   = getPriceFromModel(vehicleProps.model)
 
 	-- vehicle model not found
 	if price == 0 then
-		print(('[^2INFO^7] Player ^5%s^7 Attempted To Exploit Shop'):format(xPlayer.source))
+		print(('[^2INFO^7] Player ^5%s^7 Attempted To Exploit Shop'):format(xPlayer.src))
 		cb(false)
 	else
 		if xPlayer.getMoney() >= price then
 			xPlayer.removeMoney(price, "Boat Purchase")
 
 			MySQL.update('INSERT INTO owned_vehicles (owner, plate, vehicle, type, `stored`) VALUES (@owner, @plate, @vehicle, @type, @stored)', {
-				['@owner']   = xPlayer.identifier,
+				['@owner']   = xPlayer.getIdentifier(),
 				['@plate']   = vehicleProps.plate,
 				['@vehicle'] = json.encode(vehicleProps),
 				['@type']    = 'boat',
@@ -41,25 +41,25 @@ end)
 
 RegisterServerEvent('esx_boat:takeOutVehicle')
 AddEventHandler('esx_boat:takeOutVehicle', function(plate)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	MySQL.update('UPDATE owned_vehicles SET `stored` = @stored WHERE owner = @owner AND plate = @plate', {
 		['@stored'] = false,
-		['@owner']  = xPlayer.identifier,
+		['@owner']  = xPlayer.getIdentifier(),
 		['@plate']  = plate
 	}, function(rowsChanged)
 		if rowsChanged == 0 then
-			print(('[^2INFO^7] Player ^5%s^7 Attempted To Exploit Garage'):format(xPlayer.source))
+			print(('[^2INFO^7] Player ^5%s^7 Attempted To Exploit Garage'):format(xPlayer.src))
 		end
 	end)
 end)
 
 ESX.RegisterServerCallback('esx_boat:storeVehicle', function (source, cb, plate)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	MySQL.update('UPDATE owned_vehicles SET `stored` = @stored WHERE owner = @owner AND plate = @plate', {
 		['@stored'] = true,
-		['@owner']  = xPlayer.identifier,
+		['@owner']  = xPlayer.getIdentifier(),
 		['@plate']  = plate
 	}, function(rowsChanged)
 		cb(rowsChanged)
@@ -67,10 +67,10 @@ ESX.RegisterServerCallback('esx_boat:storeVehicle', function (source, cb, plate)
 end)
 
 ESX.RegisterServerCallback('esx_boat:getGarage', function(source, cb)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	MySQL.query('SELECT vehicle FROM owned_vehicles WHERE owner = @owner AND type = @type AND `stored` = @stored', {
-		['@owner']  = xPlayer.identifier,
+		['@owner']  = xPlayer.getIdentifier(),
 		['@type']   = 'boat',
 		['@stored'] = true
 	}, function(result)
@@ -85,7 +85,7 @@ ESX.RegisterServerCallback('esx_boat:getGarage', function(source, cb)
 end)
 
 ESX.RegisterServerCallback('esx_boat:buyBoatLicense', function(source, cb)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	if xPlayer.getMoney() >= Config.LicensePrice then
 		xPlayer.removeMoney(Config.LicensePrice, "Boat License Purchase")
