@@ -1,3 +1,4 @@
+
 local PlayersHarvesting, PlayersHarvesting2, PlayersHarvesting3, PlayersCrafting, PlayersCrafting2, PlayersCrafting3  = {}, {}, {}, {}, {}, {}
 
 if Config.MaxInService ~= -1 then
@@ -299,7 +300,7 @@ end)
 
 ESX.RegisterServerCallback('esx_mechanicjob:getPlayerInventory', function(source, cb)
 	local xPlayer    = ESX.Player(source)
-	local items      = xPlayer.getInventory(true)
+	local items      = xPlayer.getInventory(false)
 
 	cb({items = items})
 end)
