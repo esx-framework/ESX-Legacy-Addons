@@ -401,8 +401,8 @@ ESX.RegisterServerCallback('esx_policejob:storeNearbyVehicle', function(source, 
 end)
 
 function getPriceFromHash(vehicleHash, jobGrade, type)
-	local vehicles = Config.AuthorizedVehicles[type][jobGrade]
-
+   local vehicles = (Config.AuthorizedVehicles[type] and Config.AuthorizedVehicles[type][jobGrade]) or {}
+   
 	for i = 1, #vehicles do
 		local vehicle = vehicles[i]
 		if GetHashKey(vehicle.model) == vehicleHash then
