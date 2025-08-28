@@ -167,13 +167,14 @@ ESX.RegisterServerCallback('esx_ambulancejob:removeItemsAfterRPDeath', function(
 	if Config.OxInventory then return cb() end
 
 	local playerLoadout = {}
+	local loadout = xPlayer.getLoadout()
 	if Config.RemoveWeaponsAfterRPDeath then
-		for i = 1, #xPlayer.loadout, 1 do
-			xPlayer.removeWeapon(xPlayer.loadout[i].name)
+		for i = 1, #loadout, 1 do
+			xPlayer.removeWeapon(loadout[i].name)
 		end
 	else -- save weapons & restore em' since spawnmanager removes them
-		for i = 1, #xPlayer.loadout, 1 do
-			table.insert(playerLoadout, xPlayer.loadout[i])
+		for i = 1, #loadout, 1 do
+			table.insert(playerLoadout, loadout[i])
 		end
 
 		-- give back wepaons after a couple of seconds
