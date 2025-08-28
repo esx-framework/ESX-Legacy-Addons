@@ -102,7 +102,7 @@ RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netI
 					Entity(veh).state:set("VehicleProperties", vehicleProps, true)
         end
 			else
-				print(('[^3WARNING^7] Player ^5%s^7 Attempted To upgrade with mismatching vehicle model'):format(xPlayer.source))
+				print(('[^3WARNING^7] Player ^5%s^7 Attempted To upgrade with mismatching vehicle model'):format(xPlayer.src))
 			end
 		end
 	end)
