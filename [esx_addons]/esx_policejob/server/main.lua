@@ -425,7 +425,7 @@ end)
 
 ESX.RegisterServerCallback('esx_policejob:getPlayerInventory', function(source, cb)
 	local xPlayer = ESX.Player(source)
-	local items   = xPlayer.getInventory(true)
+	local items   = xPlayer.getInventory(false)
 
 	cb({items = items})
 end)
