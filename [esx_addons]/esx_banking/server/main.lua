@@ -207,7 +207,7 @@ BANK = {
         xPlayer.removeAccountMoney('bank', amount)
         xTarget.addAccountMoney('bank', amount)
         local bankMoney = xTarget.getAccount('bank').money
-        BANK.LogTransaction(xTarget.source, "TRANSFER_RECEIVE", amount, bankMoney)
+        BANK.LogTransaction(xTarget.src, "TRANSFER_RECEIVE", amount, bankMoney)
         TriggerClientEvent("esx:showNotification", xTarget.src, TranslateCap('receive_transfer', amount, xPlayer.src),
             "success")
 
