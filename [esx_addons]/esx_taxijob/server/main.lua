@@ -10,10 +10,10 @@ TriggerEvent('esx_society:registerSociety', 'taxi', 'Taxi', 'society_taxi', 'soc
 })
 
 RegisterNetEvent('esx_taxijob:success', function()
-    local xPlayer = ESX.GetPlayerFromId(source)
+    local xPlayer = ESX.Player(source)
     local timeNow = os.clock()
-    
-    if xPlayer.job.name ~= 'taxi' then
+    local job = xPlayer.getJob()
+    if job.name ~= 'taxi' then
         print(('[^3WARNING^7] Player ^5%s^7 attempted to ^5esx_taxijob:success^7 (cheating)'):format(source))
         return
     end
@@ -23,7 +23,7 @@ RegisterNetEvent('esx_taxijob:success', function()
 
         local total = math.random(Config.NPCJobEarnings.min, Config.NPCJobEarnings.max)
 
-        if xPlayer.job.grade >= 3 then
+        if job.grade >= 3 then
             total = total * 2
         end
 
@@ -45,9 +45,9 @@ RegisterNetEvent('esx_taxijob:success', function()
 end)
 
 ESX.RegisterServerCallback("esx_taxijob:SpawnVehicle", function(source, cb, model , props)
-    local xPlayer = ESX.GetPlayerFromId(source)
+    local xPlayer = ESX.Player(source)
 
-    if xPlayer.job.name ~= "taxi" then 
+    if xPlayer.getJob().name ~= "taxi" then 
         print(('[^3WARNING^7] Player ^5%s^7 attempted to Exploit Vehicle Spawing!!'):format(source))
         return
     end
@@ -64,9 +64,9 @@ ESX.RegisterServerCallback("esx_taxijob:SpawnVehicle", function(source, cb, mode
 end)
 
 RegisterNetEvent('esx_taxijob:getStockItem', function(itemName, count)
-    local xPlayer = ESX.GetPlayerFromId(source)
+    local xPlayer = ESX.Player(source)
     
-    if xPlayer.job.name ~= 'taxi' then
+    if xPlayer.getJob().name ~= 'taxi' then
         print(('[^3WARNING^7] Player ^5%s^7 attempted ^5esx_taxijob:getStockItem^7 (cheating)'):format(source))
         return
     end
@@ -97,10 +97,10 @@ ESX.RegisterServerCallback('esx_taxijob:getStockItems', function(source, cb)
 end)
 
 RegisterNetEvent('esx_taxijob:putStockItems', function(itemName, count)
-    local xPlayer = ESX.GetPlayerFromId(source)
+    local xPlayer = ESX.Player(source)
 	local sourceItem = xPlayer.getInventoryItem(itemName)
     
-    if xPlayer.job.name ~= 'taxi' then
+    if xPlayer.getJob().name ~= 'taxi' then
         print(('[^3WARNING^7] Player ^5%s^7 attempted ^5esx_taxijob:putStockItems^7 (cheating)'):format(source))
         return
     end
@@ -119,9 +119,8 @@ RegisterNetEvent('esx_taxijob:putStockItems', function(itemName, count)
 end)
 
 ESX.RegisterServerCallback('esx_taxijob:getPlayerInventory', function(source, cb)
-    local xPlayer = ESX.GetPlayerFromId(source)
-    local items = xPlayer.inventory
-
+    local xPlayer = ESX.Player(source)
+    local items = xPlayer.getInventory(false)
     cb({
         items = items
     })
