@@ -63,9 +63,9 @@ end)
 
 ESX.RegisterServerCallback('esx_service:isPlayerInService', function(source, cb, name, target)
 	local isPlayerInService = false
-	local targetXPlayer = ESX.GetPlayerFromId(target)
+	local targetXPlayer = ESX.Player(target)
 
-	if InService[name][targetXPlayer.source] then
+	if InService[name][targetXPlayer.src] then
 		isPlayerInService = true
 	end
 
