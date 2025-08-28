@@ -401,7 +401,7 @@ function isPlayerBoss(playerId, job)
 	if xPlayerJob.name == job and Config.BossGrades[xPlayerJob.grade_name] then
 		return true
 	else
-		print(('esx_society: %s attempted open a society boss menu!'):format(xPlayer.identifier))
+		print(('esx_society: %s attempted open a society boss menu!'):format(xPlayer.getIdentifier()))
 		return false
 	end
 end
