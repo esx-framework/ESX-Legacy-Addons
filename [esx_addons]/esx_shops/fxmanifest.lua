@@ -25,3 +25,13 @@ server_scripts {
 }
 
 dependency 'es_extended'
+
+ui_page {
+	'html/index.html',
+}
+
+files {
+	'html/index.html',
+	'html/app.js', 
+	'html/style.css',
+}
