@@ -1,6 +1,6 @@
 RegisterNetEvent('esx_barbershop:pay', function()
 	local src = source
-	local xPlayer = ESX.GetPlayerFromId(src)
+	local xPlayer = ESX.Player(src)
 		
 	if not xPlayer and src then return print(('^3[WARNING]^0 xPlayer for Id %s, couldn`t be found.'):format(src)) end
 
@@ -9,7 +9,7 @@ RegisterNetEvent('esx_barbershop:pay', function()
 end)
 
 ESX.RegisterServerCallback('esx_barbershop:checkMoney', function(source, cb)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 		
 	if not xPlayer and source then return print(('^3[WARNING]^0 xPlayer for Id %s, couldn`t be found.'):format(source)) end
 		
