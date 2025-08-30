@@ -43,7 +43,6 @@ AddEventHandler('esx_deathscreen:setDeathStatus', function(isDead)
 			end
 		end
 	end
-
 end)
 
 

@@ -1,6 +1,4 @@
-local firstSpawn = true
-isDead = false
-local isSearched, medic = false, 0
+isSearched, medic  = false, false, 0
 
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(xPlayer)
@@ -10,18 +8,6 @@ end)
 RegisterNetEvent('esx:onPlayerLogout')
 AddEventHandler('esx:onPlayerLogout', function()
   ESX.PlayerLoaded = false
-  firstSpawn = true
-end)
-
-AddEventHandler('esx:onPlayerSpawn', function()
-  if firstSpawn then
-    firstSpawn = false
-    return
-  end
-  isDead = false
-  ClearTimecycleModifier()
-  SetPedMotionBlur(PlayerPedId(), false)
-  ClearExtraTimecycleModifier()
 end)
 
 -- Create blips
@@ -129,7 +115,7 @@ RegisterNetEvent('esx_ambulancejob:revive')
 AddEventHandler('esx_ambulancejob:revive', function()
   local playerPed = PlayerPedId()
   local coords = GetEntityCoords(playerPed)
-  TriggerServerEvent('esx_ambulancejob:setDeathStatus', false)
+  TriggerServerEvent('esx_ambulancejob:playerNotDead', false)
 
   DoScreenFadeOut(800)
 
@@ -140,7 +126,6 @@ AddEventHandler('esx_ambulancejob:revive', function()
   local formattedCoords = {x = ESX.Math.Round(coords.x, 1), y = ESX.Math.Round(coords.y, 1), z = ESX.Math.Round(coords.z, 1)}
 
   RespawnPed(playerPed, formattedCoords, 0.0)
-  isDead = false
   ClearTimecycleModifier()
   SetPedMotionBlur(playerPed, false)
   ClearExtraTimecycleModifier()
@@ -149,7 +134,7 @@ end)
 
 -- Hook handlers pour esx_deathscreen
 AddEventHandler('esx_deathscreen:onPlayerDeath', function()
-  isSearched, medic = false, 0  -- Reset des variables
+  isSearched, medic = false, 0
 end)
 
 AddEventHandler('esx_deathscreen:onDeathLoop', function(playerIsDead)
