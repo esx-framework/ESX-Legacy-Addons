@@ -1105,7 +1105,7 @@ CreateThread(function()
 			Sleep = 50
 			local targetPed = GetPlayerPed(GetPlayerFromServerId(dragStatus.CopId))
 
-			if DoesEntityExist(targetPed) and IsPedOnFoot(targetPed) and not IsPedDeadOrDying(targetPed, true) then
+			if DoesEntityExist(targetPed) and IsPedOnFoot(targetPed) and not Player(dragStatus.CopId).state.isDead then
 				if not wasDragged then
 					AttachEntityToEntity(ESX.PlayerData.ped, targetPed, 11816, 0.54, 0.54, 0.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
 					wasDragged = true

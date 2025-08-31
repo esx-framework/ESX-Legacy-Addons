@@ -38,7 +38,7 @@ end)
 
 RegisterNetEvent('esx_lscustom:buyMod', function(price)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	price = tonumber(price)
 
   if not xPlayer then return print('^3[WARNING]^0 The player could\'nt be found.') end
@@ -72,7 +72,7 @@ end)
 
 RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netId)
 	local src = tostring(source)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
   if not vehicleProps then return print('^3[WARNING]^0 The vehicle Props could\'nt be found.') end
   if not vehicleProps.plate then return print('^3[WARNING]^0 The vehicle plate could\'nt be found.') end
@@ -102,7 +102,7 @@ RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netI
 					Entity(veh).state:set("VehicleProperties", vehicleProps, true)
         end
 			else
-				print(('[^3WARNING^7] Player ^5%s^7 Attempted To upgrade with mismatching vehicle model'):format(xPlayer.source))
+				print(('[^3WARNING^7] Player ^5%s^7 Attempted To upgrade with mismatching vehicle model'):format(xPlayer.src))
 			end
 		end
 	end)
