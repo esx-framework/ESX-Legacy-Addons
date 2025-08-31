@@ -6,7 +6,7 @@ description 'Provides a way for players to customise their appearence with acces
 lua54 'yes'
 
 version '1.1'
-legacyversion '1.13.3'
+legacyversion '1.13.4'
 
 shared_scripts {
     '@es_extended/imports.lua',

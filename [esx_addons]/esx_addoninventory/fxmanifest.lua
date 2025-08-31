@@ -6,7 +6,7 @@ description 'Adds a way for resources to store items for players'
 lua54 'yes'
 
 version '1.0'
-legacyversion '1.13.3'
+legacyversion '1.13.4'
 
 server_scripts {
 	'@es_extended/imports.lua',

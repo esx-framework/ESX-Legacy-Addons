@@ -5,7 +5,7 @@ game 'gta5'
 description 'Provides a way for Jobs to have a society system. (boss menu, salaries, funding etc)'
 lua54 'yes'
 version '1.0'
-legacyversion '1.13.3'
+legacyversion '1.13.4'
 
 shared_script '@es_extended/imports.lua'
 

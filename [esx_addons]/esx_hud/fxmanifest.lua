@@ -4,7 +4,7 @@ lua54 "yes"
 
 description "The default HUD resource for ESX-Legacy."
 version "1.10.2"
-legacyversion '1.13.3'
+legacyversion '1.13.4'
 
 shared_scripts {
     "@es_extended/imports.lua",
