@@ -1,6 +1,8 @@
 local spawnedWeeds = 0
 local weedPlants = {}
 local isPickingUp, isProcessing = false, false
+local displayed_process_prompt = false
+local displayed_pickup_prompt = false
 
 CreateThread(function()
 	local sleep
@@ -16,7 +18,6 @@ CreateThread(function()
 	end
 end)
 
-local displayedPrompt = false
 CreateThread(function()
 	local sleep
 	while true do
@@ -27,9 +28,9 @@ CreateThread(function()
 		if #(coords - Config.CircleZones.WeedProcessing.coords) < 1 then
 			sleep = 2
 
-			if not isProcessing and not displayedPrompt then
+			if not isProcessing and not displayed_process_prompt then
 				ESX.TextUI(TranslateCap('weed_processprompt'))
-				displayedPrompt = true
+				displayed_process_prompt = true
 			end
 
 			if IsControlJustReleased(0, 38) and not isProcessing then
@@ -48,8 +49,8 @@ CreateThread(function()
 				end)
 			end
 		else
-			if displayedPrompt then
-				displayedPrompt = false
+			if displayed_process_prompt then
+				displayed_process_prompt = false
 				ESX.HideUI()
 			end
 		end
@@ -102,9 +103,9 @@ CreateThread(function()
 		if nearbyObject and IsPedOnFoot(playerPed) then
 			sleep = 0
 
-			if not isPickingUp and not displayedPrompt then
+			if not isPickingUp and not displayed_pickup_prompt then
 				ESX.TextUI(TranslateCap('weed_pickupprompt'))
-				displayedPrompt = true
+				displayed_pickup_prompt = true
 			end
 
 			if IsControlJustReleased(0, 38) and not isPickingUp then
@@ -132,8 +133,8 @@ CreateThread(function()
 				end, 'cannabis')
 			end
 		else
-			if displayedPrompt then
-				displayedPrompt = false
+			if displayed_pickup_prompt then
+				displayed_pickup_prompt = false
 				ESX.HideUI()
 			end
 		end
