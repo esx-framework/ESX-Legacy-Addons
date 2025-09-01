@@ -186,11 +186,13 @@ AddEventHandler('esx_dmvschool:hasEnteredMarker', function(zone)
 		CurrentActionMsg  = TranslateCap('press_open_menu')
 		CurrentActionData = {}
 	end
+	ESX.TextUI(CurrentActionMsg)
 end)
 
 AddEventHandler('esx_dmvschool:hasExitedMarker', function(zone)
 	CurrentAction = nil
 	ESX.CloseContext()
+	ESX.HideUI()
 end)
 
 RegisterNetEvent('esx_dmvschool:loadLicenses')
@@ -277,7 +279,6 @@ CreateThread(function()
 
 		if CurrentAction then
 			sleep = 0
-			ESX.ShowHelpNotification(CurrentActionMsg)
 
 			if (IsControlJustReleased(0, 38)) and (CurrentAction == 'dmvschool_menu') then
 				OpenDMVSchoolMenu()
