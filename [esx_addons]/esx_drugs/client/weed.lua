@@ -13,6 +13,7 @@ CreateThread(function()
 	end
 end)
 
+local displayedPrompt = false
 CreateThread(function()
 	while true do
 		local wait = 1000
@@ -21,8 +22,10 @@ CreateThread(function()
 
 		if #(coords - Config.CircleZones.WeedProcessing.coords) < 1 then
 			wait = 2
-			if not isProcessing then
-				ESX.ShowHelpNotification(TranslateCap('weed_processprompt'))
+
+			if not isProcessing and not displayedPrompt then
+				ESX.TextUI(TranslateCap('weed_processprompt'))
+				displayedPrompt = true
 			end
 
 			if IsControlJustReleased(0, 38) and not isProcessing then
@@ -40,10 +43,17 @@ CreateThread(function()
 					end
 				end)
 			end
+		else
+			if displayedPrompt then
+				displayedPrompt = false
+				ESX.HideUI()
+			end
 		end
+
 		Wait(wait)
 	end
 end)
+
 
 function ProcessWeed(xCannabis)
 	isProcessing = true
@@ -70,6 +80,7 @@ function ProcessWeed(xCannabis)
 	isProcessing = false
 end
 
+local displayedPrompt = false
 CreateThread(function()
 	while true do
 		local Sleep = 1500
@@ -86,8 +97,10 @@ CreateThread(function()
 
 		if nearbyObject and IsPedOnFoot(playerPed) then
 			Sleep = 0
-			if not isPickingUp then
-				ESX.ShowHelpNotification(TranslateCap('weed_pickupprompt'))
+
+			if not isPickingUp and not displayedPrompt then
+				ESX.TextUI(TranslateCap('weed_pickupprompt'))
+				displayedPrompt = true
 			end
 
 			if IsControlJustReleased(0, 38) and not isPickingUp then
@@ -114,10 +127,17 @@ CreateThread(function()
 					isPickingUp = false
 				end, 'cannabis')
 			end
+		else
+			if displayedPrompt then
+				displayedPrompt = false
+				ESX.HideUI()
+			end
 		end
-	Wait(Sleep)
+
+		Wait(Sleep)
 	end
 end)
+
 
 AddEventHandler('onResourceStop', function(resource)
 	if resource == GetCurrentResourceName() then

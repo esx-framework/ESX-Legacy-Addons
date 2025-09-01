@@ -46,19 +46,33 @@ CreateThread(function()
 end)
 
 --main loop
-CreateThread(function ()
+local displayedPrompt = false
+CreateThread(function()
 	while true do 
 		local Sleep = 1500
+
 		if inZoneDrugShop and not menuOpen then
 			Sleep = 0
-			ESX.ShowHelpNotification(TranslateCap('dealer_prompt'),true)
+
+			if not displayedPrompt then
+				ESX.TextUI(TranslateCap('dealer_prompt'))
+				displayedPrompt = true
+			end
+
 			if IsControlJustPressed(0, 38) then
 				OpenDrugShop()
 			end
+		else
+			if displayedPrompt then
+				displayedPrompt = false
+				ESX.HideUI()
+			end
 		end
-	Wait(Sleep)
+
+		Wait(Sleep)
 	end
 end)
+
 
 function OpenDrugShop()
 	local elements = {
