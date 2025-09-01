@@ -3,25 +3,29 @@ local weedPlants = {}
 local isPickingUp, isProcessing = false, false
 
 CreateThread(function()
+	local sleep
 	while true do
-		Wait(700)
+		sleep = 700
 		local coords = GetEntityCoords(PlayerPedId())
 
 		if #(coords - Config.CircleZones.WeedField.coords) < 50 then
 			SpawnWeedPlants()
 		end
+
+		Wait(sleep)
 	end
 end)
 
 local displayedPrompt = false
 CreateThread(function()
+	local sleep
 	while true do
-		local wait = 1000
+		sleep = 1000
 		local playerPed = PlayerPedId()
 		local coords = GetEntityCoords(playerPed)
 
 		if #(coords - Config.CircleZones.WeedProcessing.coords) < 1 then
-			wait = 2
+			sleep = 2
 
 			if not isProcessing and not displayedPrompt then
 				ESX.TextUI(TranslateCap('weed_processprompt'))
@@ -50,7 +54,7 @@ CreateThread(function()
 			end
 		end
 
-		Wait(wait)
+		Wait(sleep)
 	end
 end)
 
@@ -80,10 +84,10 @@ function ProcessWeed(xCannabis)
 	isProcessing = false
 end
 
-local displayedPrompt = false
 CreateThread(function()
+	local sleep
 	while true do
-		local Sleep = 1500
+		sleep = 1500
 
 		local playerPed = PlayerPedId()
 		local coords = GetEntityCoords(playerPed)
@@ -96,7 +100,7 @@ CreateThread(function()
 		end
 
 		if nearbyObject and IsPedOnFoot(playerPed) then
-			Sleep = 0
+			sleep = 0
 
 			if not isPickingUp and not displayedPrompt then
 				ESX.TextUI(TranslateCap('weed_pickupprompt'))
@@ -134,7 +138,7 @@ CreateThread(function()
 			end
 		end
 
-		Wait(Sleep)
+		Wait(sleep)
 	end
 end)
 
