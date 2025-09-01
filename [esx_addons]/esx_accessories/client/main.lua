@@ -124,11 +124,13 @@ AddEventHandler('esx_accessories:hasEnteredMarker', function(zone)
 	CurrentAction     = 'shop_menu'
 	CurrentActionMsg  = TranslateCap('press_access')
 	CurrentActionData = { accessory = zone }
+	ESX.TextUI(CurrentActionMsg)
 end)
 
 AddEventHandler('esx_accessories:hasExitedMarker', function(zone)
 	ESX.CloseContext()
 	CurrentAction = nil
+	ESX.HideUI()
 end)
 
 -- Create Blips --
@@ -212,7 +214,6 @@ CreateThread(function()
 		
 		if CurrentAction then
 			Sleep = 0
-			ESX.ShowHelpNotification(CurrentActionMsg)
 
 			if IsControlJustReleased(0, 38) and CurrentActionData.accessory then
 				OpenShopMenu(CurrentActionData.accessory)
