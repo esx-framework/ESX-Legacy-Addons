@@ -5,9 +5,8 @@ local displayed_process_prompt = false
 local displayed_pickup_prompt = false
 
 CreateThread(function()
-	local sleep
+	local sleep = 700
 	while true do
-		sleep = 700
 		local coords = GetEntityCoords(PlayerPedId())
 
 		if #(coords - Config.CircleZones.WeedField.coords) < 50 then
@@ -21,13 +20,12 @@ end)
 CreateThread(function()
 	local sleep
 	while true do
-		sleep = 1000
 		local playerPed = PlayerPedId()
 		local coords = GetEntityCoords(playerPed)
 
 		if #(coords - Config.CircleZones.WeedProcessing.coords) < 1 then
-			sleep = 2
-
+			sleep = 0
+		
 			if not isProcessing and not displayed_process_prompt then
 				ESX.TextUI(TranslateCap('weed_processprompt'))
 				displayed_process_prompt = true
@@ -49,6 +47,7 @@ CreateThread(function()
 				end)
 			end
 		else
+			sleep = 1500
 			if displayed_process_prompt then
 				displayed_process_prompt = false
 				ESX.HideUI()
@@ -88,7 +87,6 @@ end
 CreateThread(function()
 	local sleep
 	while true do
-		sleep = 1500
 
 		local playerPed = PlayerPedId()
 		local coords = GetEntityCoords(playerPed)
@@ -102,7 +100,7 @@ CreateThread(function()
 
 		if nearbyObject and IsPedOnFoot(playerPed) then
 			sleep = 0
-
+		
 			if not isPickingUp and not displayed_pickup_prompt then
 				ESX.TextUI(TranslateCap('weed_pickupprompt'))
 				displayed_pickup_prompt = true
@@ -110,33 +108,50 @@ CreateThread(function()
 
 			if IsControlJustReleased(0, 38) and not isPickingUp then
 				isPickingUp = true
-
+			
 				ESX.TriggerServerCallback('esx_drugs:canPickUp', function(canPickUp)
 					if canPickUp then
 						TaskStartScenarioInPlace(playerPed, 'world_human_gardener_plant', 0, false)
-
+					
 						Wait(2000)
 						ClearPedTasks(playerPed)
 						Wait(1500)
-		
+						
 						ESX.Game.DeleteObject(nearbyObject)
-		
+						
 						table.remove(weedPlants, nearbyID)
 						spawnedWeeds = spawnedWeeds - 1
-		
+						
 						TriggerServerEvent('esx_drugs:pickedUpCannabis')
+						-- ensure prompt is hidden after successful pickup
+						if displayed_pickup_prompt then
+							displayed_pickup_prompt = false
+							ESX.HideUI()
+						end
 					else
 						ESX.ShowNotification(TranslateCap('weed_inventoryfull'))
+						-- ensure prompt is hidden if cannot pick up
+						if displayed_pickup_prompt then
+							displayed_pickup_prompt = false
+							ESX.HideUI()
+						end
 					end
-
+					
 					isPickingUp = false
 				end, 'cannabis')
 			end
 		else
+			sleep = 1500
 			if displayed_pickup_prompt then
 				displayed_pickup_prompt = false
 				ESX.HideUI()
 			end
+		end
+
+		-- safety: ensure UI hides if we lost the plant or state changed this tick
+		if displayed_pickup_prompt and (not nearbyObject or not IsPedOnFoot(playerPed)) then
+			displayed_pickup_prompt = false
+			ESX.HideUI()
 		end
 
 		Wait(sleep)

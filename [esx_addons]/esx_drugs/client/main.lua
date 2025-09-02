@@ -5,7 +5,7 @@ local cfgMarker = Config.Marker;
 
 --slow loop
 CreateThread(function()
-	local sleep
+	local sleep = 500
 	while true do
 		local playerPed = PlayerPedId()
 		local coords = GetEntityCoords(playerPed)
@@ -25,7 +25,6 @@ CreateThread(function()
 			end
 		end
 
-		sleep = 500
 		Wait(sleep)
 	end
 end)
@@ -34,7 +33,6 @@ end)
 CreateThread(function()
 	local sleep
 	while true do 
-		sleep = 1500
 		if(inRangeMarkerDrugShop) then
 			sleep = 0
 			local coordsMarker = Config.CircleZones.DrugDealer.coords
@@ -43,6 +41,8 @@ CreateThread(function()
 			0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
 			cfgMarker.Size, color.r,color.g,color.b,color.a,
 			false, true, 2, false, nil, nil, false)
+		else
+			sleep = 1500
 		end
 		Wait(sleep)
 	end
@@ -53,8 +53,6 @@ local displayedPrompt = false
 CreateThread(function()
 	local sleep
 	while true do 
-		sleep = 1500
-
 		if inZoneDrugShop and not menuOpen then
 			sleep = 0
 
@@ -67,6 +65,7 @@ CreateThread(function()
 				OpenDrugShop()
 			end
 		else
+			sleep = 1500
 			if displayedPrompt then
 				displayedPrompt = false
 				ESX.HideUI()
