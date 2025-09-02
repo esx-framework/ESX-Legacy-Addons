@@ -1,32 +1,41 @@
-function GetItemFromShop(itemName, zone)
-	local zoneItems = Config.Zones[zone].Items
-	local item = nil
+---@diagnostic disable: undefined-global
+local ESX = exports['es_extended']:getSharedObject()
 
-	for _, itemData in pairs(zoneItems) do
-		if itemData.name == itemName then
-			item = itemData
-			break
-		end
-	end
-
-	if not item then
-		return false
-	end
-
-	return true,item.price, item.label
+local function buildItemIndex()
+    local index = {}
+    for _, item in ipairs(Config.Items or {}) do
+        index[item.name] = item
+    end
+    return index
 end
 
-RegisterServerEvent('esx_shops:buyItem')
-AddEventHandler('esx_shops:buyItem', function(itemName, amount, zone)
-	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
-	local Exists, price, label = GetItemFromShop(itemName, zone)
-	amount = ESX.Math.Round(amount)
+local itemIndex = buildItemIndex()
 
-	if amount < 0 then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted to exploit the shop!'):format(source))
-		return
-	end
+AddEventHandler('onResourceStart', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    itemIndex = buildItemIndex()
+end)
+
+local function calculateCartTotal(cart)
+    local total = 0
+    for _, entry in ipairs(cart or {}) do
+        local def = itemIndex[entry.name]
+        if def then
+            local qty = tonumber(entry.amount) or 0
+            if qty > 0 then
+                total = total + (def.price * qty)
+            end
+        end
+    end
+    return total
+end
+
+ESX.RegisterServerCallback('esx_shops:purchase', function(source, cb, data)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer then
+        cb(false, _U('player_not_found'))
+        return
+    end
 
     local method = data and data.method or 'cash'
     local cart = data and data.cart or {}

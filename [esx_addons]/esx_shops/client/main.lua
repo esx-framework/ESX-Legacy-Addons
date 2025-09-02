@@ -18,16 +18,6 @@ local function closeShopUi()
     setShopUiVisible(false)
 end
 
-RegisterCommand('shopui', function()
-    if isShopUiOpen then
-        closeShopUi()
-    else
-        openShopUi()
-    end
-end, false)
-
-RegisterKeyMapping('shopui', 'Toggle Shop UI', 'keyboard', 'F7')
-
 RegisterNUICallback('close', function(_, cb)
     closeShopUi()
     if cb then cb({}) end
