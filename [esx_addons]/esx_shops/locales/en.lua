@@ -1,18 +1,15 @@
+---@diagnostic disable: undefined-global
 Locales['en'] = {
   ['shop'] = 'shop',
-  ['shops'] = 'shops',
-  ['press_menu'] = 'press [%s] to access the ~g~store.',
-  ['shop_item'] = '$%s',
-  ['bought'] = 'You Have Bought ~b~%sx %s~s~ for ~b~$%s',
-  ['not_enough'] = 'you do ~r~not~s~ have enough money, you\'re missing ~b~$%s!',
-  ['player_cannot_hold'] = 'you do ~r~not~s~ have enough free space in your inventory!',
-  ['shop_confirm'] = 'buy %sx %s for $%s?',
-  ['no'] = 'no',
-  ['yes'] = 'yes',
-  ['amount'] = 'Amount',
-  ['amount_placeholder'] = 'Amount you want to buy',
-  ['confirm'] = 'Confirm',
-  ['purchase'] = 'Purchase',
-  ['bread'] = 'Bread',
-  ['water'] = 'Water',
+  ['open_shop_help'] = 'Press ~INPUT_CONTEXT~ to open shop',
+  ['player_not_found'] = 'Player not found',
+  ['cart_empty'] = 'Cart is empty',
+  ['invalid_cart_entry'] = 'Invalid cart entry',
+  ['invalid_item_data'] = 'Invalid item data',
+  ['unknown_item'] = 'Unknown item: %s',
+  ['invalid_quantity'] = 'Invalid quantity',
+  ['not_enough_cash'] = 'Not enough cash',
+  ['not_enough_bank'] = 'Not enough bank balance',
+  ['purchase_success'] = 'Purchase successful'
+
 }

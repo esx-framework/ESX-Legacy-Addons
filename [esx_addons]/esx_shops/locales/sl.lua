@@ -1,18 +1,15 @@
+---@diagnostic disable: undefined-global
 Locales['sl'] = {
   ['shop'] = 'Trgovina',
-  ['shops'] = 'Trgovine',
-  ['press_menu'] = 'pritisni [%s] da odpres ~g~Trgovino.',
-  ['shop_item'] = '$%s',
-  ['bought'] = 'Vi ste kupili ~b~%sx %s~s~ za ~b~$%s',
-  ['not_enough'] = 'Vi ~r~nimate~s~ dovolj denarja, manjka vam ~b~$%s!',
-  ['player_cannot_hold'] = 'Vi ~r~nimate~s~ dovolj prostora v vasi shrambi!',
-  ['shop_confirm'] = 'kupi %sx %s za $%s?',
-  ['no'] = 'ne',
-  ['yes'] = 'da',
-  ['amount'] = 'vsota',
-  ['amount_placeholder'] = 'Koliko kosov bi kupili?',
-  ['confirm'] = 'Potrdi',
-  ['purchase'] = 'Kupi',
-  ['bread'] = 'Krh',
-  ['water'] = 'Voda',
+  ['open_shop_help'] = 'Pritisnite ~INPUT_CONTEXT~, da odprete trgovino',
+  ['player_not_found'] = 'Igralec ni najden',
+  ['cart_empty'] = 'Košarica je prazna',
+  ['invalid_cart_entry'] = 'Neveljaven vnos v košarici',
+  ['invalid_item_data'] = 'Neveljavni podatki o izdelku',
+  ['unknown_item'] = 'Neznan izdelek: %s',
+  ['invalid_quantity'] = 'Neveljavna količina',
+  ['not_enough_cash'] = 'Premalo gotovine',
+  ['not_enough_bank'] = 'Premalo sredstev na računu',
+  ['purchase_success'] = 'Nakup uspešen'
+
 }

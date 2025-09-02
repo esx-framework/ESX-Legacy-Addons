@@ -1,18 +1,15 @@
+---@diagnostic disable: undefined-global
 Locales['fr'] = {
   ['shop'] = 'magasin',
-  ['shops'] = 'magasins',
-  ['press_menu'] = 'appuyez sur [%s] pour accéder au magasin.',
-  ['shop_item'] = '$%s',
-  ['bought'] = 'vous venez d\'acheter %sx %s pour ~r~$%s',
-  ['not_enough'] = 'vous n\'avez ~r~pas assez d\'argent: %s',
-  ['player_cannot_hold'] = 'vous n\'avez ~r~pas assez de place dans votre inventaire!',
-  ['shop_confirm'] = 'acheter %sx %s pour $%s?',
-  ['no'] = 'non',
-  ['yes'] = 'oui',
-  ['amount'] = 'Quantité',
-  ['amount_placeholder'] = 'Quantité que vous voulez acheter',
-  ['confirm'] = 'Confirmer',
-  ['purchase'] = 'Acheter',
-  ['bread'] = 'Pain',
-  ['water'] = 'Eau',
+  ['open_shop_help'] = 'Appuyez sur ~INPUT_CONTEXT~ pour ouvrir le magasin',
+  ['player_not_found'] = 'Joueur introuvable',
+  ['cart_empty'] = 'Le panier est vide',
+  ['invalid_cart_entry'] = 'Entrée de panier invalide',
+  ['invalid_item_data'] = 'Données d\'objet invalides',
+  ['unknown_item'] = 'Objet inconnu : %s',
+  ['invalid_quantity'] = 'Quantité invalide',
+  ['not_enough_cash'] = 'Pas assez d\'argent liquide',
+  ['not_enough_bank'] = 'Solde bancaire insuffisant',
+  ['purchase_success'] = 'Achat réussi'
+
 }

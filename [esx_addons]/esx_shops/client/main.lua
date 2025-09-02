@@ -1,121 +1,116 @@
-local hasAlreadyEnteredMarker, lastZone
-local currentAction, currentActionMsg, currentActionData = nil, nil, {}
+---@diagnostic disable: undefined-global
+local ESX = exports['es_extended']:getSharedObject()
+local isShopUiOpen = false
 
-local function openShopMenu(zone)
-	local elements = {
-		{unselectable = true, icon = "fas fa-shopping-basket", title = TranslateCap('shop') }
-	}
-
-	for i=1, #Config.Zones[zone].Items, 1 do
-		local item = Config.Zones[zone].Items[i]
-
-		elements[#elements+1] = {
-			icon = "fas fa-shopping-basket",
-			title = ('%s - <span style="color:green;">%s</span>'):format(item.label, TranslateCap('shop_item', ESX.Math.GroupDigits(item.price))),
-			itemLabel = item.label,
-			item = item.name,
-			price = item.price
-		}
-	end
-
-	ESX.OpenContext("right", elements, function(menu,element)
-		local elements2 = {
-			{unselectable = true, icon = "fas fa-shopping-basket", title = element.title},
-			{icon = "fas fa-shopping-basket", title = TranslateCap('amount'), input = true, inputType = "number", inputPlaceholder = TranslateCap('amount_placeholder'), inputMin = 1, inputMax = 25},
-			{icon = "fas fa-check-double", title = TranslateCap('confirm'), val = "confirm"}
-		}
-
-		ESX.OpenContext("right", elements2, function(menu2,element2)
-			local amount = menu2.eles[2].inputValue
-			ESX.CloseContext()
-			TriggerServerEvent('esx_shops:buyItem', element.item, amount, zone)
-		end, function(menu)
-			currentAction     = 'shop_menu'
-			currentActionMsg  = TranslateCap('press_menu', ESX.GetInteractKey())
-			currentActionData = {zone = zone}
-		end)
-	end, function(menu)
-		currentAction     = 'shop_menu'
-		currentActionMsg  = TranslateCap('press_menu', ESX.GetInteractKey())
-		currentActionData = {zone = zone}
-	end)
+local function setShopUiVisible(visible)
+    isShopUiOpen = visible
+    SetNuiFocus(visible, visible)
+    SendNUIMessage({ action = visible and 'show' or 'hide' })
 end
 
-local function hasEnteredMarker(zone)
-	currentAction     = 'shop_menu'
-	currentActionMsg  = TranslateCap('press_menu', ESX.GetInteractKey())
-	currentActionData = {zone = zone}
+local function openShopUi()
+    if isShopUiOpen then return end
+    setShopUiVisible(true)
 end
 
-local function hasExitedMarker(zone)
-	currentAction = nil
-	ESX.CloseContext()
+local function closeShopUi()
+    if not isShopUiOpen then return end
+    setShopUiVisible(false)
 end
 
--- Create Blips
-CreateThread(function()
-	for k,v in pairs(Config.Zones) do
-		for i = 1, #v.Pos, 1 do
-			if not v.ShowBlip then return end
-				
-			local blip = AddBlipForCoord(v.Pos[i])
+RegisterCommand('shopui', function()
+    if isShopUiOpen then
+        closeShopUi()
+    else
+        openShopUi()
+    end
+end, false)
 
-			SetBlipSprite (blip, v.Type)
-			SetBlipScale  (blip, v.Size)
-			SetBlipColour (blip, v.Color)
-			SetBlipAsShortRange(blip, true)
+RegisterKeyMapping('shopui', 'Toggle Shop UI', 'keyboard', 'F7')
 
-			BeginTextCommandSetBlipName('STRING')
-			AddTextComponentSubstringPlayerName(TranslateCap('shops'))
-			EndTextCommandSetBlipName(blip)
-		end
-	end
+RegisterNUICallback('close', function(_, cb)
+    closeShopUi()
+    if cb then cb({}) end
 end)
 
--- Enter / Exit marker events
-CreateThread(function()
-	while true do
-		local sleep = 1500
-
-		local playerCoords = GetEntityCoords(ESX.PlayerData.ped)
-		local isInMarker, currentZone = false, nil
-
-		for k,v in pairs(Config.Zones) do
-			for i = 1, #v.Pos, 1 do
-				local distance = #(playerCoords - v.Pos[i])
-
-				if distance < Config.DrawDistance then
-					sleep = 0
-					if v.ShowMarker then
-						DrawMarker(Config.MarkerType, v.Pos[i], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Config.MarkerSize.x, Config.MarkerSize.y, Config.MarkerSize.z, Config.MarkerColor.r, Config.MarkerColor.g, Config.MarkerColor.b, 100, false, true, 2, false, nil, nil, false)
-				  	end
-					if distance < 2.0 then
-						isInMarker  = true
-						currentZone = k
-						lastZone    = k
-					end
-				end
-			end
-		end
-
-		if isInMarker and not hasAlreadyEnteredMarker then
-			hasAlreadyEnteredMarker = true
-			hasEnteredMarker(currentZone)
-			ESX.TextUI(currentActionMsg)
-		end
-
-		if not isInMarker and hasAlreadyEnteredMarker then
-			hasAlreadyEnteredMarker = false
-			ESX.HideUI()
-			hasExitedMarker(lastZone)
-		end
-			
-		Wait(sleep)
-	end
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    SetNuiFocus(false, false)
 end)
 
-ESX.RegisterInteraction("shop_menu", function()
-	openShopMenu(currentActionData.zone)
-end, function()
-	return currentAction and currentAction == 'shop_menu'
+
+RegisterNUICallback('getShopData', function(_, cb)
+    cb({
+        categories = Config.Categories or {},
+        items = Config.Items or {}
+    })
+end)
+
+RegisterNUICallback('purchase', function(data, cb)
+    local payload = data or {}
+    ESX.TriggerServerCallback('esx_shops:purchase', function(success, message)
+        cb({ success = success, message = message })
+        if success then
+            ESX.ShowNotification(message)
+        else
+            ESX.ShowNotification(message)
+        end
+    end, payload)
+end)
+
+---@param label any
+local function showHelpText(label)
+    BeginTextCommandDisplayHelp('STRING')
+    AddTextComponentSubstringPlayerName(label)
+    EndTextCommandDisplayHelp(0, false, true, 1)
+end
+
+CreateThread(function()
+    while true do
+        local playerPed = PlayerPedId()
+        local playerCoords = GetEntityCoords(playerPed)
+        local nearby = false
+        local inInteractRange = false
+
+        for _, loc in ipairs(Config.Locations or {}) do
+            local coords = loc.coords
+            local distance = #(playerCoords - coords)
+            if distance < 20.0 then
+                nearby = true
+                if loc.marker ~= false then
+                    DrawMarker(
+                        2,
+                        coords.x, coords.y, coords.z,
+                        0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0,
+                        0.2, 0.2, 0.2,
+                        204, 153, 0, 200,
+                        false, true, 2, true, nil, nil, false
+                    )
+                end
+                if distance < 1.8 then
+                    inInteractRange = true
+                    if not isShopUiOpen then
+                        local helpText = 'Press ~INPUT_CONTEXT~ to open shop'
+                        if type(_U) == 'function' then
+                            local translated = _U('open_shop_help')
+                            if type(translated) == 'string' and translated ~= '' then
+                                helpText = translated
+                            end
+                        end
+                        showHelpText(helpText)
+                    end
+                    if IsControlJustPressed(0, 38) then -- INPUT_PICKUP (E)
+                        openShopUi()
+                    end
+                end
+            end
+        end
+
+        if nearby then
+            Wait(0)
+        else
+            Wait(500)
+        end
+    end
 end)
