@@ -47,7 +47,6 @@ Locales['hu'] = {
   ['have_deposited'] = 'betettél x%s %s',
   ['player_cannot_hold'] = '~r~nincs elég üres helyed az inventoryban!',
   ['blip_taxi'] = 'Taxitársaság',
-  ['phone_taxi'] = 'Taxi Hívás',
   ['taxi'] = 'taxi',
   ['taxi_stock'] = 'taxi tároló',
   ['vehicle_spawned'] = 'Sikeresen lehívtad: ~b~%s!',

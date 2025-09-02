@@ -49,12 +49,11 @@ Locales['fi'] = {
   ['have_deposited'] = 'Sinä talletit x%s %s',
   ['player_cannot_hold'] = 'Sinulla ~r~ei ole enempää vapaata tilaa repussasi!',
   ['blip_taxi'] = 'Taksi',
-  ['phone_taxi'] = 'Taksi',
   ['taxi'] = 'Taksi',
   ['taxi_stock'] = 'Taksi varasto',
-  ['amount'] = "Amount", --not translated
-  ['bill_amount'] = "Amount to bill..", --not translated
-  ['deposit_amount'] = "Amount to deposit..", --not translated
-  ['withdraw_amount'] = "Amount to withdraw..", --not translated
-  ['confirm'] = "Confirm", --not translated
+  ['amount'] = "Summa",
+  ['bill_amount'] = "Laskutettava summa..",
+  ['deposit_amount'] = "Talletettava summa..",
+  ['withdraw_amount'] = "Nostettava summa..",
+  ['confirm'] = "Vahvista",
 }

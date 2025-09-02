@@ -49,12 +49,11 @@ Locales['sr'] = {
   ['have_deposited'] = 'Ostavili ste x%s %s',
   ['player_cannot_hold'] = 'Nemate prostora u inventaru!',
   ['blip_taxi'] = 'downtown Cab Co.',
-  ['phone_taxi'] = 'downtown Cab Co.',
   ['taxi'] = 'Taxi',
   ['taxi_stock'] = 'Taxi Ostava',
-  ['amount'] = "Amount", --not translated
-  ['bill_amount'] = "Amount to bill..", --not translated
-  ['deposit_amount'] = "Amount to deposit..", --not translated
-  ['withdraw_amount'] = "Amount to withdraw..", --not translated
-  ['confirm'] = "Confirm", --not translated
+  ['amount'] = "Iznos",
+  ['bill_amount'] = "Iznos za naplatu..",
+  ['deposit_amount'] = "Iznos za uplatu..",
+  ['withdraw_amount'] = "Iznos za isplatu..",
+  ['confirm'] = "Potvrdi",
 }

@@ -50,7 +50,6 @@ Locales['es'] = {
   ['have_deposited'] = 'Has depositado x%s %s',
   ['player_cannot_hold'] = '~r~No tienes suficiente espacio libre en tu inventario',
   ['blip_taxi'] = 'Downtown Cab Co.',
-  ['phone_taxi'] = 'Downtown Cab Co.',
   ['taxi'] = 'Taxi',
   ['taxi_stock'] = 'Inventario de Taxistas',
   ['amount'] = "Cantidad",

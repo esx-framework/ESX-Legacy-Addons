@@ -49,12 +49,11 @@ Locales['pl'] = {
   ['have_deposited'] = 'deponujesz x%s %s',
   ['player_cannot_hold'] = '~r~Nie masz wystarczająco wolnego miejsca w swoim ekwipunku!',
   ['blip_taxi'] = 'taxi',
-  ['phone_taxi'] = 'taxi',
   ['taxi'] = 'taxi',
   ['taxi_stock'] = 'taxi Stock',
-  ['amount'] = "Amount", --not translated
-  ['bill_amount'] = "Amount to bill..", --not translated
-  ['deposit_amount'] = "Amount to deposit..", --not translated
-  ['withdraw_amount'] = "Amount to withdraw..", --not translated
-  ['confirm'] = "Confirm", --not translated
+  ['amount'] = "Kwota",
+  ['bill_amount'] = "Kwota do zapłaty..",
+  ['deposit_amount'] = "Kwota do wpłaty..",
+  ['withdraw_amount'] = "Kwota do wypłaty..",
+  ['confirm'] = "Potwierdź",
 }

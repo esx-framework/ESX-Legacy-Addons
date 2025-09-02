@@ -49,12 +49,11 @@ Locales['zh-cn'] = {
   ['have_deposited'] = '你存入了 x%s %s ',
   ['player_cannot_hold'] = '你的物品库没有足够的空间!',
   ['blip_taxi'] = '滴滴司机',
-  ['phone_taxi'] = '滴滴司机',
   ['taxi'] = '滴滴',
   ['taxi_stock'] = '滴滴物品',
-  ['amount'] = "Amount", --not translated
-  ['bill_amount'] = "Amount to bill..", --not translated
-  ['deposit_amount'] = "Amount to deposit..", --not translated
-  ['withdraw_amount'] = "Amount to withdraw..", --not translated
-  ['confirm'] = "Confirm", --not translated
+  ['amount'] = "金额",
+  ['bill_amount'] = "账单金额..",
+  ['deposit_amount'] = "存入金额..",
+  ['withdraw_amount'] = "取款金额..",
+  ['confirm'] = "确认",
 }

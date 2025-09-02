@@ -49,12 +49,11 @@ Locales['nl'] = {
   ['have_deposited'] = 'je hebt x%s %s weggelegd',
   ['player_cannot_hold'] = 'Je hebt ~r~niet genoeg vrije ruimte in je inventory!',
   ['blip_taxi'] = 'downtown Cab Co.',
-  ['phone_taxi'] = 'downtown Cab Co.',
   ['taxi'] = 'taxi',
   ['taxi_stock'] = 'taxi voorraad',
-  ['amount'] = "Amount", --not translated
-  ['bill_amount'] = "Amount to bill..", --not translated
-  ['deposit_amount'] = "Amount to deposit..", --not translated
-  ['withdraw_amount'] = "Amount to withdraw..", --not translated
-  ['confirm'] = "Confirm", --not translated
+  ['amount'] = "Bedrag",
+  ['bill_amount'] = "Te factureren bedrag..",
+  ['deposit_amount'] = "Te storten bedrag..",
+  ['withdraw_amount'] = "Op te nemen bedrag..",
+  ['confirm'] = "Bevestigen",
 }
