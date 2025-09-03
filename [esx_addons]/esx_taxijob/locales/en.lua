@@ -7,6 +7,7 @@ Locales['en'] = {
 
   -- garage
   ['spawner_prompt'] = 'press [E] to access the Garage.',
+  ['vehiclespawner_prompt'] = 'press [E] to access the Garage.',
   ["vehicle_spawned"] = "Successfully Spawned A ~b~%s!",
   ['store_veh'] = 'press [E] to store the vehicle',
   ['spawn_veh'] = 'spawn vehicle',
@@ -19,6 +20,7 @@ Locales['en'] = {
   ['full_service'] = 'full service: ',
   ['amount_invalid'] = 'amount invalid',
   ['press_to_open'] = 'press [E] to access the menu',
+  ['taxiactions_prompt'] = 'press [E] to access the menu',
   ['billing'] = 'billing',
   ['billing_sent'] = 'the bill has been registered!',
   ['invoice_amount'] = 'invoice amount',
@@ -44,7 +46,6 @@ Locales['en'] = {
   ['quantity'] = 'quantity',
   ['quantity_invalid'] = 'that is an invalid quantity!',
   ['inventory'] = 'inventory',
-  ['taxi_client'] = 'taxi Client',
   ['have_withdrawn'] = 'you have withdrawn x%s %s',
   ['have_deposited'] = 'you have deposited x%s %s',
   ['player_cannot_hold'] = 'you do ~r~not have enough free space in your inventory!',

@@ -7,6 +7,7 @@ Locales['fr'] = {
 
   -- garage
   ['spawner_prompt'] = 'appuyez sur [E] pour ouvrir le garage.',
+  ['vehiclespawner_prompt'] = 'appuyez sur [E] pour ouvrir le garage.',
   ['store_veh'] = 'appuyez sur [E] pour ranger le véhicule',
   ['spawn_veh'] = 'sortir véhicule',
   ['spawnpoint_blocked'] = 'un véhicule bloque la sortie!!',
@@ -19,6 +20,7 @@ Locales['fr'] = {
   ['full_service'] = 'service complet : ',
   ['amount_invalid'] = 'montant invalide',
   ['press_to_open'] = 'appuyez sur [E] pour accéder au menu',
+  ['taxiactions_prompt'] = 'appuyez sur [E] pour accéder au menu',
   ['billing'] = 'facuration',
   ['billing_sent'] = 'la facture a bien été enregistrée!',
   ['invoice_amount'] = 'montant de la facture',
@@ -44,7 +46,6 @@ Locales['fr'] = {
   ['quantity'] = 'Quantité',
   ['quantity_invalid'] = 'Quantité invalide',
   ['inventory'] = 'Inventaire',
-  ['taxi_client'] = 'client Taxi',
   ['have_withdrawn'] = 'vous avez pris x%s %s',
   ['have_deposited'] = 'vous avez déposé x%s %s',
   ['player_cannot_hold'] = 'vous n\'avez pas assez de place dans votre inventaire!',

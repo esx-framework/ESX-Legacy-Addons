@@ -7,6 +7,7 @@ Locales['fi'] = {
 
   -- garage
   ['spawner_prompt'] = 'Paina [E] avataksesi talli.',
+  ['vehiclespawner_prompt'] = 'Paina [E] avataksesi talli.',
   ['store_veh'] = 'Paina [E] laittaaksesi ajoneuvo talliin',
   ['spawn_veh'] = 'Luo ajoneuvo',
   ['spawnpoint_blocked'] = 'Jokin ajoneuvo estää ajoneuvon luomisen!',
@@ -19,6 +20,7 @@ Locales['fi'] = {
   ['full_service'] = 'Täysi palvelu: ',
   ['amount_invalid'] = 'Virheellinen summa',
   ['press_to_open'] = 'Paina [E] avataksesi valikko',
+  ['taxiactions_prompt'] = 'Paina [E] avataksesi valikko',
   ['billing'] = 'Laskutus',
   ['billing_sent'] = 'Lasku on rekisteröity!',
   ['invoice_amount'] = 'Laskun määrä',
@@ -44,7 +46,6 @@ Locales['fi'] = {
   ['quantity'] = 'Määrä',
   ['quantity_invalid'] = 'Virheellinen määrä',
   ['inventory'] = 'Reppu',
-  ['taxi_client'] = 'Taksi asiakas',
   ['have_withdrawn'] = 'Sinä nostit x%s %s',
   ['have_deposited'] = 'Sinä talletit x%s %s',
   ['player_cannot_hold'] = 'Sinulla ~r~ei ole enempää vapaata tilaa repussasi!',

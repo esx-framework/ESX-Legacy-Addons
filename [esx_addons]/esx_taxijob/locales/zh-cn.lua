@@ -7,6 +7,7 @@ Locales['zh-cn'] = {
 
   -- garage
   ['spawner_prompt'] = '键下 [E]  访问车库',
+  ['vehiclespawner_prompt'] = '键下 [E]  访问车库',
   ["vehicle_spawned"] = "%s 车辆已放行！",
   ['store_veh'] = '键下 [E] 储存车辆',
   ['spawn_veh'] = '生成载具',
@@ -19,6 +20,7 @@ Locales['zh-cn'] = {
   ['full_service'] = '公共服务:',
   ['amount_invalid'] = '无效的金额输入！请重新检查',
   ['press_to_open'] = '键下 [E] 打开菜单',
+  ['taxiactions_prompt'] = '键下 [E] 打开菜单',
   ['billing'] = '开具帐单',
   ['billing_sent'] = '当前帐单已成功发送至目标市民!',
   ['invoice_amount'] = '帐单金额',
@@ -44,7 +46,6 @@ Locales['zh-cn'] = {
   ['quantity'] = '数量',
   ['quantity_invalid'] = '数量无效',
   ['inventory'] = '存储柜',
-  ['taxi_client'] = '计程车客户',
   ['have_withdrawn'] = '你取出了 x%s %s ',
   ['have_deposited'] = '你存入了 x%s %s ',
   ['player_cannot_hold'] = '你的物品库没有足够的空间!',

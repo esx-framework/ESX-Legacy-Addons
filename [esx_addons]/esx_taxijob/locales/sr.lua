@@ -7,6 +7,7 @@ Locales['sr'] = {
 
   -- garage
   ['spawner_prompt'] = 'Pritisni [E] da pristupiš garaži.',
+  ['vehiclespawner_prompt'] = 'Pritisni [E] da pristupiš garaži.',
   ["vehicle_spawned"] = "Uspešno uzeto ~b~%s vozilo!",
   ['store_veh'] = 'Pritisni [E] da parkiraš vozilo',
   ['spawn_veh'] = 'Uzmi Vozilo',
@@ -19,6 +20,7 @@ Locales['sr'] = {
   ['full_service'] = 'Posao: ',
   ['amount_invalid'] = 'Nevažeći Iznos',
   ['press_to_open'] = 'Pritisni [E] da pristupiš meniju',
+  ['taxiactions_prompt'] = 'Pritisni [E] da pristupiš meniju',
   ['billing'] = 'Računi',
   ['billing_sent'] = 'Račun je registrovan!',
   ['invoice_amount'] = 'Iznos računa',
@@ -44,7 +46,6 @@ Locales['sr'] = {
   ['quantity'] = 'Količina',
   ['quantity_invalid'] = 'Ta količina je nevažeća!',
   ['inventory'] = 'Inventar',
-  ['taxi_client'] = 'Taxi Klijent',
   ['have_withdrawn'] = 'Podigli ste x%s %s',
   ['have_deposited'] = 'Ostavili ste x%s %s',
   ['player_cannot_hold'] = 'Nemate prostora u inventaru!',

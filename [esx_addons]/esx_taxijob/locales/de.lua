@@ -7,6 +7,7 @@ Locales['de'] = {
 
   -- garage
   ['spawner_prompt'] = 'Drücke ~INPUT_CONTEXT~ um die ~y~garage~s~ zu öffnen!.',
+  ['vehiclespawner_prompt'] = 'Drücke ~INPUT_CONTEXT~ um die ~y~garage~s~ zu öffnen!.',
   ["vehicle_spawned"] = "%s erfolgreich geparkt !",
   ['store_veh'] = 'Drücke ~INPUT_CONTEXT~ um das Fahrzeug zu parken',
   ['spawn_veh'] = 'Fahrzeug ausparken',
@@ -19,6 +20,7 @@ Locales['de'] = {
   ['full_service'] = 'Voller Service: ',
   ['amount_invalid'] = 'Betrag ungültig',
   ['press_to_open'] = 'Drücke ~INPUT_CONTEXT~ um das Menü zu öffnen',
+  ['taxiactions_prompt'] = 'Drücke ~INPUT_CONTEXT~ um das Menü zu öffnen',
   ['billing'] = 'Rechnung',
   ['billing_sent'] = 'Die rechnung wurde registriert!!',
   ['invoice_amount'] = 'Rechnugsbetrag',
@@ -44,7 +46,6 @@ Locales['de'] = {
   ['quantity'] = 'Anzahl',
   ['quantity_invalid'] = 'Ungültige Anzahl!!',
   ['inventory'] = 'Inventar',
-  ['taxi_client'] = 'Taxi Client',
   ['have_withdrawn'] = 'Du zahlst aus ~y~x%s~s~ ~b~%s~s~€',
   ['have_deposited'] = 'Du zahlst ein ~y~x%s~s~ ~b~%s~s~€',
   ['player_cannot_hold'] = 'Du hast ~r~nicht~s~ genügend ~y~freien platz~s~ in deinem Inventar!',

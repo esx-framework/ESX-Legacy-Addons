@@ -7,6 +7,7 @@ Locales['nl'] = {
 
   -- garage
   ['spawner_prompt'] = 'Druk op [E] om de Garage te gebruiken.',
+  ['vehiclespawner_prompt'] = 'Druk op [E] om de Garage te gebruiken.',
   ["vehicle_spawned"] = "Successfully Spawned A ~b~%s!",
   ['store_veh'] = 'Druk op [E] om het voertuig weg te zetten.',
   ['spawn_veh'] = 'pak voertuig',
@@ -19,6 +20,7 @@ Locales['nl'] = {
   ['full_service'] = 'volledige dienst: ',
   ['amount_invalid'] = 'ongeldig bedrag',
   ['press_to_open'] = 'Druk op [E] om het menu te gebruiken.',
+  ['taxiactions_prompt'] = 'Druk op [E] om het menu te gebruiken.',
   ['billing'] = 'facturering',
   ['billing_sent'] = 'de factuur is geregistreerd!',
   ['invoice_amount'] = 'factuurbedrag',
@@ -44,7 +46,6 @@ Locales['nl'] = {
   ['quantity'] = 'hoeveelheid',
   ['quantity_invalid'] = 'dat is een ongeldige hoeveelheid !',
   ['inventory'] = 'inventory',
-  ['taxi_client'] = 'taxi klant',
   ['have_withdrawn'] = 'je hebt x%s %s gepakt',
   ['have_deposited'] = 'je hebt x%s %s weggelegd',
   ['player_cannot_hold'] = 'Je hebt ~r~niet genoeg vrije ruimte in je inventory!',
