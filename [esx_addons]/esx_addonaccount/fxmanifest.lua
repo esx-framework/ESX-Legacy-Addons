@@ -14,10 +14,3 @@ server_scripts {
 	'server/classes/addonaccount.lua',
 	'server/main.lua'
 }
-
--- @todo remove, kept just for overview
--- server_exports {
--- 	'GetSharedAccount',
--- 	'AddSharedAccount',
--- 	'GetAccount'
--- }
