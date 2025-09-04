@@ -1,10 +1,11 @@
-fx_version 'adamant'
+fx_version 'cerulean'
 game 'gta5'
+lua54 'yes'
+use_fxv2_oal 'yes'
 
 author 'ESX-Framework'
-description 'Allows resources to store account data, such as society funds'
-lua54 'yes'
-version '1.1'
+description 'Allows resources to store account data, such as society funds.'
+version '1.2'
 legacyversion '1.13.4'
 
 server_scripts {
@@ -14,10 +15,9 @@ server_scripts {
 	'server/main.lua'
 }
 
-server_exports {
-	'GetSharedAccount',
-	'AddSharedAccount',
-	'GetAccount'
-}
-
-dependency 'es_extended'
+-- @todo remove, kept just for overview
+-- server_exports {
+-- 	'GetSharedAccount',
+-- 	'AddSharedAccount',
+-- 	'GetAccount'
+-- }
