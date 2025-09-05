@@ -162,6 +162,23 @@ AddEventHandler('esx_addonaccount:getSharedAccount', function(name, cb)
     cb(getSharedAccount(name))
 end)
 
+AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)
+    if eventData.secondsRemaining == 60 then
+        CreateThread(function()
+            Wait(50000)
+            Database.saveAccounts()
+        end)
+    end
+end)
+
+AddEventHandler('onResourceStop', function(resource)
+    if resource == GetCurrentResourceName() then
+        Database.saveAccounts()
+    end
+end)
+
+AddEventHandler('txAdmin:events:serverShuttingDown', Database.saveAccounts)
+
 exports('GetSharedAccount', getSharedAccount)
 exports('GetAccount', getAccount)
 
