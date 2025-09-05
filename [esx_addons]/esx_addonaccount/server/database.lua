@@ -33,3 +33,22 @@ function Database.fetchSharedAccount(name)
 
     return accountData
 end
+
+function Database.saveAccounts()
+    local params, n = {}, 0
+    for _, accountData in pairs(Accounts) do
+        for owner, account in pairs(accountData) do
+            n += 1
+            params[n] = { account.money, account.name, owner }
+        end
+    end
+
+    for _, account in pairs(SharedAccounts) do
+        n += 1
+        params[n] = { account.money, account.name }
+    end
+
+    MySQL.prepare.await([[
+        UPDATE addon_account_data SET money = ? WHERE account_name = ? AND owner = ?;
+    ]], params)
+end
