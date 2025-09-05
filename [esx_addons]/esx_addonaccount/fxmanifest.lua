@@ -12,5 +12,6 @@ server_scripts {
 	'@es_extended/imports.lua',
 	'@oxmysql/lib/MySQL.lua',
 	'server/classes/addonaccount.lua',
+	'server/database.lua',
 	'server/main.lua'
 }
