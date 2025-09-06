@@ -115,6 +115,8 @@ RegisterNetEvent('esx_ambulancejob:revive')
 AddEventHandler('esx_ambulancejob:revive', function()
   local playerPed = PlayerPedId()
   local coords = GetEntityCoords(playerPed)
+
+  Player(PlayerId()).state:set('isDead', false, true)
   TriggerServerEvent('esx_ambulancejob:playerNotDead', false)
 
   DoScreenFadeOut(800)
