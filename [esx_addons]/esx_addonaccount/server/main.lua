@@ -4,7 +4,7 @@ Accounts, SharedAccounts = {}, {}
 ---@param owner string
 ---@return AddonAccount?
 local function getAccount(name, owner)
-    local existingAccount = Accounts[name][owner]
+    local existingAccount = Accounts[name]?[owner]
     if existingAccount then
         return existingAccount
     end
