@@ -1,85 +1,59 @@
+---@alias AddonInventoryItem { name: string, count: number, label: string }
+
+---@class AddonInventory
+---@field name string
+---@field owner? string
+---@field items table<string, AddonInventoryItem>
+---@field addItem fun(itemName: string, count: number)
+---@field removeItem fun(itemName: string, count: number)
+---@field setItem fun(itemName: string, count: number)
+---@field getItem fun(itemName: string): AddonInventoryItem
+---@field saveItem function
+
+---@param name string
+---@param owner? string
+---@param items table<string, AddonInventoryItem>
+---@return AddonInventory
 function CreateAddonInventory(name, owner, items)
-	local self = {}
+	---@diagnostic disable-next-line: missing-fields
+	local self = {} --[[@type AddonInventory]]
 
 	self.name  = name
 	self.owner = owner
 	self.items = items
 
-	function self.addItem(name, count)
-		local item = self.getItem(name)
-		item.count = item.count + count
-
-		self.saveItem(name, item.count)
+	function self.addItem(itemName, count)
+		local item = self.getItem(itemName)
+		item.count += count
 	end
 
-	function self.removeItem(name, count)
-		if count > 0 then
-			local item = self.getItem(name)
-			item.count = item.count - count
-			
-			self.saveItem(name, item.count)
-		end
+	function self.removeItem(itemName, count)
+		if count <= 0 then return end
+
+		local item = self.getItem(itemName)
+		item.count = math.max(0, item.count - count)
 	end
 
-	function self.setItem(name, count)
-		local item = self.getItem(name)
+	function self.setItem(itemName, count)
+		local item = self.getItem(itemName)
 		item.count = count
-
-		self.saveItem(name, item.count)
 	end
 
-	function self.getItem(name)
-		for i=1, #self.items, 1 do
-			if self.items[i].name == name then
-				return self.items[i]
-			end
-		end
+	function self.getItem(itemName)
+		local existingItem = self.items[itemName]
+		if existingItem then return existingItem end
 
-		item = {
-			name  = name,
+		self.items[itemName] = {
+			name  = itemName,
 			count = 0,
-			label = Items[name]
+			label = Items[itemName]
 		}
 
-		table.insert(self.items, item)
-
-		if self.owner == nil then
-			MySQL.update('INSERT INTO addon_inventory_items (inventory_name, name, count) VALUES (@inventory_name, @item_name, @count)',
-			{
-				['@inventory_name'] = self.name,
-				['@item_name']      = name,
-				['@count']          = 0
-			})
-		else
-			MySQL.update('INSERT INTO addon_inventory_items (inventory_name, name, count, owner) VALUES (@inventory_name, @item_name, @count, @owner)',
-			{
-				['@inventory_name'] = self.name,
-				['@item_name']      = name,
-				['@count']          = 0,
-				['@owner']          = self.owner
-			})
-		end
-
-		return item
+		return self.items[itemName]
 	end
 
-	function self.saveItem(name, count)
-		if self.owner == nil then
-			MySQL.update('UPDATE addon_inventory_items SET count = @count WHERE inventory_name = @inventory_name AND name = @item_name', {
-				['@inventory_name'] = self.name,
-				['@item_name']      = name,
-				['@count']          = count
-			})
-		else
-			MySQL.update('UPDATE addon_inventory_items SET count = @count WHERE inventory_name = @inventory_name AND name = @item_name AND owner = @owner', {
-				['@inventory_name'] = self.name,
-				['@item_name']      = name,
-				['@count']          = count,
-				['@owner']          = self.owner
-			})
-		end
+	function self.saveItem(itemName, count)
 	end
 
 	return self
 end
-

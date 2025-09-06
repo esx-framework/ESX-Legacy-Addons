@@ -3,7 +3,7 @@ if ESX.GetConfig().OxInventory then
 		if resourceName == 'ox_inventory' or resourceName == GetCurrentResourceName() then
 			local stashes = MySQL.query.await('SELECT * FROM addon_inventory')
 
-			for i=1, #stashes do
+			for i = 1, #stashes do
 				local stash = stashes[i]
 				local jobStash = stash.name:find('society') and string.sub(stash.name, 9)
 				exports.ox_inventory:RegisterStash(stash.name, stash.label, 100, 200000, stash.shared == 0 and true or false, jobStash)
@@ -20,29 +20,28 @@ local InventoriesIndex, Inventories, SharedInventories = {}, {}, {}
 MySQL.ready(function()
 	local items = MySQL.query.await('SELECT * FROM items')
 
-	for i=1, #items, 1 do
+	for i = 1, #items, 1 do
 		Items[items[i].name] = items[i].label
 	end
 
 	local result = MySQL.query.await('SELECT * FROM addon_inventory')
 
-	for i=1, #result, 1 do
-		local name   = result[i].name
-		local label  = result[i].label
-		local shared = result[i].shared
+	for i = 1, #result, 1 do
+		local name    = result[i].name
+		local label   = result[i].label
+		local shared  = result[i].shared
 
 		local result2 = MySQL.query.await('SELECT * FROM addon_inventory_items WHERE inventory_name = @inventory_name', {
 			['@inventory_name'] = name
 		})
 
 		if shared == 0 then
-
 			table.insert(InventoriesIndex, name)
 
 			Inventories[name] = {}
 			local items       = {}
 
-			for j=1, #result2, 1 do
+			for j = 1, #result2, 1 do
 				local itemName  = result2[j].name
 				local itemCount = result2[j].count
 				local itemOwner = result2[j].owner
@@ -58,15 +57,14 @@ MySQL.ready(function()
 				})
 			end
 
-			for k,v in pairs(items) do
+			for k, v in pairs(items) do
 				local addonInventory = CreateAddonInventory(name, k, v)
 				table.insert(Inventories[name], addonInventory)
 			end
-
 		else
 			local items = {}
 
-			for j=1, #result2, 1 do
+			for j = 1, #result2, 1 do
 				table.insert(items, {
 					name  = result2[j].name,
 					count = result2[j].count,
@@ -74,15 +72,15 @@ MySQL.ready(function()
 				})
 			end
 
-			local addonInventory    = CreateAddonInventory(name, nil, items)
-			SharedInventories[name] = addonInventory
+			local addonInventory          = CreateAddonInventory(name, nil, items)
+			SharedInventories[name]       = addonInventory
 			GlobalState.SharedInventories = SharedInventories
 		end
 	end
 end)
 
 function GetInventory(name, owner)
-	for i=1, #Inventories[name], 1 do
+	for i = 1, #Inventories[name], 1 do
 		if Inventories[name][i].owner == owner then
 			return Inventories[name][i]
 		end
@@ -94,17 +92,17 @@ function GetSharedInventory(name)
 end
 
 function AddSharedInventory(society)
-    if type(society) ~= 'table' or not society?.name or not society?.label then return end
-    -- society (array) containing name (string) and label (string)
+	if type(society) ~= 'table' or not society?.name or not society?.label then return end
+	-- society (array) containing name (string) and label (string)
 
-    -- addon inventory:
-    MySQL.Async.execute('INSERT INTO addon_inventory (name, label, shared) VALUES (@name, @label, @shared)', {
-        ['name'] = society.name,
-        ['label'] = society.label,
-        ['shared'] = 1
-    })
+	-- addon inventory:
+	MySQL.Async.execute('INSERT INTO addon_inventory (name, label, shared) VALUES (@name, @label, @shared)', {
+		['name'] = society.name,
+		['label'] = society.label,
+		['shared'] = 1
+	})
 
-    SharedInventories[society.name] = CreateAddonInventory(society.name, nil, {})
+	SharedInventories[society.name] = CreateAddonInventory(society.name, nil, {})
 end
 
 AddEventHandler('esx_addoninventory:getInventory', function(name, owner, cb)
@@ -118,7 +116,7 @@ end)
 AddEventHandler('esx:playerLoaded', function(playerId, xPlayer)
 	local addonInventories = {}
 
-	for i=1, #InventoriesIndex, 1 do
+	for i = 1, #InventoriesIndex, 1 do
 		local name      = InventoriesIndex[i]
 		local inventory = GetInventory(name, xPlayer.identifier)
 
