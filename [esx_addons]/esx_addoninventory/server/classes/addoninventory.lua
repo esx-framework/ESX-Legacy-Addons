@@ -46,7 +46,7 @@ function CreateAddonInventory(name, owner, items)
 		self.items[itemName] = {
 			name  = itemName,
 			count = 0,
-			label = Items[itemName]
+			label = ESX.GetItemLabel(itemName)
 		}
 
 		return self.items[itemName]
