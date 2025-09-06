@@ -16,7 +16,7 @@ function Database.fetchAccount(name, owner)
     local accountData = MySQL.single.await([[
         SELECT * FROM addon_account aa
         LEFT JOIN addon_account_data aad ON aa.name = aad.account_name
-        WHERE aa.shared = 1 AND aa.name = ? AND aad.owner = ?
+        WHERE aa.shared = 0 AND aa.name = ? AND aad.owner = ?
     ]], { name, owner })
 
     return accountData
