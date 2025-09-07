@@ -13,10 +13,10 @@ Database = {}
 ---@field owner? string
 
 ---@param name string
----@param shared number
+---@param shared? boolean
 ---@return DatabaseInventoryRow?
 function Database.fetchInventory(name, shared)
-    return MySQL.single.await('SELECT * FROM addon_inventory WHERE name = ? AND shared = ?', { name, shared })
+    return MySQL.single.await('SELECT * FROM addon_inventory WHERE name = ? AND shared = ?', { name, shared and 1 or 0 })
 end
 
 ---@param name string
