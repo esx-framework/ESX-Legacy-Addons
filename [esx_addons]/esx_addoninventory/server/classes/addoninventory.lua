@@ -20,7 +20,16 @@ function CreateAddonInventory(name, owner, items)
 
 	self.name  = name
 	self.owner = owner
-	self.items = items
+	self.items = {}
+
+	for _, item in ipairs(items) do
+		local itemName = item.name
+		self.items[itemName] = {
+			name = itemName,
+			count = item.count,
+			label = ESX.GetItemLabel(itemName),
+		}
+	end
 
 	function self.addItem(itemName, count)
 		local item = self.getItem(itemName)
