@@ -127,6 +127,39 @@ local function setSharedAccountMoney(name, amount)
     account.setMoney(amount)
 end
 
+---@alias TransactionAccount { name: string, owner?: string }|string
+
+---@param accountData TransactionAccount
+---@return AddonAccount?
+local function getTransactionAccount(accountData)
+    if type(accountData) == "string" then
+        return getSharedAccount(accountData)
+    end
+
+    if accountData.owner then
+        return getAccount(accountData.name, accountData.owner)
+    else
+        return getSharedAccount(accountData.name)
+    end
+end
+
+---@param sender TransactionAccount
+---@param receiver TransactionAccount
+---@param amount number
+---@return boolean, string
+local function transferMoney(sender, receiver, amount)
+    local senderAccount, receiverAccount = getTransactionAccount(sender), getTransactionAccount(receiver)
+    if not senderAccount or not receiverAccount then return false, 'invalid_account' end
+
+    if not senderAccount.removeMoney(amount) then
+        return false, 'insufficient_funds'
+    end
+
+    receiverAccount.addMoney(amount)
+
+    return true, 'success'
+end
+
 AddEventHandler('esx:playerLoaded', function(_, xPlayer)
     local addonAccounts = {}
 
@@ -191,3 +224,5 @@ exports('SetAccountMoney', setAccountMoney)
 exports('AddSharedAccountMoney', addSharedAccountMoney)
 exports('RemoveSharedAccountMoney', removeSharedAccountMoney)
 exports('SetSharedAccountMoney', setSharedAccountMoney)
+
+exports('TransferMoney', transferMoney)
