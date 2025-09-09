@@ -2,9 +2,9 @@
 ---@field name string
 ---@field owner? string
 ---@field money number
----@field addMoney fun(amount: number)
----@field removeMoney fun(amount: number)
----@field setMoney fun(amount: number)
+---@field addMoney fun(amount: number): boolean
+---@field removeMoney fun(amount: number): boolean
+---@field setMoney fun(amount: number): boolean
 ---@field save function
 
 ---@param name string
@@ -24,13 +24,17 @@ function CreateAddonAccount(name, owner, money)
 
 		TriggerEvent('esx_addonaccount:addMoney', self.name, amount)
 		TriggerClientEvent('esx_addonaccount:setMoney', -1, self.name, self.money)
+		return true
 	end
 
 	function self.removeMoney(amount)
+		if amount > self.money then return false end
+
 		self.money -= amount
 
 		TriggerEvent('esx_addonaccount:removeMoney', self.name, amount)
 		TriggerClientEvent('esx_addonaccount:setMoney', -1, self.name, self.money)
+		return true
 	end
 
 	function self.setMoney(amount)
@@ -38,6 +42,7 @@ function CreateAddonAccount(name, owner, money)
 
 		TriggerEvent('esx_addonaccount:setMoney', self.name, amount)
 		TriggerClientEvent('esx_addonaccount:setMoney', -1, self.name, self.money)
+		return true
 	end
 
 	function self.save()
