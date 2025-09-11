@@ -131,7 +131,7 @@ end
 
 ---@param accountData TransactionAccount
 ---@return AddonAccount?
-local function getTransactionAccount(accountData)
+function GetTransactionAccount(accountData)
     if type(accountData) == "string" then
         return getSharedAccount(accountData)
     end
@@ -148,7 +148,7 @@ end
 ---@param amount number
 ---@return boolean, string
 local function transferMoney(sender, receiver, amount)
-    local senderAccount, receiverAccount = getTransactionAccount(sender), getTransactionAccount(receiver)
+    local senderAccount, receiverAccount = GetTransactionAccount(sender), GetTransactionAccount(receiver)
     if not senderAccount or not receiverAccount then return false, 'invalid_account' end
 
     if not senderAccount.removeMoney(amount) then

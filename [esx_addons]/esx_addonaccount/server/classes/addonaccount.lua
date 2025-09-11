@@ -5,6 +5,7 @@
 ---@field addMoney fun(amount: number): boolean
 ---@field removeMoney fun(amount: number): boolean
 ---@field setMoney fun(amount: number): boolean
+---@field transferMoney fun(target: TransactionAccount, amount: number): boolean
 ---@field save function
 
 ---@param name string
@@ -42,6 +43,18 @@ function CreateAddonAccount(name, owner, money)
 
 		TriggerEvent('esx_addonaccount:setMoney', self.name, amount)
 		TriggerClientEvent('esx_addonaccount:setMoney', -1, self.name, self.money)
+		return true
+	end
+
+	function self.transferMoney(target, amount)
+		local targetAccount = GetTransactionAccount(target)
+		if not targetAccount then return false end
+
+		if not self.removeMoney(amount) then
+			return false
+		end
+
+		targetAccount.addMoney(amount)
 		return true
 	end
 
