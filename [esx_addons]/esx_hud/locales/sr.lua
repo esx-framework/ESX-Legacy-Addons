@@ -7,10 +7,5 @@ Locales["sr"] = {
     resource_not_built = "Resurs nije napravljen, preuzmite release verziju resursa!",
     settingsSaveSuccess = "Trenutna podešavanja uspešno sačuvana",
     settingsResetSuccess = "Podešavanja uspešno resetovana",
-    currentVersion = "Poslednja verzija: ",
-    yourVersion = "Vaša verzija: ",
-    latestVersion = "Vi koristite poslednju verziju!",
-    needUpdateResource = "Morate preuzeti najnoviju verziju. Trenutno koristite staru verziju.",
-    errorGetCurrentVersion = "Došlo je do greške prilikom provere trenutne verzije resursa!",
     job_off_duty = " (Van dužnosti)",
 }
