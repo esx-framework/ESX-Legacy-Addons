@@ -29,6 +29,9 @@ end
 RegisterServerEvent('esx_mechanicjob:startHarvest')
 AddEventHandler('esx_mechanicjob:startHarvest', function()
 	local source = source
+    if PlayersHarvesting[source] then
+        return
+    end
 	PlayersHarvesting[source] = true
 	TriggerClientEvent('esx:showNotification', source, TranslateCap('recovery_gas_can'))
 	Harvest(source)
@@ -61,6 +64,9 @@ end
 RegisterServerEvent('esx_mechanicjob:startHarvest2')
 AddEventHandler('esx_mechanicjob:startHarvest2', function()
 	local source = source
+   if PlayersHarvesting2[source] then
+        return
+    end
 	PlayersHarvesting2[source] = true
 	TriggerClientEvent('esx:showNotification', source, TranslateCap('recovery_repair_tools'))
 	Harvest2(source)
@@ -92,6 +98,9 @@ end
 RegisterServerEvent('esx_mechanicjob:startHarvest3')
 AddEventHandler('esx_mechanicjob:startHarvest3', function()
 	local source = source
+     if PlayersHarvesting3[source] then
+        return
+    end
 	PlayersHarvesting3[source] = true
 	TriggerClientEvent('esx:showNotification', source, TranslateCap('recovery_body_tools'))
 	Harvest3(source)
@@ -125,6 +134,9 @@ end
 RegisterServerEvent('esx_mechanicjob:startCraft')
 AddEventHandler('esx_mechanicjob:startCraft', function()
 	local source = source
+    if PlayersCrafting[source] then
+        return
+    end
 	PlayersCrafting[source] = true
 	TriggerClientEvent('esx:showNotification', source, TranslateCap('assembling_blowtorch'))
 	Craft(source)
@@ -158,6 +170,9 @@ end
 RegisterServerEvent('esx_mechanicjob:startCraft2')
 AddEventHandler('esx_mechanicjob:startCraft2', function()
 	local source = source
+    if PlayersCrafting2[source] then
+        return
+    end   
 	PlayersCrafting2[source] = true
 	TriggerClientEvent('esx:showNotification', source, TranslateCap('assembling_repair_kit'))
 	Craft2(source)
@@ -191,6 +206,9 @@ end
 RegisterServerEvent('esx_mechanicjob:startCraft3')
 AddEventHandler('esx_mechanicjob:startCraft3', function()
 	local source = source
+    if PlayersCrafting3[source] then
+        return
+    end
 	PlayersCrafting3[source] = true
 	TriggerClientEvent('esx:showNotification', source, TranslateCap('assembling_body_kit'))
 	Craft3(source)
