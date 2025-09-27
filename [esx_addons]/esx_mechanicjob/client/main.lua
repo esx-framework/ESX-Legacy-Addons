@@ -48,8 +48,6 @@ function StopNPCJob(cancel)
 
 	if cancel then
 		ESX.ShowNotification(TranslateCap('mission_canceled'), "error")
-	else
-		--TriggerServerEvent('esx_mechanicjob:onNPCJobCompleted')
 	end
 end
 
@@ -175,22 +173,16 @@ function OpenMechanicActionsMenu()
 end
 
 function OpenMechanicHarvestMenu()
-	if Config.EnablePlayerManagement and ESX.PlayerData.job and ESX.PlayerData.job.grade_name ~= 'recrue' then
+	if Config.EnablePlayerManagement and ESX.PlayerData.job and ESX.PlayerData.job.grade ~= 0 then
 		local elements = {
 			{ unselectable = true,  icon = "fas fa-gear",                    title = "Mechanic Harvest Menu" },
-			{ icon = "fas fa-gear", title = TranslateCap('gas_can'),         value = 'gaz_bottle' },
-			{ icon = "fas fa-gear", title = TranslateCap('repair_tools'),    value = 'fix_tool' },
-			{ icon = "fas fa-gear", title = TranslateCap('body_work_tools'), value = 'caro_tool' }
+			{ icon = "fas fa-gear", title = TranslateCap('gas_can'),         value = 'gazbottle' },
+			{ icon = "fas fa-gear", title = TranslateCap('repair_tools'),    value = 'fixtool' },
+			{ icon = "fas fa-gear", title = TranslateCap('body_work_tools'), value = 'carotool' }
 		}
 
 		ESX.OpenContext("right", elements, function(menu, element)
-			if element.value == 'gaz_bottle' then
-				TriggerServerEvent('esx_mechanicjob:startHarvest')
-			elseif element.value == 'fix_tool' then
-				TriggerServerEvent('esx_mechanicjob:startHarvest2')
-			elseif element.value == 'caro_tool' then
-				TriggerServerEvent('esx_mechanicjob:startHarvest3')
-			end
+			TriggerServerEvent('esx_mechanicjob:startHarvest', element.value)
 		end, function(menu)
 			CurrentAction     = 'mechanic_harvest_menu'
 			CurrentActionMsg  = TranslateCap('harvest_menu')
@@ -202,22 +194,16 @@ function OpenMechanicHarvestMenu()
 end
 
 function OpenMechanicCraftMenu()
-	if Config.EnablePlayerManagement and ESX.PlayerData.job and ESX.PlayerData.job.grade_name ~= 'recrue' then
+	if Config.EnablePlayerManagement and ESX.PlayerData.job and ESX.PlayerData.job.grade ~= 0 then
 		local elements = {
 			{ unselectable = true,  icon = "fas fa-gear",               title = "Mechanic Craft Menu" },
-			{ icon = "fas fa-gear", title = TranslateCap('blowtorch'),  value = 'blow_pipe' },
-			{ icon = "fas fa-gear", title = TranslateCap('repair_kit'), value = 'fix_kit' },
-			{ icon = "fas fa-gear", title = TranslateCap('body_kit'),   value = 'caro_kit' }
+			{ icon = "fas fa-gear", title = TranslateCap('blowtorch'),  value = 'blowpipe' },
+			{ icon = "fas fa-gear", title = TranslateCap('repair_kit'), value = 'fixkit' },
+			{ icon = "fas fa-gear", title = TranslateCap('body_kit'),   value = 'carokit' }
 		}
 
 		ESX.OpenContext("right", elements, function(menu, element)
-			if element.value == 'blow_pipe' then
-				TriggerServerEvent('esx_mechanicjob:startCraft')
-			elseif element.value == 'fix_kit' then
-				TriggerServerEvent('esx_mechanicjob:startCraft2')
-			elseif element.value == 'caro_kit' then
-				TriggerServerEvent('esx_mechanicjob:startCraft3')
-			end
+			TriggerServerEvent('esx_mechanicjob:startCraft', element.value)
 		end, function(menu)
 			CurrentAction     = 'mechanic_craft_menu'
 			CurrentActionMsg  = TranslateCap('craft_menu')
@@ -261,8 +247,7 @@ function OpenMobileMechanicActionsMenu()
 						ESX.ShowNotification(TranslateCap('no_players_nearby'), "error")
 					else
 						ESX.CloseContext()
-						TriggerServerEvent('esx_billing:sendBill', GetPlayerServerId(closestPlayer), 'society_mechanic',
-							TranslateCap('mechanic'), amount)
+						TriggerServerEvent('esx_billing:sendBill', GetPlayerServerId(closestPlayer), 'society_mechanic', TranslateCap('mechanic'), amount)
 					end
 				end
 			end)
@@ -700,14 +685,9 @@ AddEventHandler('esx_mechanicjob:hasExitedMarker', function(zone)
 		NPCTargetDeleterZone = false
 	elseif zone == 'Craft' then
 		TriggerServerEvent('esx_mechanicjob:stopCraft')
-		TriggerServerEvent('esx_mechanicjob:stopCraft2')
-		TriggerServerEvent('esx_mechanicjob:stopCraft3')
 	elseif zone == 'Garage' then
 		TriggerServerEvent('esx_mechanicjob:stopHarvest')
-		TriggerServerEvent('esx_mechanicjob:stopHarvest2')
-		TriggerServerEvent('esx_mechanicjob:stopHarvest3')
 	end
-
 	CurrentAction = nil
 	ESX.CloseContext()
 	ESX.HideUI()
@@ -731,19 +711,6 @@ AddEventHandler('esx_mechanicjob:hasExitedEntityZone', function(entity)
 	ESX.HideUI()
 end)
 
-RegisterNetEvent('esx_phone:loaded')
-AddEventHandler('esx_phone:loaded', function(phoneNumber, contacts)
-	local specialContact = {
-		name       = TranslateCap('mechanic'),
-		number     = 'mechanic',
-		base64Icon =
-		'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEwAACxMBAJqcGAAAA4BJREFUWIXtll9oU3cUx7/nJA02aSSlFouWMnXVB0ejU3wcRteHjv1puoc9rA978cUi2IqgRYWIZkMwrahUGfgkFMEZUdg6C+u21z1o3fbgqigVi7NzUtNcmsac40Npltz7S3rvUHzxQODec87vfD+/e0/O/QFv7Q0beV3QeXqmgV74/7H7fZJvuLwv8q/Xeux1gUrNBpN/nmtavdaqDqBK8VT2RDyV2VHmF1lvLERSBtCVynzYmcp+A9WqT9kcVKX4gHUehF0CEVY+1jYTTIwvt7YSIQnCTvsSUYz6gX5uDt7MP7KOKuQAgxmqQ+neUA+I1B1AiXi5X6ZAvKrabirmVYFwAMRT2RMg7F9SyKspvk73hfrtbkMPyIhA5FVqi0iBiEZMMQdAui/8E4GPv0oAJkpc6Q3+6goAAGpWBxNQmTLFmgL3jSJNgQdGv4pMts2EKm7ICJB/aG0xNdz74VEk13UYCx1/twPR8JjDT8wttyLZtkoAxSb8ZDCz0gdfKxWkFURf2v9qTYH7SK7rQIDn0P3nA0ehixvfwZwE0X9vBE/mW8piohhl1WH18UQBhYnre8N/L8b8xQvlx4ACbB4NnzaeRYDnKm0EALCMLXy84hwuTCXL/ExoB1E7qcK/8NCLIq5HcTT0i6u8TYbXUM1cAyyveVq8Xls7XhYrvY/4n3gC8C+dsmAzL1YUiyfWxvHzsy/w/dNd+KjhW2yvv/RfXr7x9QDcmo1he2RBiCCI1Q8jVj9szPNixVfgz+UiIGyDSrcoRu2J16d3I6e1VYvNSQjXpnucAcEPUOkGYZs/l4uUhowt/3kqu1UIv9n90fAY9jT3YBlbRvFTD4fw++wHjhiTRL/bG75t0jI2ITcHb5om4Xgmhv57xpGOg3d/NIqryOR7z+r+MC6qBJB/ZB2t9Om1D5lFm843G/3E3HI7Yh1xDRAfzLQr5EClBf/HBHK462TG2J0OABXeyWDPZ8VqxmBWYscpyghwtTd4EKpDTjCZdCNmzFM9k+4LHXIFACJN94Z6FiFEpKDQw9HndWsEuhnADVMhAUaYJBp9XrcGQKJ4qFE9k+6r2+MG3k5N8VQ22TVglbX2ZwOzX2VvNKr91zmY6S7N6zqZicVT2WNLyVSehESaBhxnOALfMeYX+K/S2yv7wmMAlvwyuR7FxQUyf0fgc/jztfkJr7XeGgC8BJJgWNV8ImT+AAAAAElFTkSuQmCC'
-	}
-
-	TriggerEvent('esx_phone:addSpecialContact', specialContact.name, specialContact.number, specialContact.base64Icon)
-end)
-
--- Pop NPC mission vehicle when inside area
 CreateThread(function()
 	while true do
 		local Sleep = 1500
@@ -779,7 +746,6 @@ CreateThread(function()
 	end
 end)
 
--- Create Blips
 CreateThread(function()
 	local blip = AddBlipForCoord(Config.Zones.MechanicActions.Pos.x, Config.Zones.MechanicActions.Pos.y,
 		Config.Zones.MechanicActions.Pos.z)
@@ -795,7 +761,6 @@ CreateThread(function()
 	EndTextCommandSetBlipName(blip)
 end)
 
--- Display markers
 CreateThread(function()
 	while true do
 		local Sleep = 2000
@@ -817,7 +782,6 @@ CreateThread(function()
 	end
 end)
 
--- Enter / Exit marker events
 CreateThread(function()
 	while true do
 		local Sleep = 500
@@ -893,7 +857,6 @@ CreateThread(function()
 	end
 end)
 
--- Key Controls
 CreateThread(function()
 	while true do
 		local sleep = 500
@@ -933,8 +896,6 @@ RegisterCommand('mechanicMenu', function()
 		OpenMobileMechanicActionsMenu()
 	end
 end, false)
-
-
 
 RegisterCommand('mechanicjob', function()
 	local playerPed = PlayerPedId()

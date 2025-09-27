@@ -1,205 +1,86 @@
 
-local PlayersHarvesting, PlayersHarvesting2, PlayersHarvesting3, PlayersCrafting, PlayersCrafting2, PlayersCrafting3  = {}, {}, {}, {}, {}, {}
+local PlayersHarvesting, PlayersCrafting = {}, {}
 
 if Config.MaxInService ~= -1 then
 	TriggerEvent('esx_service:activateService', 'mechanic', Config.MaxInService)
 end
 
-TriggerEvent('esx_phone:registerNumber', 'mechanic', TranslateCap('mechanic_customer'), true, true)
 TriggerEvent('esx_society:registerSociety', 'mechanic', 'mechanic', 'society_mechanic', 'society_mechanic', 'society_mechanic', {type = 'private'})
 
-local function Harvest(source)
+local function Harvest(source, itemType)
 	SetTimeout(4000, function()
-
-		if PlayersHarvesting[source] == true then
+		if PlayersHarvesting[source] and PlayersHarvesting[source].itemType == itemType then
 			local xPlayer = ESX.Player(source)
-			local GazBottleQuantity = xPlayer.getInventoryItem('gazbottle').count
+			local itemQuantity = xPlayer.getInventoryItem(itemType).count
 
-			if GazBottleQuantity >= 5 then
+			if itemQuantity >= 5 then
 				TriggerClientEvent('esx:showNotification', source, TranslateCap('you_do_not_room'))
+				PlayersHarvesting[source] = nil
 			else
-				xPlayer.addInventoryItem('gazbottle', 1)
-				Harvest(source)
+				TriggerClientEvent('esx:showNotification', source, TranslateCap('recovery_' .. itemType))
+				xPlayer.addInventoryItem(itemType, 1)
+				Harvest(source, itemType)
 			end
 		end
-
 	end)
 end
 
 RegisterServerEvent('esx_mechanicjob:startHarvest')
-AddEventHandler('esx_mechanicjob:startHarvest', function()
+AddEventHandler('esx_mechanicjob:startHarvest', function(itemType)
 	local source = source
-	PlayersHarvesting[source] = true
-	TriggerClientEvent('esx:showNotification', source, TranslateCap('recovery_gas_can'))
-	Harvest(source)
+	local xPlayer = ESX.Player(source)
+	if xPlayer.getJob().name == 'mechanic' and not PlayersHarvesting[source] then
+		PlayersHarvesting[source] = { itemType = itemType }
+		Harvest(source, itemType)
+	end
 end)
 
 RegisterServerEvent('esx_mechanicjob:stopHarvest')
 AddEventHandler('esx_mechanicjob:stopHarvest', function()
 	local source = source
-	PlayersHarvesting[source] = false
+	PlayersHarvesting[source] = nil
 end)
 
-local function Harvest2(source)
+local function Craft(source, itemType)
 	SetTimeout(4000, function()
-
-		if PlayersHarvesting2[source] == true then
+		if PlayersCrafting[source] and PlayersCrafting[source].itemType == itemType then
 			local xPlayer = ESX.Player(source)
-			local FixToolQuantity = xPlayer.getInventoryItem('fixtool').count
-
-			if FixToolQuantity >= 5 then
-				TriggerClientEvent('esx:showNotification', source, TranslateCap('you_do_not_room'))
+			
+			local ingredients = {
+				['blowpipe'] = 'gazbottle',
+				['fixkit'] = 'fixtool',
+				['carokit'] = 'carotool'
+			}
+			local ingredient = ingredients[itemType]
+			local ingredientQuantity = xPlayer.getInventoryItem(ingredient).count
+			
+			if ingredientQuantity <= 0 then
+				TriggerClientEvent('esx:showNotification', source, TranslateCap('not_enough_' .. ingredient))
+				PlayersCrafting[source] = nil
 			else
-				xPlayer.addInventoryItem('fixtool', 1)
-				Harvest2(source)
+				TriggerClientEvent('esx:showNotification', source, TranslateCap('assembling_' .. itemType))
+				xPlayer.removeInventoryItem(ingredient, 1)
+				xPlayer.addInventoryItem(itemType, 1)
+				Craft(source, itemType)
 			end
 		end
-
-	end)
-end
-
-RegisterServerEvent('esx_mechanicjob:startHarvest2')
-AddEventHandler('esx_mechanicjob:startHarvest2', function()
-	local source = source
-	PlayersHarvesting2[source] = true
-	TriggerClientEvent('esx:showNotification', source, TranslateCap('recovery_repair_tools'))
-	Harvest2(source)
-end)
-
-RegisterServerEvent('esx_mechanicjob:stopHarvest2')
-AddEventHandler('esx_mechanicjob:stopHarvest2', function()
-	local source = source
-	PlayersHarvesting2[source] = false
-end)
-
-local function Harvest3(source)
-	SetTimeout(4000, function()
-
-		if PlayersHarvesting3[source] == true then
-			local xPlayer = ESX.Player(source)
-			local CaroToolQuantity = xPlayer.getInventoryItem('carotool').count
-			if CaroToolQuantity >= 5 then
-				TriggerClientEvent('esx:showNotification', source, TranslateCap('you_do_not_room'))
-			else
-				xPlayer.addInventoryItem('carotool', 1)
-				Harvest3(source)
-			end
-		end
-
-	end)
-end
-
-RegisterServerEvent('esx_mechanicjob:startHarvest3')
-AddEventHandler('esx_mechanicjob:startHarvest3', function()
-	local source = source
-	PlayersHarvesting3[source] = true
-	TriggerClientEvent('esx:showNotification', source, TranslateCap('recovery_body_tools'))
-	Harvest3(source)
-end)
-
-RegisterServerEvent('esx_mechanicjob:stopHarvest3')
-AddEventHandler('esx_mechanicjob:stopHarvest3', function()
-	local source = source
-	PlayersHarvesting3[source] = false
-end)
-
-local function Craft(source)
-	SetTimeout(4000, function()
-
-		if PlayersCrafting[source] == true then
-			local xPlayer = ESX.Player(source)
-			local GazBottleQuantity = xPlayer.getInventoryItem('gazbottle').count
-
-			if GazBottleQuantity <= 0 then
-				TriggerClientEvent('esx:showNotification', source, TranslateCap('not_enough_gas_can'))
-			else
-				xPlayer.removeInventoryItem('gazbottle', 1)
-				xPlayer.addInventoryItem('blowpipe', 1)
-				Craft(source)
-			end
-		end
-
 	end)
 end
 
 RegisterServerEvent('esx_mechanicjob:startCraft')
-AddEventHandler('esx_mechanicjob:startCraft', function()
+AddEventHandler('esx_mechanicjob:startCraft', function(itemType)
 	local source = source
-	PlayersCrafting[source] = true
-	TriggerClientEvent('esx:showNotification', source, TranslateCap('assembling_blowtorch'))
-	Craft(source)
+	local xPlayer = ESX.Player(source)
+	if xPlayer.getJob().name == 'mechanic' and not PlayersCrafting[source] then
+		PlayersCrafting[source] = { itemType = itemType }
+		Craft(source, itemType)
+	end
 end)
 
 RegisterServerEvent('esx_mechanicjob:stopCraft')
 AddEventHandler('esx_mechanicjob:stopCraft', function()
 	local source = source
-	PlayersCrafting[source] = false
-end)
-
-local function Craft2(source)
-	SetTimeout(4000, function()
-
-		if PlayersCrafting2[source] == true then
-			local xPlayer = ESX.Player(source)
-			local FixToolQuantity = xPlayer.getInventoryItem('fixtool').count
-
-			if FixToolQuantity <= 0 then
-				TriggerClientEvent('esx:showNotification', source, TranslateCap('not_enough_repair_tools'))
-			else
-				xPlayer.removeInventoryItem('fixtool', 1)
-				xPlayer.addInventoryItem('fixkit', 1)
-				Craft2(source)
-			end
-		end
-
-	end)
-end
-
-RegisterServerEvent('esx_mechanicjob:startCraft2')
-AddEventHandler('esx_mechanicjob:startCraft2', function()
-	local source = source
-	PlayersCrafting2[source] = true
-	TriggerClientEvent('esx:showNotification', source, TranslateCap('assembling_repair_kit'))
-	Craft2(source)
-end)
-
-RegisterServerEvent('esx_mechanicjob:stopCraft2')
-AddEventHandler('esx_mechanicjob:stopCraft2', function()
-	local source = source
-	PlayersCrafting2[source] = false
-end)
-
-local function Craft3(source)
-	SetTimeout(4000, function()
-
-		if PlayersCrafting3[source] == true then
-			local xPlayer = ESX.Player(source)
-			local CaroToolQuantity = xPlayer.getInventoryItem('carotool').count
-
-			if CaroToolQuantity <= 0 then
-				TriggerClientEvent('esx:showNotification', source, TranslateCap('not_enough_body_tools'))
-			else
-				xPlayer.removeInventoryItem('carotool', 1)
-				xPlayer.addInventoryItem('carokit', 1)
-				Craft3(source)
-			end
-		end
-
-	end)
-end
-
-RegisterServerEvent('esx_mechanicjob:startCraft3')
-AddEventHandler('esx_mechanicjob:startCraft3', function()
-	local source = source
-	PlayersCrafting3[source] = true
-	TriggerClientEvent('esx:showNotification', source, TranslateCap('assembling_body_kit'))
-	Craft3(source)
-end)
-
-RegisterServerEvent('esx_mechanicjob:stopCraft3')
-AddEventHandler('esx_mechanicjob:stopCraft3', function()
-	local source = source
-	PlayersCrafting3[source] = false
+	PlayersCrafting[source] = nil
 end)
 
 RegisterServerEvent('esx_mechanicjob:onNPCJobMissionCompleted')
@@ -256,10 +137,8 @@ AddEventHandler('esx_mechanicjob:getStockItem', function(itemName, count)
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_mechanic', function(inventory)
 		local item = inventory.getItem(itemName)
 
-		-- is there enough in the society?
 		if count > 0 and item.count >= count then
 
-			-- can the player carry the said amount of x item?
 			if xPlayer.canCarryItem(itemName, count) then
 				inventory.removeItem(itemName, count)
 				xPlayer.addInventoryItem(itemName, count)
