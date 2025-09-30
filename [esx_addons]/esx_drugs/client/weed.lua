@@ -62,7 +62,7 @@ end)
 function ProcessWeed(xCannabis)
 	isProcessing = true
 	ESX.ShowNotification(TranslateCap('weed_processingstarted'))
-  TriggerServerEvent('esx_drugs:processCannabis')
+  	TriggerServerEvent('esx_drugs:processCannabis')
 	if(xCannabis <= 3) then
 		xCannabis = 0
 	end
@@ -123,14 +123,12 @@ CreateThread(function()
 						spawnedWeeds = spawnedWeeds - 1
 						
 						TriggerServerEvent('esx_drugs:pickedUpCannabis')
-						-- ensure prompt is hidden after successful pickup
 						if displayed_pickup_prompt then
 							displayed_pickup_prompt = false
 							ESX.HideUI()
 						end
 					else
 						ESX.ShowNotification(TranslateCap('weed_inventoryfull'))
-						-- ensure prompt is hidden if cannot pick up
 						if displayed_pickup_prompt then
 							displayed_pickup_prompt = false
 							ESX.HideUI()
@@ -148,7 +146,6 @@ CreateThread(function()
 			end
 		end
 
-		-- safety: ensure UI hides if we lost the plant or state changed this tick
 		if displayed_pickup_prompt and (not nearbyObject or not IsPedOnFoot(playerPed)) then
 			displayed_pickup_prompt = false
 			ESX.HideUI()
