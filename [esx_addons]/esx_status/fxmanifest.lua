@@ -5,7 +5,7 @@ game 'gta5'
 description 'Handles the overall status system for Hunger, Thrist and others'
 
 version '1.1'
-legacyversion '1.13.3'
+legacyversion '1.13.4'
 
 lua54 'yes'
 

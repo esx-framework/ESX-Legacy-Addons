@@ -1,3 +1,4 @@
+
 local PlayersHarvesting, PlayersHarvesting2, PlayersHarvesting3, PlayersCrafting, PlayersCrafting2, PlayersCrafting3  = {}, {}, {}, {}, {}, {}
 
 if Config.MaxInService ~= -1 then
@@ -11,7 +12,7 @@ local function Harvest(source)
 	SetTimeout(4000, function()
 
 		if PlayersHarvesting[source] == true then
-			local xPlayer = ESX.GetPlayerFromId(source)
+			local xPlayer = ESX.Player(source)
 			local GazBottleQuantity = xPlayer.getInventoryItem('gazbottle').count
 
 			if GazBottleQuantity >= 5 then
@@ -43,7 +44,7 @@ local function Harvest2(source)
 	SetTimeout(4000, function()
 
 		if PlayersHarvesting2[source] == true then
-			local xPlayer = ESX.GetPlayerFromId(source)
+			local xPlayer = ESX.Player(source)
 			local FixToolQuantity = xPlayer.getInventoryItem('fixtool').count
 
 			if FixToolQuantity >= 5 then
@@ -75,7 +76,7 @@ local function Harvest3(source)
 	SetTimeout(4000, function()
 
 		if PlayersHarvesting3[source] == true then
-			local xPlayer = ESX.GetPlayerFromId(source)
+			local xPlayer = ESX.Player(source)
 			local CaroToolQuantity = xPlayer.getInventoryItem('carotool').count
 			if CaroToolQuantity >= 5 then
 				TriggerClientEvent('esx:showNotification', source, TranslateCap('you_do_not_room'))
@@ -106,7 +107,7 @@ local function Craft(source)
 	SetTimeout(4000, function()
 
 		if PlayersCrafting[source] == true then
-			local xPlayer = ESX.GetPlayerFromId(source)
+			local xPlayer = ESX.Player(source)
 			local GazBottleQuantity = xPlayer.getInventoryItem('gazbottle').count
 
 			if GazBottleQuantity <= 0 then
@@ -139,7 +140,7 @@ local function Craft2(source)
 	SetTimeout(4000, function()
 
 		if PlayersCrafting2[source] == true then
-			local xPlayer = ESX.GetPlayerFromId(source)
+			local xPlayer = ESX.Player(source)
 			local FixToolQuantity = xPlayer.getInventoryItem('fixtool').count
 
 			if FixToolQuantity <= 0 then
@@ -172,7 +173,7 @@ local function Craft3(source)
 	SetTimeout(4000, function()
 
 		if PlayersCrafting3[source] == true then
-			local xPlayer = ESX.GetPlayerFromId(source)
+			local xPlayer = ESX.Player(source)
 			local CaroToolQuantity = xPlayer.getInventoryItem('carotool').count
 
 			if CaroToolQuantity <= 0 then
@@ -204,10 +205,10 @@ end)
 RegisterServerEvent('esx_mechanicjob:onNPCJobMissionCompleted')
 AddEventHandler('esx_mechanicjob:onNPCJobMissionCompleted', function()
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	local total   = math.random(Config.NPCJobEarnings.min, Config.NPCJobEarnings.max);
 
-	if xPlayer.job.grade >= 3 then
+	if xPlayer.getJob().grade >= 3 then
 		total = total * 2
 	end
 
@@ -220,7 +221,7 @@ end)
 
 ESX.RegisterUsableItem('blowpipe', function(source)
 	local source = source
-	local xPlayer  = ESX.GetPlayerFromId(source)
+	local xPlayer  = ESX.Player(source)
 
 	xPlayer.removeInventoryItem('blowpipe', 1)
 
@@ -230,7 +231,7 @@ end)
 
 ESX.RegisterUsableItem('fixkit', function(source)
 	local source = source
-	local xPlayer  = ESX.GetPlayerFromId(source)
+	local xPlayer  = ESX.Player(source)
 
 	xPlayer.removeInventoryItem('fixkit', 1)
 
@@ -240,7 +241,7 @@ end)
 
 ESX.RegisterUsableItem('carokit', function(source)
 	local source = source
-	local xPlayer  = ESX.GetPlayerFromId(source)
+	local xPlayer  = ESX.Player(source)
 
 	xPlayer.removeInventoryItem('carokit', 1)
 
@@ -250,7 +251,7 @@ end)
 
 RegisterServerEvent('esx_mechanicjob:getStockItem')
 AddEventHandler('esx_mechanicjob:getStockItem', function(itemName, count)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_mechanic', function(inventory)
 		local item = inventory.getItem(itemName)
@@ -280,7 +281,7 @@ end)
 
 RegisterServerEvent('esx_mechanicjob:putStockItems')
 AddEventHandler('esx_mechanicjob:putStockItems', function(itemName, count)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_mechanic', function(inventory)
 		local item = inventory.getItem(itemName)
@@ -298,8 +299,8 @@ AddEventHandler('esx_mechanicjob:putStockItems', function(itemName, count)
 end)
 
 ESX.RegisterServerCallback('esx_mechanicjob:getPlayerInventory', function(source, cb)
-	local xPlayer    = ESX.GetPlayerFromId(source)
-	local items      = xPlayer.inventory
+	local xPlayer    = ESX.Player(source)
+	local items      = xPlayer.getInventory(false)
 
 	cb({items = items})
 end)

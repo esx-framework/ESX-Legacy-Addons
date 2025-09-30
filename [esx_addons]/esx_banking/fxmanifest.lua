@@ -5,7 +5,7 @@ game 'gta5'
 description 'A banking system that adds interactable banks and ATMs'
 lua54 'yes'
 version '1.0.1'
-legacyversion '1.13.3'
+legacyversion '1.13.4'
 
 shared_scripts {
 	'@es_extended/imports.lua',

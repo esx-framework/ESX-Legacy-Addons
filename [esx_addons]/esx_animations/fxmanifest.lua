@@ -4,7 +4,7 @@ lua54 'yes'
 
 description 'Allows Players to play animations'
 version '1.0'
-legacyversion '1.13.3'
+legacyversion '1.13.4'
 
 dependency 'es_extended'
 

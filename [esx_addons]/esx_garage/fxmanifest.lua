@@ -5,7 +5,7 @@ author 'ESX-Framework'
 description 'Allows Players to Store & Retrieve their vehicles'
 
 version '1.0'
-legacyversion '1.13.3'
+legacyversion '1.13.4'
 
 lua54 'yes'
 
@@ -17,4 +17,4 @@ client_scripts { '@es_extended/locale.lua', 'locales/*.lua', 'config.lua', 'clie
 
 ui_page 'nui/ui.html'
 
-files { 'nui/ui.html', 'nui/js/*.js', 'nui/css/*.css', 'nui/roboto.ttf' }
+files {'nui/ui.html', 'nui/js/*.js', 'nui/css/*.css', 'nui/roboto.ttf', 'nui/img/*.png'}

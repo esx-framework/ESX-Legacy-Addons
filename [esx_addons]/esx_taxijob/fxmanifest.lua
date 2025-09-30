@@ -5,7 +5,7 @@ game 'gta5'
 description 'Allows players to be a taxi driver (Pickup and drop-off NPCs)'
 lua54 'yes'
 version '1.0'
-legacyversion '1.13.3'
+legacyversion '1.13.4'
 
 shared_script '@es_extended/imports.lua'
 
