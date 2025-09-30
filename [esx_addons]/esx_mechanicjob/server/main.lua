@@ -25,8 +25,7 @@ local function Harvest(source, itemType)
 	end)
 end
 
-RegisterServerEvent('esx_mechanicjob:startHarvest')
-AddEventHandler('esx_mechanicjob:startHarvest', function(itemType)
+RegisterServerEvent('esx_mechanicjob:startHarvest', function(itemType)
 	local source = source
 	local xPlayer = ESX.Player(source)
 	if xPlayer.getJob().name == 'mechanic' and not PlayersHarvesting[source] then
@@ -35,8 +34,7 @@ AddEventHandler('esx_mechanicjob:startHarvest', function(itemType)
 	end
 end)
 
-RegisterServerEvent('esx_mechanicjob:stopHarvest')
-AddEventHandler('esx_mechanicjob:stopHarvest', function()
+RegisterServerEvent('esx_mechanicjob:stopHarvest', function()
 	local source = source
 	PlayersHarvesting[source] = nil
 end)
@@ -67,8 +65,7 @@ local function Craft(source, itemType)
 	end)
 end
 
-RegisterServerEvent('esx_mechanicjob:startCraft')
-AddEventHandler('esx_mechanicjob:startCraft', function(itemType)
+RegisterServerEvent('esx_mechanicjob:startCraft', function(itemType)
 	local source = source
 	local xPlayer = ESX.Player(source)
 	if xPlayer.getJob().name == 'mechanic' and not PlayersCrafting[source] then
@@ -77,14 +74,12 @@ AddEventHandler('esx_mechanicjob:startCraft', function(itemType)
 	end
 end)
 
-RegisterServerEvent('esx_mechanicjob:stopCraft')
-AddEventHandler('esx_mechanicjob:stopCraft', function()
+RegisterServerEvent('esx_mechanicjob:stopCraft', function()
 	local source = source
 	PlayersCrafting[source] = nil
 end)
 
-RegisterServerEvent('esx_mechanicjob:onNPCJobMissionCompleted')
-AddEventHandler('esx_mechanicjob:onNPCJobMissionCompleted', function()
+RegisterServerEvent('esx_mechanicjob:onNPCJobMissionCompleted', function()
 	local source = source
 	local xPlayer = ESX.Player(source)
 	local total   = math.random(Config.NPCJobEarnings.min, Config.NPCJobEarnings.max);
@@ -100,38 +95,7 @@ AddEventHandler('esx_mechanicjob:onNPCJobMissionCompleted', function()
 	TriggerClientEvent("esx:showNotification", source, TranslateCap('your_comp_earned').. total)
 end)
 
-ESX.RegisterUsableItem('blowpipe', function(source)
-	local source = source
-	local xPlayer  = ESX.Player(source)
-
-	xPlayer.removeInventoryItem('blowpipe', 1)
-
-	TriggerClientEvent('esx_mechanicjob:onHijack', source)
-	TriggerClientEvent('esx:showNotification', source, TranslateCap('you_used_blowtorch'))
-end)
-
-ESX.RegisterUsableItem('fixkit', function(source)
-	local source = source
-	local xPlayer  = ESX.Player(source)
-
-	xPlayer.removeInventoryItem('fixkit', 1)
-
-	TriggerClientEvent('esx_mechanicjob:onFixkit', source)
-	TriggerClientEvent('esx:showNotification', source, TranslateCap('you_used_repair_kit'))
-end)
-
-ESX.RegisterUsableItem('carokit', function(source)
-	local source = source
-	local xPlayer  = ESX.Player(source)
-
-	xPlayer.removeInventoryItem('carokit', 1)
-
-	TriggerClientEvent('esx_mechanicjob:onCarokit', source)
-	TriggerClientEvent('esx:showNotification', source, TranslateCap('you_used_body_kit'))
-end)
-
-RegisterServerEvent('esx_mechanicjob:getStockItem')
-AddEventHandler('esx_mechanicjob:getStockItem', function(itemName, count)
+RegisterServerEvent('esx_mechanicjob:getStockItem', function(itemName, count)
 	local xPlayer = ESX.Player(source)
 
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_mechanic', function(inventory)
@@ -152,34 +116,13 @@ AddEventHandler('esx_mechanicjob:getStockItem', function(itemName, count)
 	end)
 end)
 
-ESX.RegisterServerCallback('esx_mechanicjob:getStockItems', function(source, cb)
-	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_mechanic', function(inventory)
-		cb(inventory.items)
-	end)
-end)
-
-RegisterServerEvent('esx_mechanicjob:putStockItems')
-AddEventHandler('esx_mechanicjob:putStockItems', function(itemName, count)
+RegisterServerEvent('esx_mechanicjob:putStockItems', function(itemName, count)
 	local xPlayer = ESX.Player(source)
 
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_mechanic', function(inventory)
 		local item = inventory.getItem(itemName)
-		local playerItemCount = xPlayer.getInventoryItem(itemName).count
-
-		if item.count >= 0 and count <= playerItemCount then
-			xPlayer.removeInventoryItem(itemName, count)
-			inventory.addItem(itemName, count)
-		else
-			xPlayer.showNotification(TranslateCap('invalid_quantity'))
-		end
-
+		xPlayer.removeInventoryItem(itemName, count)
+		inventory.addItem(itemName, count)
 		xPlayer.showNotification(TranslateCap('have_deposited', count, item.label))
 	end)
-end)
-
-ESX.RegisterServerCallback('esx_mechanicjob:getPlayerInventory', function(source, cb)
-	local xPlayer    = ESX.Player(source)
-	local items      = xPlayer.getInventory(false)
-
-	cb({items = items})
 end)
