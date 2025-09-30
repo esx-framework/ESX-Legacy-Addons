@@ -86,11 +86,11 @@ CreateThread(function()
 
 		if nearbyObject and IsPedOnFoot(playerPed) then
 			Sleep = 0
-			if not isPickingUp then
+			if not isPickingUp and not isProcessing then
 				ESX.ShowHelpNotification(TranslateCap('weed_pickupprompt'))
 			end
 
-			if IsControlJustReleased(0, 38) and not isPickingUp then
+			if IsControlJustReleased(0, 38) and not isPickingUp and not isProcessing then
 				isPickingUp = true
 
 				ESX.TriggerServerCallback('esx_drugs:canPickUp', function(canPickUp)
