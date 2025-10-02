@@ -253,8 +253,8 @@ function OpenMobileMechanicActionsMenu()
 			end)
 		elseif element.value == "hijack_vehicle" then
 			local playerPed = PlayerPedId()
-			local vehicle = ESX.Game.GetVehicleInDirection()
-			local coords = GetEntityCoords(playerPed)
+			local coords    = GetEntityCoords(playerPed)
+			local vehicle, distance = ESX.Game.GetClosestVehicle(coords)
 
 			if IsPedSittingInAnyVehicle(playerPed) then
 				ESX.ShowNotification(TranslateCap('inside_vehicle'))
@@ -279,8 +279,8 @@ function OpenMobileMechanicActionsMenu()
 			end
 		elseif element.value == "fix_vehicle" then
 			local playerPed = PlayerPedId()
-			local vehicle   = ESX.Game.GetVehicleInDirection()
 			local coords    = GetEntityCoords(playerPed)
+			local vehicle, distance = ESX.Game.GetClosestVehicle(coords)
 
 			if IsPedSittingInAnyVehicle(playerPed) then
 				ESX.ShowNotification(TranslateCap('inside_vehicle'))
@@ -307,8 +307,8 @@ function OpenMobileMechanicActionsMenu()
 			end
 		elseif element.value == "clean_vehicle" then
 			local playerPed = PlayerPedId()
-			local vehicle   = ESX.Game.GetVehicleInDirection()
 			local coords    = GetEntityCoords(playerPed)
+			local vehicle, distance = ESX.Game.GetClosestVehicle(coords)
 
 			if IsPedSittingInAnyVehicle(playerPed) then
 				ESX.ShowNotification(TranslateCap('inside_vehicle'))
@@ -332,6 +332,7 @@ function OpenMobileMechanicActionsMenu()
 			end
 		elseif element.value == "del_vehicle" then
 			local playerPed = PlayerPedId()
+			local coords    = GetEntityCoords(playerPed)
 
 			if IsPedSittingInAnyVehicle(playerPed) then
 				local vehicle = GetVehiclePedIsIn(playerPed, false)
@@ -343,7 +344,7 @@ function OpenMobileMechanicActionsMenu()
 					ESX.ShowNotification(TranslateCap('must_seat_driver'))
 				end
 			else
-				local vehicle = ESX.Game.GetVehicleInDirection()
+				local vehicle, distance = ESX.Game.GetClosestVehicle(coords)
 
 				if DoesEntityExist(vehicle) then
 					ESX.ShowNotification(TranslateCap('vehicle_impounded'))
@@ -354,13 +355,15 @@ function OpenMobileMechanicActionsMenu()
 			end
 		elseif element.value == "dep_vehicle" then
 			local playerPed = PlayerPedId()
+			local coords    = GetEntityCoords(playerPed)
+
 			local vehicle = GetVehiclePedIsIn(playerPed, true)
 
 			local towmodel = `flatbed`
 			local isVehicleTow = IsVehicleModel(vehicle, towmodel)
 
 			if isVehicleTow then
-				local targetVehicle = ESX.Game.GetVehicleInDirection()
+				local vehicle, distance = ESX.Game.GetClosestVehicle(coords)
 
 				if CurrentlyTowedVehicle == nil then
 					if targetVehicle ~= 0 then
@@ -437,15 +440,9 @@ function OpenMobileMechanicActionsMenu()
 				local model   = elementObj.value
 				local coords  = GetEntityCoords(playerPed)
 				local forward = GetEntityForwardVector(playerPed)
-				local x, y, z = table.unpack(coords + forward * 1.0)
+				local spawn = coords + forward * 1.0
 
-				if model == 'prop_roadcone02a' then
-					z = z - 2.0
-				elseif model == 'prop_toolchest_01' then
-					z = z - 2.0
-				end
-
-				ESX.Game.SpawnObject(model, { x = x, y = y, z = z }, function(obj)
+				ESX.Game.SpawnObject(model, spawn, function(obj)
 					SetEntityHeading(obj, GetEntityHeading(playerPed))
 					PlaceObjectOnGroundProperly(obj)
 				end)

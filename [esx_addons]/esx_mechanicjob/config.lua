@@ -1,5 +1,5 @@
 Config                            = {}
-Config.Locale = GetConvar('esx:locale', 'fr')
+Config.Locale = GetConvar('esx:locale', 'en')
 
 Config.Controls = {
 	mechanicMenu = "F6",
