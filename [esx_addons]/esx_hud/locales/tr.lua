@@ -7,5 +7,10 @@ Locales["tr"] = {
     resource_not_built = "Kaynak kurulmamış, lütfen son sürümü indirin",
     settingsSaveSuccess = "Ayarlar başarıyla kaydedildi",
     settingsResetSuccess = "Ayarlar başarıyla sıfırlandı",
+    currentVersion = "En son sürüm: ",
+    yourVersion = "Sizin sürümünüz: ",
+    latestVersion = "Şu anda en son sürümü kullanıyorsunuz!",
+    needUpdateResource = "En son sürümü indirmeniz gerekiyor! Şu anda eski bir sürümü kullanıyorsunuz!",
+    errorGetCurrentVersion = "Geçerli sürümü alırken bir hata oluştu!",
     job_off_duty = " (Görev dışı)",
 }
