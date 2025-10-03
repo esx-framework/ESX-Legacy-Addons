@@ -20,6 +20,8 @@ server_scripts {
 	'@es_extended/locale.lua',
 	'locales/*.lua',
 	'config.lua',
+	'server/callbacks.lua',
+	'server/usables.lua',
 	'server/main.lua'
 }
 
