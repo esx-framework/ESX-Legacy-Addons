@@ -1,5 +1,4 @@
 fx_version 'adamant'
-
 game 'gta5'
 
 description 'Allows Players to RP as Police Officers (cars, outfits, handcuffing etc)'
@@ -13,14 +12,16 @@ server_scripts {
 	'@oxmysql/lib/MySQL.lua',
 	'@es_extended/locale.lua',
 	'locales/*.lua',
-	'config.lua',
+	'shared/config.lua',
+	'shared/constants.lua',
+	'shared/permissions.lua',
 	'server/*.lua'
 }
 
 client_scripts {
 	'@es_extended/locale.lua',
 	'locales/*.lua',
-	'config.lua',
+	'shared/config.lua',
 	'client/*.lua'
 }
 
