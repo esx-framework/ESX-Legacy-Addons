@@ -7,5 +7,10 @@ Locales["de"] = {
     resource_not_built = "Resource ist gebuilded! Downloade die neuste version!",
     settingsSaveSuccess = "Erfolgreich die derzeitigen einstellungen gespeichert!",
     settingsResetSuccess = "Einstellungen erfolgreich zurückgesetzt",
+    currentVersion = "Letzte Version: ",
+    yourVersion = "Deine Version: ",
+    latestVersion = "Du nutzt die neuste Version von esx_hud!",
+    needUpdateResource = "Du musst die letze Version downloaden! Installiere die neuste Version!",
+    errorGetCurrentVersion = "Ein Fehler kam als die Versionsabfrage durchgeführt wurde!",
     job_off_duty = " (Außer Dienst)",
 }
