@@ -10,6 +10,7 @@ Config.EnableArmoryManagement     = false
 Config.EnableESXIdentity          = true -- Enable if you're using esx_identity.
 Config.EnableESXOptionalneeds     = false -- Enable if you're using esx_optionalneeds
 Config.EnableLicenses             = false -- Enable if you're using esx_license.
+Config.ArmoryAccount = 'money'   -- change 'money' to 'bank' if you want armory to be funded from society bank account
 
 Config.EnableHandcuffTimer        = true -- Enable handcuff timer? will unrestrain player after the time ends.
 Config.HandcuffTimer              = 10 * 60000 -- 10 minutes.
@@ -21,7 +22,7 @@ Config.MaxInService               = -1 -- How many people can be in service at o
 
 Config.EnableFinePresets          = false -- Set to false to use a custom input fields for fines
 
-Config.Locale = GetConvar('esx:locale', 'en')
+Config.Locale = GetConvar('esx:locale', 'fr')
 
 Config.OxInventory                = ESX.GetConfig().OxInventory
 
@@ -83,6 +84,10 @@ Config.PoliceStations = {
 
 	}
 
+}
+
+Config.Cuffs = {
+    FreezePlayer = false
 }
 
 Config.AuthorizedWeapons = {
@@ -186,7 +191,7 @@ Config.CustomPeds = {
 	}
 }
 
--- CHECK SKINCHANGER CLIENT MAIN.LUA for matching elements
+-- CHECK SKINCHANGER CLIENT MAIN.LUA for matching elements (line 66)
 Config.Uniforms = {
 	recruit = {
 		male = {
