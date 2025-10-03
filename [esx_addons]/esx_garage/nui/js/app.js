@@ -3,8 +3,8 @@ $(window).ready(function () {
     let data = event.data;
 
     if (data.showMenu) {
-      $("#container").fadeIn();
-      $("#menu").fadeIn();
+      $("#container").css({ display: 'grid', opacity: 0 }).animate({ opacity: 1 }, 200);
+      $("#menu").show();
 
       if (data.type === "impound") {
         $("#header ul").hide();
@@ -68,7 +68,9 @@ $(window).ready(function () {
         return text.replace("Condition", data.locales.veh_condition);
       });
     } else if (data.hideAll) {
-      $("#container").fadeOut();
+      $("#container").stop(true, true).fadeOut(150, function(){
+        $(this).css('display','none');
+      });
     }
   });
 
@@ -95,6 +97,8 @@ $(window).ready(function () {
     }
   };
 
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
   function getVehicles(locale, vehicle, amount = null) {
     let html = "";
     let vehicleData = JSON.parse(vehicle);
@@ -104,19 +108,26 @@ $(window).ready(function () {
     let vehicleDamagePercent = "";
 
     for (let i = 0; i < vehicleData.length; i++) {
-      bodyHealth = (vehicleData[i].props.bodyHealth / 1000) * 100;
-      engineHealth = (vehicleData[i].props.engineHealth / 1000) * 100;
-      tankHealth = (vehicleData[i].props.tankHealth / 1000) * 100;
+      const p = vehicleData[i].props || {};
+      const b = typeof p.bodyHealth === 'number' ? p.bodyHealth : 1000;
+      const e = typeof p.engineHealth === 'number' ? p.engineHealth : 1000;
+      const t = typeof p.tankHealth === 'number' ? p.tankHealth : 1000;
 
-      vehicleDamagePercent =
-        Math.round(((bodyHealth + engineHealth + tankHealth) / 300) * 100) +
-        "%";
+      bodyHealth = clamp((b / 1000) * 100, 0, 100);
+      engineHealth = clamp((e / 1000) * 100, 0, 100);
+      tankHealth = clamp((t / 1000) * 100, 0, 100);
 
-      html += "<div class='vehicle-listing'>";
+      const percentNumber = clamp(Math.round(((bodyHealth + engineHealth + tankHealth) / 300) * 100), 0, 100);
+      vehicleDamagePercent = percentNumber + "%";
+
+      const model = String(vehicleData[i].model || '').toLowerCase();
+      const plate = String(vehicleData[i].plate || '').toLowerCase();
+
+      html += "<div class='vehicle-listing' data-model='" + model + "' data-plate='" + plate + "'>";
       html += "<div>Model: <strong>" + vehicleData[i].model + "</strong></div>";
       html += "<div>Plate: <strong>" + vehicleData[i].plate + "</strong></div>";
       html +=
-        "<div>Condition: <strong>" + vehicleDamagePercent + "</strong></div>";
+        "<div class='condition'><span>Condition</span><div class='bar'><div class='fill' style='width:" + vehicleDamagePercent + "'></div></div><strong class='percent'>" + vehicleDamagePercent + "</strong></div>";
       html +=
         "<button data-button='spawn' class='vehicle-action unstyled-button' data-vehprops='" +
         JSON.stringify(vehicleData[i].props) +
@@ -139,19 +150,26 @@ $(window).ready(function () {
     let vehicleDamagePercent = "";
 
     for (let i = 0; i < vehicleData.length; i++) {
-      bodyHealth = (vehicleData[i].props.bodyHealth / 1000) * 100;
-      engineHealth = (vehicleData[i].props.engineHealth / 1000) * 100;
-      tankHealth = (vehicleData[i].props.tankHealth / 1000) * 100;
+      const p = vehicleData[i].props || {};
+      const b = typeof p.bodyHealth === 'number' ? p.bodyHealth : 1000;
+      const e = typeof p.engineHealth === 'number' ? p.engineHealth : 1000;
+      const t = typeof p.tankHealth === 'number' ? p.tankHealth : 1000;
 
-      vehicleDamagePercent =
-        Math.round(((bodyHealth + engineHealth + tankHealth) / 300) * 100) +
-        "%";
+      bodyHealth = clamp((b / 1000) * 100, 0, 100);
+      engineHealth = clamp((e / 1000) * 100, 0, 100);
+      tankHealth = clamp((t / 1000) * 100, 0, 100);
 
-      html += "<div class='vehicle-listing'>";
+      const percentNumber = clamp(Math.round(((bodyHealth + engineHealth + tankHealth) / 300) * 100), 0, 100);
+      vehicleDamagePercent = percentNumber + "%";
+
+      const model = String(vehicleData[i].model || '').toLowerCase();
+      const plate = String(vehicleData[i].plate || '').toLowerCase();
+
+      html += "<div class='vehicle-listing' data-model='" + model + "' data-plate='" + plate + "'>";
       html += "<div>Model: <strong>" + vehicleData[i].model + "</strong></div>";
       html += "<div>Plate: <strong>" + vehicleData[i].plate + "</strong></div>";
       html +=
-        "<div>Condition: <strong>" + vehicleDamagePercent + "</strong></div>";
+        "<div class='condition'><span>Condition</span><div class='bar'><div class='fill' style='width:" + vehicleDamagePercent + "'></div></div><strong class='percent'>" + vehicleDamagePercent + "</strong></div>";
       html +=
         "<button data-button='impounded' class='vehicle-action red unstyled-button' data-vehprops='" +
         JSON.stringify(vehicleData[i].props) +
@@ -163,6 +181,33 @@ $(window).ready(function () {
 
     return html;
   }
+
+  function applyFilter($container, query) {
+    const q = String(query || '').trim().toLowerCase();
+    const $cards = $container.find('.vehicle-listing');
+    if (!q) {
+      $cards.show();
+      return;
+    }
+    $cards.each(function () {
+      const model = String($(this).data('model') || '');
+      const plate = String($(this).data('plate') || '');
+      if (model.indexOf(q) !== -1 || plate.indexOf(q) !== -1) {
+        $(this).show();
+      } else {
+        $(this).hide();
+      }
+    });
+  }
+
+  $(document).on('input', '#search-garage', function () {
+    applyFilter($('.content .vehicle-list'), $(this).val());
+  });
+  $(document).on('input', '#search-impounded', function () {
+    applyFilter($('.impounded_content .vehicle-list'), $(this).val());
+  });
+
+  // Helpers (none for now)
 
   $('li[data-page="garage"]').click(function (event) {
     $(".impounded_content").hide();
