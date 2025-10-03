@@ -1,6 +1,9 @@
 local Blips, JobBlips, isInMarker, hintToDisplay, onDuty, spawner, myPlate, vehicleObjInCaseofDrop, vehicleInCaseofDrop, vehicleMaxHealth =
 	{}, {}, false, "no hint to display", false, 0, {}, nil, nil, nil
 
+local show_text = false
+local show_public_text = false
+
 local PlayerPedId = PlayerPedId
 local IsPedInAnyVehicle = IsPedInAnyVehicle
 local GetVehiclePedIsIn = GetVehiclePedIsIn
@@ -163,7 +166,6 @@ AddEventHandler('esx_jobs:action', function(job, zone, zoneKey)
 		end
 		TriggerServerEvent('esx_jobs:startWork', zone.Item, zoneKey)
 	end
-	--nextStep(zone.GPS)
 end)
 
 function nextStep(gps)
@@ -187,7 +189,7 @@ end)
 RegisterNetEvent('esx:setJob', function(job)
 	ESX.PlayerData.job = job
 	onDuty = false
-	myPlate = {} -- loosing vehicle caution in case player changes job.
+	myPlate = {}
 	spawner = 0
 	deleteBlips()
 	refreshBlips()
@@ -216,15 +218,7 @@ function refreshBlips()
 		if jobKey == playerJob then
 			for zoneKey, zoneValues in pairs(jobValues.Zones) do
 				if not zoneValues.Blip then goto continue end
-				local _Pos = {}
-				if not (zoneValues.Zone) then
-					_Pos = zoneValues.Pos
-				end
-				TriggerEvent("izone:getZoneCenter", zoneValues.Zone, function(_center)
-					if (_center) then
-						_Pos = _center
-					end
-				end)
+				local _Pos = zoneValues.Pos
 				local blip = AddBlipForCoord(_Pos.x, _Pos.y, _Pos.z)
 				SetBlipSprite(blip, jobValues.BlipInfos.Sprite)
 				SetBlipDisplay(blip, 4)
@@ -260,7 +254,6 @@ RegisterNetEvent('esx_jobs:spawnJobVehicle', function(spawnPoint, vehicle)
 			end)
 		end
 
-		-- save & set plate
 		local plate = 'WORK' .. math.random(100, 900)
 		SetVehicleNumberPlateText(spawnedVehicle, plate)
 		table.insert(myPlate, plate)
@@ -275,7 +268,6 @@ RegisterNetEvent('esx_jobs:spawnJobVehicle', function(spawnPoint, vehicle)
 	end)
 end)
 
--- Display markers (only if on duty and the player's job ones)
 CreateThread(function()
 	while true do
 		local Sleep = 1500
@@ -294,28 +286,14 @@ CreateThread(function()
 
 				local coords = GetEntityCoords(PlayerPedId())
 				for k, v in pairs(zones) do
-					if onDuty or v.Type == "cloakroom" then
-						if (v.Zone) then
-							TriggerEvent("izone:getZoneCenter", v.Zone, function(center)
-								if (not (center == nil)) then
-									if (v.Marker ~= -1 and #(coords - center) < Config.DrawDistance) then
-										Sleep = 0
-										DrawMarker(v.Marker, center.x, center.y, center.z - 1, 0.0, 0.0, 0.0, 0, 0.0, 0.0,
-											v.Size.x, v.Size.y, v.Size.z, v.Color.r, v.Color.g, v.Color.b, 100, false,
-											true,
-											2, false, false, false, false)
-									end
-								end
-							end)
-						else
-							local Pos = vector3(v.Pos.x, v.Pos.y, v.Pos.z)
-							if (v.Marker ~= -1 and #(coords - Pos) < Config.DrawDistance) then
-								Sleep = 0
-								DrawMarker(v.Marker, v.Pos.x, v.Pos.y, v.Pos.z, 0.0, 0.0, 0.0, 0, 0.0, 0.0, v.Size.x,
-									v.Size.y, v.Size.z, v.Color.r, v.Color.g, v.Color.b, 100, false, true, 2, false,
-									false,
-									false, false)
-							end
+					if onDuty or v.Type == "cloakroom" or v.Type == "delivery" then
+						local Pos = vector3(v.Pos.x, v.Pos.y, v.Pos.z)
+						if (v.Marker ~= -1 and #(coords - Pos) < Config.DrawDistance) then
+							Sleep = 0
+							DrawMarker(v.Marker, v.Pos.x, v.Pos.y, v.Pos.z, 0.0, 0.0, 0.0, 0, 0.0, 0.0, v.Size.x,
+								v.Size.y, v.Size.z, v.Color.r, v.Color.g, v.Color.b, 100, false, true, 2, false,
+								false,
+								false, false)
 						end
 					end
 				end
@@ -325,7 +303,6 @@ CreateThread(function()
 	end
 end)
 
--- Display public markers
 CreateThread(function()
 	while true do
 		local Sleep = 1500
@@ -341,28 +318,39 @@ CreateThread(function()
 	end
 end)
 
--- Activate public marker
 CreateThread(function()
 	while true do
 		local Sleep  = 1500
 		local coords = GetEntityCoords(PlayerPedId())
+		local isInPublicMarker = false
 
 		for k, v in pairs(Config.PublicZones) do
 			if #(coords - v.Pos) < v.Size.x / 2 then
 				Sleep = 0
-				ESX.ShowHelpNotification(v.Hint)
-				hintIsShowed = true
+				isInPublicMarker = true
+				if show_text then
+					ESX.HideUI()
+					show_text = false
+				end
+				if not show_public_text then
+					ESX.TextUI(v.Hint)
+					show_public_text = true
+				end
 				if IsControlJustReleased(0, 38) then
 					ESX.Game.Teleport(PlayerPedId(), v.Teleport)
 				end
 			end
 		end
 
+		if not isInPublicMarker and show_public_text then
+			ESX.HideUI()
+			show_public_text = false
+		end
+
 		Wait(Sleep)
 	end
 end)
 
--- Activate menu when player is inside marker
 CreateThread(function()
 	while true do
 		local Sleep = 500
@@ -389,51 +377,37 @@ CreateThread(function()
 					local lastZone    = nil
 
 					for k, v in pairs(zones) do
-						-- If we defined a zone from iZone
-						if v.Zone then
-							TriggerEvent("izone:isPlayerInZone", v.Zone, function(isIn)
-								if isIn then
-									Sleep       = 0
-									isInMarker  = true
-									currentZone = k
-									zone        = v
-									return
-								else
-									isInMarker = false
-								end
-							end)
-							-- Because we were in a routine
-							if isInMarker then
-								break
-							end
-							-- Else use radius defined from center
+						local Pos = vector3(v.Pos.x, v.Pos.y, v.Pos.z)
+						if #(coords - Pos) < v.Size.x then
+							Sleep       = 0
+							isInMarker  = true
+							currentZone = k
+							zone        = v
+							break
 						else
-							local Pos = vector3(v.Pos.x, v.Pos.y, v.Pos.z)
-							if #(coords - Pos) < v.Size.x then
-								Sleep       = 0
-								isInMarker  = true
-								currentZone = k
-								zone        = v
-								break
-							else
-								isInMarker = false
-							end
+							isInMarker = false
 						end
 					end
 
 					if IsControlJustReleased(0, 38) and not menuIsShowed and isInMarker then
-						if onDuty or zone.Type == "cloakroom" then
+						if onDuty or zone.Type == "cloakroom" or zone.Type == "delivery" then
 							TriggerEvent('esx_jobs:action', job, zone, currentZone)
 						end
 					end
 
-					-- hide or show top left zone hints
 					if isInMarker and not menuIsShowed then
 						hintIsShowed = true
-						if (onDuty or zone.Type == "cloakroom") and zone.Type ~= "vehdelete" then
+						if show_public_text then
+							ESX.HideUI()
+							show_public_text = false
+						end
+						if (onDuty or zone.Type == "cloakroom" or zone.Type == "delivery") and zone.Type ~= "vehdelete" then
 							if zone.Hint then
 								hintToDisplay = zone.Hint
-								ESX.ShowHelpNotification(hintToDisplay)
+								if not show_text then
+									ESX.TextUI(hintToDisplay)
+									show_text = true
+								end
 							end
 						elseif zone.Type == "vehdelete" and (onDuty) then
 							local playerPed = PlayerPedId()
@@ -453,16 +427,25 @@ CreateThread(function()
 									end
 								else
 									hintToDisplay = TranslateCap('not_your_vehicle')
-									ESX.ShowHelpNotification(hintToDisplay)
+									if not show_text then
+										ESX.TextUI(hintToDisplay)
+										show_text = true
+									end
 								end
 							else
 								hintToDisplay = TranslateCap('in_vehicle')
-								ESX.ShowHelpNotification(hintToDisplay)
+								if not show_text then
+									ESX.TextUI(hintToDisplay)
+									show_text = true
+								end
 							end
 							hintIsShowed = true
 						elseif onDuty and zone.Spawner ~= spawner then
 							hintToDisplay = TranslateCap('wrong_point')
-							ESX.ShowHelpNotification(hintToDisplay)
+							if not show_text then
+								ESX.TextUI(hintToDisplay)
+								show_text = true
+							end
 						end
 					end
 
@@ -472,24 +455,32 @@ CreateThread(function()
 
 					if not isInMarker and hasAlreadyEnteredMarker then
 						hasAlreadyEnteredMarker = false
+						if show_text then
+							ESX.HideUI()
+							show_text = false
+						end
 						TriggerEvent('esx_jobs:hasExitedMarker', zone)
 					end
 				end
 			end
 		end
+		
+		if not isInMarker and show_text then
+			ESX.HideUI()
+			show_text = false
+		end
+		
 		Wait(Sleep)
 	end
 end)
 
 if Config.RequestIPL then
 	CreateThread(function()
-		-- Slaughterer
 		RemoveIpl("CS1_02_cf_offmission")
 		RequestIpl("CS1_02_cf_onmission1")
 		RequestIpl("CS1_02_cf_onmission2")
 		RequestIpl("CS1_02_cf_onmission3")
 		RequestIpl("CS1_02_cf_onmission4")
-		-- Tailor
 		RequestIpl("id2_14_during_door")
 		RequestIpl("id2_14_during1")
 	end)
