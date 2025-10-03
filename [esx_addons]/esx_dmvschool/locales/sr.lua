@@ -27,4 +27,8 @@ Locales['sr'] = {
   ['errors'] = 'Greške: ~r~%s/%s',
   ['you_damaged_veh'] = 'Oštetili ste vozilo',
   ['not_enough_money'] = 'Nemate dovoljno novca',
+  ['yourVersion'] = "Vaša verzija: ",
+  ['latestVersion'] = "Koristite najnoviju verziju!",
+  ['needUpdateResource'] = "Morate preuzeti najnoviju verziju! Trenutno koristite staru verziju!",
+  ['errorGetCurrentVersion'] = "Došlo je do greške prilikom pokušaja dobavljanja trenutne verzije!"
 }
