@@ -1,6 +1,5 @@
 local CurrentAction     = nil
 local CurrentActionMsg  = nil
-local CurrentActionData = nil
 local Licenses          = {}
 local CurrentTest       = nil
 local CurrentTestType   = nil
@@ -30,7 +29,7 @@ function StartTheoryTest()
 		SetNuiFocus(true, true)
 	end)
 
-
+	ESX.HideUI()
 end
 
 function StopTheoryTest(success)
@@ -48,6 +47,8 @@ function StopTheoryTest(success)
 	else
 		ESX.ShowNotification(TranslateCap('failed_test'))
 	end
+
+	ESX.TextUI(TranslateCap('press_open_menu'))
 end
 
 function StartDriveTest(type)
@@ -84,10 +85,11 @@ function StopDriveTest(success)
 end
 
 function SetCurrentZoneType(type)
-CurrentZoneType = type
+	CurrentZoneType = type
 end
 
 function OpenDMVSchoolMenu()
+	ESX.HideUI()
 	local ownedLicenses = {}
 
 	for i=1, #Licenses, 1 do
@@ -100,9 +102,10 @@ function OpenDMVSchoolMenu()
 
 	if not ownedLicenses['dmv'] then
 		elements[#elements+1] = {
-			icon = "fas fa-car",
+			icon = "fas fa-id-card",
 			title = (('%s: <span style="color:green;">%s</span>'):format(TranslateCap('theory_test'), TranslateCap('school_item', ESX.Math.GroupDigits(Config.Prices['dmv'])))),
-			value = "theory_test"
+			value = "theory_test",
+			type = "dmv"
 		}
 	end
 
@@ -118,7 +121,7 @@ function OpenDMVSchoolMenu()
 
 		if not ownedLicenses['drive_bike'] then
 			elements[#elements+1] = {
-				icon = "fas fa-car",
+				icon = "fas fa-motorcycle",
 				title = (('%s: <span style="color:green;">%s</span>'):format(TranslateCap('road_test_bike'), TranslateCap('school_item', ESX.Math.GroupDigits(Config.Prices['drive_bike'])))),
 				value = "drive_test",
 				type = "drive_bike"
@@ -127,7 +130,7 @@ function OpenDMVSchoolMenu()
 
 		if not ownedLicenses['drive_truck'] then
 			elements[#elements+1] = {
-				icon = "fas fa-car",
+				icon = "fas fa-truck",
 				title = (('%s: <span style="color:green;">%s</span>'):format(TranslateCap('road_test_truck'), TranslateCap('school_item', ESX.Math.GroupDigits(Config.Prices['drive_truck'])))),
 				value = "drive_test",
 				type = "drive_truck"
@@ -136,29 +139,22 @@ function OpenDMVSchoolMenu()
 	end
 
 	ESX.OpenContext("right", elements, function(menu,element)
-		if element.value == "theory_test" then
-			ESX.TriggerServerCallback('esx_dmvschool:canYouPay', function(haveMoney)
-				if haveMoney then
-					ESX.CloseContext()
+		ESX.TriggerServerCallback('esx_dmvschool:canYouPay', function(haveMoney)
+			if haveMoney then
+				ESX.CloseContext()
+				if element.value == "theory_test" then
 					StartTheoryTest()
 				else
-					ESX.ShowNotification(TranslateCap('not_enough_money'))
-				end
-			end, 'dmv')
-		elseif element.value == "drive_test" then
-			ESX.TriggerServerCallback('esx_dmvschool:canYouPay', function(haveMoney)
-				if haveMoney then
-					ESX.CloseContext()
 					StartDriveTest(element.type)
-				else
-					ESX.ShowNotification(TranslateCap('not_enough_money'))
 				end
-			end, element.type)
-		end
+			else
+				ESX.ShowNotification(TranslateCap('not_enough_money'))
+			end
+		end, element.type)
 	end, function(menu)
 		CurrentAction     = 'dmvschool_menu'
 		CurrentActionMsg  = TranslateCap('press_open_menu')
-		CurrentActionData = {}
+		ESX.TextUI(CurrentActionMsg)
 	end)
 end
 
@@ -184,13 +180,14 @@ AddEventHandler('esx_dmvschool:hasEnteredMarker', function(zone)
 	if zone == 'DMVSchool' then
 		CurrentAction     = 'dmvschool_menu'
 		CurrentActionMsg  = TranslateCap('press_open_menu')
-		CurrentActionData = {}
 	end
+	ESX.TextUI(CurrentActionMsg)
 end)
 
 AddEventHandler('esx_dmvschool:hasExitedMarker', function(zone)
 	CurrentAction = nil
 	ESX.CloseContext()
+	ESX.HideUI()
 end)
 
 RegisterNetEvent('esx_dmvschool:loadLicenses')
@@ -277,10 +274,10 @@ CreateThread(function()
 
 		if CurrentAction then
 			sleep = 0
-			ESX.ShowHelpNotification(CurrentActionMsg)
 
 			if (IsControlJustReleased(0, 38)) and (CurrentAction == 'dmvschool_menu') then
 				OpenDMVSchoolMenu()
+				ESX.HideUI()
 				CurrentAction = nil
 			end
 		end
@@ -369,4 +366,3 @@ CreateThread(function()
 		Wait(sleep)
 	end
 end)
-
