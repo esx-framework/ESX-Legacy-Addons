@@ -1,18 +1,15 @@
+---@diagnostic disable: undefined-global
 Locales['es'] = {
   ['shop'] = 'tienda',
-  ['shops'] = 'tiendas',
-  ['press_menu'] = 'pulsa [%s] para comprar en la tienda.',
-  ['shop_item'] = '%s€',
-  ['bought'] = 'has comprado %sx %s por ~r~%s€',
-  ['not_enough'] = 'no tienes ~r~suficiente  dinero: %s',
-  ['player_cannot_hold'] = 'no tienes espacio libre en tu inventario...',
-  ['shop_confirm'] = '¿Comprar %sx %s por $%s?',
-  ['no'] = 'no',
-  ['yes'] = 'si',
-  ['amount'] = 'Amount', --not translated
-  ['amount_placeholder'] = 'Amount you want to buy', --not translated
-  ['confirm'] = 'Confirm', --not translated
-  ['purchase'] = 'Purchase', --not translated
-  ['bread'] = 'Bread', --not translated
-  ['water'] = 'Water', --not translated
+  ['open_shop_help'] = 'Pulsa ~INPUT_CONTEXT~ para abrir la tienda',
+  ['player_not_found'] = 'Jugador no encontrado',
+  ['cart_empty'] = 'El carrito está vacío',
+  ['invalid_cart_entry'] = 'Entrada de carrito inválida',
+  ['invalid_item_data'] = 'Datos de artículo inválidos',
+  ['unknown_item'] = 'Artículo desconocido: %s',
+  ['invalid_quantity'] = 'Cantidad inválida',
+  ['not_enough_cash'] = 'No tienes suficiente efectivo',
+  ['not_enough_bank'] = 'Saldo bancario insuficiente',
+  ['purchase_success'] = 'Compra exitosa'
+
 }

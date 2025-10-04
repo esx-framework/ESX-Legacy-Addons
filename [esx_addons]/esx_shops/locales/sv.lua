@@ -1,18 +1,15 @@
+---@diagnostic disable: undefined-global
 Locales['sv'] = {
-    ['shop'] = 'Affär',
-    ['shops'] = 'Affärer',
-    ['press_menu'] = 'Tryck [%s] för att öppna ~g~affären.',
-    ['shop_item'] = '%skr',
-    ['bought'] = 'Du har köpt ~b~%sx %s~s~ för ~b~%skr',
-    ['not_enough'] = 'Du har ~r~inte~s~ råd, det fattas ~b~%skr!',
-    ['player_cannot_hold'] = 'Du har ~r~inte~s~ plats i inventoryt för detta!',
-    ['shop_confirm'] = 'Köp %sx %s för %skr?',
-    ['no'] = 'Ja',
-    ['yes'] = 'Nej',
-    ['amount'] = 'Antal',
-    ['amount_placeholder'] = 'Antal du vill köpa',
-    ['confirm'] = 'Godkänn',
-    ['purchase'] = 'Köp',
-    ['bread'] = 'Bröd',
-    ['water'] = 'Vatten',
-  }
+  ['shop'] = 'Affär',
+  ['open_shop_help'] = 'Tryck ~INPUT_CONTEXT~ för att öppna affären',
+  ['player_not_found'] = 'Spelare hittades inte',
+  ['cart_empty'] = 'Kundvagnen är tom',
+  ['invalid_cart_entry'] = 'Ogiltig kundvagnspost',
+  ['invalid_item_data'] = 'Ogiltig artikeldata',
+  ['unknown_item'] = 'Okänt objekt: %s',
+  ['invalid_quantity'] = 'Ogiltig mängd',
+  ['not_enough_cash'] = 'Inte tillräckligt med kontanter',
+  ['not_enough_bank'] = 'Otillräckligt banksaldo',
+  ['purchase_success'] = 'Köpet lyckades'
+
+}

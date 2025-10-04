@@ -1,18 +1,15 @@
+---@diagnostic disable: undefined-global
 Locales['sr'] = {
   ['shop'] = 'Prodavnica',
-  ['shops'] = 'Prodavnice',
-  ['press_menu'] = 'Pritisni [%s] da pristupiš ~g~prodavnici.',
-  ['shop_item'] = '$%s',
-  ['bought'] = 'Kupili ste ~b~%sx %s~s~ za ~b~$%s',
-  ['not_enough'] = 'Vi ~r~nemate~s~ dovoljno novca, nedostaje vam ~b~$%s!',
-  ['player_cannot_hold'] = 'Vi ~r~nemate~s~ dovoljno mesta u vašem inventaru!',
-  ['shop_confirm'] = 'Kupi %sx %s za $%s?',
-  ['no'] = 'Ne',
-  ['yes'] = 'Da',
-  ['amount'] = 'Amount', --not translated
-  ['amount_placeholder'] = 'Amount you want to buy', --not translated
-  ['confirm'] = 'Confirm', --not translated
-  ['purchase'] = 'Purchase', --not translated
-  ['bread'] = 'Bread', --not translated
-  ['water'] = 'Water', --not translated
+  ['open_shop_help'] = 'Pritisnite ~INPUT_CONTEXT~ da otvorite prodavnicu',
+  ['player_not_found'] = 'Igrač nije pronađen',
+  ['cart_empty'] = 'Korpa je prazna',
+  ['invalid_cart_entry'] = 'Nevažeći unos u korpi',
+  ['invalid_item_data'] = 'Nevažeći podaci o artiklu',
+  ['unknown_item'] = 'Nepoznat artikal: %s',
+  ['invalid_quantity'] = 'Nevažeća količina',
+  ['not_enough_cash'] = 'Nedovoljno gotovine',
+  ['not_enough_bank'] = 'Nedovoljno sredstava u banci',
+  ['purchase_success'] = 'Kupovina uspešna'
+
 }
