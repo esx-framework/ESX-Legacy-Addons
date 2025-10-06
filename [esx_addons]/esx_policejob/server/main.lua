@@ -10,11 +10,13 @@ TriggerEvent('esx_society:registerSociety', 'police', TranslateCap('society_poli
 RegisterNetEvent('esx_policejob:confiscatePlayerItem')
 AddEventHandler('esx_policejob:confiscatePlayerItem', function(target, itemType, itemName, amount)
 	local source = source
-	local sourceXPlayer = ESX.GetPlayerFromId(source)
-	local targetXPlayer = ESX.GetPlayerFromId(target)
-
-	if sourceXPlayer.job.name ~= 'police' then
-		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit The Confuscation System!'):format(sourceXPlayer.source))
+	local sourceXPlayer = ESX.Player(source)
+	local targetXPlayer = ESX.Player(target)
+	local job = sourceXPlayer.getJob()
+	local sourceXPlayerName = sourceXPlayer.getName()
+	local targetXPlayerName = targetXPlayer.getName()
+	if job.name ~= 'police' then
+		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit The Confuscation System!'):format(sourceXPlayer.src))
 		return
 	end
 
@@ -29,8 +31,8 @@ AddEventHandler('esx_policejob:confiscatePlayerItem', function(target, itemType,
 			if sourceXPlayer.canCarryItem(itemName, amount) then
 				targetXPlayer.removeInventoryItem(itemName, amount)
 				sourceXPlayer.addInventoryItem   (itemName, amount)
-				sourceXPlayer.showNotification(TranslateCap('you_confiscated', amount, sourceItem.label, targetXPlayer.name))
-				targetXPlayer.showNotification(TranslateCap('got_confiscated', amount, sourceItem.label, sourceXPlayer.name))
+				sourceXPlayer.showNotification(TranslateCap('you_confiscated', amount, sourceItem.label, targetXPlayerName))
+				targetXPlayer.showNotification(TranslateCap('got_confiscated', amount, sourceItem.label, sourceXPlayerName))
 			else
 				sourceXPlayer.showNotification(TranslateCap('quantity_invalid'))
 			end
@@ -46,8 +48,8 @@ AddEventHandler('esx_policejob:confiscatePlayerItem', function(target, itemType,
 			targetXPlayer.removeAccountMoney(itemName, amount, "Confiscated")
 			sourceXPlayer.addAccountMoney   (itemName, amount, "Confiscated")
 
-			sourceXPlayer.showNotification(TranslateCap('you_confiscated_account', amount, itemName, targetXPlayer.name))
-			targetXPlayer.showNotification(TranslateCap('got_confiscated_account', amount, itemName, sourceXPlayer.name))
+			sourceXPlayer.showNotification(TranslateCap('you_confiscated_account', amount, itemName, targetXPlayerName))
+			targetXPlayer.showNotification(TranslateCap('got_confiscated_account', amount, itemName, sourceXPlayerName))
 		else
 			sourceXPlayer.showNotification(TranslateCap('quantity_invalid'))
 		end
@@ -60,8 +62,8 @@ AddEventHandler('esx_policejob:confiscatePlayerItem', function(target, itemType,
 			targetXPlayer.removeWeapon(itemName)
 			sourceXPlayer.addWeapon   (itemName, amount)
 
-			sourceXPlayer.showNotification(TranslateCap('you_confiscated_weapon', ESX.GetWeaponLabel(itemName), targetXPlayer.name, amount))
-			targetXPlayer.showNotification(TranslateCap('got_confiscated_weapon', ESX.GetWeaponLabel(itemName), amount, sourceXPlayer.name))
+			sourceXPlayer.showNotification(TranslateCap('you_confiscated_weapon', ESX.GetWeaponLabel(itemName), targetXPlayerName, amount))
+			targetXPlayer.showNotification(TranslateCap('got_confiscated_weapon', ESX.GetWeaponLabel(itemName), amount, sourceXPlayerName))
 		else
 			sourceXPlayer.showNotification(TranslateCap('quantity_invalid'))
 		end
@@ -70,52 +72,52 @@ end)
 
 RegisterNetEvent('esx_policejob:handcuff')
 AddEventHandler('esx_policejob:handcuff', function(target)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
-	if xPlayer.job.name == 'police' then
+	if xPlayer.getJob().name == 'police' then
 		TriggerClientEvent('esx_policejob:handcuff', target)
 	else
-		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Handcuffs!'):format(xPlayer.source))
+		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Handcuffs!'):format(xPlayer.src))
 	end
 end)
 
 RegisterNetEvent('esx_policejob:drag')
 AddEventHandler('esx_policejob:drag', function(target)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
-	if xPlayer.job.name == 'police' then
+	if xPlayer.getJob().name == 'police' then
 		TriggerClientEvent('esx_policejob:drag', target, source)
 	else
-		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging!'):format(xPlayer.source))
+		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging!'):format(xPlayer.src))
 	end
 end)
 
 RegisterNetEvent('esx_policejob:putInVehicle')
 AddEventHandler('esx_policejob:putInVehicle', function(target)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
-	if xPlayer.job.name == 'police' then
+	if xPlayer.getJob().name == 'police' then
 		TriggerClientEvent('esx_policejob:putInVehicle', target)
 	else
-		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Garage!'):format(xPlayer.source))
+		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Garage!'):format(xPlayer.src))
 	end
 end)
 
 RegisterNetEvent('esx_policejob:OutVehicle')
 AddEventHandler('esx_policejob:OutVehicle', function(target)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
-	if xPlayer.job.name == 'police' then
+	if xPlayer.getJob().name == 'police' then
 		TriggerClientEvent('esx_policejob:OutVehicle', target)
 	else
-		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging Out Of Vehicle!'):format(xPlayer.source))
+		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging Out Of Vehicle!'):format(xPlayer.src))
 	end
 end)
 
 RegisterNetEvent('esx_policejob:getStockItem')
 AddEventHandler('esx_policejob:getStockItem', function(itemName, count)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_police', function(inventory)
 		local inventoryItem = inventory.getItem(itemName)
@@ -139,7 +141,7 @@ end)
 
 RegisterNetEvent('esx_policejob:putStockItems')
 AddEventHandler('esx_policejob:putStockItems', function(itemName, count)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	local sourceItem = xPlayer.getInventoryItem(itemName)
 
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_police', function(inventory)
@@ -157,8 +159,8 @@ AddEventHandler('esx_policejob:putStockItems', function(itemName, count)
 end)
 
 ESX.RegisterServerCallback('esx_policejob:getOtherPlayerData', function(source, cb, target, notify)
-	local xPlayer = ESX.GetPlayerFromId(target)
-
+	local xPlayer = ESX.Player(target)
+	local job = xPlayer.getJob()
 	if notify then
 		xPlayer.showNotification(TranslateCap('being_searched'))
 	end
@@ -166,8 +168,8 @@ ESX.RegisterServerCallback('esx_policejob:getOtherPlayerData', function(source, 
 	if xPlayer then
 		local data = {
 			name = xPlayer.getName(),
-			job = xPlayer.job.label,
-			grade = xPlayer.job.grade_label,
+			job = job.label,
+			grade = job.grade_label,
 			inventory = xPlayer.getInventory(),
 			accounts = xPlayer.getAccounts(),
 			weapons = xPlayer.getLoadout()
@@ -228,7 +230,7 @@ ESX.RegisterServerCallback('esx_policejob:getVehicleInfos', function(source, cb,
 		MySQL.scalar('SELECT owner FROM owned_vehicles WHERE plate = ?', {plate},
 		function(owner)
 			if owner then
-				local xPlayer = ESX.GetPlayerFromIdentifier(owner)
+				local xPlayer = ESX.Player(owner)
 				if xPlayer then
 					retrivedInfo.owner = xPlayer.getName()
 				end
@@ -251,7 +253,7 @@ ESX.RegisterServerCallback('esx_policejob:getArmoryWeapons', function(source, cb
 end)
 
 ESX.RegisterServerCallback('esx_policejob:addArmoryWeapon', function(source, cb, weaponName, removeWeapon)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	if removeWeapon then
 		xPlayer.removeWeapon(weaponName)
@@ -282,7 +284,7 @@ ESX.RegisterServerCallback('esx_policejob:addArmoryWeapon', function(source, cb,
 end)
 
 ESX.RegisterServerCallback('esx_policejob:removeArmoryWeapon', function(source, cb, weaponName)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	xPlayer.addWeapon(weaponName, 500)
 
 	TriggerEvent('esx_datastore:getSharedDataStore', 'society_police', function(store)
@@ -311,8 +313,8 @@ ESX.RegisterServerCallback('esx_policejob:removeArmoryWeapon', function(source, 
 end)
 
 ESX.RegisterServerCallback('esx_policejob:buyWeapon', function(source, cb, weaponName, type, componentNum)
-	local xPlayer = ESX.GetPlayerFromId(source)
-	local authorizedWeapons, selectedWeapon = Config.AuthorizedWeapons[xPlayer.job.grade_name]
+	local xPlayer = ESX.Player(source)
+	local authorizedWeapons, selectedWeapon = Config.AuthorizedWeapons[xPlayer.getJob().grade_name]
 
 	for k,v in ipairs(authorizedWeapons) do
 		if v.weapon == weaponName then
@@ -360,8 +362,9 @@ ESX.RegisterServerCallback('esx_policejob:buyWeapon', function(source, cb, weapo
 end)
 
 ESX.RegisterServerCallback('esx_policejob:buyJobVehicle', function(source, cb, vehicleProps, type)
-	local xPlayer = ESX.GetPlayerFromId(source)
-	local price = getPriceFromHash(vehicleProps.model, xPlayer.job.grade_name, type)
+	local xPlayer = ESX.Player(source)
+	local job = xPlayer.getJob()
+	local price = getPriceFromHash(vehicleProps.model, job.grade_name, type)
 
 	-- vehicle model not found
 	if price == 0 then
@@ -371,7 +374,7 @@ ESX.RegisterServerCallback('esx_policejob:buyJobVehicle', function(source, cb, v
 		if xPlayer.getMoney() >= price then
 			xPlayer.removeMoney(price, "Job Vehicle Bought")
 
-			MySQL.insert('INSERT INTO owned_vehicles (owner, vehicle, plate, type, job, `stored`) VALUES (?, ?, ?, ?, ?, ?)', { xPlayer.identifier, json.encode(vehicleProps), vehicleProps.plate, type, xPlayer.job.name, true},
+			MySQL.insert('INSERT INTO owned_vehicles (owner, vehicle, plate, type, job, `stored`) VALUES (?, ?, ?, ?, ?, ?)', { xPlayer.getIdentifier(), json.encode(vehicleProps), vehicleProps.plate, type, job.name, true},
 			function (rowsChanged)
 				cb(true)
 			end)
@@ -382,12 +385,13 @@ ESX.RegisterServerCallback('esx_policejob:buyJobVehicle', function(source, cb, v
 end)
 
 ESX.RegisterServerCallback('esx_policejob:storeNearbyVehicle', function(source, cb, plates)
-	local xPlayer = ESX.GetPlayerFromId(source)
-
-	local plate = MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE owner = ? AND plate IN (?) AND job = ?', {xPlayer.identifier, plates, xPlayer.job.name})
+	local xPlayer = ESX.Player(source)
+	local job = xPlayer.getJob()
+	local identifier = xPlayer.getIdentifier()
+	local plate = MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE owner = ? AND plate IN (?) AND job = ?', {identifier, plates, job.name})
 
 	if plate then
-		MySQL.update('UPDATE owned_vehicles SET `stored` = true WHERE owner = ? AND plate = ? AND job = ?', {xPlayer.identifier, plate, xPlayer.job.name},
+		MySQL.update('UPDATE owned_vehicles SET `stored` = true WHERE owner = ? AND plate = ? AND job = ?', {identifier, plate, job.name},
 		function(rowsChanged)
 			if rowsChanged == 0 then
 				cb(false)
@@ -401,7 +405,7 @@ ESX.RegisterServerCallback('esx_policejob:storeNearbyVehicle', function(source, 
 end)
 
 function getPriceFromHash(vehicleHash, jobGrade, type)
-	local vehicles = Config.AuthorizedVehicles[type][jobGrade]
+   local vehicles = Config.AuthorizedVehicles[type]?[jobGrade] or {}
 
 	for i = 1, #vehicles do
 		local vehicle = vehicles[i]
@@ -420,8 +424,8 @@ ESX.RegisterServerCallback('esx_policejob:getStockItems', function(source, cb)
 end)
 
 ESX.RegisterServerCallback('esx_policejob:getPlayerInventory', function(source, cb)
-	local xPlayer = ESX.GetPlayerFromId(source)
-	local items   = xPlayer.inventory
+	local xPlayer = ESX.Player(source)
+	local items   = xPlayer.getInventory(false)
 
 	cb({items = items})
 end)

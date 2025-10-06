@@ -5,8 +5,8 @@ game 'gta5'
 description 'Adds a way for resources to store items for players'
 lua54 'yes'
 
-version '1.0' 
-legacyversion '1.9.1'
+version '1.0'
+legacyversion '1.13.4'
 
 server_scripts {
 	'@es_extended/imports.lua',
@@ -16,8 +16,8 @@ server_scripts {
 }
 
 server_exports {
-    'GetSharedInventory',
-    'AddSharedInventory'
+	'GetSharedInventory',
+	'AddSharedInventory'
 }
 
 dependency 'es_extended'

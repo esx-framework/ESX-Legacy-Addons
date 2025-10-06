@@ -14,7 +14,7 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-]] 
+]]
 fx_version 'adamant'
 
 game 'gta5'
@@ -23,25 +23,25 @@ lua54 'yes'
 author 'ESX-Framework'
 description 'Allows players to buy/sell houses, aswell as furnish them'
 version '2.0'
-legacyversion '1.9.1'
+legacyversion '1.13.4'
 
-shared_scripts {'@es_extended/imports.lua', '@es_extended/locale.lua', 'locales/*.lua'}
+shared_scripts { '@es_extended/imports.lua', '@es_extended/locale.lua', 'locales/*.lua' }
 file "client/html/copy.html"
 ui_page "client/html/copy.html"
 
 server_scripts {
-	'@oxmysql/lib/MySQL.lua',
-	'config.lua',
-	'server/*.lua'
+    '@oxmysql/lib/MySQL.lua',
+    'config.lua',
+    'server/*.lua'
 }
 
 client_scripts {
-	'config.lua',
-	'client/cctv.lua',
-	'client/main.lua',
-	'client/furniture.lua'
+    'config.lua',
+    'client/cctv.lua',
+    'client/main.lua',
+    'client/furniture.lua'
 }
 
 dependencies {
-	'es_extended'
+    'es_extended'
 }

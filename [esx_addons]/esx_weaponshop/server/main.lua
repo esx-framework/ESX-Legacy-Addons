@@ -1,6 +1,6 @@
 
 ESX.RegisterServerCallback('esx_weaponshop:buyLicense', function(source, cb)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 
 	if xPlayer.getMoney() >= Config.LicensePrice then
 		xPlayer.removeMoney(Config.LicensePrice, "Weapon License")
@@ -15,7 +15,7 @@ ESX.RegisterServerCallback('esx_weaponshop:buyLicense', function(source, cb)
 end)
 
 ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weaponName, zone)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = ESX.Player(source)
 	local price = GetPrice(weaponName, zone)
 
 	if price <= 0  then

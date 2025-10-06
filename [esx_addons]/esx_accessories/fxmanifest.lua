@@ -5,14 +5,14 @@ game 'gta5'
 description 'Provides a way for players to customise their appearence with accessories)'
 lua54 'yes'
 
-version '1.1' 
-legacyversion '1.9.1'
+version '1.1'
+legacyversion '1.13.4'
 
 shared_scripts {
-	'@es_extended/imports.lua',
-	'@es_extended/locale.lua',
-	'locales/*.lua',
-	'config.lua'
+    '@es_extended/imports.lua',
+    '@es_extended/locale.lua',
+    'locales/*.lua',
+    'config.lua'
 }
 
 server_scripts {
