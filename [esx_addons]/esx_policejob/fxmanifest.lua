@@ -19,10 +19,21 @@ server_scripts {
 }
 
 client_scripts {
-	'@es_extended/locale.lua',
-	'locales/*.lua',
-	'shared/config.lua',
-	'client/*.lua'
+    '@es_extended/locale.lua',
+    'locales/*.lua',
+    'shared/config.lua',
+    'client/state.lua',
+    'client/boot.lua',
+    'client/main.lua',
+    'client/vehicle.lua',
+    'client/cuffs.lua',
+    'client/interactions/*.lua',
+    'client/menus/*.lua',
+    'client/markers.lua',
+    'client/blips.lua',
+    'client/objects.lua',
+    'client/inputs.lua',
+    'client/phone.lua'
 }
 
 dependencies {
