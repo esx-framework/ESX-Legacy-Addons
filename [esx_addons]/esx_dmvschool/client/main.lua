@@ -1,4 +1,3 @@
-local Licenses          = {}
 local CurrentTest       = nil
 local CurrentTestType   = nil
 local CurrentVehicle    = nil
@@ -241,7 +240,7 @@ CreateThread(function()
 			end
 		else
 			sleep = 0
-			if IsControlJustReleased(0, 38) then
+			if isInMarker and IsControlJustReleased(0, 38) then
 				OpenDMVSchoolMenu()
 				ESX.HideUI()
 			end
