@@ -151,16 +151,7 @@ RegisterNUICallback('kick', function(data, cb)
 end)
 
 AddEventHandler('esx_dmvschool:hasEnteredMarker', function(zone)
-<<<<<<< HEAD
-	if zone == 'DMVSchool' then
-		CurrentAction     = 'dmvschool_menu'
-		CurrentActionMsg  = TranslateCap('press_open_menu')
-		CurrentActionData = {}
-	end
-	ESX.TextUI(CurrentActionMsg)
-=======
 	ESX.TextUI(TranslateCap('press_open_menu'))
->>>>>>> origin/dmvschool-fix
 end)
 
 AddEventHandler('esx_dmvschool:hasExitedMarker', function(zone)
@@ -250,12 +241,7 @@ CreateThread(function()
 			end
 		else
 			sleep = 0
-<<<<<<< HEAD
-
-			if (IsControlJustReleased(0, 38)) and (CurrentAction == 'dmvschool_menu') then
-=======
 			if IsControlJustReleased(0, 38) then
->>>>>>> origin/dmvschool-fix
 				OpenDMVSchoolMenu()
 				ESX.HideUI()
 			end
