@@ -24,6 +24,12 @@ client_scripts {
 	'client/*.lua'
 }
 
+files {
+	'stream/types1.ytyp'
+}
+
+data_file 'DLC_ITYP_REQUEST' 'stream/types1.ytyp'
+
 dependencies {
 	'es_extended',
 	'esx_billing',
