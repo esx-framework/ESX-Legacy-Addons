@@ -13,8 +13,11 @@
 - Item farming jobs
 This addon is an easy way to have farming jobs on your server, there is no player management.
 
+<<<<<<< HEAD
 ### [How to install and use iZone](https://github.com/izio38/iZone)
 
+=======
+>>>>>>> origin/jobs-fix
 ## Legal
 
 esx_jobs - jobs
