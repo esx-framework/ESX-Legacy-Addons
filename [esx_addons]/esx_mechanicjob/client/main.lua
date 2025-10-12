@@ -672,7 +672,7 @@ AddEventHandler('esx_mechanicjob:hasEnteredMarker', function(zone)
 		end
 	end
 
-	if zone ~= 'VehicleSpawnPoint' then
+	if zone ~= 'VehicleSpawnPoint' and CurrentActionMsg ~= '' then
 		ESX.TextUI(CurrentActionMsg)
 	end
 end)
@@ -759,6 +759,21 @@ CreateThread(function()
 end)
 
 CreateThread(function()
+	local blip = AddBlipForCoord(Config.Zones.VehicleDeleter.Pos.x, Config.Zones.VehicleDeleter.Pos.y,
+		Config.Zones.VehicleDeleter.Pos.z)
+
+	SetBlipSprite(blip, 446)
+	SetBlipDisplay(blip, 4)
+	SetBlipScale(blip, 1.0)
+	SetBlipColour(blip, 3)
+	SetBlipAsShortRange(blip, true)
+
+	BeginTextCommandSetBlipName('STRING')
+	AddTextComponentSubstringPlayerName('Vehicle Storage')
+	EndTextCommandSetBlipName(blip)
+end)
+
+CreateThread(function()
 	while true do
 		local Sleep = 2000
 
@@ -768,10 +783,20 @@ CreateThread(function()
 
 			for k, v in pairs(Config.Zones) do
 				if v.Type ~= -1 and #(coords - v.Pos) < Config.DrawDistance then
-					Sleep = 0
-					DrawMarker(v.Type, v.Pos.x, v.Pos.y, v.Pos.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, v.Size.x, v.Size.y,
-						v.Size.z, v.Color.r, v.Color.g, v.Color.b, 100, true, true, 2, true, nil, nil, false)
-					letSleep = false
+					if k == 'VehicleDeleter' then
+						local playerPed = PlayerPedId()
+						if IsPedInAnyVehicle(playerPed, false) then
+							Sleep = 0
+							DrawMarker(v.Type, v.Pos.x, v.Pos.y, v.Pos.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, v.Size.x, v.Size.y,
+								v.Size.z, v.Color.r, v.Color.g, v.Color.b, 100, true, true, 2, true, nil, nil, false)
+							letSleep = false
+						end
+					else
+						Sleep = 0
+						DrawMarker(v.Type, v.Pos.x, v.Pos.y, v.Pos.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, v.Size.x, v.Size.y,
+							v.Size.z, v.Color.r, v.Color.g, v.Color.b, 100, true, true, 2, true, nil, nil, false)
+						letSleep = false
+					end
 				end
 			end
 		end
@@ -872,12 +897,15 @@ CreateThread(function()
 						TriggerServerEvent('esx_society:putVehicleInGarage', 'mechanic', vehicleProps)
 					else
 						local entityModel = GetEntityModel(CurrentActionData.vehicle)
-
 						if entityModel == `flatbed` or entityModel == `towtruck2` or entityModel == `slamvan3` then
 							TriggerServerEvent('esx_service:disableService', 'mechanic')
 						end
 					end
 					ESX.Game.DeleteVehicle(CurrentActionData.vehicle)
+					CurrentAction = nil
+					CurrentActionMsg = ''
+					CurrentActionData = {}
+					ESX.HideUI()
 				elseif CurrentAction == 'remove_entity' then
 					DeleteEntity(CurrentActionData.entity)
 				end
@@ -888,6 +916,7 @@ CreateThread(function()
 		Wait(sleep)
 	end
 end)
+
 RegisterCommand('mechanicMenu', function()
 	if ESX.PlayerData.job and ESX.PlayerData.job.name == 'mechanic' then
 		OpenMobileMechanicActionsMenu()
