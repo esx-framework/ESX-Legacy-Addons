@@ -2,7 +2,7 @@
 
 ## Files
 - `handcuffs.ydr` - 3D model file
-- `types1.ytyp` - Type definition file
+- `handcuffs.ytyp` - Type definition file
 
 ## Installation
 
