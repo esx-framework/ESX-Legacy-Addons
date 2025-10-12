@@ -1,13 +1,8 @@
 local Blips, JobBlips, isInMarker, hintToDisplay, onDuty, spawner, myPlate, vehicleObjInCaseofDrop, vehicleInCaseofDrop, vehicleMaxHealth =
 	{}, {}, false, "no hint to display", false, 0, {}, nil, nil, nil
 
-<<<<<<< HEAD
-local show_text = false
-local show_public_text = false
-=======
 local ShowText = false
 local ShowPublicText = false
->>>>>>> origin/jobs-fix
 
 local PlayerPedId = PlayerPedId
 local IsPedInAnyVehicle = IsPedInAnyVehicle
@@ -333,15 +328,6 @@ CreateThread(function()
 			if #(coords - v.Pos) < v.Size.x / 2 then
 				Sleep = 0
 				isInPublicMarker = true
-<<<<<<< HEAD
-				if show_text then
-					ESX.HideUI()
-					show_text = false
-				end
-				if not show_public_text then
-					ESX.TextUI(v.Hint)
-					show_public_text = true
-=======
 				if ShowText then
 					ESX.HideUI()
 					ShowText = false
@@ -349,7 +335,6 @@ CreateThread(function()
 				if not ShowPublicText then
 					ESX.TextUI(v.Hint)
 					ShowPublicText = true
->>>>>>> origin/jobs-fix
 				end
 				if IsControlJustReleased(0, 38) then
 					ESX.Game.Teleport(PlayerPedId(), v.Teleport)
@@ -357,15 +342,9 @@ CreateThread(function()
 			end
 		end
 
-<<<<<<< HEAD
-		if not isInPublicMarker and show_public_text then
-			ESX.HideUI()
-			show_public_text = false
-=======
 		if not isInPublicMarker and ShowPublicText then
 			ESX.HideUI()
 			ShowPublicText = false
->>>>>>> origin/jobs-fix
 		end
 
 		Wait(Sleep)
@@ -418,28 +397,16 @@ CreateThread(function()
 
 					if isInMarker and not menuIsShowed then
 						hintIsShowed = true
-<<<<<<< HEAD
-						if show_public_text then
-							ESX.HideUI()
-							show_public_text = false
-=======
 						if ShowPublicText then
 							ESX.HideUI()
 							ShowPublicText = false
->>>>>>> origin/jobs-fix
 						end
 						if (onDuty or zone.Type == "cloakroom" or zone.Type == "delivery") and zone.Type ~= "vehdelete" then
 							if zone.Hint then
 								hintToDisplay = zone.Hint
-<<<<<<< HEAD
-								if not show_text then
-									ESX.TextUI(hintToDisplay)
-									show_text = true
-=======
 								if not ShowText then
 									ESX.TextUI(hintToDisplay)
 									ShowText = true
->>>>>>> origin/jobs-fix
 								end
 							end
 						elseif zone.Type == "vehdelete" and (onDuty) then
@@ -460,42 +427,24 @@ CreateThread(function()
 									end
 								else
 									hintToDisplay = TranslateCap('not_your_vehicle')
-<<<<<<< HEAD
-									if not show_text then
-										ESX.TextUI(hintToDisplay)
-										show_text = true
-=======
 									if not ShowText then
 										ESX.TextUI(hintToDisplay)
 										ShowText = true
->>>>>>> origin/jobs-fix
 									end
 								end
 							else
 								hintToDisplay = TranslateCap('in_vehicle')
-<<<<<<< HEAD
-								if not show_text then
-									ESX.TextUI(hintToDisplay)
-									show_text = true
-=======
 								if not ShowText then
 									ESX.TextUI(hintToDisplay)
 									ShowText = true
->>>>>>> origin/jobs-fix
 								end
 							end
 							hintIsShowed = true
 						elseif onDuty and zone.Spawner ~= spawner then
 							hintToDisplay = TranslateCap('wrong_point')
-<<<<<<< HEAD
-							if not show_text then
-								ESX.TextUI(hintToDisplay)
-								show_text = true
-=======
 							if not ShowText then
 								ESX.TextUI(hintToDisplay)
 								ShowText = true
->>>>>>> origin/jobs-fix
 							end
 						end
 					end
@@ -506,15 +455,9 @@ CreateThread(function()
 
 					if not isInMarker and hasAlreadyEnteredMarker then
 						hasAlreadyEnteredMarker = false
-<<<<<<< HEAD
-						if show_text then
-							ESX.HideUI()
-							show_text = false
-=======
 						if ShowText then
 							ESX.HideUI()
 							ShowText = false
->>>>>>> origin/jobs-fix
 						end
 						TriggerEvent('esx_jobs:hasExitedMarker', zone)
 					end
@@ -522,15 +465,9 @@ CreateThread(function()
 			end
 		end
 		
-<<<<<<< HEAD
-		if not isInMarker and show_text then
-			ESX.HideUI()
-			show_text = false
-=======
 		if not isInMarker and ShowText then
 			ESX.HideUI()
 			ShowText = false
->>>>>>> origin/jobs-fix
 		end
 		
 		Wait(Sleep)
