@@ -24,14 +24,9 @@ client_scripts {
 	'client/*.lua'
 }
 
-files {
-	'stream/handcuffs.ytyp'
-}
-
-data_file 'DLC_ITYP_REQUEST' 'stream/handcuffs.ytyp'
-
 dependencies {
 	'es_extended',
 	'esx_billing',
-	'esx_vehicleshop'
+	'esx_vehicleshop',
+	'esx_custom_props'
 }
