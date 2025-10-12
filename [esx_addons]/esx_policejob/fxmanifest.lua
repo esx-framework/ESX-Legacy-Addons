@@ -25,10 +25,10 @@ client_scripts {
 }
 
 files {
-	'stream/types1.ytyp'
+	'stream/handcuffs.ytyp'
 }
 
-data_file 'DLC_ITYP_REQUEST' 'stream/types1.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/handcuffs.ytyp'
 
 dependencies {
 	'es_extended',
