@@ -1,13 +1,9 @@
 local playersProcessingCannabis = {}
 local outofbound = true
-local alive = true
 
-local function ValidatePickupCannabis(src)
-	local ECoords = Config.CircleZones.WeedField.coords
-	local PCoords = GetEntityCoords(GetPlayerPed(src))
-	local Dist = #(PCoords-ECoords)
-	if Dist <= 90 then return true end
-end
+local spawnedWeedPlants = {}
+local maxWeedPlants = 10
+local weedFieldCoords = Config.CircleZones.WeedField.coords
 
 local function ValidateProcessCannabis(src)
 	local ECoords = Config.CircleZones.WeedProcessing.coords
@@ -27,7 +23,6 @@ AddEventHandler('esx_drugs:sellDrug', function(itemName, amount)
 	local price = Config.DrugDealerItems[itemName]
 	local xItem = xPlayer.getInventoryItem(itemName)
 	local identifier = xPlayer.getIdentifier()
-	-- If this fails its 99% a mod-menu, the variables client sided are setup to provide the exact right arguments
 	if type(amount) ~= 'number' or type(itemName) ~= 'string' then
 		print(('esx_drugs: %s attempted to sell with invalid input type!'):format(identifier))
 		FoundExploiter(xPlayer.src,'SellDrugs Event Trigger')
@@ -45,15 +40,12 @@ AddEventHandler('esx_drugs:sellDrug', function(itemName, amount)
 		xPlayer.showNotification(TranslateCap('dealer_notenough'))
 		return
 	end
-
 	price = ESX.Math.Round(price * amount)
-
 	if Config.GiveBlack then
 		xPlayer.addAccountMoney('black_money', price, "Drugs Sold")
 	else
 		xPlayer.addMoney(price, "Drugs Sold")
 	end
-
 	xPlayer.removeInventoryItem(xItem.name, amount)
 	xPlayer.showNotification(TranslateCap('dealer_sold', amount, xItem.label, ESX.Math.GroupDigits(price)))
 end)
@@ -61,11 +53,9 @@ end)
 ESX.RegisterServerCallback('esx_drugs:buyLicense', function(source, cb, licenseName)
 	local xPlayer = ESX.Player(source)
 	local license = Config.LicensePrices[licenseName]
-
 	if license then
 		if xPlayer.getMoney() >= license.price then
 			xPlayer.removeMoney(license.price)
-
 			TriggerEvent('esx_license:addLicense', source, licenseName, function()
 				cb(true)
 			end)
@@ -78,25 +68,10 @@ ESX.RegisterServerCallback('esx_drugs:buyLicense', function(source, cb, licenseN
 	end
 end)
 
-RegisterServerEvent('esx_drugs:pickedUpCannabis')
-AddEventHandler('esx_drugs:pickedUpCannabis', function()
-	local src = source
-	local xPlayer = ESX.Player(src)
-	local cime = math.random(5,10)
-	if ValidatePickupCannabis(src) then
-		if xPlayer.canCarryItem('cannabis', cime) then
-			xPlayer.addInventoryItem('cannabis', cime)
-		else
-			xPlayer.showNotification(TranslateCap('weed_inventoryfull'))
-		end
-	else
-		FoundExploiter(src,'Event Trigger')
-	end
-end)
-
 ESX.RegisterServerCallback('esx_drugs:canPickUp', function(source, cb, item)
 	local xPlayer = ESX.Player(source)
-	cb(xPlayer.canCarryItem(item, 1))
+	local qty = math.random(5,10)
+	cb(xPlayer.canCarryItem(item, qty), qty)
 end)
 
 RegisterServerEvent('esx_drugs:outofbound')
@@ -168,6 +143,106 @@ AddEventHandler('esx_drugs:cancelProcessing', function()
 	CancelProcessing(source)
 end)
 
+local function GenerateWeedCoord()
+	local weedCoordX, weedCoordY
+	local modX = math.random(-90, 90)
+	local modY = math.random(-90, 90)
+	weedCoordX = weedFieldCoords.x + modX
+	weedCoordY = weedFieldCoords.y + modY
+	return vector3(weedCoordX, weedCoordY, weedFieldCoords.z)
+end
+
+local function ValidateWeedCoord(plantCoord)
+	for k, v in pairs(spawnedWeedPlants) do
+		if v.active and #(plantCoord - v.coords) < 5 then
+			return false
+		end
+	end
+	if #(plantCoord - weedFieldCoords) > 50 then
+		return false
+	end
+	return true
+end
+
+local function SpawnWeedPlant()
+    local attempts = 0
+    local maxAttempts = 50
+    while attempts < maxAttempts do
+        local coords = GenerateWeedCoord()
+        if ValidateWeedCoord(coords) then
+            local plantId = tostring(os.time()) .. "_" .. math.random(1000, 9999)
+            local modelHash = GetHashKey('prop_weed_02')
+            local weedObject = CreateObjectNoOffset(modelHash, coords.x, coords.y, coords.z - 1, true, true, true)
+            if weedObject then
+                FreezeEntityPosition(weedObject, true)
+                Entity(weedObject).state.plantId = plantId
+                Entity(weedObject).state.active = true
+                spawnedWeedPlants[plantId] = {
+                    id = plantId,
+                    coords = coords,
+                    networkId = weedObject,
+                    active = true
+                }
+                return true
+            end
+        end
+        attempts = attempts + 1
+    end
+    return false
+end
+
+local function RemoveWeedPlant(plantId)
+	if spawnedWeedPlants[plantId] then
+		local obj = spawnedWeedPlants[plantId].networkId
+		if obj and DoesEntityExist(obj) then
+			DeleteEntity(obj)
+		end
+		spawnedWeedPlants[plantId] = nil
+		return true
+	end
+	return false
+end
+
+CreateThread(function()
+    Wait(5000)
+    for plantId, plantData in pairs(spawnedWeedPlants) do
+        if plantData.networkId and DoesEntityExist(plantData.networkId) then
+            DeleteEntity(plantData.networkId)
+        end
+    end
+    spawnedWeedPlants = {}
+    local spawnedCount = 0
+    for i = 1, maxWeedPlants do
+        if SpawnWeedPlant() then
+            spawnedCount = spawnedCount + 1
+        end
+        Wait(100)
+    end
+    print(('esx_drugs: Spawned %d/%d initial weed plants'):format(spawnedCount, maxWeedPlants))
+end)
+
+RegisterServerEvent('esx_drugs:pickupWeedPlant')
+AddEventHandler('esx_drugs:pickupWeedPlant', function(plantId, qty)
+	local src = source
+	local xPlayer = ESX.Player(src)
+	if spawnedWeedPlants[plantId] and spawnedWeedPlants[plantId].active then
+		if xPlayer.canCarryItem('cannabis', qty) then
+			spawnedWeedPlants[plantId].active = false
+			if spawnedWeedPlants[plantId].networkId and DoesEntityExist(spawnedWeedPlants[plantId].networkId) then
+				Entity(spawnedWeedPlants[plantId].networkId).state.active = false
+			end
+			xPlayer.addInventoryItem('cannabis', qty)
+			xPlayer.showNotification(TranslateCap('weed_pickedup'))
+			RemoveWeedPlant(plantId)
+			SetTimeout(10000, function()
+				SpawnWeedPlant()
+			end)
+		else
+			xPlayer.showNotification(TranslateCap('weed_inventoryfull'))
+		end
+	end
+end)
+
 AddEventHandler('esx:playerDropped', function(playerId, reason)
 	CancelProcessing(playerId)
 end)
@@ -175,4 +250,36 @@ end)
 RegisterServerEvent('esx:onPlayerDeath')
 AddEventHandler('esx:onPlayerDeath', function(data)
 	CancelProcessing(source)
+end)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+        for plantId, plantData in pairs(spawnedWeedPlants) do
+            if plantData.networkId and DoesEntityExist(plantData.networkId) then
+                DeleteEntity(plantData.networkId)
+            end
+        end
+        spawnedWeedPlants = {}
+    end
+end)
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+        CreateThread(function()
+            Wait(2000)
+            for plantId, plantData in pairs(spawnedWeedPlants) do
+                if plantData.networkId and DoesEntityExist(plantData.networkId) then
+                    DeleteEntity(plantData.networkId)
+                end
+            end
+            spawnedWeedPlants = {}
+            local spawnedCount = 0
+            for i = 1, maxWeedPlants do
+                if SpawnWeedPlant() then
+                    spawnedCount = spawnedCount + 1
+                end
+                Wait(100)
+            end
+        end)
+    end
 end)

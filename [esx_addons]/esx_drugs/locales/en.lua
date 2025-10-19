@@ -9,6 +9,7 @@ Locales ['en'] = {
   ['weed_processingenough'] = 'you must have 3x Cannabis in order to process.',
   ['weed_processed'] = 'you\'ve processed 3x Cannabis to 1x Marijuana',
   ['weed_processingtoofar'] = 'the processing has been ~r~canceled due to you abandoning the area.',
+  ['weed_pickedup'] = 'you\'ve picked up Cannabis',
 
   -- drug dealer
   ['dealer_prompt'] = 'press [E] to talk with the ~r~Drug Dealer.',
