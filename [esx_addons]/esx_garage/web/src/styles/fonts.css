@@ -1,0 +1,37 @@
+/* Roboto Font Face Definitions - ESX Standard */
+
+/* Roboto Light - 300 */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../assets/fonts/Roboto-Light.ttf') format('truetype');
+}
+
+/* Roboto Regular - 400 */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/Roboto-Regular.ttf') format('truetype');
+}
+
+/* Roboto Medium - 500 */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/Roboto-Medium.ttf') format('truetype');
+}
+
+/* Roboto Bold - 700 */
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/Roboto-Bold.ttf') format('truetype');
+}

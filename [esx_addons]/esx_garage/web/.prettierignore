@@ -1,0 +1,15 @@
+# Dependencies
+node_modules
+package-lock.json
+
+# Production
+build
+dist
+
+# Cache
+.cache
+*.tsbuildinfo
+
+# Generated
+*.min.js
+*.min.css
