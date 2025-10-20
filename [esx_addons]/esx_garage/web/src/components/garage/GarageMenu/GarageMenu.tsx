@@ -7,6 +7,7 @@ import { VehicleGrid } from '@/components/vehicle/VehicleGrid';
 import { VehicleDetails } from '@/components/vehicle/VehicleDetails';
 import { useGarageStore } from '@/store/garage.store';
 import { useNuiEvent } from '@/hooks/useNuiEvent';
+import { useScale } from '@/providers/ScaleProvider';
 import { NuiEventType } from '@/types/nui.types';
 import type { Vehicle } from '@/types/vehicle.types';
 import type { Garage } from '@/types/garage.types';
@@ -77,6 +78,7 @@ interface OpenGarageData {
 }
 
 export const GarageMenu: React.FC = () => {
+  const { scale } = useScale();
   const {
     isOpen,
     isLoading,
@@ -108,8 +110,8 @@ export const GarageMenu: React.FC = () => {
         {isOpen && (
           <Container>
             <GridContainer
-              initial={{ x: 180 }}
-              animate={{ x: selectedVehicle ? 0 : 180 }}
+              initial={{ x: 180 * scale }}
+              animate={{ x: selectedVehicle ? 0 : 180 * scale }}
               transition={{
                 duration: 0.6,
                 ease: [0.34, 1.3, 0.64, 1]

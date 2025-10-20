@@ -44,10 +44,13 @@ export const ScaleProvider: React.FC<ScaleProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // Update CSS variables
     const root = document.documentElement;
-    root.style.setProperty('--ui-scale', scaleData.scale.toString());
-    root.style.setProperty('--ui-font-scale', scaleData.fontScale.toString());
+
+    // Best Practice: Set HTML font-size to scale ALL rem values automatically
+    // Base size is 16px, multiply by scale factor
+    root.style.fontSize = `${16 * scaleData.scale}px`;
+
+    // Keep CSS variables for viewport info (optional, for debugging)
     root.style.setProperty('--ui-viewport-width', `${scaleData.viewport.width}px`);
     root.style.setProperty('--ui-viewport-height', `${scaleData.viewport.height}px`);
     root.style.setProperty('--ui-scale-percent', `${scaleData.scalePercent}%`);
