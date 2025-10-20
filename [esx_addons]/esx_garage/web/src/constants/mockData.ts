@@ -1,0 +1,237 @@
+import type { Vehicle } from '@/types/vehicle.types';
+import { VehicleType } from '@/types/vehicle.types';
+import type { Garage } from '@/types/garage.types';
+import { GarageType } from '@/types/garage.types';
+
+export const mockGarage: Garage = {
+  id: 'garage_central',
+  name: 'Central Garage',
+  label: 'Los Santos Central Garage',
+  type: GarageType.PUBLIC,
+  coords: { x: 215.124, y: -810.123, z: 30.727 },
+  maxVehicles: 50
+};
+
+export const mockVehicles: Vehicle[] = [
+  {
+    id: '1',
+    plate: '05GN906',
+    model: 'sultan',
+    name: 'Sultan RS',
+    type: VehicleType.CAR,
+    stored: true,
+    garage: 'garage_central',
+    impounded: false,
+    mileage: 12523,
+    fuel: 85,
+    engine: 95,
+    body: 100,
+    isFavorite: true,
+    lastUsed: Date.now() - 86400000,
+    image: '/Car.svg'
+  },
+  {
+    id: '2',
+    plate: 'XYZ789',
+    model: 'adder',
+    name: 'Adder',
+    type: VehicleType.CAR,
+    stored: true,
+    garage: 'garage_central',
+    impounded: false,
+    mileage: 5234,
+    fuel: 60,
+    engine: 100,
+    body: 98,
+    isFavorite: false,
+    lastUsed: Date.now() - 172800000,
+    image: '/Car.svg'
+  },
+  {
+    id: '3',
+    plate: 'ABC123',
+    model: 'zentorno',
+    name: 'Zentorno',
+    type: VehicleType.CAR,
+    stored: false,
+    impounded: false,
+    mileage: 18945,
+    fuel: 45,
+    engine: 88,
+    body: 92,
+    isFavorite: true,
+    customName: 'Speed Demon',
+    lastUsed: Date.now(),
+    image: '/Car.svg'
+  },
+  {
+    id: '4',
+    plate: 'IMP001',
+    model: 'kuruma',
+    name: 'Kuruma',
+    type: VehicleType.CAR,
+    stored: true,
+    garage: 'garage_central',
+    impounded: true,
+    impoundFee: 5000,
+    mileage: 8234,
+    fuel: 20,
+    engine: 75,
+    body: 68,
+    isFavorite: false,
+    lastUsed: Date.now() - 604800000,
+    image: '/Car.svg'
+  },
+  {
+    id: '5',
+    plate: 'BIKE01',
+    model: 'bati',
+    name: 'Bati 801',
+    type: VehicleType.MOTORCYCLE,
+    stored: true,
+    garage: 'garage_central',
+    impounded: false,
+    mileage: 3421,
+    fuel: 90,
+    engine: 100,
+    body: 100,
+    isFavorite: false,
+    lastUsed: Date.now() - 259200000,
+    image: '/Car.svg'
+  },
+  {
+    id: '6',
+    plate: 'LUX001',
+    model: 'schafter',
+    name: 'Schafter V12',
+    type: VehicleType.CAR,
+    stored: true,
+    garage: 'garage_central',
+    impounded: false,
+    mileage: 15234,
+    fuel: 70,
+    engine: 92,
+    body: 95,
+    isFavorite: false,
+    customName: 'Business Class',
+    lastUsed: Date.now() - 432000000,
+    image: '/Car.svg'
+  },
+  {
+    id: '7',
+    plate: 'DRIFT1',
+    model: 'elegy',
+    name: 'Elegy RH8',
+    type: VehicleType.CAR,
+    stored: true,
+    garage: 'garage_central',
+    impounded: false,
+    mileage: 22456,
+    fuel: 55,
+    engine: 85,
+    body: 78,
+    isFavorite: true,
+    lastUsed: Date.now() - 86400000,
+    image: '/Car.svg'
+  },
+  {
+    id: '8',
+    plate: 'TRUCK1',
+    model: 'sandking',
+    name: 'Sandking XL',
+    type: VehicleType.TRUCK,
+    stored: false,
+    impounded: false,
+    mileage: 45678,
+    fuel: 80,
+    engine: 90,
+    body: 85,
+    isFavorite: false,
+    lastUsed: Date.now() - 172800000,
+    image: '/Car.svg'
+  },
+  {
+    id: '9',
+    plate: 'SPORT1',
+    model: 'comet',
+    name: 'Comet',
+    type: VehicleType.CAR,
+    stored: true,
+    garage: 'garage_central',
+    impounded: false,
+    mileage: 9876,
+    fuel: 40,
+    engine: 88,
+    body: 91,
+    isFavorite: false,
+    lastUsed: Date.now() - 518400000,
+    image: '/Car.svg'
+  },
+  {
+    id: '10',
+    plate: 'IMP002',
+    model: 'buffalo',
+    name: 'Buffalo S',
+    type: VehicleType.CAR,
+    stored: true,
+    garage: 'garage_central',
+    impounded: true,
+    impoundFee: 3500,
+    mileage: 28934,
+    fuel: 25,
+    engine: 70,
+    body: 65,
+    isFavorite: false,
+    lastUsed: Date.now() - 777600000,
+    image: '/Car.svg'
+  },
+  {
+    id: '11',
+    plate: 'SUPER1',
+    model: 't20',
+    name: 'T20',
+    type: VehicleType.CAR,
+    stored: true,
+    garage: 'garage_central',
+    impounded: false,
+    mileage: 4523,
+    fuel: 95,
+    engine: 100,
+    body: 100,
+    isFavorite: true,
+    customName: 'Lightning',
+    lastUsed: Date.now() - 43200000,
+    image: '/Car.svg'
+  },
+  {
+    id: '12',
+    plate: 'MUSCLE',
+    model: 'dominator',
+    name: 'Dominator',
+    type: VehicleType.CAR,
+    stored: false,
+    impounded: false,
+    mileage: 35678,
+    fuel: 60,
+    engine: 82,
+    body: 79,
+    isFavorite: false,
+    lastUsed: Date.now() - 345600000,
+    image: '/Car.svg'
+  }
+];
+
+// Function to send mock data in development
+export const sendMockData = () => {
+  if (process.env.NODE_ENV === 'development') {
+    setTimeout(() => {
+      window.postMessage({
+        type: 'openGarage',
+        payload: {
+          garage: mockGarage,
+          vehicles: mockVehicles
+        }
+      }, '*');
+    }, 1000);
+  }
+};
