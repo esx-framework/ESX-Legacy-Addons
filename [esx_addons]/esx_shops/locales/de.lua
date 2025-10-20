@@ -1,18 +1,15 @@
+---@diagnostic disable: undefined-global
 Locales['de'] = {
   ['shop'] = 'Shop',
-  ['shops'] = 'Shops',
-  ['press_menu'] = 'Drücke [%s] um auf den ~g~Shop~g~ zuzugreifen.',
-  ['shop_item'] = '%sEUR',
-  ['bought'] = 'Du kaufst ~b~%sx %s~s~ für ~b~%sEUR',
-  ['not_enough'] = 'Du hast ~r~nicht~s~ genügend Geld! Dir Fehlt ~b~%sEUR!',
-  ['player_cannot_hold'] = 'Du hast ~r~nicht~s~ genügend freien Platz in deinem Inventar!',
-  ['shop_confirm'] = 'Willst du %sx %s kaufen für %sEUR?',
-  ['no'] = 'Nein',
-  ['yes'] = 'Ja',
-  ['amount'] = 'Anzahl',
-  ['amount_placeholder'] = 'Anzahl die du kaufen möchtest',
-  ['confirm'] = 'Bestätigen',
-  ['purchase'] = 'Kaufen',
-  ['bread'] = 'Brot',
-  ['water'] = 'Wasser',
+  ['open_shop_help'] = 'Drücke ~INPUT_CONTEXT~, um den Shop zu öffnen',
+  ['player_not_found'] = 'Spieler nicht gefunden',
+  ['cart_empty'] = 'Warenkorb ist leer',
+  ['invalid_cart_entry'] = 'Ungültiger Warenkorbeintrag',
+  ['invalid_item_data'] = 'Ungültige Artikeldaten',
+  ['unknown_item'] = 'Unbekannter Artikel: %s',
+  ['invalid_quantity'] = 'Ungültige Menge',
+  ['not_enough_cash'] = 'Nicht genug Bargeld',
+  ['not_enough_bank'] = 'Unzureichendes Bankguthaben',
+  ['purchase_success'] = 'Kauf erfolgreich'
+
 }
