@@ -5,6 +5,16 @@ local spawnedWeedPlants = {}
 local maxWeedPlants = 10
 local weedFieldCoords = Config.CircleZones.WeedField.coords
 
+local playerPoints = {}
+
+local function GetPlayerPoints(identifier)
+	return playerPoints[identifier] or 0
+end
+
+local function AddPlayerPoints(identifier, points)
+	playerPoints[identifier] = GetPlayerPoints(identifier) + points
+end
+
 local function ValidateProcessCannabis(src)
 	local ECoords = Config.CircleZones.WeedProcessing.coords
 	local PCoords = GetEntityCoords(GetPlayerPed(src))
@@ -41,13 +51,22 @@ AddEventHandler('esx_drugs:sellDrug', function(itemName, amount)
 		return
 	end
 	price = ESX.Math.Round(price * amount)
-	if Config.GiveBlack then
-		xPlayer.addAccountMoney('black_money', price, "Drugs Sold")
+	
+	if Config.UsePointsSystem then
+		local pointsEarned = Config.PointsPerSale[itemName] or 0
+		pointsEarned = pointsEarned * amount
+		AddPlayerPoints(identifier, pointsEarned)
+		xPlayer.showNotification(TranslateCap('dealer_sold_points', amount, xItem.label, pointsEarned))
 	else
-		xPlayer.addMoney(price, "Drugs Sold")
+		if Config.GiveBlack then
+			xPlayer.addAccountMoney('black_money', price, "Drugs Sold")
+		else
+			xPlayer.addMoney(price, "Drugs Sold")
+		end
+		xPlayer.showNotification(TranslateCap('dealer_sold', amount, xItem.label, ESX.Math.GroupDigits(price)))
 	end
+	
 	xPlayer.removeInventoryItem(xItem.name, amount)
-	xPlayer.showNotification(TranslateCap('dealer_sold', amount, xItem.label, ESX.Math.GroupDigits(price)))
 end)
 
 ESX.RegisterServerCallback('esx_drugs:buyLicense', function(source, cb, licenseName)
@@ -87,47 +106,49 @@ end)
 
 RegisterServerEvent('esx_drugs:processCannabis')
 AddEventHandler('esx_drugs:processCannabis', function()
-  	if not playersProcessingCannabis[source] then
-		local source = source
-		if ValidateProcessCannabis(source) then
-			local xPlayer = ESX.Player(source)
-			local xCannabis = xPlayer.getInventoryItem('cannabis')
-			local can = true
-			outofbound = false
-			if xCannabis.count >= 3 then
-				while outofbound == false and can do
-					if playersProcessingCannabis[source] == nil then
-						playersProcessingCannabis[source] = ESX.SetTimeout(Config.Delays.WeedProcessing , function()
-							if xCannabis.count >= 3 then
-								if xPlayer.canSwapItem('cannabis', 3, 'marijuana', 1) then
-									xPlayer.removeInventoryItem('cannabis', 3)
-									xPlayer.addInventoryItem('marijuana', 1)
-									xPlayer.showNotification(TranslateCap('weed_processed'))
-								else
-									can = false
-									xPlayer.showNotification(TranslateCap('weed_processingfull'))
-									TriggerEvent('esx_drugs:cancelProcessing')
-								end
-							else						
-								can = false
-								xPlayer.showNotification(TranslateCap('weed_processingenough'))
-								TriggerEvent('esx_drugs:cancelProcessing')
-							end
-							playersProcessingCannabis[source] = nil
-						end)
-					else
-						Wait(Config.Delays.WeedProcessing)
-					end	
-				end
-			else
-				xPlayer.showNotification(TranslateCap('weed_processingenough'))
-				TriggerEvent('esx_drugs:cancelProcessing')
-			end	
-		else
-			FoundExploiter(source,'Event Trigger')
-		end
-	else
+	local source = source
+	if playersProcessingCannabis[source] then
 		print(('esx_drugs: %s attempted to exploit weed processing!'):format(GetPlayerIdentifiers(source)[1]))
+		return
+	end
+	if not ValidateProcessCannabis(source) then
+		FoundExploiter(source,'Event Trigger')
+		return
+	end
+	local xPlayer = ESX.Player(source)
+	local xCannabis = xPlayer.getInventoryItem('cannabis')
+	if xCannabis.count < 3 then
+		xPlayer.showNotification(TranslateCap('weed_processingenough'))
+		TriggerEvent('esx_drugs:cancelProcessing')
+		return
+	end
+	local can = true
+	outofbound = false
+	while outofbound == false and can do
+		if playersProcessingCannabis[source] == nil then
+			playersProcessingCannabis[source] = ESX.SetTimeout(Config.Delays.WeedProcessing , function()
+				if xCannabis.count < 3 then
+					can = false
+					xPlayer.showNotification(TranslateCap('weed_processingenough'))
+					TriggerEvent('esx_drugs:cancelProcessing')
+					playersProcessingCannabis[source] = nil
+					return
+				end
+				if not xPlayer.canSwapItem('cannabis', 3, 'marijuana', 1) then
+					can = false
+					xPlayer.showNotification(TranslateCap('weed_processingfull'))
+					TriggerEvent('esx_drugs:cancelProcessing')
+					playersProcessingCannabis[source] = nil
+					return
+				end
+				xPlayer.removeInventoryItem('cannabis', 3)
+				xPlayer.addInventoryItem('marijuana', 1)
+				xPlayer.showNotification(TranslateCap('weed_processed'))
+				playersProcessingCannabis[source] = nil
+			end)
+		else
+			Wait(Config.Delays.WeedProcessing)
+		end	
 	end
 end)
 
@@ -153,8 +174,8 @@ local function GenerateWeedCoord()
 end
 
 local function ValidateWeedCoord(plantCoord)
-	for k, v in pairs(spawnedWeedPlants) do
-		if v.active and #(plantCoord - v.coords) < 5 then
+	for plantId, plantData in pairs(spawnedWeedPlants) do
+		if plantData.active and #(plantCoord - plantData.coords) < 5 then
 			return false
 		end
 	end
@@ -205,7 +226,7 @@ end
 
 CreateThread(function()
     Wait(5000)
-    for plantId, plantData in pairs(spawnedWeedPlants) do
+    for _, plantData in pairs(spawnedWeedPlants) do
         if plantData.networkId and DoesEntityExist(plantData.networkId) then
             DeleteEntity(plantData.networkId)
         end
@@ -218,7 +239,6 @@ CreateThread(function()
         end
         Wait(100)
     end
-    print(('esx_drugs: Spawned %d/%d initial weed plants'):format(spawnedCount, maxWeedPlants))
 end)
 
 RegisterServerEvent('esx_drugs:pickupWeedPlant')
@@ -254,7 +274,7 @@ end)
 
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName == GetCurrentResourceName() then
-        for plantId, plantData in pairs(spawnedWeedPlants) do
+        for _, plantData in pairs(spawnedWeedPlants) do
             if plantData.networkId and DoesEntityExist(plantData.networkId) then
                 DeleteEntity(plantData.networkId)
             end
@@ -267,7 +287,7 @@ AddEventHandler('onResourceStart', function(resourceName)
     if resourceName == GetCurrentResourceName() then
         CreateThread(function()
             Wait(2000)
-            for plantId, plantData in pairs(spawnedWeedPlants) do
+            for _, plantData in pairs(spawnedWeedPlants) do
                 if plantData.networkId and DoesEntityExist(plantData.networkId) then
                     DeleteEntity(plantData.networkId)
                 end

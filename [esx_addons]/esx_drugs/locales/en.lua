@@ -10,6 +10,9 @@ Locales ['en'] = {
   ['weed_processed'] = 'you\'ve processed 3x Cannabis to 1x Marijuana',
   ['weed_processingtoofar'] = 'the processing has been ~r~canceled due to you abandoning the area.',
   ['weed_pickedup'] = 'you\'ve picked up Cannabis',
+  ['weed_count_failed'] = 'failed to get cannabis count. Please try again.',
+  ['license_check_failed'] = 'failed to check processing license. Please try again.',
+  ['pickup_check_failed'] = 'failed to check pickup availability. Please try again.',
 
   -- drug dealer
   ['dealer_prompt'] = 'press [E] to talk with the ~r~Drug Dealer.',
