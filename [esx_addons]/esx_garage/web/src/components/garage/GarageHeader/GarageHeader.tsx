@@ -54,29 +54,44 @@ const ControlsContainer = styled.div`
   flex-shrink: 0;
 `;
 
-const CounterButton = styled.div<{ $variant?: 'primary' | 'danger' }>`
-  background: ${props =>
-    props.$variant === 'danger'
+const CounterButton = styled.div<{ $variant?: 'primary' | 'danger'; $active?: boolean }>`
+  background: ${props => {
+    if (props.$active) {
+      return props.$variant === 'danger'
+        ? props.theme.colors.secondary
+        : props.theme.colors.primary;
+    }
+    return props.$variant === 'danger'
       ? props.theme.colors.button.dangerBg
-      : props.theme.colors.button.secondary};
+      : props.theme.colors.button.secondary;
+  }};
   border-radius: ${props => props.theme.sizes.borderRadius.lg};
   padding: 0 0.625rem 0 0.1875rem;
   height: 1.875rem;
   display: flex;
   align-items: center;
   gap: 0.3125rem;
-  box-shadow: ${props => props.theme.colors.shadows.sm};
+  box-shadow: ${props => {
+    if (props.$active) {
+      return props.$variant === 'danger'
+        ? '0 6px 18px rgba(255, 128, 128, 0.25)'
+        : props.theme.colors.shadows.brand;
+    }
+    return props.theme.colors.shadows.sm;
+  }};
   cursor: pointer;
-  transition: ${props => props.theme.transitions.fast};
+  transition: all ${props => props.theme.transitions.fast};
 
   &:hover {
     opacity: ${props => props.theme.effects.opacity.hover};
   }
 `;
 
-const CounterIcon = styled.div<{ $variant?: 'primary' | 'danger' }>`
+const CounterIcon = styled.div<{ $variant?: 'primary' | 'danger'; $active?: boolean }>`
   background: ${props =>
-    props.$variant === 'danger'
+    props.$active
+      ? props.theme.colors.backgroundSecondary
+      : props.$variant === 'danger'
       ? props.theme.colors.secondary
       : props.theme.colors.primary};
   border-radius: 6.25rem;
@@ -89,13 +104,20 @@ const CounterIcon = styled.div<{ $variant?: 'primary' | 'danger' }>`
   svg {
     width: 1rem;
     height: 1rem;
-    color: ${props => props.theme.colors.background};
+    color: ${props =>
+      props.$active
+        ? props.$variant === 'danger'
+          ? props.theme.colors.secondary
+          : props.theme.colors.primary
+        : props.theme.colors.background};
   }
 `;
 
-const CounterText = styled.span<{ $variant?: 'primary' | 'danger' }>`
+const CounterText = styled.span<{ $variant?: 'primary' | 'danger'; $active?: boolean }>`
   color: ${props =>
-    props.$variant === 'danger'
+    props.$active
+      ? props.theme.colors.background
+      : props.$variant === 'danger'
       ? props.theme.colors.secondary
       : props.theme.colors.primary};
   font-size: 0.875rem;
@@ -160,7 +182,7 @@ const CloseButton = styled.button`
 // Spacer removed - use margin-left: auto instead
 
 export const GarageHeader: React.FC = () => {
-  const { selectedGarage, stats, setFilter } = useGarageStore();
+  const { selectedGarage, stats, filter, setFilter } = useGarageStore();
   const { close } = useNui();
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState('');
@@ -175,11 +197,19 @@ export const GarageHeader: React.FC = () => {
   };
 
   const handleStoredFilter = () => {
-    setFilter({ stored: true, impounded: false });
+    if (filter.stored === true) {
+      setFilter({ stored: 'all', impounded: 'all' });
+    } else {
+      setFilter({ stored: true, impounded: false });
+    }
   };
 
   const handleImpoundedFilter = () => {
-    setFilter({ impounded: true });
+    if (filter.impounded === true) {
+      setFilter({ stored: 'all', impounded: 'all' });
+    } else {
+      setFilter({ impounded: true, stored: false });
+    }
   };
 
   return (
@@ -192,18 +222,18 @@ export const GarageHeader: React.FC = () => {
       </GarageName>
 
       <ControlsContainer>
-        <CounterButton onClick={handleStoredFilter}>
-          <CounterIcon>
+        <CounterButton onClick={handleStoredFilter} $active={filter.stored === true}>
+          <CounterIcon $active={filter.stored === true}>
             <IoCarSport />
           </CounterIcon>
-          <CounterText>{stats.stored}</CounterText>
+          <CounterText $active={filter.stored === true}>{stats.stored}</CounterText>
         </CounterButton>
 
-        <CounterButton $variant="danger" onClick={handleImpoundedFilter}>
-          <CounterIcon $variant="danger">
+        <CounterButton $variant="danger" onClick={handleImpoundedFilter} $active={filter.impounded === true}>
+          <CounterIcon $variant="danger" $active={filter.impounded === true}>
             <GiHook />
           </CounterIcon>
-          <CounterText $variant="danger">{stats.impounded}</CounterText>
+          <CounterText $variant="danger" $active={filter.impounded === true}>{stats.impounded}</CounterText>
         </CounterButton>
 
         <SearchBar>
