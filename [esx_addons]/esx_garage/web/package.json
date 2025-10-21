@@ -6,12 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
-    "clean": "rm -rf build node_modules/.vite",
+    "clean": "rm -rf dist node_modules/.vite",
     "test": "vitest",
     "test:ui": "vitest --ui"
   },
