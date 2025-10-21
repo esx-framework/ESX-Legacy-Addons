@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { MdStar, MdStarBorder, MdEdit } from 'react-icons/md';
+import { MdStarBorder, MdEdit } from 'react-icons/md';
 import type { Vehicle } from '@/types/vehicle.types';
 import { useGarageStore } from '@/store/garage.store';
 import { getVehicleImagePath } from '@/utils/vehicle';
@@ -116,7 +116,7 @@ const ActionButton = styled.button<{ $active?: boolean }>`
     height: 1.125rem;
     color: ${props =>
       props.$active
-        ? props.theme.colors.background
+        ? props.theme.colors.text.primary
         : props.theme.colors.text.secondary};
   }
 
@@ -257,7 +257,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onClick }) =>
             onClick={handleFavoriteClick}
             title="Toggle Favorite"
           >
-            {vehicle.isFavorite ? <MdStar /> : <MdStarBorder />}
+            <MdStarBorder />
           </ActionButton>
           <ActionButton onClick={handleRenameClick} title="Rename Vehicle">
             <MdEdit />

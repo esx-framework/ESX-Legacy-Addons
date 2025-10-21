@@ -200,7 +200,7 @@ export const GarageHeader: React.FC = () => {
     if (filter.stored === true) {
       setFilter({ stored: 'all', impounded: 'all' });
     } else {
-      setFilter({ stored: true, impounded: false });
+      setFilter({ stored: true, impounded: 'all' });
     }
   };
 
@@ -208,7 +208,7 @@ export const GarageHeader: React.FC = () => {
     if (filter.impounded === true) {
       setFilter({ stored: 'all', impounded: 'all' });
     } else {
-      setFilter({ impounded: true, stored: false });
+      setFilter({ impounded: true, stored: 'all' });
     }
   };
 
