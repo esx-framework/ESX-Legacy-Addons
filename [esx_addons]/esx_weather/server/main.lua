@@ -27,8 +27,9 @@ end
 AddEventHandler("esx:playerLoaded", onPlayerLoaded)
 
 Citizen.SetTimeout(1000, function()
-    for i, src in ipairs(GetPlayers()) do
-        onPlayerLoaded(tonumber(src) --[[@as integer]])
+    local Players = GetPlayers()
+    for i = 1, #Players do
+        onPlayerLoaded(tonumber(Players[i]) --[[@as integer]])
     end
 end)
 
