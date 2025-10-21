@@ -194,7 +194,7 @@ BANK = {
         if xPlayer.removeAccountMoney('bank', amount) then
             if not xPlayer.addAccountMoney('money', amount) then
                 xPlayer.addAccountMoney('bank', amount)
-                TriggerClientEvent("esx:showNotification", xPlayer.source, "Error en la transacción, intenta de nuevo", "error")
+                TriggerClientEvent("esx:showNotification", xPlayer.source, TranslateCap("error_withdraw_money"), "error")
                 return false
             end
             return true
@@ -206,7 +206,7 @@ BANK = {
         if xPlayer.removeAccountMoney('money', amount) then
             if not xPlayer.addAccountMoney('bank', amount) then
                 xPlayer.addAccountMoney('money', amount)
-                TriggerClientEvent("esx:showNotification", xPlayer.source, "Error en la transacción, intenta de nuevo", "error")
+                TriggerClientEvent("esx:showNotification", xPlayer.source, TranslateCap("error_deposit_money"), "error")
                 return false
             end
             return true
@@ -226,7 +226,7 @@ BANK = {
 
         if not xTarget.addAccountMoney('bank', amount) then
             xPlayer.addAccountMoney('bank', amount)
-            TriggerClientEvent("esx:showNotification", xPlayer.src, "Error en la transferencia, intenta de nuevo", "error")
+            TriggerClientEvent("esx:showNotification", xPlayer.src, TranslateCap("error_transfer_money"), "error")
             return false
         end
 
