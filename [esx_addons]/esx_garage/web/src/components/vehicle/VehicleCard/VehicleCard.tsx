@@ -30,7 +30,7 @@ const VehicleImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: center bottom;
+  object-position: center 120%;
   opacity: 0.8;
   pointer-events: none;
   padding: 1.25rem;
