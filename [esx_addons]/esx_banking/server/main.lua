@@ -139,7 +139,7 @@ function logTransaction(targetSource,label, key,amount)
         print("ERROR: Do you need use these: WITHDRAW,DEPOSIT,TRANSFER_RECEIVE")
         return
     end
-    
+
     if type(key) ~= "string" or key == '' then
         print("ERROR: Do you need use these: WITHDRAW,DEPOSIT,TRANSFER_RECEIVE and can only be string type!")
         return
@@ -158,9 +158,9 @@ function logTransaction(targetSource,label, key,amount)
 
     if xPlayer ~= nil then
         local bankCurrentMoney = xPlayer.getAccount('bank').money
-        BANK.LogTransaction(targetSource, label, string.upper(key), amount, bankCurrentMoney)  
+        BANK.LogTransaction(targetSource, label, string.upper(key), amount, bankCurrentMoney)
     else
-        print("ERROR: xPlayer is nil!") 
+        print("ERROR: xPlayer is nil!")
     end
 end
 exports("logTransaction", logTransaction)
@@ -191,25 +191,48 @@ BANK = {
         end
     end,
     Withdraw = function(amount, xPlayer)
-        xPlayer.addAccountMoney('money', amount)
-        xPlayer.removeAccountMoney('bank', amount)
+        if xPlayer.removeAccountMoney('bank', amount) then
+            if not xPlayer.addAccountMoney('money', amount) then
+                xPlayer.addAccountMoney('bank', amount)
+                TriggerClientEvent("esx:showNotification", xPlayer.source, "Error en la transacción, intenta de nuevo", "error")
+                return false
+            end
+            return true
+        end
+        return false
     end,
+
     Deposit = function(amount, xPlayer)
-        xPlayer.removeAccountMoney('money', amount)
-        xPlayer.addAccountMoney('bank', amount)
+        if xPlayer.removeAccountMoney('money', amount) then
+            if not xPlayer.addAccountMoney('bank', amount) then
+                xPlayer.addAccountMoney('money', amount)
+                TriggerClientEvent("esx:showNotification", xPlayer.source, "Error en la transacción, intenta de nuevo", "error")
+                return false
+            end
+            return true
+        end
+        return false
     end,
+
     Transfer = function(xTarget, xPlayer, amount, key)
         if xTarget == nil or xPlayer.src == xTarget.src then
             TriggerClientEvent("esx:showNotification", source, TranslateCap("cant_do_it"), "error")
             return false
         end
 
-        xPlayer.removeAccountMoney('bank', amount)
-        xTarget.addAccountMoney('bank', amount)
+        if not xPlayer.removeAccountMoney('bank', amount) then
+            return false
+        end
+
+        if not xTarget.addAccountMoney('bank', amount) then
+            xPlayer.addAccountMoney('bank', amount)
+            TriggerClientEvent("esx:showNotification", xPlayer.src, "Error en la transferencia, intenta de nuevo", "error")
+            return false
+        end
+
         local bankMoney = xTarget.getAccount('bank').money
         BANK.LogTransaction(xTarget.src, "TRANSFER_RECEIVE", amount, bankMoney)
-        TriggerClientEvent("esx:showNotification", xTarget.src, TranslateCap('receive_transfer', amount, xPlayer.src),
-            "success")
+        TriggerClientEvent("esx:showNotification", xTarget.src, TranslateCap('receive_transfer', amount, xPlayer.src), "success")
 
         return true
     end,
@@ -227,8 +250,8 @@ BANK = {
 
         local xPlayer = ESX.Player(playerId)
         local identifier = xPlayer.getIdentifier()
-    
+
         MySQL.insert('INSERT INTO banking (identifier, label, type, amount, time, balance) VALUES (?, ?, ?, ?, ?, ?)',
             {identifier,label,logType,amount, os.time() * 1000, bankMoney})
-    end   
+    end
 }
