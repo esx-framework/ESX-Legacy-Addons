@@ -58,5 +58,5 @@ RegisterCommand("weathersync", function()
 
     if (not WeatherByZone or not currentWeather) then return end
 
-    Modules.NUI.show(currentWeather, WeatherByZone)
+    Modules.NUI.show(getPlayerCurrentZone(), currentWeather, WeatherByZone)
 end)

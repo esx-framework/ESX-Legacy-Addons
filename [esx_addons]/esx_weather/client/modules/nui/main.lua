@@ -2,12 +2,14 @@ Modules = Modules or {}
 Modules.NUI = Modules.NUI or {}
 Modules.NUI.isOpen = false
 
+---@param currentZone string
 ---@param currentWeather WeatherType
 ---@param WeatherByZone table<string, WeatherType>
-function Modules.NUI.show(currentWeather, WeatherByZone)
+function Modules.NUI.show(currentZone, currentWeather, WeatherByZone)
     SendNUIMessage({
         action = "show",
         Data = {
+            currentZone = currentZone,
             currentWeather = currentWeather,
             WeatherByZone = WeatherByZone,
         }
