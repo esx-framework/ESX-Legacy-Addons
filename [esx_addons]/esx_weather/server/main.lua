@@ -3,6 +3,8 @@ for zoneName, _ in pairs(WeatherByZone) do
     WeatherByZone[zoneName] = Config.ValidWeatherTypes[math.random(1, #Config.ValidWeatherTypes)]
 end
 
+---@param zoneName string
+---@param weatherType WeatherType
 RegisterNetEvent("esx_weather:server:setZoneWeather", function(zoneName, weatherType)
     local src = source --[[@as integer]]
     local xPlayer = ESX.Player(src)
