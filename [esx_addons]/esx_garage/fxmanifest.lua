@@ -13,7 +13,8 @@ lua54 'yes'
 ui_page 'web/dist/index.html'
 files {
     'web/dist/index.html',
-    'web/dist/**/*'
+    'web/dist/**/*',
+    'vehicleImages/**/*'
 }
 
 shared_script '@es_extended/imports.lua'
