@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { MdStar, MdStarBorder, MdEdit } from 'react-icons/md';
 import type { Vehicle } from '@/types/vehicle.types';
 import { useGarageStore } from '@/store/garage.store';
+import { getVehicleImagePath } from '@/utils/vehicle';
 
 const CardContainer = styled(motion.div)`
   background: ${props => props.theme.colors.background};
@@ -29,6 +30,7 @@ const VehicleImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center bottom;
   opacity: 0.8;
   pointer-events: none;
   padding: 1.25rem;
@@ -215,10 +217,10 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onClick }) =>
       transition={{ duration: 0.3 }}
     >
       <VehicleImage
-        src={vehicle.image || '/Car.svg'}
+        src={vehicle.image || getVehicleImagePath(vehicle.model)}
         alt={vehicle.name}
         onError={(e) => {
-          e.currentTarget.src = '/Car.svg';
+          e.currentTarget.src = './vehicleImages/fallback.webp';
         }}
       />
       <VehicleOverlay />
