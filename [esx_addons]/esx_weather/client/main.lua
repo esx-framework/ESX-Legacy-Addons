@@ -1,5 +1,6 @@
 local WeatherByZone = false ---@type table<string, WeatherType> | false
 local currentWeather = false ---@type WeatherType | false
+local isWeatherSyncEnabled = true ---@type boolean
 
 ---@param _WeatherByZone table<string, WeatherType>
 RegisterNetEvent("esx_weather:client:setWeatherZones", function(_WeatherByZone)
@@ -35,18 +36,37 @@ local function getPlayerCurrentZone()
     return closestZone
 end
 
+---@param toggle boolean
+local function toggleWeatherSync(toggle)
+    if (type(toggle) ~= "boolean") then
+        error("toggleWeatherSync: expected boolean, got " .. type(toggle))
+    end
+
+    isWeatherSyncEnabled = toggle
+end
+exports("ToggleWeatherSync", toggleWeatherSync)
+
 Citizen.CreateThread(function()
     while (not ESX.PlayerLoaded or not WeatherByZone) do Citizen.Wait(0) end
 
     while (true) do
-        local currentZone = getPlayerCurrentZone()
-        local zoneWeather = WeatherByZone[currentZone]
-        if (zoneWeather ~= currentWeather) then
-            Shared.Modules.Debug.print(("Entered zone %s. Changing weather: %s -> %s"):format(currentZone, currentWeather or "NONE", zoneWeather))
-            currentWeather = zoneWeather
-            SetWeatherTypeOvertimePersist(zoneWeather, Config.weatherTransitionTimeSeconds * 1.0)
+        local currentZone, zoneWeather
+
+        if (not isWeatherSyncEnabled) then
+            goto continue
         end
 
+        currentZone = getPlayerCurrentZone()
+        zoneWeather = WeatherByZone[currentZone]
+        if (zoneWeather == currentWeather) then
+            goto continue
+        end
+
+        Shared.Modules.Debug.print(("Entered zone %s. Changing weather: %s -> %s"):format(currentZone, currentWeather or "NONE", zoneWeather))
+        currentWeather = zoneWeather
+        SetWeatherTypeOvertimePersist(zoneWeather, Config.weatherTransitionTimeSeconds * 1.0)
+
+        ::continue::
         Citizen.Wait(1000)
     end
 end)
