@@ -11,7 +11,6 @@ function Modules.NUI.show(currentZone, currentWeather, WeatherByZone)
         Data = {
             currentZone = currentZone,
             currentWeather = currentWeather,
-            WeatherTypes = Shared.Enum.WeatherType,
             WeatherByZone = WeatherByZone,
         }
     })
@@ -44,4 +43,10 @@ RegisterNUICallback("close", function(_, cb)
     SetNuiFocus(false, false)
     Modules.NUI.isOpen = false
     cb(true)
+end)
+
+---@param _ nil
+---@param cb fun(Data: {WeatherTypes: table<WeatherType, string>})
+RegisterNUICallback("ready", function(_, cb)
+    cb({ WeatherTypes = Shared.Enum.WeatherType })
 end)
