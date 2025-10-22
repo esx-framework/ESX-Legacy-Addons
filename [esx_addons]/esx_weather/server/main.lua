@@ -19,7 +19,7 @@ RegisterNetEvent("esx_weather:server:setZoneWeather", function(zoneName, weather
     end
 
     WeatherByZone[zoneName] = weatherType
-    TriggerClientEvent("esx_weather:client:setZoneWeather", -1, zoneName, weatherType)
+    TriggerClientEvent("esx_weather:client:weather:setZone", -1, zoneName, weatherType)
 end)
 
 ---@param src integer

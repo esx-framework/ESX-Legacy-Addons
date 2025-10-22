@@ -7,7 +7,7 @@ end)
 
 ---@param zoneName string
 ---@param weatherType WeatherType
-RegisterNetEvent("esx_weather:client:setZoneWeather", function(zoneName, weatherType)
+RegisterNetEvent("esx_weather:client:weather:setZone", function(zoneName, weatherType)
     if (not Modules.Weather.ByZone) then return end
 
     local oldWeatherType = Modules.Weather.ByZone[zoneName]
