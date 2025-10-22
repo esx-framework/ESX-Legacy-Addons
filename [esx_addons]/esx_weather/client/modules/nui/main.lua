@@ -11,6 +11,7 @@ function Modules.NUI.show(currentZone, currentWeather, WeatherByZone)
         Data = {
             currentZone = currentZone,
             currentWeather = currentWeather,
+            WeatherTypes = Shared.Enum.WeatherType,
             WeatherByZone = WeatherByZone,
         }
     })
