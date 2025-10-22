@@ -46,31 +46,29 @@ function OpenDrugShop()
 	end
 
 	ESX.OpenContext("right", elements, function(menu, element)
-		do
-			local elements = {
-				{ unselectable = true, icon = "fas fa-shopping-basket", title = element.title },
-				{
-					icon = "fas fa-shopping-basket",
-					title = "Amount",
-					input = true,
-					inputType = "number",
-					inputPlaceholder = "Amount you want to sell",
-					inputValue = 0,
-					inputMin = Config.SellMenu.Min,
-					inputMax = Config.SellMenu.Max
-				},
-				{ icon = "fas fa-check-double", title = "Confirm", val = "confirm" }
-			}
+		local sellElements = {
+			{ unselectable = true, icon = "fas fa-shopping-basket", title = element.title },
+			{
+				icon = "fas fa-shopping-basket",
+				title = "Amount",
+				input = true,
+				inputType = "number",
+				inputPlaceholder = "Amount you want to sell",
+				inputValue = 0,
+				inputMin = Config.SellMenu.Min,
+				inputMax = Config.SellMenu.Max
+			},
+			{ icon = "fas fa-check-double", title = "Confirm", val = "confirm" }
+		}
 
-			ESX.OpenContext("right", elements, function(menu2, element2)
-				ESX.CloseContext()
-				local count = tonumber(menu2.eles[2] and menu2.eles[2].inputValue)
-				if not count or count < 1 then return end
-				TriggerServerEvent('esx_drugs:sellDrug', tostring(element.name), count)
-			end, function(menu2)
-				menuOpen = false
-			end)
-		end
+		ESX.OpenContext("right", sellElements, function(sellMenu, sellElement)
+			ESX.CloseContext()
+			local count = tonumber(sellMenu.eles[2] and sellMenu.eles[2].inputValue)
+			if not count or count < 1 then return end
+			TriggerServerEvent('esx_drugs:sellDrug', tostring(element.name), count)
+		end, function(sellMenu)
+			menuOpen = false
+		end)
 	end, function(menu)
 		menuOpen = false
 	end)
@@ -122,7 +120,7 @@ function CreateBlipCircle(coords, text, radius, color, sprite)
 end
 
 CreateThread(function()
-	for k,zone in pairs(Config.CircleZones) do
+	for _, zone in pairs(Config.CircleZones) do
 		CreateBlipCircle(zone.coords, zone.name, zone.radius, zone.color, zone.sprite)
 	end
 end)
