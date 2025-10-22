@@ -24,7 +24,7 @@ end)
 
 ---@param src integer
 local function onPlayerLoaded(src)
-    TriggerClientEvent("esx_weather:client:setWeatherZones", src, WeatherByZone)
+    TriggerClientEvent("esx_weather:client:weather:setZones", src, WeatherByZone)
 end
 AddEventHandler("esx:playerLoaded", onPlayerLoaded)
 
