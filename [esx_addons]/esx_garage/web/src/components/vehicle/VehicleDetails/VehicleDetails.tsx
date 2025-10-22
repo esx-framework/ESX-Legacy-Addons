@@ -6,6 +6,7 @@ import type { Vehicle } from '@/types/vehicle.types';
 import { useGarageStore } from '@/store/garage.store';
 import { fetchNui } from '@/utils/nui';
 import { NuiCallbackType } from '@/types/nui.types';
+import { getVehicleImagePath } from '@/utils/vehicle';
 
 const DetailsContainer = styled(motion.div)`
   background: ${props => props.theme.colors.background};
@@ -108,7 +109,8 @@ const BackButton = styled.button`
 const VehicleImage = styled.img`
   align-self: stretch;
   height: 10.375rem;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 1rem;
 `;
 
 const PlateContainer = styled.div`
@@ -315,8 +317,11 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ vehicle, onClose
           </BackButton>
         </HeaderRow>
         <VehicleImage
-          src={vehicle.image || '/Car.svg'}
+          src={vehicle.image || getVehicleImagePath(vehicle.model)}
           alt={vehicle.name}
+          onError={(e) => {
+            e.currentTarget.src = './vehicleImages/fallback.webp';
+          }}
         />
       </VehicleHeader>
 

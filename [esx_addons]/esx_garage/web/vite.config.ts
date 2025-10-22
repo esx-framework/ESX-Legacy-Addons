@@ -20,10 +20,27 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: 'build',
+    outDir: 'dist',
     assetsDir: 'static',
     sourcemap: false,
-    minify: 'esbuild'
+    minify: 'esbuild',
+
+    // Target CEF 103 (Chrome 103) for FiveM
+    target: 'chrome103',
+
+    // Remove console logs and debugger statements in production
+    esbuild: {
+      drop: ['console', 'debugger']
+    },
+
+    // Split vendor chunks for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['react', 'react-dom', 'styled-components', 'framer-motion']
+        }
+      }
+    }
   },
   server: {
     port: 3000,

@@ -28,7 +28,6 @@ export const mockVehicles: Vehicle[] = [
     body: 100,
     isFavorite: true,
     lastUsed: Date.now() - 86400000,
-    image: '/Car.svg'
   },
   {
     id: '2',
@@ -45,7 +44,6 @@ export const mockVehicles: Vehicle[] = [
     body: 98,
     isFavorite: false,
     lastUsed: Date.now() - 172800000,
-    image: '/Car.svg'
   },
   {
     id: '3',
@@ -62,7 +60,6 @@ export const mockVehicles: Vehicle[] = [
     isFavorite: true,
     customName: 'Speed Demon',
     lastUsed: Date.now(),
-    image: '/Car.svg'
   },
   {
     id: '4',
@@ -80,7 +77,6 @@ export const mockVehicles: Vehicle[] = [
     body: 68,
     isFavorite: false,
     lastUsed: Date.now() - 604800000,
-    image: '/Car.svg'
   },
   {
     id: '5',
@@ -97,7 +93,6 @@ export const mockVehicles: Vehicle[] = [
     body: 100,
     isFavorite: false,
     lastUsed: Date.now() - 259200000,
-    image: '/Car.svg'
   },
   {
     id: '6',
@@ -115,7 +110,6 @@ export const mockVehicles: Vehicle[] = [
     isFavorite: false,
     customName: 'Business Class',
     lastUsed: Date.now() - 432000000,
-    image: '/Car.svg'
   },
   {
     id: '7',
@@ -132,7 +126,6 @@ export const mockVehicles: Vehicle[] = [
     body: 78,
     isFavorite: true,
     lastUsed: Date.now() - 86400000,
-    image: '/Car.svg'
   },
   {
     id: '8',
@@ -148,7 +141,6 @@ export const mockVehicles: Vehicle[] = [
     body: 85,
     isFavorite: false,
     lastUsed: Date.now() - 172800000,
-    image: '/Car.svg'
   },
   {
     id: '9',
@@ -165,7 +157,6 @@ export const mockVehicles: Vehicle[] = [
     body: 91,
     isFavorite: false,
     lastUsed: Date.now() - 518400000,
-    image: '/Car.svg'
   },
   {
     id: '10',
@@ -183,7 +174,6 @@ export const mockVehicles: Vehicle[] = [
     body: 65,
     isFavorite: false,
     lastUsed: Date.now() - 777600000,
-    image: '/Car.svg'
   },
   {
     id: '11',
@@ -201,7 +191,6 @@ export const mockVehicles: Vehicle[] = [
     isFavorite: true,
     customName: 'Lightning',
     lastUsed: Date.now() - 43200000,
-    image: '/Car.svg'
   },
   {
     id: '12',
@@ -217,7 +206,6 @@ export const mockVehicles: Vehicle[] = [
     body: 79,
     isFavorite: false,
     lastUsed: Date.now() - 345600000,
-    image: '/Car.svg'
   }
 ];
 

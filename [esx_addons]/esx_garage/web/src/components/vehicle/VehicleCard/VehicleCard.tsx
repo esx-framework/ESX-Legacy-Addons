@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { MdStar, MdStarBorder, MdEdit } from 'react-icons/md';
+import { MdStarBorder, MdEdit } from 'react-icons/md';
 import type { Vehicle } from '@/types/vehicle.types';
 import { useGarageStore } from '@/store/garage.store';
+import { getVehicleImagePath } from '@/utils/vehicle';
 
 const CardContainer = styled(motion.div)`
   background: ${props => props.theme.colors.background};
@@ -29,7 +30,9 @@ const VehicleImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: contain;
-  opacity: 0.8;
+  object-position: center 120%;
+  opacity: 1;
+  filter: brightness(1.15) saturate(1.1);
   pointer-events: none;
   padding: 1.25rem;
   z-index: 0;
@@ -113,7 +116,7 @@ const ActionButton = styled.button<{ $active?: boolean }>`
     height: 1.125rem;
     color: ${props =>
       props.$active
-        ? props.theme.colors.background
+        ? props.theme.colors.text.primary
         : props.theme.colors.text.secondary};
   }
 
@@ -215,10 +218,10 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onClick }) =>
       transition={{ duration: 0.3 }}
     >
       <VehicleImage
-        src={vehicle.image || '/Car.svg'}
+        src={vehicle.image || getVehicleImagePath(vehicle.model)}
         alt={vehicle.name}
         onError={(e) => {
-          e.currentTarget.src = '/Car.svg';
+          e.currentTarget.src = './vehicleImages/fallback.webp';
         }}
       />
       <VehicleOverlay />
@@ -254,7 +257,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onClick }) =>
             onClick={handleFavoriteClick}
             title="Toggle Favorite"
           >
-            {vehicle.isFavorite ? <MdStar /> : <MdStarBorder />}
+            <MdStarBorder />
           </ActionButton>
           <ActionButton onClick={handleRenameClick} title="Rename Vehicle">
             <MdEdit />
