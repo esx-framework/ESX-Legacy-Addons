@@ -30,7 +30,9 @@ function OpenDrugShop()
 	}
 	menuOpen = true
 
-	for _, v in ipairs(ESX.GetPlayerData().inventory) do
+	local inventory = ESX.GetPlayerData().inventory
+	for i = 1, #inventory do
+		local v = inventory[i]
 		local price = Config.DrugDealerItems[v.name]
 		if price and v.count > 0 then
 			elements[#elements+1] = {

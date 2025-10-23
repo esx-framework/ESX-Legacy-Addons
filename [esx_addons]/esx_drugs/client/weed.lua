@@ -40,55 +40,64 @@ do
             local coords = GetEntityCoords(playerPed)
             local modelHash = GetHashKey('prop_weed_02')
             local nearbyObject = GetClosestObjectOfType(coords.x, coords.y, coords.z, 10.0, modelHash, false, false, false)
-            if DoesEntityExist(nearbyObject) then
-                PlaceObjectOnGroundProperly(nearbyObject)
-                local plantId = Entity(nearbyObject).state.plantId
-                local active = Entity(nearbyObject).state.active
-                if plantId and active then
-                    local dist = #(coords - GetEntityCoords(nearbyObject))
-                    if dist < 1.5 then
-                        if not isPickingUp and not pickupTextShown then
-                            ESX.TextUI(TranslateCap('weed_pickupprompt'))
-                            pickupTextShown = true
-                        end
-                        if IsControlJustReleased(0, 38) and not isPickingUp then
-                            isPickingUp = true
-                            ESX.TriggerServerCallback('esx_drugs:canPickUp', function(canPickUp, qty)
-                                if canPickUp then
-                                    TaskStartScenarioInPlace(playerPed, 'world_human_gardener_plant', 0, false)
-                                    Wait(2000)
-                                    ClearPedTasks(playerPed)
-                                    Wait(1500)
-                                    TriggerServerEvent('esx_drugs:pickupWeedPlant', plantId, qty)
-                                    if pickupTextShown then
-                                        ESX.HideUI()
-                                        pickupTextShown = false
-                                    end
-                                else
-                                    ESX.ShowNotification(TranslateCap('weed_inventoryfull'))
-                                end
-                                isPickingUp = false
-                            end, 'cannabis')
-                        end
-                    else
-                        if pickupTextShown then
-                            ESX.HideUI()
-                            pickupTextShown = false
-                        end
-                    end
-                end
-            else
-                if pickupTextShown then
-                    ESX.HideUI()
-                    pickupTextShown = false
-                end
-            end
-        end,
-        leave = function()
-            if pickupTextShown then
+
+            if not DoesEntityExist(nearbyObject) then
                 ESX.HideUI()
                 pickupTextShown = false
+                return
             end
+
+            PlaceObjectOnGroundProperly(nearbyObject)
+
+            local entity = Entity(nearbyObject)
+            local plantId, active = entity.state.plantId, entity.state.active
+
+            if not plantId or not active then
+                ESX.HideUI()
+                pickupTextShown = false
+                return
+            end
+
+            local dist = #(coords - GetEntityCoords(nearbyObject))
+
+            if dist >= 1.5 then
+                ESX.HideUI()
+                pickupTextShown = false
+                return
+            end
+
+            if not isPickingUp and not pickupTextShown then
+                ESX.TextUI(TranslateCap('weed_pickupprompt'))
+                pickupTextShown = true
+            end
+
+            if not IsControlJustReleased(0, 38) or isPickingUp then
+                return
+            end
+
+            isPickingUp = true
+            ESX.TriggerServerCallback('esx_drugs:canPickUp', function(canPickUp, qty)
+                if not canPickUp then
+                    ESX.ShowNotification(TranslateCap('weed_inventoryfull'))
+                    isPickingUp = false
+                    return
+                end
+
+                TaskStartScenarioInPlace(playerPed, 'world_human_gardener_plant', 0, false)
+                Wait(2000)
+                ClearPedTasks(playerPed)
+                Wait(1500)
+
+                TriggerServerEvent('esx_drugs:pickupWeedPlant', plantId, qty)
+                ESX.HideUI()
+                pickupTextShown = false
+                isPickingUp = false
+            end, 'cannabis')
+        end,
+
+        leave = function()
+            ESX.HideUI()
+            pickupTextShown = false
         end
     })
     
