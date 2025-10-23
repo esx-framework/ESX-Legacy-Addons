@@ -26,5 +26,9 @@ Locales['fr'] = {
   ['test_failed_go_to_start_point'] = '~r~Go to the starting point, because you failed the test!',
   ['errors'] = 'erreurs: ~r~%s/%s',
   ['you_damaged_veh'] = 'Vous avez endommagé votre véhicule',
-  ['not_enough_money'] = 'Tu n\'as pas assez d\'argent'
+  ['not_enough_money'] = 'Tu n\'as pas assez d\'argent',
+  ['yourVersion'] = "Votre version : ",
+  ['latestVersion'] = "Vous utilisez la dernière version !",
+  ['needUpdateResource'] = "Vous devez télécharger la dernière version ! Vous utilisez actuellement une ancienne version !",
+  ['errorGetCurrentVersion'] = "Une erreur s'est produite lors de la récupération de la version actuelle !"
 }

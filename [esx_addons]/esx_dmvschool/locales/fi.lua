@@ -26,5 +26,9 @@ Locales['fi'] = {
   ['test_failed_go_to_start_point'] = '~r~Go to the starting point, because you failed the test!',
   ['errors'] = 'mistakes: ~r~%s/%s',
   ['you_damaged_veh'] = 'Vahingoitit ajoneuvoa. Aja varovaisemmin...',
-  ['not_enough_money'] = 'Sinulla ei ole tarpeeksi rahaa'
+  ['not_enough_money'] = 'Sinulla ei ole tarpeeksi rahaa',
+  ['yourVersion'] = "Versiosi: ",
+  ['latestVersion'] = "Käytät uusinta versiota!",
+  ['needUpdateResource'] = "Sinun täytyy ladata uusin versio! Käytät tällä hetkellä vanhaa versiota!",
+  ['errorGetCurrentVersion'] = "Virhe tapahtui haettaessa nykyistä versiota!"
 }

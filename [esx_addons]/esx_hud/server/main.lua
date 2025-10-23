@@ -38,7 +38,7 @@ VERSION = {
             return
         end
 
-        local remoteVersion = response:match("version%s+'([%d%.]+)'")
+        local remoteVersion = response:match('version%s+["\']([%d%.]+)["\']')
         if not remoteVersion then
             HUD:ErrorHandle(Translate("errorGetRemoteVersion"))
             return

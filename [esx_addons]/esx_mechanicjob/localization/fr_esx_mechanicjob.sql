@@ -17,16 +17,23 @@ INSERT INTO `jobs` (name, label) VALUES
 INSERT INTO `job_grades` (job_name, grade, name, label, salary, skin_male, skin_female) VALUES
 	('mechanic',0,'recrue','Recrue',12,'{}','{}'),
 	('mechanic',1,'novice','Novice',24,'{}','{}'),
-	('mechanic',2,'expérimenté','Expérimenté',36,'{}','{}'),
-	('mechanic',3,'chef','Chef',48,'{}','{}'),
+	('mechanic',2,'experimente','Expérimenté',36,'{}','{}'),
+	('mechanic',3,'chief','Chef',48,'{}','{}'),
 	('mechanic',4,'boss','Boss',0,'{}','{}')
 ;
 
 INSERT INTO `items` (name, label, weight) VALUES
 	('gazbottle', 'Bouteille de gaz', 2),
 	('fixtool', 'Outils de réparation', 2),
-	('carotool', 'Outils', 2),
+	('carotool', 'Outils de carrosserie', 2),
 	('blowpipe', 'Chalumeau', 2),
 	('fixkit', 'Kit de réparation', 3),
 	('carokit', 'Kit de carrosserie', 3)
 ;
+
+
+
+
+
+
+

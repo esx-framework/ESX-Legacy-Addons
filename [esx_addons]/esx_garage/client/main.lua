@@ -242,8 +242,8 @@ CreateThread(function()
                                             SendNUIMessage({
                                                 showMenu = true,
                                                 type = 'garage',
-                                                vehiclesList = {json.encode(vehiclesList)},
-                                                vehiclesImpoundedList = {json.encode(vehiclesImpoundedList)},
+                                                vehiclesList = json.encode(vehiclesList),
+                                                vehiclesImpoundedList = json.encode(vehiclesImpoundedList),
                                                 poundName = v.ImpoundedName,
                                                 poundSpawnPoint = poundSpawnPoint,
                                                 spawnPoint = spawnPoint,
@@ -260,7 +260,7 @@ CreateThread(function()
                                             SendNUIMessage({
                                                 showMenu = true,
                                                 type = 'garage',
-                                                vehiclesList = {json.encode(vehiclesList)},
+                                                vehiclesList = json.encode(vehiclesList),
                                                 spawnPoint = spawnPoint,
                                                 locales = {
                                                     action = TranslateCap('veh_exit'),
@@ -301,7 +301,7 @@ CreateThread(function()
                                             SendNUIMessage({
                                                 showMenu = true,
                                                 type = 'garage',
-                                                vehiclesImpoundedList = {json.encode(vehiclesImpoundedList)},
+                                                vehiclesImpoundedList = json.encode(vehiclesImpoundedList),
                                                 poundName = v.ImpoundedName,
                                                 poundSpawnPoint = poundSpawnPoint,
                                                 locales = {
@@ -390,7 +390,7 @@ CreateThread(function()
                                 SendNUIMessage({
                                     showMenu = true,
                                     type = 'impound',
-                                    vehiclesList = {json.encode(vehiclesList)},
+                                    vehiclesList = json.encode(vehiclesList),
                                     spawnPoint = spawnPoint,
                                     poundCost = v.Cost,
                                     locales = {
