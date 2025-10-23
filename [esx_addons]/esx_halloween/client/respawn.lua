@@ -90,11 +90,6 @@ end
 ---@example
 --- RespawnAtHospital()
 function RespawnAtHospital()
-    if not ESX then
-        print('^1[ESX Halloween] Error: ESX not loaded, cannot respawn at hospital^7')
-        FadeScreenIn()
-        return
-    end
 
     ESX.TriggerServerCallback('esx_ambulancejob:removeItemsAfterRPDeath', function()
         local playerPed = PlayerPedId()

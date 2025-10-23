@@ -254,10 +254,6 @@ CreateThread(function()
             if Config.Ghost.abilities.scare.enabled and IsControlJustPressed(0, scareKey) then
                 local currentTime = GetGameTimer()
                 if currentTime - ghostState.lastScareTime >= Config.Ghost.abilities.scare.cooldown then
-                    if not ESX then
-                        Wait(500)
-                        goto continue
-                    end
 
                     local playerPed = PlayerPedId()
                     local playerCoords = GetEntityCoords(playerPed)

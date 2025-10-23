@@ -1,10 +1,6 @@
 ---@param source number
 ---@return boolean
 local function HasAdminPermission(source)
-    if not ESX then
-        return false
-    end
-
     local xPlayer = ESX.Player(source)
     if not xPlayer then return false end
 
