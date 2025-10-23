@@ -97,11 +97,10 @@ end
 --- Respawns player at closest hospital from Config.RespawnPoints
 --- Triggers ESX ambulancejob callback to remove items
 --- Uses NetworkResurrectLocalPlayer for proper respawn
----@param playerPed number Player ped entity
 ---@return nil
 ---@example
---- RespawnAtHospital(PlayerPedId())
-function RespawnAtHospital(playerPed)
+--- RespawnAtHospital()
+function RespawnAtHospital()
     if not ESX then
         print('^1[ESX Halloween] Error: ESX not loaded, cannot respawn at hospital^7')
         FadeScreenIn()
@@ -109,6 +108,7 @@ function RespawnAtHospital(playerPed)
     end
 
     ESX.TriggerServerCallback('esx_ambulancejob:removeItemsAfterRPDeath', function()
+        local playerPed = PlayerPedId()
         local closestHospital = GetClosestRespawnPoint()
 
         if closestHospital then

@@ -1,15 +1,3 @@
-ESX = nil
-
--- Load ESX asynchronously
-CreateThread(function()
-    while not ESX do
-        ESX = exports['es_extended']:getSharedObject()
-        if not ESX then
-            Wait(500)
-        end
-    end
-end)
-
 local KEYBIND_MAP = {
     ['X'] = 73,
     ['E'] = 38,
@@ -153,10 +141,10 @@ local function DisableGhostMode()
     FadeScreenOut()
 
     -- Restore player model and skin
-    RestorePlayerSkin(function(playerPed)
+    RestorePlayerSkin(function()
         if wasActivatedByDeath then
             -- Respawn at hospital with fade in
-            RespawnAtHospital(playerPed)
+            RespawnAtHospital()
         else
             -- Just fade back in at current location
             FadeScreenIn()
