@@ -12,13 +12,9 @@ local function GetESXThemeColors()
     }
 end
 
-CreateThread(function()
-    Wait(1000)
-
+--- NUI Callback for frontend to request theme colors
+--- Prevents race conditions by letting frontend fetch when ready
+RegisterNUICallback('ready', function(data, cb)
     local colors = GetESXThemeColors()
-
-    SendNUIMessage({
-        type = 'setThemeColors',
-        colors = colors
-    })
+    cb(colors)
 end)
