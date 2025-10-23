@@ -47,22 +47,26 @@ local function ShowNotification(data)
         return
     end
 
+    -- Localize to avoid constant table indexing
+    local size = data.size
+    local position = data.position
+
     -- Validate size
-    if data.size ~= "small" and data.size ~= "large" then
-        print("^3[ESX Halloween] Warning: Invalid size '" .. tostring(data.size) .. "', defaulting to 'small'^7")
-        data.size = "small"
+    if size ~= "small" and size ~= "large" then
+        print("^3[ESX Halloween] Warning: Invalid size '" .. tostring(size) .. "', defaulting to 'small'^7")
+        size = "small"
     end
 
     -- Validate position
     local validPositions = { ["top-left"] = true, ["top-right"] = true, ["top-center"] = true, ["bottom-center"] = true }
-    if not validPositions[data.position] then
-        print("^3[ESX Halloween] Warning: Invalid position '" .. tostring(data.position) .. "', defaulting to 'top-right'^7")
-        data.position = "top-right"
+    if not validPositions[position] then
+        print("^3[ESX Halloween] Warning: Invalid position '" .. tostring(position) .. "', defaulting to 'top-right'^7")
+        position = "top-right"
     end
 
-    if data.size == "large" and data.position ~= "bottom-center" then
+    if size == "large" and position ~= "bottom-center" then
         print("^3[ESX Halloween] Warning: Large notifications only support bottom-center position^7")
-        data.position = "bottom-center"
+        position = "bottom-center"
     end
 
     -- Sanitize strings
@@ -77,8 +81,8 @@ local function ShowNotification(data)
 
     SendNUIMessage({
         type = 'showNotification',
-        size = data.size,
-        position = data.position,
+        size = size,
+        position = position,
         header = header,
         description = description,
         duration = duration
