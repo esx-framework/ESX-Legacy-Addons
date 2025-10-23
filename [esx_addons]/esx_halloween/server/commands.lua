@@ -1,15 +1,3 @@
-ESX = nil
-
--- Properly load ESX with callback
-CreateThread(function()
-    while not ESX do
-        ESX = exports['es_extended']:getSharedObject()
-        if not ESX then
-            Wait(500) 
-        end
-    end
-end)
-
 ---@param source number
 ---@return boolean
 local function HasAdminPermission(source)
@@ -17,11 +5,13 @@ local function HasAdminPermission(source)
         return false
     end
 
-    local xPlayer = ESX.GetPlayerFromId(source)
+    local xPlayer = ESX.Player(source)
     if not xPlayer then return false end
 
-    for _, group in ipairs(Config.AdminGroups) do
-        if xPlayer.getGroup() == group then
+    local playerGroup = xPlayer.getGroup()
+
+    for i = 1, #Config.AdminGroups do
+        if playerGroup == Config.AdminGroups[i] then
             return true
         end
     end
