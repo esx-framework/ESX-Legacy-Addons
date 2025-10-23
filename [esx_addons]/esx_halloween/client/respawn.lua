@@ -48,49 +48,38 @@ end
 ---@param callback function|nil Function to call after skin is restored
 ---@return nil
 ---@example
---- RestorePlayerSkin(function(playerPed)
----     print('Skin restored for ped: ' .. playerPed)
+--- RestorePlayerSkin(function()
+---     print('Skin restored')
 --- end)
 function RestorePlayerSkin(callback)
     TriggerEvent('skinchanger:getSkin', function(skin)
         if not skin then
             print('^1[ESX Halloween] Error: Failed to get player skin from skinchanger^7')
-            if callback then callback(PlayerPedId()) end
+            if callback then callback() end
             return
         end
 
         local modelHash = skin.sex == 0 and GetHashKey('mp_m_freemode_01') or GetHashKey('mp_f_freemode_01')
 
-        RequestModel(modelHash)
-        local timeout = 0
-        while not HasModelLoaded(modelHash) and timeout < 100 do
-            Wait(50)
-            timeout = timeout + 1
-        end
+        ESX.Streaming.RequestModel(modelHash, function()
+            SetPlayerModel(PlayerId(), modelHash)
+            SetModelAsNoLongerNeeded(modelHash)
 
-        if not HasModelLoaded(modelHash) then
-            print('^1[ESX Halloween] Error: Failed to load player model^7')
-            if callback then callback(PlayerPedId()) end
-            return
-        end
+            Wait(100)
 
-        SetPlayerModel(PlayerId(), modelHash)
-        SetModelAsNoLongerNeeded(modelHash)
+            TriggerEvent('skinchanger:loadSkin', skin)
 
-        Wait(100)
+            Wait(100)
 
-        TriggerEvent('skinchanger:loadSkin', skin)
+            local playerPed = PlayerPedId()
+            SetEntityInvincible(playerPed, false)
+            SetEntityAlpha(playerPed, 255, false)
+            SetPedCanRagdoll(playerPed, true)
 
-        Wait(100)
-
-        local playerPed = PlayerPedId()
-        SetEntityInvincible(playerPed, false)
-        SetEntityAlpha(playerPed, 255, false)
-        SetPedCanRagdoll(playerPed, true)
-
-        if callback then
-            callback(playerPed)
-        end
+            if callback then
+                callback()
+            end
+        end)
     end)
 end
 
