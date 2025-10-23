@@ -16,5 +16,5 @@ Locales ['nl'] = {
   ['no_helmet'] = 'je hebt geen helm',
   ['no_mask'] = 'je hebt geen masker',
   ['you_paid'] = 'je betaalde €%s',
-  ['keymap'] = 'Open Accessory Menu', --not translated
+  ['keymap'] = 'Accessoiremenu openen',
 }

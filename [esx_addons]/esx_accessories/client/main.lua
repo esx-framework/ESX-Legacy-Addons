@@ -1,6 +1,4 @@
-local HasAlreadyEnteredMarker = false
-local LastZone, CurrentAction, CurrentActionMsg
-local CurrentActionData	= {}
+local show_text = false
 
 function OpenAccessoryMenu()
 	local elements = {
@@ -104,32 +102,12 @@ function OpenShopMenu(accessory)
 
 				ESX.CloseContext()
 			end
-			CurrentAction     = 'shop_menu'
-			CurrentActionMsg  = TranslateCap('press_access')
-			CurrentActionData = {}
 		end, function(menu)
-			CurrentAction     = 'shop_menu'
-			CurrentActionMsg  = TranslateCap('press_access')
-			CurrentActionData = {}
 		end)
 	end, function(data, menu)
 		menu.close()
-		CurrentAction     = 'shop_menu'
-		CurrentActionMsg  = TranslateCap('press_access')
-		CurrentActionData = {}
 	end, restrict)
 end
-
-AddEventHandler('esx_accessories:hasEnteredMarker', function(zone)
-	CurrentAction     = 'shop_menu'
-	CurrentActionMsg  = TranslateCap('press_access')
-	CurrentActionData = { accessory = zone }
-end)
-
-AddEventHandler('esx_accessories:hasExitedMarker', function(zone)
-	ESX.CloseContext()
-	CurrentAction = nil
-end)
 
 -- Create Blips --
 CreateThread(function()
@@ -152,74 +130,44 @@ CreateThread(function()
 	end
 end)
 
-local nearMarker = false
--- Display markers
 CreateThread(function()
 	while true do
-		local sleep = 1500
-		local coords = GetEntityCoords(PlayerPedId())
+		local interval = true
+		local playerCoords = GetEntityCoords(PlayerPedId())
+		local isInMarker = false
+		
 		for k,v in pairs(Config.Zones) do
 			for i = 1, #v.Pos, 1 do
-				if(Config.Type ~= -1 and #(coords - v.Pos[i]) < Config.DrawDistance) then
+				local distance = #(playerCoords - v.Pos[i])
+				
+				if Config.Type ~= -1 and distance < Config.DrawDistance then
 					DrawMarker(Config.Type, v.Pos[i], 0.0, 0.0, 0.0, 0, 0.0, 0.0, Config.Size.x, Config.Size.y, Config.Size.z, Config.Color.r, Config.Color.g, Config.Color.b, 255, true, false, 2, true, false, false, false)
-					sleep = 0
-					break
+					interval = false
 				end
-			end
-		end
-		if sleep == 0 then nearMarker = true else nearMarker = false end
-		Wait(sleep)
-	end
-end)
-
-CreateThread(function()
-	while true do
-		local sleep = 1500
-		if nearMarker then
-			sleep = 0
-			local coords = GetEntityCoords(PlayerPedId())
-			local isInMarker = false
-			local currentZone = nil
-			for k,v in pairs(Config.Zones) do
-				for i = 1, #v.Pos, 1 do
-					if #(coords - v.Pos[i]) < Config.Size.x then
-						isInMarker  = true
-						currentZone = k
-						break
+				
+				if distance < Config.Size.x then
+					isInMarker = true
+					interval = false
+					if IsControlJustReleased(0, 38) then
+						OpenShopMenu(k)
 					end
 				end
 			end
-
-			if (isInMarker and not HasAlreadyEnteredMarker) or (isInMarker and LastZone ~= currentZone) then
-				HasAlreadyEnteredMarker = true
-				LastZone = currentZone
-				TriggerEvent('esx_accessories:hasEnteredMarker', currentZone)
-			end
-
-			if not isInMarker and HasAlreadyEnteredMarker then
-				HasAlreadyEnteredMarker = false
-				TriggerEvent('esx_accessories:hasExitedMarker', LastZone)
-			end
 		end
-		Wait(sleep)
-	end
-end)
-
--- Key controls
-CreateThread(function()
-	while true do
-		local Sleep = 1500
 		
-		if CurrentAction then
-			Sleep = 0
-			ESX.ShowHelpNotification(CurrentActionMsg)
-
-			if IsControlJustReleased(0, 38) and CurrentActionData.accessory then
-				OpenShopMenu(CurrentActionData.accessory)
-				CurrentAction = nil
-			end
+		if isInMarker and not show_text then
+			ESX.TextUI(TranslateCap('press_access'))
+			show_text = true
+		elseif not isInMarker and show_text then
+			ESX.HideUI()
+			show_text = false
 		end
-		Wait(Sleep)
+		
+		if interval then
+			Wait(500)
+		else
+			Wait(0)
+		end
 	end
 end)
 

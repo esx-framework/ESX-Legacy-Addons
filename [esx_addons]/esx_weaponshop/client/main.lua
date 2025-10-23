@@ -32,8 +32,6 @@ function OpenBuyLicenseMenu(zone)
     end)
 end
 
-
-
 function OpenShopMenu(zone)
     shopOpen = true
     local elements = {{
@@ -106,7 +104,6 @@ AddEventHandler('onResourceStop', function(resource)
     end
 end)
 
--- Create Blips
 CreateThread(function()
     for k, v in pairs(Config.Zones) do
         local blipSettings = v.Blip
@@ -129,52 +126,64 @@ CreateThread(function()
 end)
 
 local textShown = false
-local GetEntityCoords = GetEntityCoords
-local CreateThread = CreateThread
-local Wait = Wait
-local IsControlJustReleased = IsControlJustReleased
+local HasAlreadyEnteredMarker = false
+local LastZone = nil
 
--- Display markers
 CreateThread(function()
-    while true do
-        local sleep = 1500
-        local currentShop = nil
-        local coords = GetEntityCoords(ESX.PlayerData.ped)
+	while true do
+		local sleep = 1500
+		local coords = GetEntityCoords(ESX.PlayerData.ped)
+		local isInMarker = false
+		local currentZone = nil
+		local nearMarker = false
 
-        for k, v in pairs(Config.Zones) do
-            for i = 1, #v.Locations, 1 do
-                if (Config.Type ~= -1 and #(coords - v.Locations[i]) < Config.DrawDistance) then
-                    currentShop = v.Locations[i]
-                    sleep = 0
-                    if #(coords - currentShop) < 2.0 then
-                        if not textShown then
-                            ESX.TextUI(TranslateCap('shop_menu_prompt', ESX.GetInteractKey()))
-                            textShown = true
-                            nearbyZone = k
-                        end
-                    end
-                    DrawMarker(Config.Type, v.Locations[i].x, v.Locations[i].y, v.Locations[i].z, 0.0, 0.0, 0.0, 0, 0.0, 0.0, Config.Size.x, Config.Size.y,
-                    Config.Size.z, Config.Color.r, Config.Color.g, Config.Color.b, 100, false, true, 2, false, false,
-                    false, false)
-                end
-            end
-        end
+		for k, v in pairs(Config.Zones) do
+			for i = 1, #v.Locations, 1 do
+				local location = v.Locations[i]
+				local distance = #(coords - location)
+				if (Config.Type ~= -1 and distance < Config.DrawDistance) then
+					nearMarker = true
+					DrawMarker(Config.Type, location.x, location.y, location.z, 0.0, 0.0, 0.0, 0, 0.0, 0.0, Config.Size.x, Config.Size.y,
+					Config.Size.z, Config.Color.r, Config.Color.g, Config.Color.b, 100, false, true, 2, false, false,
+					false, false)
+					if distance < Config.Size.x then
+						isInMarker = true
+						currentZone = k
+						break
+					end
+				end
+			end
+		end
 
-        if (not currentShop or shopOpen) and textShown then
-            textShown = false
-            nearbyZone = nil
-            ESX.HideUI()
-        end
+		if nearMarker then
+			sleep = 0
+		end
 
-        if not currentShop and shopOpen then
-            textShown = false
-            ESX.HideUI()
-            ESX.CloseContext()
-            shopOpen = false
-            nearbyZone = nil
-        end
-        Wait(sleep)
-    end
+		if isInMarker and (not HasAlreadyEnteredMarker or LastZone ~= currentZone) then
+			HasAlreadyEnteredMarker = true
+			LastZone = currentZone
+			nearbyZone = currentZone
+			if not textShown then
+				ESX.TextUI(TranslateCap('shop_menu_prompt', ESX.GetInteractKey()))
+				textShown = true
+			end
+		end
+
+		if not isInMarker and HasAlreadyEnteredMarker then
+			HasAlreadyEnteredMarker = false
+			if textShown then
+				ESX.HideUI()
+				textShown = false
+			end
+			nearbyZone = nil
+			if shopOpen then
+				ESX.CloseContext()
+				shopOpen = false
+			end
+		end
+
+		Wait(sleep)
+	end
 end)
 
 ESX.RegisterInteraction("open_weaponshop", function ()

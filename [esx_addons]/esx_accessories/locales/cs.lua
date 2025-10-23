@@ -16,5 +16,5 @@ Locales ['cs'] = {
   ['no_helmet'] = 'nemáte helmu',
   ['no_mask'] = 'nemáte masku',
   ['you_paid'] = 'zaplatili jste $%s',
-  ['keymap'] = 'Open Accessory Menu', --not translated
+  ['keymap'] = 'Otevřít nabídku doplňků',
 }

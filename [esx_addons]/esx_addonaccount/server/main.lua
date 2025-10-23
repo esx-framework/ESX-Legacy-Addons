@@ -1,140 +1,228 @@
-local AccountsIndex, Accounts, SharedAccounts = {}, {}, {}
+Accounts, SharedAccounts = {}, {}
 
-AddEventHandler('onResourceStart', function(resourceName)
-	if resourceName == GetCurrentResourceName() then
-		local accounts = MySQL.query.await(
-			'SELECT * FROM addon_account LEFT JOIN addon_account_data ON addon_account.name = addon_account_data.account_name UNION SELECT * FROM addon_account RIGHT JOIN addon_account_data ON addon_account.name = addon_account_data.account_name')
+---@param name string
+---@param owner string
+---@return AddonAccount?
+local function getAccount(name, owner)
+    local existingAccount = Accounts[name]?[owner]
+    if existingAccount then
+        return existingAccount
+    end
 
-		local newAccounts = {}
-		for i = 1, #accounts do
-			local account = accounts[i]
-			if account.shared == 0 then
-				if not Accounts[account.name] then
-					AccountsIndex[#AccountsIndex + 1] = account.name
-					Accounts[account.name] = {}
-				end
-				Accounts[account.name][#Accounts[account.name] + 1] = CreateAddonAccount(account.name, account.owner,
-					account.money)
-			else
-				if account.money then
-					SharedAccounts[account.name] = CreateAddonAccount(account.name, nil, account.money)
-				else
-					newAccounts[#newAccounts + 1] = { account.name, 0 }
-				end
-			end
-		end
-		GlobalState.SharedAccounts = SharedAccounts
+    local dbAccount = Database.fetchAccount(name, owner)
+    if not dbAccount then return end
 
-		if next(newAccounts) then
-			MySQL.prepare('INSERT INTO addon_account_data (account_name, money) VALUES (?, ?)', newAccounts)
-			for i = 1, #newAccounts do
-				local newAccount = newAccounts[i]
-				SharedAccounts[newAccount[1]] = CreateAddonAccount(newAccount[1], nil, 0)
-			end
-			GlobalState.SharedAccounts = SharedAccounts
-		end
-	end
+    if not Accounts[name] then
+        Accounts[name] = {}
+    end
+
+    Accounts[name][owner] = CreateAddonAccount(name, owner, dbAccount.money)
+
+    return Accounts[name][owner]
+end
+
+---@param name string
+---@return AddonAccount?
+local function getSharedAccount(name)
+    local existingAccount = SharedAccounts[name]
+    if existingAccount then
+        return existingAccount
+    end
+
+    local dbAccount = Database.fetchSharedAccount(name)
+    if not dbAccount then return end
+
+    local money = dbAccount.money
+    SharedAccounts[name] = CreateAddonAccount(name, nil, money or 0)
+
+    if not money then
+        MySQL.prepare.await('INSERT INTO addon_account_data (account_name, money) VALUES (?, ?)', { name, 0 })
+    end
+
+    GlobalState.SharedAccounts = SharedAccounts
+
+    return SharedAccounts[name]
+end
+
+---@param society { name: string, label: string }
+---@param amount? number
+---@return AddonAccount?
+local function addSharedAccount(society, amount)
+    local societyName, societyLabel = society?.name, society?.label
+    if not societyName or not societyLabel then return end
+
+    local existingSharedAccount = getSharedAccount(societyName)
+    if existingSharedAccount then return existingSharedAccount end
+
+    local account = MySQL.insert.await('INSERT INTO `addon_account` (name, label, shared) VALUES (?, ?, ?)', { societyName, societyLabel, 1 })
+    if not account then return end
+
+    amount = amount or 0
+    local accountData = MySQL.insert.await('INSERT INTO `addon_account_data` (account_name, money) VALUES (?, ?)', {
+        societyName, amount
+    })
+    if not accountData then return end
+
+    SharedAccounts[societyName] = CreateAddonAccount(societyName, nil, amount)
+
+    GlobalState.SharedAccounts = SharedAccounts
+
+    return SharedAccounts[societyName]
+end
+
+---@param name string
+---@param owner string
+---@param amount number
+local function addAccountMoney(name, owner, amount)
+    local account = getAccount(name, owner)
+    if not account then return end
+
+    account.addMoney(amount)
+end
+
+---@param name string
+---@param owner string
+---@param amount number
+local function removeAccountMoney(name, owner, amount)
+    local account = getAccount(name, owner)
+    if not account then return end
+
+    account.removeMoney(amount)
+end
+
+---@param name string
+---@param owner string
+---@param amount number
+local function setAccountMoney(name, owner, amount)
+    local account = getAccount(name, owner)
+    if not account then return end
+
+    account.setMoney(amount)
+end
+
+---@param name string
+---@param amount number
+local function addSharedAccountMoney(name, amount)
+    local account = getSharedAccount(name)
+    if not account then return end
+
+    account.addMoney(amount)
+end
+
+---@param name string
+---@param amount number
+local function removeSharedAccountMoney(name, amount)
+    local account = getSharedAccount(name)
+    if not account then return end
+
+    account.removeMoney(amount)
+end
+
+---@param name string
+---@param amount number
+local function setSharedAccountMoney(name, amount)
+    local account = getSharedAccount(name)
+    if not account then return end
+
+    account.setMoney(amount)
+end
+
+---@alias TransactionAccount { name: string, owner?: string }|string
+
+---@param accountData TransactionAccount
+---@return AddonAccount?
+function GetTransactionAccount(accountData)
+    if type(accountData) == "string" then
+        return getSharedAccount(accountData)
+    end
+
+    if accountData.owner then
+        return getAccount(accountData.name, accountData.owner)
+    else
+        return getSharedAccount(accountData.name)
+    end
+end
+
+---@param sender TransactionAccount
+---@param receiver TransactionAccount
+---@param amount number
+---@return boolean, string
+local function transferMoney(sender, receiver, amount)
+    local senderAccount, receiverAccount = GetTransactionAccount(sender), GetTransactionAccount(receiver)
+    if not senderAccount or not receiverAccount then return false, 'invalid_account' end
+
+    if not senderAccount.removeMoney(amount) then
+        return false, 'insufficient_funds'
+    end
+
+    receiverAccount.addMoney(amount)
+
+    return true, 'success'
+end
+
+AddEventHandler('esx:playerLoaded', function(_, xPlayer)
+    local addonAccounts = {}
+
+    local identifier = xPlayer.getIdentifier()
+    for _, accountName in pairs(Accounts) do
+        local account = getAccount(accountName, identifier)
+
+        if not account then
+            MySQL.insert.await('INSERT INTO addon_account_data (account_name, money, owner) VALUES (?, ?, ?)',
+                { accountName, 0, identifier })
+
+            account = CreateAddonAccount(accountName, identifier, 0)
+
+            Accounts[accountName][identifier] = account
+        end
+
+        addonAccounts[#addonAccounts + 1] = account
+    end
+
+    xPlayer.set('addonAccounts', addonAccounts)
 end)
 
-function GetAccount(name, owner)
-	for i = 1, #Accounts[name], 1 do
-		if Accounts[name][i].owner == owner then
-			return Accounts[name][i]
-		end
-	end
-end
-
-function GetSharedAccount(name)
-	return SharedAccounts[name]
-end
-
-function AddSharedAccount(society, amount)
-	-- society.name = job_name/society_name
-	-- society.label = label for the job/account
-	-- amount = if the shared account should start with x amount
-	if type(society) ~= 'table' or not society?.name or not society?.label then return end
-
-	-- check if account already exist?
-	if SharedAccounts[society.name] ~= nil then return SharedAccounts[society.name] end
-
-	-- addon account:
-	local account = MySQL.insert.await('INSERT INTO `addon_account` (name, label, shared) VALUES (?, ?, ?)', {
-		society.name, society.label, 1
-	})
-	if not account then return end
-
-	-- if addon account inserted, insert addon account data:
-	local account_data = MySQL.insert.await('INSERT INTO `addon_account_data` (account_name, money) VALUES (?, ?)', {
-		society.name, (amount or 0)
-	})
-	if not account_data then return end
-
-	-- if all data inserted successfully to sql:
-	SharedAccounts[society.name] = CreateAddonAccount(society.name, nil, (amount or 0))
-
-	return SharedAccounts[society.name]
-end
-
+---@param name string
+---@param owner string
+---@param cb function
 AddEventHandler('esx_addonaccount:getAccount', function(name, owner, cb)
-	cb(GetAccount(name, owner))
+    cb(getAccount(name, owner))
 end)
 
+---@param name string
+---@param cb function
 AddEventHandler('esx_addonaccount:getSharedAccount', function(name, cb)
-	cb(GetSharedAccount(name))
+    cb(getSharedAccount(name))
 end)
 
-AddEventHandler('esx:playerLoaded', function(playerId, xPlayer)
-	local addonAccounts = {}
-
-	for i = 1, #AccountsIndex, 1 do
-		local name    = AccountsIndex[i]
-		local account = GetAccount(name, xPlayer.identifier)
-
-		if account == nil then
-			MySQL.insert('INSERT INTO addon_account_data (account_name, money, owner) VALUES (?, ?, ?)',
-				{ name, 0, xPlayer.identifier })
-
-			account = CreateAddonAccount(name, xPlayer.identifier, 0)
-			Accounts[name][#Accounts[name] + 1] = account
-		end
-
-		addonAccounts[#addonAccounts + 1] = account
-	end
-
-	xPlayer.set('addonAccounts', addonAccounts)
+AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)
+    if eventData.secondsRemaining == 60 then
+        CreateThread(function()
+            Wait(50000)
+            Database.saveAccounts()
+        end)
+    end
 end)
 
-RegisterNetEvent('esx_addonaccount:refreshAccounts')
-AddEventHandler('esx_addonaccount:refreshAccounts', function()
-	local addonAccounts = MySQL.query.await('SELECT * FROM addon_account')
-
-	for i = 1, #addonAccounts, 1 do
-		local name             = addonAccounts[i].name
-		local shared           = addonAccounts[i].shared
-
-		local addonAccountData = MySQL.query.await('SELECT * FROM addon_account_data WHERE account_name = ?', { name })
-
-		if shared == 0 then
-			table.insert(AccountsIndex, name)
-			Accounts[name] = {}
-
-			for j = 1, #addonAccountData, 1 do
-				local addonAccount = CreateAddonAccount(name, addonAccountData[j].owner, addonAccountData[j].money)
-				table.insert(Accounts[name], addonAccount)
-			end
-		else
-			local money = nil
-
-			if #addonAccountData == 0 then
-				MySQL.insert('INSERT INTO addon_account_data (account_name, money, owner) VALUES (?, ?, ?)',
-					{ name, 0, nil })
-				money = 0
-			else
-				money = addonAccountData[1].money
-			end
-
-			local addonAccount   = CreateAddonAccount(name, nil, money)
-			SharedAccounts[name] = addonAccount
-		end
-	end
+AddEventHandler('onResourceStop', function(resource)
+    if resource == GetCurrentResourceName() then
+        Database.saveAccounts()
+    end
 end)
+
+AddEventHandler('txAdmin:events:serverShuttingDown', Database.saveAccounts)
+
+exports('GetSharedAccount', getSharedAccount)
+exports('GetAccount', getAccount)
+
+exports('AddSharedAccount', addSharedAccount)
+
+exports('AddAccountMoney', addAccountMoney)
+exports('RemoveAccountMoney', removeAccountMoney)
+exports('SetAccountMoney', setAccountMoney)
+
+exports('AddSharedAccountMoney', addSharedAccountMoney)
+exports('RemoveSharedAccountMoney', removeSharedAccountMoney)
+exports('SetSharedAccountMoney', setSharedAccountMoney)
+
+exports('TransferMoney', transferMoney)

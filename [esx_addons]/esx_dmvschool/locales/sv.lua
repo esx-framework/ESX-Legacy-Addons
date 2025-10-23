@@ -27,4 +27,8 @@ Locales['sv'] = {
     ['errors'] = 'Misstag: ~r~%s/%s',
     ['you_damaged_veh'] = 'Du skadade fordonet',
     ['not_enough_money'] = 'Du har inte tillräckligt med pengar',
+    ['yourVersion'] = "Din version: ",
+  ['latestVersion'] = "Du använder den senaste versionen!",
+  ['needUpdateResource'] = "Du måste ladda ner den senaste versionen! Du använder för närvarande en gammal version!",
+  ['errorGetCurrentVersion'] = "Ett fel uppstod när den aktuella versionen försöktes hämtas!"
   }
