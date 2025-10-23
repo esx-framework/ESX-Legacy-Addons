@@ -334,6 +334,10 @@ end)
 
 -- Ghost visibility thread
 CreateThread(function()
+    -- Localize config values to avoid constant global table access
+    local visibilityRange = Config.Ghost.visibility.range
+    local visibilityAlpha = Config.Ghost.visibility.alpha
+
     while true do
         -- Check if any ghosts exist
         local hasGhosts = next(otherGhostPlayers) ~= nil
@@ -353,8 +357,8 @@ CreateThread(function()
                         local targetCoords = GetEntityCoords(targetPed)
                         local distance = #(playerCoords - targetCoords)
 
-                        if distance <= Config.Ghost.visibility.range then
-                            SetEntityAlpha(targetPed, Config.Ghost.visibility.alpha, false)
+                        if distance <= visibilityRange then
+                            SetEntityAlpha(targetPed, visibilityAlpha, false)
                         else
                             SetEntityAlpha(targetPed, 0, false)
                         end
