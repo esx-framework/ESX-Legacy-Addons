@@ -198,9 +198,8 @@
   .item-cart-label {
     display: inline-block;
     color: var(--lightest-color);
-    font-size: 0.7rem;
+    font-size: 0.9rem;
     transition: color 0.3s ease;
-    transform: translateY(1px);
   }
 
   .shop-item:hover .item-cart-icon,

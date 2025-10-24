@@ -93,12 +93,12 @@ Config.Zones = {
 
 	RobsLiquor = {
 		Items = {
-			{name = "bread", label = "Bread", price = 15, category = "food", image = "https://r2.fivemanage.com/R92pivz8ZlXwjJjTvi3Oq/bread.png"},
+			{name = "burger", label = "Burger", price = 15, category = "food"},
 			{name = "water", label = "Water", price = 10, category = "drinks", image = "https://r2.fivemanage.com/R92pivz8ZlXwjJjTvi3Oq/water.png"},
-			{name = "beer", label = "Beer", price = 18, category = "alcohol", image = "https://r2.fivemanage.com/R92pivz8ZlXwjJjTvi3Oq/beer.png"},
-			{name = "wine", label = "Wine", price = 35, category = "alcohol", image = "https://r2.fivemanage.com/R92pivz8ZlXwjJjTvi3Oq/wine.png"},
-			{name = "vodka", label = "Vodka", price = 50, category = "alcohol", image = "https://r2.fivemanage.com/R92pivz8ZlXwjJjTvi3Oq/vodka.png"},
-			{name = "whiskey", label = "Whiskey", price = 65, category = "alcohol", image = "https://r2.fivemanage.com/R92pivz8ZlXwjJjTvi3Oq/whiskey.png"}
+			{name = "meth", label = "Meth", price = 18, category = "alcohol"},
+			{name = "wine", label = "Wine", price = 35, category = "alcohol"},
+			{name = "vodka", label = "Vodka", price = 50, category = "alcohol"},
+			{name = "whiskey", label = "Whiskey", price = 65, category = "alcohol"}
 		},
 		Categories = {
 			{id = "food", label = "Food", icon = "fa-solid fa-burger"},
