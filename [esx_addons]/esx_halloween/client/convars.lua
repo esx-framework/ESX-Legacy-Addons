@@ -16,5 +16,8 @@ end
 --- Prevents race conditions by letting frontend fetch when ready
 RegisterNUICallback('ready', function(data, cb)
     local colors = GetESXThemeColors()
-    cb(colors)
+    cb({
+        ok = true,
+        data = colors
+    })
 end)
