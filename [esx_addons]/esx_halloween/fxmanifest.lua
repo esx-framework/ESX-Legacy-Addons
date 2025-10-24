@@ -12,6 +12,8 @@ files {
     'web/build/**/*'
 }
 
+shared_script '@es_extended/imports.lua'
+
 shared_scripts {
     'shared/events.lua',
     'types.lua',
