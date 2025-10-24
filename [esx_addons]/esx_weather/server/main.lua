@@ -1,8 +1,3 @@
-local WeatherByZone = table.clone(Config.Zones) --[[@as table<string, WeatherType>]]
-for zoneName, _ in pairs(WeatherByZone) do
-    WeatherByZone[zoneName] = Config.ValidWeatherTypes[math.random(1, #Config.ValidWeatherTypes)]
-end
-
 ---@param zoneName string
 ---@param weatherType WeatherType
 RegisterNetEvent("esx_weather:server:setZoneWeather", function(zoneName, weatherType)
@@ -14,35 +9,20 @@ RegisterNetEvent("esx_weather:server:setZoneWeather", function(zoneName, weather
         return
     end
 
-    if (not WeatherByZone[zoneName]) then
+    if (not Modules.Weather.ByZone[zoneName]) then
         return
     end
 
-    WeatherByZone[zoneName] = weatherType
-    TriggerClientEvent("esx_weather:client:weather:setZone", -1, zoneName, weatherType)
+    Modules.Weather.setZone(zoneName, weatherType)
 end)
 
 ---@param src integer
-local function onPlayerLoaded(src)
-    TriggerClientEvent("esx_weather:client:weather:setZones", src, WeatherByZone)
-end
-AddEventHandler("esx:playerLoaded", onPlayerLoaded)
-
-Citizen.SetTimeout(1000, function()
-    local Players = GetPlayers()
-    for i = 1, #Players do
-        onPlayerLoaded(tonumber(Players[i]) --[[@as integer]])
-    end
+AddEventHandler("esx:playerLoaded", function(src)
+    Modules.Weather.broadcastZones(src)
+    Modules.Time.broadcast(src)
 end)
 
-Citizen.CreateThread(function()
-    while (true) do
-        Citizen.Wait(Config.weatherCycleTimeSeconds * 1000)
-
-        for zoneName, _ in pairs(WeatherByZone) do
-            WeatherByZone[zoneName] = Config.ValidWeatherTypes[math.random(1, #Config.ValidWeatherTypes)]
-        end
-
-        onPlayerLoaded(-1)
-    end
+Citizen.SetTimeout(1000, function()
+    Modules.Weather.broadcastZones()
+    Modules.Time.broadcast()
 end)

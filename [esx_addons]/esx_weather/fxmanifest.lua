@@ -18,6 +18,7 @@ client_scripts {
 }
 
 server_scripts {
+    "/server/modules/**",
     "server/main.lua",
 }
 

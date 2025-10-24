@@ -27,3 +27,8 @@ RegisterCommand("weathersync", function()
 
     Modules.NUI.show(Modules.Zone.getClosest(), Modules.Weather.currentType, Modules.Weather.ByZone)
 end)
+
+---@param currentTime SerializedTime
+RegisterNetEvent("esx_weather:client:time:setTime", function(currentTime)
+    Modules.Time.set(currentTime)
+end)
