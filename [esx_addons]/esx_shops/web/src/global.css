@@ -1,0 +1,110 @@
+/* Google Fonts - Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+/* CSS Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Root variables for scaling and theming */
+:root {
+  /* Scaling variables */
+  --ui-scale: 1;
+  --base-font-size: 16px;
+
+  /* ESX UI Kit - Color Palette */
+  --brand-color: #FB9B04;
+  --brand-color-rgb: 251, 155, 4;
+
+  --darkest-color: #161616;
+  --darkest-color-rgb: 22, 22, 22;
+
+  --dark-color: #252525;
+  --dark-color-rgb: 37, 37, 37;
+
+  --mid-color: #383838;
+  --mid-color-rgb: 56, 56, 56;
+
+  --light-color: #969696;
+  --light-color-rgb: 150, 150, 150;
+
+  --lightest-color: #F2F2F2;
+  --lightest-color-rgb: 242, 242, 242;
+
+  /* Font sizes (ESX UI Kit) */
+  --h1-size: 32px;
+  --h2-size: 24px;
+  --h3-size: 20px;
+  --h4-size: 18px;
+  --h5-size: 16px;
+  --h6-size: 14px;
+
+  /* Convar overrides (can be set via NUI) */
+  --primary-color: var(--brand-color);
+  --secondary-color: var(--darkest-color);
+  --background-color: var(--darkest-color);
+  --accent-color: var(--brand-color);
+}
+
+/* Global font-size scaling */
+html {
+  font-size: calc(var(--base-font-size) * var(--ui-scale));
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  color: var(--lightest-color);
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 0.2rem;
+  height: 0.35rem;
+  border-radius: 100vh;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(var(--brand-color-rgb), 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--brand-color);
+  border-radius: 100vh;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Remove number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Focus styles */
+input:focus,
+button:focus {
+  outline: none;
+}
