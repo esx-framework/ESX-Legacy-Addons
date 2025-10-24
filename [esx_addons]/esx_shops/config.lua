@@ -2,6 +2,17 @@
 Config = {}
 
 -- ════════════════════════════════════════════════════════════════
+-- IMAGE CONFIGURATION
+-- ════════════════════════════════════════════════════════════════
+
+-- Automatic image path generation for items
+-- If an item doesn't have an 'image' field, it will be auto-generated as:
+-- {DefaultImagePath}/{itemName}.{DefaultImageFormat}
+-- Set to nil or empty string to disable auto-generation
+Config.DefaultImagePath = "nui://ox_inventory/web/images"
+Config.DefaultImageFormat = "png" -- png, webp, jpg, etc.
+
+-- ════════════════════════════════════════════════════════════════
 -- TAX SYSTEM CONFIGURATION
 -- ════════════════════════════════════════════════════════════════
 

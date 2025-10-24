@@ -43,6 +43,10 @@ The UI adapts to your server's ESX theme colors automatically. Items are organiz
 ### Basic Setup
 
 ```lua
+-- Automatic image path generation
+Config.DefaultImagePath = "nui://ox_inventory/web/images"
+Config.DefaultImageFormat = "png" -- png, webp, jpg, etc.
+
 -- Inventory system
 Config.Inventory = 'esx' -- or 'ox_inventory'
 
@@ -93,21 +97,35 @@ Config.Zones = {
 
 **Icons:** Use [FontAwesome 6](https://fontawesome.com/icons) class names (e.g., `fa-solid fa-burger`)
 
-**Images:** You have three options for item images:
-1. **CDN URLs:** `https://your-cdn.com/bread.png`
-2. **NUI URLs (internal resources):** `nui://ox_inventory/web/images/bread.png`
-3. **No image:** Leave it out - items work fine without them
+**Images:** The script automatically generates image paths based on item names. You have options:
 
-Example using ox_inventory images:
-```lua
-{
-    name = "bread",
-    label = "Bread",
-    price = 15,
-    category = "food",
-    image = "nui://ox_inventory/web/images/bread.png"
-}
-```
+1. **Auto-Generated (Recommended):**
+   - Set `Config.DefaultImagePath` and `Config.DefaultImageFormat`
+   - Images auto-generate as: `{DefaultImagePath}/{itemName}.{DefaultImageFormat}`
+   - Perfect for ox_inventory users
+   ```lua
+   Config.DefaultImagePath = "nui://ox_inventory/web/images"
+   Config.DefaultImageFormat = "png"
+
+   -- Items without 'image' field use auto-generation:
+   {name = "bread", label = "Bread", price = 15}
+   -- Becomes: nui://ox_inventory/web/images/bread.png
+   ```
+
+2. **Custom Override:**
+   - Add `image` field to specific items to override auto-generation
+   ```lua
+   {
+       name = "bread",
+       label = "Bread",
+       price = 15,
+       image = "https://custom-cdn.com/special-bread.webp" -- Overrides auto-path
+   }
+   ```
+
+3. **Disable Auto-Generation:**
+   - Set `Config.DefaultImagePath = nil` or `""`
+   - Only items with explicit `image` fields will show images
 
 ## What's Good
 

@@ -25,6 +25,45 @@ local function GetESXThemeColors()
 	}
 end
 
+---Processes items and auto-generates image paths if needed
+---@param items table[] Raw items from config
+---@return table[] processedItems Items with auto-generated images
+local function ProcessItemImages(items)
+	-- Return early if no auto-generation configured
+	if not Config.DefaultImagePath or Config.DefaultImagePath == '' then
+		return items
+	end
+
+	local processedItems = {}
+	local itemCount = #items
+
+	for i = 1, itemCount do
+		local item = items[i]
+		local processedItem = {
+			name = item.name,
+			label = item.label,
+			price = item.price,
+			category = item.category,
+			limit = item.limit
+		}
+
+		-- Auto-generate image path if not provided
+		if item.image then
+			processedItem.image = item.image
+		else
+			processedItem.image = ('%s/%s.%s'):format(
+				Config.DefaultImagePath,
+				item.name,
+				Config.DefaultImageFormat
+			)
+		end
+
+		processedItems[i] = processedItem
+	end
+
+	return processedItems
+end
+
 -- NUI Ready Callback
 RegisterNUICallback('ready', function(data, cb)
 	cb({ theme = GetESXThemeColors() })
@@ -52,6 +91,9 @@ local function OpenShop(zone)
 	local callbackReceived = false
 	local defaultTaxRate = 0.19 -- Fallback tax rate
 
+	-- Process items with auto-image generation
+	local processedItems = ProcessItemImages(zoneData.Items)
+
 	-- Timeout handler: Open shop with default tax rate after 5 seconds
 	SetTimeout(5000, function()
 		if not callbackReceived then
@@ -59,7 +101,7 @@ local function OpenShop(zone)
 
 			local shopData = {
 				shopName = zone,
-				items = zoneData.Items,
+				items = processedItems,
 				categories = zoneData.Categories,
 				taxRate = defaultTaxRate,
 				taxMessage = nil
@@ -83,7 +125,7 @@ local function OpenShop(zone)
 
 		local shopData = {
 			shopName = zone,
-			items = zoneData.Items,
+			items = processedItems,
 			categories = zoneData.Categories,
 			taxRate = taxRate,
 			taxMessage = taxMessage
