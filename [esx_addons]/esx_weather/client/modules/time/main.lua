@@ -29,8 +29,7 @@ function Modules.Time.tick()
     local elapsedMs = GetGameTimer() - Modules.Time.syncedAt
     local elapsedSeconds = math.floor(elapsedMs / MS_PER_SECOND)
 
-    local currentTime = Shared.Class.Time:new(Modules.Time.currentTime)
-    currentTime:add({
+    local currentTime = Shared.Class.Time:new(Modules.Time.currentTime):add({
         hours = zoneHoursOffset,
         minutes = 0,
         seconds = elapsedSeconds

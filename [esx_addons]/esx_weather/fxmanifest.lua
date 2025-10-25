@@ -5,6 +5,7 @@ description "Weather sync for your ESX server"
 version "1.0.0"
 legacyversion "1.13.4"
 lua54 "yes"
+use_fxv2_oal "yes"
 
 shared_scripts {
     "@es_extended/imports.lua",
