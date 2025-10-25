@@ -14,32 +14,35 @@ function Modules.Time.set(currentTime)
 end
 
 function Modules.Time.tick()
-    if (Modules.Time.currentTime and Modules.Time.syncedAt) then
-        local closestZone = Modules.Zone.getClosest()
-
-        if (not Modules.Time.currentZone or Modules.Time.currentZone ~= closestZone) then
-            Modules.Time.currentZone = closestZone
-            local zoneHoursOffset = Config.Time.Zones[Modules.Time.currentZone] or 0
-
-            local elapsedMs = GetGameTimer() - Modules.Time.syncedAt
-            local elapsedSeconds = math.floor(elapsedMs / MS_PER_SECOND)
-
-            local currentTime = Shared.Class.Time:new(Modules.Time.currentTime)
-            currentTime:add({
-                hours = zoneHoursOffset,
-                minutes = 0,
-                seconds = elapsedSeconds
-            })
-
-            Shared.Modules.Debug.print(("Setting time for zone %s (offset %dh): %02d:%02d:%02d"):format(
-                Modules.Time.currentZone,
-                zoneHoursOffset,
-                currentTime.hours,
-                currentTime.minutes,
-                currentTime.seconds
-            ))
-
-            AdvanceClockTimeTo(currentTime.hours, currentTime.minutes, currentTime.seconds)
-        end
+    if (not Modules.Time.currentTime or not Modules.Time.syncedAt) then
+        return
     end
+    local closestZone = Modules.Zone.getClosest()
+
+    if (Modules.Time.currentZone == closestZone) then
+        return
+    end
+
+    Modules.Time.currentZone = closestZone
+    local zoneHoursOffset = Config.Time.Zones[Modules.Time.currentZone] or 0
+
+    local elapsedMs = GetGameTimer() - Modules.Time.syncedAt
+    local elapsedSeconds = math.floor(elapsedMs / MS_PER_SECOND)
+
+    local currentTime = Shared.Class.Time:new(Modules.Time.currentTime)
+    currentTime:add({
+        hours = zoneHoursOffset,
+        minutes = 0,
+        seconds = elapsedSeconds
+    })
+
+    Shared.Modules.Debug.print(("Setting time for zone %s (offset %dh): %02d:%02d:%02d"):format(
+        Modules.Time.currentZone,
+        zoneHoursOffset,
+        currentTime.hours,
+        currentTime.minutes,
+        currentTime.seconds
+    ))
+
+    AdvanceClockTimeTo(currentTime.hours, currentTime.minutes, currentTime.seconds)
 end
