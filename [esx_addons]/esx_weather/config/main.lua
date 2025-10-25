@@ -15,7 +15,7 @@
 ---@field Time TimeConfig
 
 Config = {
-    debug       = true,
+    debug       = false,
     AdminGroups = {
         admin = true,
         moderator = true,
