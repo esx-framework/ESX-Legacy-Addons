@@ -11,27 +11,20 @@ function Modules.Weather.toggleSync(toggle)
     Modules.Weather.isSyncEnabled = toggle
 end
 
-Citizen.CreateThread(function()
-    while (not ESX.PlayerLoaded or not Modules.Weather.ByZone) do Citizen.Wait(0) end
+function Modules.Weather.tick()
+    local currentZone, zoneWeather
 
-    while (true) do
-        local currentZone, zoneWeather
-
-        if (not Modules.Weather.isSyncEnabled) then
-            goto continue
-        end
-
-        currentZone = Modules.Zone.getClosest()
-        zoneWeather = Modules.Weather.ByZone[currentZone]
-        if (not zoneWeather or zoneWeather == Modules.Weather.currentType) then
-            goto continue
-        end
-
-        Shared.Modules.Debug.print(("Entered zone %s. Changing weather: %s -> %s"):format(currentZone, Modules.Weather.currentType or "NONE", zoneWeather))
-        Modules.Weather.currentType = zoneWeather
-        SetWeatherTypeOvertimePersist(zoneWeather, Config.Weather.transitionTimeSeconds * 1.0)
-
-        ::continue::
-        Citizen.Wait(1000)
+    if (not Modules.Weather.isSyncEnabled) then
+        return
     end
-end)
+
+    currentZone = Modules.Zone.getClosest()
+    zoneWeather = Modules.Weather.ByZone[currentZone]
+    if (not zoneWeather or zoneWeather == Modules.Weather.currentType) then
+        return
+    end
+
+    Shared.Modules.Debug.print(("Entered zone %s. Changing weather: %s -> %s"):format(currentZone, Modules.Weather.currentType or "NONE", zoneWeather))
+    Modules.Weather.currentType = zoneWeather
+    SetWeatherTypeOvertimePersist(zoneWeather, Config.Weather.transitionTimeSeconds * 1.0)
+end

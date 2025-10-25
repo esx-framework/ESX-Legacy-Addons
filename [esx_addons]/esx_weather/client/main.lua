@@ -32,3 +32,13 @@ end)
 RegisterNetEvent("esx_weather:client:time:setTime", function(currentTime)
     Modules.Time.set(currentTime)
 end)
+
+Citizen.CreateThread(function()
+    while (not ESX.PlayerLoaded) do Citizen.Wait(0) end
+
+    while (true) do
+        Modules.Time.tick()
+        Modules.Weather.tick()
+        Citizen.Wait(1000)
+    end
+end)
