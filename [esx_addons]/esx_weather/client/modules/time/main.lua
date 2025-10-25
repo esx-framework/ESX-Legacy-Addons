@@ -3,7 +3,7 @@ Modules.Time = Modules.Time or {}
 
 Modules.Time.currentTime = false ---@type Time|false
 Modules.Time.syncedAt = false ---@type integer|false
-Modules.Time.currentZone = false ---@type string|false
+Modules.Time.currentZone = false ---@type Zone|false
 
 local MS_PER_SECOND <const> = 1000
 

@@ -1,6 +1,6 @@
 Modules = Modules or {}
 Modules.Weather = Modules.Weather or {}
-Modules.Weather.ByZone = false ---@type table<string, WeatherType> | false
+Modules.Weather.ByZone = false ---@type table<Zone, WeatherType> | false
 Modules.Weather.currentType = false ---@type WeatherType | false
 Modules.Weather.isSyncEnabled = true
 

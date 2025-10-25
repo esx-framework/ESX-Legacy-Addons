@@ -1,11 +1,11 @@
----@param WeatherByZone table<string, WeatherType>
+---@param WeatherByZone table<Zone, WeatherType>
 RegisterNetEvent("esx_weather:client:weather:setZones", function(WeatherByZone)
     Modules.Weather.ByZone = WeatherByZone
     Modules.NUI.updateWeatherZones(Modules.Weather.ByZone)
     Shared.Modules.Debug.print("Received weather zones from server:", json.encode(Modules.Weather.ByZone, { indent = true }))
 end)
 
----@param zoneName string
+---@param zoneName Zone
 ---@param weatherType WeatherType
 RegisterNetEvent("esx_weather:client:weather:setZone", function(zoneName, weatherType)
     if (not Modules.Weather.ByZone) then return end

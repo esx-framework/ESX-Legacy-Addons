@@ -5,12 +5,12 @@
 
 ---@class TimeConfig
 ---@field secondsPerGameMinute integer
----@field Zones table<string, integer>
+---@field Zones table<Zone, integer>
 
 ---@class Config
 ---@field debug boolean
 ---@field AdminGroups table<string, boolean>
----@field Zones table<string, vector2>
+---@field Zones table<Zone, vector2>
 ---@field Weather WeatherConfig
 ---@field Time TimeConfig
 
@@ -21,9 +21,9 @@ Config = {
         moderator = true,
     },
     Zones       = {
-        ["Los Santos"] = vector2(-33.6997, -1102.0000),
-        ["Sandy Shores"] = vector2(1728.2000, 3709.3000),
-        ["Paleto Bay"] = vector2(-220.2753, 6408.9116),
+        [Shared.Enum.Zone.LOS_SANTOS] = vector2(-33.6997, -1102.0000),
+        [Shared.Enum.Zone.SANDY_SHORES] = vector2(1728.2000, 3709.3000),
+        [Shared.Enum.Zone.PALETO_BAY] = vector2(-220.2753, 6408.9116),
     },
 
     Weather     = {
@@ -43,9 +43,9 @@ Config = {
     Time        = {
         secondsPerGameMinute = 15,
         Zones = {
-            ["Los Santos"] = 0,
-            ["Sandy Shores"] = 5,
-            ["Paleto Bay"] = 3,
+            [Shared.Enum.Zone.LOS_SANTOS] = 0,
+            [Shared.Enum.Zone.SANDY_SHORES] = 5,
+            [Shared.Enum.Zone.PALETO_BAY] = 3,
         }
     }
 } --[[@as Config]]

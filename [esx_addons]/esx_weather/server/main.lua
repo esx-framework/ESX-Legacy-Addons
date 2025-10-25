@@ -1,4 +1,4 @@
----@param zoneName string
+---@param zoneName Zone
 ---@param weatherType WeatherType
 RegisterNetEvent("esx_weather:server:setZoneWeather", function(zoneName, weatherType)
     local src = source --[[@as integer]]

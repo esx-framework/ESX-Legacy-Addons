@@ -1,7 +1,7 @@
 Modules = Modules or {}
 Modules.Zone = Modules.Zone or {}
 
----@return string
+---@return Zone
 function Modules.Zone.getClosest()
     local playerCoords = GetEntityCoords(ESX.PlayerData.ped).xy
 
