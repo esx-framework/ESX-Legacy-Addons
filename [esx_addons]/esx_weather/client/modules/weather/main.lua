@@ -12,14 +12,12 @@ function Modules.Weather.toggleSync(toggle)
 end
 
 function Modules.Weather.tick()
-    local currentZone, zoneWeather
-
     if (not Modules.Weather.isSyncEnabled) then
         return
     end
 
-    currentZone = Modules.Zone.getClosest()
-    zoneWeather = Modules.Weather.ByZone[currentZone]
+    local currentZone = Modules.Zone.getClosest()
+    local zoneWeather = Modules.Weather.ByZone[currentZone]
     if (not zoneWeather or zoneWeather == Modules.Weather.currentType) then
         return
     end

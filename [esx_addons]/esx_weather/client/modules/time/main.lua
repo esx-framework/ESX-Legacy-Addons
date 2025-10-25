@@ -4,6 +4,7 @@ Modules.Time = Modules.Time or {}
 Modules.Time.currentTime = false ---@type Time|false
 Modules.Time.syncedAt = false ---@type integer|false
 Modules.Time.currentZone = false ---@type Zone|false
+Modules.Time.isSyncEnabled = true
 
 local MS_PER_SECOND <const> = 1000
 
@@ -14,6 +15,10 @@ function Modules.Time.set(currentTime)
 end
 
 function Modules.Time.tick()
+    if (not Modules.Time.isSyncEnabled) then
+        return
+    end
+
     if (not Modules.Time.currentTime or not Modules.Time.syncedAt) then
         return
     end
@@ -44,4 +49,11 @@ function Modules.Time.tick()
     ))
 
     AdvanceClockTimeTo(currentTime.hours, currentTime.minutes, currentTime.seconds)
+end
+
+---@param toggle boolean
+function Modules.Time.toggleSync(toggle)
+    assert(type(toggle) == "boolean", "toggle must be a boolean")
+
+    Modules.Time.isSyncEnabled = toggle
 end

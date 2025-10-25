@@ -16,18 +16,6 @@ RegisterNetEvent("esx_weather:client:weather:setZone", function(zoneName, weathe
     Shared.Modules.Debug.print(("Updated zone %s. Changing weather: %s -> %s"):format(zoneName, oldWeatherType, weatherType))
 end)
 
-exports("ToggleWeatherSync", Modules.Weather.toggleSync)
-
-RegisterCommand("weathersync", function()
-    if (not Config.AdminGroups[ESX.PlayerData.group]) then
-        return
-    end
-
-    if (not Modules.Weather.ByZone or not Modules.Weather.currentType) then return end
-
-    Modules.NUI.show(Modules.Zone.getClosest(), Modules.Weather.currentType, Modules.Weather.ByZone)
-end)
-
 ---@param currentTime SerializedTime
 RegisterNetEvent("esx_weather:client:time:setTime", function(currentTime)
     Modules.Time.set(currentTime)
@@ -42,3 +30,16 @@ Citizen.CreateThread(function()
         Citizen.Wait(1000)
     end
 end)
+
+RegisterCommand("weathersync", function()
+    if (not Config.AdminGroups[ESX.PlayerData.group]) then
+        return
+    end
+
+    if (not Modules.Weather.ByZone or not Modules.Weather.currentType) then return end
+
+    Modules.NUI.show(Modules.Zone.getClosest(), Modules.Weather.currentType, Modules.Weather.ByZone)
+end)
+
+exports("ToggleWeatherSync", Modules.Weather.toggleSync)
+exports("ToggleTimeSync", Modules.Time.toggleSync)
