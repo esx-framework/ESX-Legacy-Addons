@@ -5,15 +5,15 @@ RegisterNetEvent("esx_weather:client:weather:setZones", function(WeatherByZone)
     Shared.Modules.Debug.print("Received weather zones from server:", json.encode(Modules.Weather.ByZone, { indent = true }))
 end)
 
----@param zoneName Zone
+---@param zone Zone
 ---@param weatherType WeatherType
-RegisterNetEvent("esx_weather:client:weather:setZone", function(zoneName, weatherType)
+RegisterNetEvent("esx_weather:client:weather:setZone", function(zone, weatherType)
     if (not Modules.Weather.ByZone) then return end
 
-    local oldWeatherType = Modules.Weather.ByZone[zoneName]
-    Modules.Weather.ByZone[zoneName] = weatherType
+    local oldWeatherType = Modules.Weather.ByZone[zone]
+    Modules.Weather.ByZone[zone] = weatherType
     Modules.NUI.updateWeatherZones(Modules.Weather.ByZone)
-    Shared.Modules.Debug.print(("Updated zone %s. Changing weather: %s -> %s"):format(zoneName, oldWeatherType, weatherType))
+    Shared.Modules.Debug.print(("Updated zone %s. Changing weather: %s -> %s"):format(zone, oldWeatherType, weatherType))
 end)
 
 ---@param currentTime SerializedTime

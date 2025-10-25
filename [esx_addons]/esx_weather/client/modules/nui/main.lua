@@ -30,10 +30,10 @@ function Modules.NUI.updateWeatherZones(WeatherByZone)
     })
 end
 
----@param Data {zoneName: Zone, weatherType: WeatherType}
+---@param Data {zone: Zone, weatherType: WeatherType}
 ---@param cb fun(success:boolean)
 RegisterNUICallback("setZoneWeather", function(Data, cb)
-    TriggerServerEvent("esx_weather:server:setZoneWeather", Data.zoneName, Data.weatherType)
+    TriggerServerEvent("esx_weather:server:setZoneWeather", Data.zone, Data.weatherType)
     cb(true)
 end)
 
@@ -46,7 +46,7 @@ RegisterNUICallback("close", function(_, cb)
 end)
 
 ---@param _ nil
----@param cb fun(Data: {WeatherTypes: table<WeatherType, Zone>})
+---@param cb fun(Data: {WeatherTypes: table<WeatherType, string>})
 RegisterNUICallback("ready", function(_, cb)
     cb({ WeatherTypes = Shared.Enum.WeatherType })
 end)

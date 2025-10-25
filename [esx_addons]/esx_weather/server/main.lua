@@ -1,6 +1,6 @@
----@param zoneName Zone
+---@param zone Zone
 ---@param weatherType WeatherType
-RegisterNetEvent("esx_weather:server:setZoneWeather", function(zoneName, weatherType)
+RegisterNetEvent("esx_weather:server:setZoneWeather", function(zone, weatherType)
     local src = source --[[@as integer]]
     local xPlayer = ESX.Player(src)
     if (not xPlayer) then return end
@@ -9,11 +9,11 @@ RegisterNetEvent("esx_weather:server:setZoneWeather", function(zoneName, weather
         return
     end
 
-    if (not Modules.Weather.ByZone[zoneName]) then
+    if (not Modules.Weather.ByZone[zone]) then
         return
     end
 
-    Modules.Weather.setZone(zoneName, weatherType)
+    Modules.Weather.setZone(zone, weatherType)
 end)
 
 ---@param src integer

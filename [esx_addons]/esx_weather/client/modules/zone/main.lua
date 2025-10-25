@@ -6,10 +6,10 @@ function Modules.Zone.getClosest()
     local playerCoords = GetEntityCoords(ESX.PlayerData.ped).xy
 
     local closestZone, closestZoneDistance = nil, nil
-    for zoneName, zoneCoords in pairs(Config.Zones) do
+    for zone, zoneCoords in pairs(Config.Zones) do
         local currentDistance = #(playerCoords - zoneCoords)
         if (not closestZone or currentDistance < closestZoneDistance) then
-            closestZone = zoneName
+            closestZone = zone
             closestZoneDistance = currentDistance
         end
     end
