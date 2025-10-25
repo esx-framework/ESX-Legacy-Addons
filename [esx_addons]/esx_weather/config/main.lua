@@ -45,7 +45,7 @@ Config = {
         Zones = {
             [Shared.Enum.Zone.LOS_SANTOS] = 0,
             [Shared.Enum.Zone.SANDY_SHORES] = 1,
-            [Shared.Enum.Zone.PALETO_BAY] = 3,
+            [Shared.Enum.Zone.PALETO_BAY] = 2,
         }
     }
 } --[[@as Config]]
