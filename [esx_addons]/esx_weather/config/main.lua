@@ -44,7 +44,7 @@ Config = {
         secondsPerGameMinute = 15,
         Zones = {
             [Shared.Enum.Zone.LOS_SANTOS] = 0,
-            [Shared.Enum.Zone.SANDY_SHORES] = 5,
+            [Shared.Enum.Zone.SANDY_SHORES] = 1,
             [Shared.Enum.Zone.PALETO_BAY] = 3,
         }
     }
