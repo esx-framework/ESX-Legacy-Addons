@@ -63,20 +63,7 @@ const UIController = (() => {
         const container = document.querySelector('.current-zone-info');
         if (!container) return;
 
-        // Validate inputs
-        if (!Sanitizer.isValidZoneName(zoneName)) {
-            console.warn('[UIController] Invalid zone name:', zoneName);
-            return;
-        }
-
-        if (!Sanitizer.isValidWeatherType(weatherType, State.weatherTypes)) {
-            console.warn('[UIController] Invalid weather type:', weatherType);
-            return;
-        }
-
         const iconConfig = getWeatherIcon(weatherType);
-        const safeZoneName = Sanitizer.sanitizeHTML(zoneName);
-        const safeWeatherType = Sanitizer.sanitizeHTML(weatherType);
 
         container.className = `current-zone-info ${iconConfig.gradientClass}`;
 
@@ -119,12 +106,6 @@ const UIController = (() => {
      * @returns {HTMLElement}
      */
     const createZoneCard = (zoneName, weatherType, isCurrent) => {
-        // Validate inputs
-        if (!Sanitizer.isValidZoneName(zoneName) || !Sanitizer.isValidWeatherType(weatherType, State.weatherTypes)) {
-            console.warn('[UIController] Invalid zone card data:', { zoneName, weatherType });
-            return document.createElement('div');
-        }
-
         const card = document.createElement('div');
         const iconConfig = getWeatherIcon(weatherType);
 
@@ -263,12 +244,6 @@ const UIController = (() => {
     const updateZoneWeather = (zoneName, weatherType) => {
         const card = elements.zonesGrid?.querySelector(`[data-zone="${zoneName}"]`);
         if (!card) return;
-
-        // Validate inputs
-        if (!Sanitizer.isValidWeatherType(weatherType, State.weatherTypes)) {
-            console.warn('[UIController] Invalid weather type for update:', weatherType);
-            return;
-        }
 
         const iconConfig = getWeatherIcon(weatherType);
         const isCurrent = card.classList.contains('current');
