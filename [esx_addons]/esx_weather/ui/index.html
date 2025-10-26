@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div id="app" class="hidden">
+        <div class="backdrop"></div>
+
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-header-content">
+                    <h1>Weather Control Panel</h1>
+                    <p class="modal-subtitle">Control the forecast. Shape the atmosphere. Rule the skies.</p>
+                </div>
+                <button class="close-btn" id="closeBtn" aria-label="Close panel">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="current-zone-info">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
+                <div class="zones-grid" id="zonesGrid">
+                    <!-- Zone cards will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Modules -->
+    <script src="js/core/state.js"></script>
+    <script src="js/core/constants.js"></script>
+
+    <!-- Utilities -->
+    <script src="js/utils/sanitizer.js"></script>
+    <script src="js/utils/helpers.js"></script>
+
+    <!-- Services -->
+    <script src="js/services/nui-bridge.js"></script>
+
+    <!-- Controllers -->
+    <script src="js/controllers/ui-controller.js"></script>
+
+    <!-- Event Handlers -->
+    <script src="js/handlers/event-handlers.js"></script>
+
+    <!-- Main Application -->
+    <script src="js/main.js"></script>
+
+    <!-- Development Testing Tool (only active in browser) -->
+    <script>
+        /**
+         * Development Testing Tool
+         * Only active in browser, never in FiveM
+         */
+        (function DevMode() {
+            if (window.location.protocol !== 'file:' && !window.location.hostname.includes('localhost')) {
+                return;
+            }
+
+            console.log('%c🔧 Development Mode Active', 'color: #FB9B04; font-weight: bold; font-size: 14px;');
+            console.log('%cTest Controls:\n  Press 1: Show UI\n  Press 2: Update Weather (Random)\n  Press ESC: Close UI', 'color: #969696;');
+
+            const mockWeatherTypes = {
+                CLEAR: 'CLEAR',
+                EXTRASUNNY: 'EXTRASUNNY',
+                CLOUDS: 'CLOUDS',
+                OVERCAST: 'OVERCAST',
+                RAIN: 'RAIN',
+                THUNDER: 'THUNDER',
+                FOGGY: 'FOGGY',
+                SMOG: 'SMOG'
+            };
+
+            const mockData = {
+                show: {
+                    action: 'show',
+                    Data: {
+                        currentZone: 'Los Santos',
+                        currentWeather: 'CLEAR',
+                        WeatherByZone: {
+                            'Los Santos': 'CLEAR',
+                            'Sandy Shores': 'EXTRASUNNY',
+                            'Paleto Bay': 'FOGGY'
+                        }
+                    }
+                },
+                updateWeatherZones: {
+                    action: 'updateWeatherZones',
+                    Data: {
+                        WeatherByZone: {
+                            'Los Santos': 'RAIN',
+                            'Sandy Shores': 'THUNDER',
+                            'Paleto Bay': 'CLEAR'
+                        }
+                    }
+                }
+            };
+
+            // Mock fetch for NUI callbacks
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                console.log('%c[Mock Fetch]', 'color: #FB9B04', url);
+
+                if (url.includes('/ready')) {
+                    console.log('%c[Mock] Returning weather types', 'color: #4CAF50');
+                    return Promise.resolve({
+                        ok: true,
+                        json: () => Promise.resolve({ WeatherTypes: mockWeatherTypes })
+                    });
+                }
+
+                if (url.includes('/setZoneWeather')) {
+                    const data = JSON.parse(options.body);
+                    console.log('%c[Mock] Set Weather:', 'color: #4CAF50', data);
+                    return Promise.resolve({ ok: true });
+                }
+
+                if (url.includes('/close')) {
+                    console.log('%c[Mock] Close UI', 'color: #FF5722');
+                    return Promise.resolve({ ok: true });
+                }
+
+                return originalFetch ? originalFetch.apply(this, arguments) : Promise.resolve({ ok: false });
+            };
+
+            // Auto-show UI after initialization
+            setTimeout(() => {
+                console.log('%c[Mock] Auto-showing UI', 'color: #2196F3');
+                window.postMessage(mockData.show, '*');
+            }, 1000);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === '1') {
+                    console.log('%c[Mock] Showing UI (Key: 1)', 'color: #2196F3');
+                    window.postMessage(mockData.show, '*');
+                }
+
+                if (e.key === '2') {
+                    const weathers = Object.keys(mockWeatherTypes);
+                    const randomWeather = {
+                        action: 'updateWeatherZones',
+                        Data: {
+                            WeatherByZone: {
+                                'Los Santos': weathers[Math.floor(Math.random() * weathers.length)],
+                                'Sandy Shores': weathers[Math.floor(Math.random() * weathers.length)],
+                                'Paleto Bay': weathers[Math.floor(Math.random() * weathers.length)]
+                            }
+                        }
+                    };
+                    console.log('%c[Mock] Updating weather (Key: 2)', 'color: #9C27B0', randomWeather.Data.WeatherByZone);
+                    window.postMessage(randomWeather, '*');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -18,6 +18,23 @@ client_scripts {
     "client/main.lua",
 }
 
+ui_page "ui/index.html"
+
+files {
+    -- Keep this order.
+    "ui/index.html",
+    "ui/style.css",
+    "ui/css/*.css",
+    "ui/js/core/state.js",
+    "ui/js/core/constants.js",
+    "ui/js/utils/sanitizer.js",
+    "ui/js/utils/helpers.js",
+    "ui/js/services/nui-bridge.js",
+    "ui/js/controllers/ui-controller.js",
+    "ui/js/handlers/event-handlers.js",
+    "ui/js/main.js",
+}
+
 server_scripts {
     "/server/modules/**",
     "server/main.lua",
