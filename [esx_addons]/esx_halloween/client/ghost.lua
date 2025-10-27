@@ -39,7 +39,7 @@ local function RequestGhostMode(fromDeath)
     TriggerServerEvent(Events.REQUEST_GHOST_MODE, 'ghost')
 
     -- Set timeout in case server doesn't respond
-    ghostRequestTimeout = SetTimeout(Config.Ghost.security.requestTimeout, function()
+    ghostRequestTimeout = ESX.SetTimeout(Config.Ghost.security.requestTimeout, function()
         if ghostState.pendingRequest then
             ghostState.pendingRequest = false
             ghostState.activatedByDeath = false
@@ -59,7 +59,7 @@ local function EnableGhostMode(fromDeath)
 
     -- Clear timeout if exists
     if ghostRequestTimeout then
-        ClearTimeout(ghostRequestTimeout)
+        ESX.ClearTimeout(ghostRequestTimeout)
         ghostRequestTimeout = nil
     end
 
@@ -167,7 +167,7 @@ AddEventHandler('esx:onPlayerDeath', function()
     if not Config.Ghost.enabled then return end
 
     if math.random(100) <= Config.Ghost.spawnChance then
-        SetTimeout(Config.Ghost.security.deathCooldown, function()
+        ESX.SetTimeout(Config.Ghost.security.deathCooldown, function()
             pendingGhostFromDeath = true
             SetNuiFocus(true, true)
             SendNUIMessage({
@@ -204,7 +204,7 @@ AddEventHandler(Events.GHOST_MODE_RESPONSE, function(approved, reason)
         ghostState.activatedByDeath = false
 
         if ghostRequestTimeout then
-            ClearTimeout(ghostRequestTimeout)
+            ESX.ClearTimeout(ghostRequestTimeout)
             ghostRequestTimeout = nil
         end
 
@@ -314,7 +314,7 @@ AddEventHandler(Events.RECEIVE_SCARE, function(ghostName)
     end
 
     -- Show notification AFTER jumpscare effect (2 second delay)
-    SetTimeout(2000, function()
+    ESX.SetTimeout(2000, function()
         SendNUIMessage({
             type = 'showNotification',
             size = 'large',
@@ -398,6 +398,6 @@ AddEventHandler('onResourceStop', function(resourceName)
 
     -- Clear timeouts
     if ghostRequestTimeout then
-        ClearTimeout(ghostRequestTimeout)
+        ESX.ClearTimeout(ghostRequestTimeout)
     end
 end)
