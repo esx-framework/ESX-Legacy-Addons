@@ -9,6 +9,27 @@
 
   let { item }: Props = $props();
 
+  // Placeholder for items without images or failed loads
+  const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24"%3E%3Crect width="24" height="24" fill="%23252525"/%3E%3Cpath fill="%23969696" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/%3E%3C/svg%3E';
+
+  let imageLoaded = $state<boolean>(false);
+  let currentImageSrc = $state<string>(item.image || PLACEHOLDER_IMAGE);
+
+  /**
+   * Handles image load success
+   */
+  function handleImageLoad(): void {
+    imageLoaded = true;
+  }
+
+  /**
+   * Handles image load error - fallback to placeholder
+   */
+  function handleImageError(): void {
+    imageLoaded = true;
+    currentImageSrc = PLACEHOLDER_IMAGE;
+  }
+
   /**
    * Increases item quantity by 1
    */
@@ -45,7 +66,12 @@
 <div class="cart-item">
   <div class="cart-item-left">
     <div class="cart-item-img">
-      <img src={item.image} alt={item.label} />
+      <img
+        src={currentImageSrc}
+        alt={item.label}
+        onload={handleImageLoad}
+        onerror={handleImageError}
+      />
     </div>
     <div class="cart-item-info">
       <div class="cart-item-label">{item.label}</div>
