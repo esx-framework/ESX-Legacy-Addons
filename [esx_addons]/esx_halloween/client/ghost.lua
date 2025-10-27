@@ -114,6 +114,10 @@ local function EnableGhostMode(fromDeath)
         scareKey = Config.Ghost.abilities.scare.keybind
     })
 
+    -- Start ghost mode threads (will terminate automatically when ghostState.isGhost becomes false)
+    StartGhostControlThread()
+    StartGhostDurationThread()
+
     return true
 end
 
@@ -232,10 +236,13 @@ end)
 local exitKey = KEYBIND_MAP[Config.Ghost.exitKeybind] or 73
 local scareKey = KEYBIND_MAP[Config.Ghost.abilities.scare.keybind] or 38
 
--- Control disable thread - MUST run every frame (Wait(0))
-CreateThread(function()
-    while true do
-        if ghostState.isGhost then
+--- Starts control disable thread for ghost mode
+--- Runs only while player is a ghost, terminates automatically when ghost mode ends
+--- MUST run every frame (Wait(0)) for DisableControlAction to work properly
+---@return nil
+local function StartGhostControlThread()
+    CreateThread(function()
+        while ghostState.isGhost do
             Wait(0) -- CRITICAL: Must be 0 for DisableControlAction to work
 
             -- Disable combat controls
@@ -267,27 +274,28 @@ CreateThread(function()
                     end
                 end
             end
-
-            ::continue::
-        else
-            Wait(500)
         end
-    end
-end)
+    end)
+end
 
--- Auto-exit ghost mode after maxDuration
-CreateThread(function()
-    while true do
-        Wait(1000)
+--- Starts auto-exit thread for ghost mode
+--- Monitors elapsed time and automatically exits ghost mode after maxDuration
+--- Runs only while player is a ghost, terminates automatically when ghost mode ends
+---@return nil
+local function StartGhostDurationThread()
+    CreateThread(function()
+        while ghostState.isGhost do
+            Wait(1000)
 
-        if ghostState.isGhost and ghostState.startTime > 0 then
-            local elapsed = GetGameTimer() - ghostState.startTime
-            if elapsed >= Config.Ghost.maxDuration then
-                DisableGhostMode()
+            if ghostState.startTime > 0 then
+                local elapsed = GetGameTimer() - ghostState.startTime
+                if elapsed >= Config.Ghost.maxDuration then
+                    DisableGhostMode()
+                end
             end
         end
-    end
-end)
+    end)
+end
 
 -- Receive scare effect
 RegisterNetEvent(Events.RECEIVE_SCARE)
