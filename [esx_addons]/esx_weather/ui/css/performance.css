@@ -1,0 +1,68 @@
+/**
+ * Performance Mode Styles
+ * Disables heavy animations and effects for improved FPS on weak hardware
+ */
+
+/* Disable all weather icon animations */
+.performance-mode .weather-icon.animate-sun,
+.performance-mode .weather-icon.animate-rain,
+.performance-mode .weather-icon.animate-cloud,
+.performance-mode .weather-icon.animate-lightning,
+.performance-mode .current-zone-icon.animate-sun,
+.performance-mode .current-zone-icon.animate-rain,
+.performance-mode .current-zone-icon.animate-cloud,
+.performance-mode .current-zone-icon.animate-lightning {
+    animation: none !important;
+}
+
+/* Remove backdrop filter blur (known CEF issue, replace with solid color) */
+.performance-mode .backdrop {
+    backdrop-filter: none !important;
+}
+
+/* Remove drop-shadow filters from icons */
+.performance-mode .current-zone-icon,
+.performance-mode .weather-icon {
+    filter: none !important;
+}
+
+/* Remove text shadows for reduced GPU load */
+.performance-mode .current-zone-name {
+    text-shadow: none !important;
+}
+
+.performance-mode .zone-card-title {
+    text-shadow: none !important;
+}
+
+/* Simplify modal entrance animation (fade only, no scale/translate) */
+.performance-mode .modal {
+    animation: fadeIn var(--transition-normal) ease-out !important;
+}
+
+/* Remove hover transform effects (keep color changes) */
+.performance-mode .zone-card:hover {
+    transform: none !important;
+}
+
+.performance-mode .perf-toggle-btn:hover,
+.performance-mode .close-btn:hover {
+    transform: none !important;
+}
+
+.performance-mode .perf-toggle-btn:active,
+.performance-mode .close-btn:active {
+    transform: none !important;
+}
+
+/* Simplify zone card hover background gradient */
+.performance-mode .zone-card::before {
+    display: none !important;
+}
+
+/* Reduce transition duration in performance mode */
+.performance-mode .zone-card,
+.performance-mode .perf-toggle-btn,
+.performance-mode .close-btn {
+    transition-duration: var(--transition-fast) !important;
+}
