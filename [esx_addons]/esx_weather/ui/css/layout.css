@@ -70,6 +70,53 @@
     margin: 0;
 }
 
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.perf-toggle-btn {
+    background: transparent;
+    border: 0.125rem solid var(--mid-color);
+    color: var(--light-color);
+    height: 2.5rem;
+    padding: 0 var(--spacing-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all var(--transition-fast);
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.perf-toggle-btn svg {
+    flex-shrink: 0;
+}
+
+.perf-toggle-btn:hover {
+    border-color: var(--brand-color);
+    color: var(--brand-color);
+    background: rgba(var(--brand-color-rgb), 0.1);
+    transform: scale(1.05);
+}
+
+.perf-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+/* Performance mode active state */
+.perf-toggle-btn.active {
+    border-color: var(--brand-color);
+    color: var(--brand-color);
+    background: rgba(var(--brand-color-rgb), 0.2);
+    box-shadow: 0 0 0.5rem rgba(var(--brand-color-rgb), 0.3);
+}
+
 .close-btn {
     background: transparent;
     border: 0.125rem solid var(--mid-color);

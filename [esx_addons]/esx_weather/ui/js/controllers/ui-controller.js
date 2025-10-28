@@ -22,7 +22,8 @@ const UIController = (() => {
             app: document.getElementById('app'),
             closeBtn: document.getElementById('closeBtn'),
             currentZoneName: document.getElementById('currentZoneName'),
-            zonesGrid: document.getElementById('zonesGrid')
+            zonesGrid: document.getElementById('zonesGrid'),
+            perfToggleBtn: document.getElementById('perfToggleBtn')
         };
     };
 
@@ -63,20 +64,7 @@ const UIController = (() => {
         const container = document.querySelector('.current-zone-info');
         if (!container) return;
 
-        // Validate inputs
-        if (!Sanitizer.isValidZoneName(zoneName)) {
-            console.warn('[UIController] Invalid zone name:', zoneName);
-            return;
-        }
-
-        if (!Sanitizer.isValidWeatherType(weatherType, State.weatherTypes)) {
-            console.warn('[UIController] Invalid weather type:', weatherType);
-            return;
-        }
-
         const iconConfig = getWeatherIcon(weatherType);
-        const safeZoneName = Sanitizer.sanitizeHTML(zoneName);
-        const safeWeatherType = Sanitizer.sanitizeHTML(weatherType);
 
         container.className = `current-zone-info ${iconConfig.gradientClass}`;
 
@@ -119,12 +107,6 @@ const UIController = (() => {
      * @returns {HTMLElement}
      */
     const createZoneCard = (zoneName, weatherType, isCurrent) => {
-        // Validate inputs
-        if (!Sanitizer.isValidZoneName(zoneName) || !Sanitizer.isValidWeatherType(weatherType, State.weatherTypes)) {
-            console.warn('[UIController] Invalid zone card data:', { zoneName, weatherType });
-            return document.createElement('div');
-        }
-
         const card = document.createElement('div');
         const iconConfig = getWeatherIcon(weatherType);
 
@@ -264,12 +246,6 @@ const UIController = (() => {
         const card = elements.zonesGrid?.querySelector(`[data-zone="${zoneName}"]`);
         if (!card) return;
 
-        // Validate inputs
-        if (!Sanitizer.isValidWeatherType(weatherType, State.weatherTypes)) {
-            console.warn('[UIController] Invalid weather type for update:', weatherType);
-            return;
-        }
-
         const iconConfig = getWeatherIcon(weatherType);
         const isCurrent = card.classList.contains('current');
 
@@ -317,6 +293,61 @@ const UIController = (() => {
         }
     };
 
+    /**
+     * Toggle performance mode on/off
+     * Applies CSS class to root element and updates button state
+     * @returns {void}
+     */
+    const togglePerformanceMode = () => {
+        setPerformanceMode(!State.performanceMode);
+        applyPerformanceMode();
+    };
+
+    /**
+     * Apply performance mode settings to UI
+     * Adds/removes performance-mode class based on state
+     * @returns {void}
+     */
+    const applyPerformanceMode = () => {
+        const app = elements.app || document.getElementById('app');
+        if (!app) return;
+
+        if (State.performanceMode) {
+            app.classList.add('performance-mode');
+            updatePerformanceModeButtonState();
+        } else {
+            app.classList.remove('performance-mode');
+            updatePerformanceModeButtonState();
+        }
+    };
+
+    /**
+     * Update performance mode button visual state
+     * Shows active state when performance mode is enabled
+     * @returns {void}
+     */
+    const updatePerformanceModeButtonState = () => {
+        const btn = elements.perfToggleBtn || document.getElementById('perfToggleBtn');
+        if (!btn) return;
+
+        if (State.performanceMode) {
+            btn.classList.add('active');
+            btn.setAttribute('title', 'Performance Mode: ON (Click to disable)');
+        } else {
+            btn.classList.remove('active');
+            btn.setAttribute('title', 'Performance Mode: OFF (Click to enable)');
+        }
+    };
+
+    /**
+     * Initialize performance mode based on saved setting
+     * Called during app initialization
+     * @returns {void}
+     */
+    const initPerformanceMode = () => {
+        applyPerformanceMode();
+    };
+
     return {
         initElements,
         show,
@@ -325,6 +356,9 @@ const UIController = (() => {
         renderZones,
         updateZoneWeather,
         getWeatherIcon,
+        togglePerformanceMode,
+        applyPerformanceMode,
+        initPerformanceMode,
         elements
     };
 })();

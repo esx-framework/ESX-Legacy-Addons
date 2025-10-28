@@ -31,8 +31,27 @@
 const State = {
     isVisible: false,
     data: null,
-    weatherTypes: {}
+    weatherTypes: {},
+    performanceMode: getPerformanceModeSetting()
 };
+
+/**
+ * Get performance mode setting from localStorage
+ * @returns {boolean} Performance mode enabled status
+ */
+function getPerformanceModeSetting() {
+    const stored = localStorage.getItem('weather_performanceMode');
+    return stored !== null ? JSON.parse(stored) : false;
+}
+
+/**
+ * Set performance mode and persist to localStorage
+ * @param {boolean} enabled - Whether performance mode is enabled
+ */
+function setPerformanceMode(enabled) {
+    State.performanceMode = enabled;
+    localStorage.setItem('weather_performanceMode', JSON.stringify(enabled));
+}
 
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {

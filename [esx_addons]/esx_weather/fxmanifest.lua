@@ -2,7 +2,7 @@ fx_version "cerulean"
 game "gta5"
 author "Kenshin13"
 description "Weather sync for your ESX server"
-version "1.0.0"
+version "1.1.0"
 legacyversion "1.13.4"
 lua54 "yes"
 use_fxv2_oal "yes"
@@ -27,7 +27,6 @@ files {
     "ui/css/*.css",
     "ui/js/core/state.js",
     "ui/js/core/constants.js",
-    "ui/js/utils/sanitizer.js",
     "ui/js/utils/helpers.js",
     "ui/js/services/nui-bridge.js",
     "ui/js/controllers/ui-controller.js",

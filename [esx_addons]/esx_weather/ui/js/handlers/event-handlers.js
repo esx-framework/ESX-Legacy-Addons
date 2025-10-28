@@ -53,6 +53,7 @@ const EventHandlers = (() => {
 
     /**
      * Handle custom dropdown option selection
+     * In performance mode, skips icon animations and uses instant text updates
      * @param {HTMLElement} option - Selected option element
      * @returns {void}
      */
@@ -74,46 +75,66 @@ const EventHandlers = (() => {
         const weatherName = Helpers.getWeatherDisplayName(value, State.weatherTypes);
         const iconConfig = UIController.getWeatherIcon(value);
 
-        if (textElement) {
-            textElement.classList.add('slide-out');
-
-            setTimeout(() => {
+        // In performance mode, use instant updates without animations
+        if (State.performanceMode) {
+            // Instant text update
+            if (textElement) {
                 textElement.textContent = weatherName;
-                textElement.classList.remove('slide-out');
-                textElement.classList.add('slide-in');
+            }
 
-                setTimeout(() => {
-                    textElement.classList.remove('slide-in');
-                }, AnimationTimings.SLIDE_ANIMATION);
-            }, AnimationTimings.SLIDE_ANIMATION);
-        }
-
-        if (trigger) {
-            const currentIcon = trigger.querySelector('svg') || trigger.querySelector('i');
-
-            if (currentIcon) {
-                currentIcon.classList.add('icon-fade');
-
-                setTimeout(() => {
-                    currentIcon.remove();
-
+            // Instant icon update
+            if (trigger) {
+                const currentIcon = trigger.querySelector('svg') || trigger.querySelector('i');
+                if (currentIcon) {
                     const newIcon = document.createElement('i');
                     newIcon.setAttribute('data-lucide', iconConfig.icon);
-                    newIcon.style.opacity = '0';
-                    newIcon.style.transform = 'scale(0.8)';
-
-                    trigger.insertBefore(newIcon, trigger.firstChild);
-
+                    trigger.replaceChild(newIcon, currentIcon);
                     Helpers.initLucideIcons(trigger);
+                }
+            }
+        } else {
+            // Normal mode with animations
+            if (textElement) {
+                textElement.classList.add('slide-out');
+
+                setTimeout(() => {
+                    textElement.textContent = weatherName;
+                    textElement.classList.remove('slide-out');
+                    textElement.classList.add('slide-in');
 
                     setTimeout(() => {
-                        const renderedIcon = trigger.querySelector('svg') || trigger.querySelector('i');
-                        if (renderedIcon) {
-                            renderedIcon.style.opacity = '1';
-                            renderedIcon.style.transform = 'scale(1)';
-                        }
-                    }, AnimationTimings.ICON_FADE_IN);
-                }, AnimationTimings.ICON_FADE_OUT);
+                        textElement.classList.remove('slide-in');
+                    }, AnimationTimings.SLIDE_ANIMATION);
+                }, AnimationTimings.SLIDE_ANIMATION);
+            }
+
+            if (trigger) {
+                const currentIcon = trigger.querySelector('svg') || trigger.querySelector('i');
+
+                if (currentIcon) {
+                    currentIcon.classList.add('icon-fade');
+
+                    setTimeout(() => {
+                        currentIcon.remove();
+
+                        const newIcon = document.createElement('i');
+                        newIcon.setAttribute('data-lucide', iconConfig.icon);
+                        newIcon.style.opacity = '0';
+                        newIcon.style.transform = 'scale(0.8)';
+
+                        trigger.insertBefore(newIcon, trigger.firstChild);
+
+                        Helpers.initLucideIcons(trigger);
+
+                        setTimeout(() => {
+                            const renderedIcon = trigger.querySelector('svg') || trigger.querySelector('i');
+                            if (renderedIcon) {
+                                renderedIcon.style.opacity = '1';
+                                renderedIcon.style.transform = 'scale(1)';
+                            }
+                        }, AnimationTimings.ICON_FADE_IN);
+                    }, AnimationTimings.ICON_FADE_OUT);
+                }
             }
         }
 
@@ -165,12 +186,26 @@ const EventHandlers = (() => {
     };
 
     /**
+     * Handle performance mode toggle button click
+     * @returns {void}
+     */
+    const handlePerformanceModeToggle = () => {
+        UIController.togglePerformanceMode();
+    };
+
+    /**
      * Global click handler with delegation
      * @param {Event} event - Click event
      * @returns {void}
      */
     const handleGlobalClick = (event) => {
         const target = event.target;
+
+        // Performance mode toggle button
+        if (target.matches('#perfToggleBtn') || target.closest('#perfToggleBtn')) {
+            handlePerformanceModeToggle();
+            return;
+        }
 
         // Close button
         if (target.matches('#closeBtn, .close-btn') || target.closest('#closeBtn, .close-btn')) {
