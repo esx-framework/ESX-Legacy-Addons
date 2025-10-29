@@ -25,8 +25,8 @@ const GarageName = styled.div`
 `;
 
 const GarageIcon = styled.div`
-  background: ${props => props.theme.colors.primary};
-  border-radius: ${props => props.theme.sizes.borderRadius.sm};
+  background: ${(props) => props.theme.colors.primary};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.sm};
   width: 1.875rem;
   height: 1.875rem;
   display: flex;
@@ -36,14 +36,14 @@ const GarageIcon = styled.div`
   svg {
     width: 1.25rem;
     height: 1.25rem;
-    color: ${props => props.theme.colors.background};
+    color: ${(props) => props.theme.colors.background};
   }
 `;
 
 const GarageTitle = styled.h2`
-  color: ${props => props.theme.colors.text.primary};
+  color: ${(props) => props.theme.colors.text.primary};
   font-size: 1.5rem;
-  font-weight: ${props => props.theme.fonts.weights.medium};
+  font-weight: ${(props) => props.theme.fonts.weights.medium};
   margin: 0;
 `;
 
@@ -55,7 +55,7 @@ const ControlsContainer = styled.div`
 `;
 
 const CounterButton = styled.div<{ $variant?: 'primary' | 'danger'; $active?: boolean }>`
-  background: ${props => {
+  background: ${(props) => {
     if (props.$active) {
       return props.$variant === 'danger'
         ? props.theme.colors.secondary
@@ -65,13 +65,13 @@ const CounterButton = styled.div<{ $variant?: 'primary' | 'danger'; $active?: bo
       ? props.theme.colors.button.dangerBg
       : props.theme.colors.button.secondary;
   }};
-  border-radius: ${props => props.theme.sizes.borderRadius.lg};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.lg};
   padding: 0 0.625rem 0 0.1875rem;
   height: 1.875rem;
   display: flex;
   align-items: center;
   gap: 0.3125rem;
-  box-shadow: ${props => {
+  box-shadow: ${(props) => {
     if (props.$active) {
       return props.$variant === 'danger'
         ? '0 6px 18px rgba(255, 128, 128, 0.25)'
@@ -80,20 +80,20 @@ const CounterButton = styled.div<{ $variant?: 'primary' | 'danger'; $active?: bo
     return props.theme.colors.shadows.sm;
   }};
   cursor: pointer;
-  transition: all ${props => props.theme.transitions.fast};
+  transition: all ${(props) => props.theme.transitions.fast};
 
   &:hover {
-    opacity: ${props => props.theme.effects.opacity.hover};
+    opacity: ${(props) => props.theme.effects.opacity.hover};
   }
 `;
 
 const CounterIcon = styled.div<{ $variant?: 'primary' | 'danger'; $active?: boolean }>`
-  background: ${props =>
+  background: ${(props) =>
     props.$active
       ? props.theme.colors.backgroundSecondary
       : props.$variant === 'danger'
-      ? props.theme.colors.secondary
-      : props.theme.colors.primary};
+        ? props.theme.colors.secondary
+        : props.theme.colors.primary};
   border-radius: 6.25rem;
   width: 1.5rem;
   height: 1.5rem;
@@ -104,7 +104,7 @@ const CounterIcon = styled.div<{ $variant?: 'primary' | 'danger'; $active?: bool
   svg {
     width: 1rem;
     height: 1rem;
-    color: ${props =>
+    color: ${(props) =>
       props.$active
         ? props.$variant === 'danger'
           ? props.theme.colors.secondary
@@ -114,31 +114,31 @@ const CounterIcon = styled.div<{ $variant?: 'primary' | 'danger'; $active?: bool
 `;
 
 const CounterText = styled.span<{ $variant?: 'primary' | 'danger'; $active?: boolean }>`
-  color: ${props =>
+  color: ${(props) =>
     props.$active
       ? props.theme.colors.background
       : props.$variant === 'danger'
-      ? props.theme.colors.secondary
-      : props.theme.colors.primary};
+        ? props.theme.colors.secondary
+        : props.theme.colors.primary};
   font-size: 0.875rem;
-  font-weight: ${props => props.theme.fonts.weights.bold};
+  font-weight: ${(props) => props.theme.fonts.weights.bold};
 `;
 
 const SearchBar = styled.div`
-  background: ${props => props.theme.colors.backgroundSecondary};
-  border-radius: ${props => props.theme.sizes.borderRadius.sm};
+  background: ${(props) => props.theme.colors.backgroundSecondary};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.sm};
   padding: 0.625rem;
   width: 21.875rem;
   height: 2.375rem;
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  opacity: ${props => props.theme.effects.opacity.disabled};
-  transition: ${props => props.theme.transitions.fast};
+  opacity: ${(props) => props.theme.effects.opacity.disabled};
+  transition: ${(props) => props.theme.transitions.fast};
 
   &:focus-within {
     opacity: 1;
-    border: 1px solid ${props => props.theme.colors.primary};
+    border: 1px solid ${(props) => props.theme.colors.primary};
   }
 `;
 
@@ -146,36 +146,36 @@ const SearchInput = styled.input`
   flex: 1;
   background: transparent;
   border: none;
-  color: ${props => props.theme.colors.text.primary};
+  color: ${(props) => props.theme.colors.text.primary};
   font-size: 1rem;
-  font-weight: ${props => props.theme.fonts.weights.regular};
+  font-weight: ${(props) => props.theme.fonts.weights.regular};
   outline: none;
 
   &::placeholder {
-    color: ${props => props.theme.colors.text.disabled};
+    color: ${(props) => props.theme.colors.text.disabled};
   }
 `;
 
 const CloseButton = styled.button`
-  background: ${props => props.theme.colors.backgroundSecondary};
-  border-radius: ${props => props.theme.sizes.borderRadius.sm};
+  background: ${(props) => props.theme.colors.backgroundSecondary};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.sm};
   width: 2.375rem;
   height: 2.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: ${props => props.theme.effects.opacity.disabled};
-  transition: ${props => props.theme.transitions.fast};
+  opacity: ${(props) => props.theme.effects.opacity.disabled};
+  transition: ${(props) => props.theme.transitions.fast};
 
   svg {
     width: 1.25rem;
     height: 1.25rem;
-    color: ${props => props.theme.colors.text.primary};
+    color: ${(props) => props.theme.colors.text.primary};
   }
 
   &:hover {
     opacity: 1;
-    background: ${props => props.theme.colors.button.danger};
+    background: ${(props) => props.theme.colors.button.danger};
   }
 `;
 
@@ -229,11 +229,17 @@ export const GarageHeader: React.FC = () => {
           <CounterText $active={filter.stored === true}>{stats.stored}</CounterText>
         </CounterButton>
 
-        <CounterButton $variant="danger" onClick={handleImpoundedFilter} $active={filter.impounded === true}>
+        <CounterButton
+          $variant="danger"
+          onClick={handleImpoundedFilter}
+          $active={filter.impounded === true}
+        >
           <CounterIcon $variant="danger" $active={filter.impounded === true}>
             <GiHook />
           </CounterIcon>
-          <CounterText $variant="danger" $active={filter.impounded === true}>{stats.impounded}</CounterText>
+          <CounterText $variant="danger" $active={filter.impounded === true}>
+            {stats.impounded}
+          </CounterText>
         </CounterButton>
 
         <SearchBar>

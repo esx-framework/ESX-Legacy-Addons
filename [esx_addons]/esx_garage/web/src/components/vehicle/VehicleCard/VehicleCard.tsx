@@ -7,19 +7,19 @@ import { useGarageStore } from '@/store/garage.store';
 import { getVehicleImagePath } from '@/utils/vehicle';
 
 const CardContainer = styled(motion.div)`
-  background: ${props => props.theme.colors.background};
-  border-radius: ${props => props.theme.sizes.borderRadius.sm};
-  border: 1px solid ${props => props.theme.colors.borderLight};
+  background: ${(props) => props.theme.colors.background};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.sm};
+  border: 1px solid ${(props) => props.theme.colors.borderLight};
   width: 20.625rem;
   height: 12rem;
   overflow: hidden;
   cursor: pointer;
-  transition: ${props => props.theme.transitions.fast};
+  transition: ${(props) => props.theme.transitions.fast};
   display: grid;
   grid-template-rows: auto 1fr auto;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: ${(props) => props.theme.colors.primary};
     transform: translateY(-0.125rem);
   }
 `;
@@ -30,18 +30,25 @@ const VehicleImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: center 120%;
+  object-position: center center;
+  // top: 0%;
   opacity: 1;
   filter: brightness(1.15) saturate(1.1);
   pointer-events: none;
   padding: 1.25rem;
   z-index: 0;
+  transform: scale(0.6) translateY(10%);
 `;
 
 const VehicleOverlay = styled.div`
   grid-row: 1 / -1;
   grid-column: 1;
-  background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 50%, rgba(0,0,0,0.8) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.8) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
   pointer-events: none;
   z-index: 1;
 `;
@@ -63,21 +70,21 @@ const VehicleInfo = styled.div`
 `;
 
 const VehicleName = styled.h3`
-  color: ${props => props.theme.colors.text.primary};
+  color: ${(props) => props.theme.colors.text.primary};
   font-size: 0.75rem;
-  font-weight: ${props => props.theme.fonts.weights.medium};
+  font-weight: ${(props) => props.theme.fonts.weights.medium};
   margin: 0;
   text-transform: uppercase;
 `;
 
 const VehicleDetails = styled.div`
   display: flex;
-  gap: ${props => props.theme.sizes.spacing.sm};
+  gap: ${(props) => props.theme.sizes.spacing.sm};
 `;
 
 const DetailBadge = styled.div`
-  background: ${props => props.theme.colors.backgroundSecondary};
-  border-radius: ${props => props.theme.sizes.borderRadius.sm};
+  background: ${(props) => props.theme.colors.backgroundSecondary};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.sm};
   padding: 0 0.3125rem;
   height: 1.125rem;
   display: flex;
@@ -86,9 +93,9 @@ const DetailBadge = styled.div`
 `;
 
 const DetailText = styled.span`
-  color: ${props => props.theme.colors.text.primary};
+  color: ${(props) => props.theme.colors.text.primary};
   font-size: 0.625rem;
-  font-weight: ${props => props.theme.fonts.weights.bold};
+  font-weight: ${(props) => props.theme.fonts.weights.bold};
 `;
 
 const ActionButtons = styled.div`
@@ -98,30 +105,26 @@ const ActionButtons = styled.div`
 `;
 
 const ActionButton = styled.button<{ $active?: boolean }>`
-  background: ${props =>
-    props.$active
-      ? props.theme.colors.primary
-      : props.theme.colors.backgroundSecondary};
-  border-radius: ${props => props.theme.sizes.borderRadius.sm};
+  background: ${(props) =>
+    props.$active ? props.theme.colors.primary : props.theme.colors.backgroundSecondary};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.sm};
   width: 2rem;
   height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: ${props => props.theme.transitions.fast};
-  box-shadow: ${props => props.$active ? props.theme.colors.shadows.brand : 'none'};
+  transition: ${(props) => props.theme.transitions.fast};
+  box-shadow: ${(props) => (props.$active ? props.theme.colors.shadows.brand : 'none')};
 
   svg {
     width: 1.125rem;
     height: 1.125rem;
-    color: ${props =>
-      props.$active
-        ? props.theme.colors.text.primary
-        : props.theme.colors.text.secondary};
+    color: ${(props) =>
+      props.$active ? props.theme.colors.text.primary : props.theme.colors.text.secondary};
   }
 
   &:hover {
-    background: ${props =>
+    background: ${(props) =>
       props.$active
         ? props.theme.colors.button.primaryHover
         : props.theme.colors.backgroundSecondary};
@@ -139,33 +142,31 @@ const BottomContainer = styled.div`
 `;
 
 const StatusIndicator = styled.div<{ $impounded?: boolean }>`
-  background: ${props =>
-    props.$impounded
-      ? props.theme.colors.secondary
-      : props.theme.colors.primary};
-  color: ${props => props.theme.colors.background};
+  background: ${(props) =>
+    props.$impounded ? props.theme.colors.secondary : props.theme.colors.primary};
+  color: ${(props) => props.theme.colors.background};
   padding: 0.25rem 0.5rem;
-  border-radius: ${props => props.theme.sizes.borderRadius.sm};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.sm};
   font-size: 0.625rem;
-  font-weight: ${props => props.theme.fonts.weights.bold};
+  font-weight: ${(props) => props.theme.fonts.weights.bold};
   text-transform: uppercase;
   margin-left: auto;
 `;
 
 const PriceTag = styled.div`
-  background: ${props => props.theme.colors.secondary};
-  color: ${props => props.theme.colors.text.primary};
+  background: ${(props) => props.theme.colors.secondary};
+  color: ${(props) => props.theme.colors.text.primary};
   padding: 0.25rem 0.5rem;
-  border-radius: ${props => props.theme.sizes.borderRadius.sm};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.sm};
   font-size: 0.625rem;
-  font-weight: ${props => props.theme.fonts.weights.bold};
+  font-weight: ${(props) => props.theme.fonts.weights.bold};
 `;
 
 const RenameInput = styled.input`
-  background: ${props => props.theme.colors.backgroundSecondary};
-  border: 1px solid ${props => props.theme.colors.primary};
-  border-radius: ${props => props.theme.sizes.borderRadius.sm};
-  color: ${props => props.theme.colors.text.primary};
+  background: ${(props) => props.theme.colors.backgroundSecondary};
+  border: 1px solid ${(props) => props.theme.colors.primary};
+  border-radius: ${(props) => props.theme.sizes.borderRadius.sm};
+  color: ${(props) => props.theme.colors.text.primary};
   font-size: 0.75rem;
   padding: 0.125rem 0.3125rem;
   outline: none;
@@ -204,7 +205,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onClick }) =>
 
   const formatMileage = (mileage: number) => {
     // Convert to miles (1 km = 0.621371 miles)
-    const miles = mileage * 0.621371 / 1000;
+    const miles = (mileage * 0.621371) / 1000;
     return `${miles.toFixed(1)} miles`;
   };
 
@@ -268,15 +269,11 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onClick }) =>
       <BottomContainer>
         {vehicle.impounded ? (
           <>
-            {vehicle.impoundFee && (
-              <PriceTag>${vehicle.impoundFee}</PriceTag>
-            )}
+            {vehicle.impoundFee && <PriceTag>${vehicle.impoundFee}</PriceTag>}
             <StatusIndicator $impounded>Impounded</StatusIndicator>
           </>
         ) : (
-          <StatusIndicator>
-            {vehicle.stored ? 'Stored' : 'Out'}
-          </StatusIndicator>
+          <StatusIndicator>{vehicle.stored ? 'Stored' : 'Out'}</StatusIndicator>
         )}
       </BottomContainer>
     </CardContainer>

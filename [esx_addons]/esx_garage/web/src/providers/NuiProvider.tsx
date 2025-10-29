@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, type PropsWithChildren } from 'react';
-import { isInGame } from '@/utils/nui';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  type PropsWithChildren,
+} from 'react';
+import { fetchNui, isInGame } from '@/utils/nui';
 import type { NuiMessage } from '@/types/nui.types';
 
 interface NuiContextValue {
@@ -27,47 +34,49 @@ export const NuiProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const inGame = isInGame();
 
   const setVisible = useCallback((visible: boolean) => {
+    console.log(visible);
     setIsVisible(visible);
     if (!visible) {
       setFocus(false, false);
     }
   }, []);
 
-  const setFocus = useCallback((focus: boolean, cursor = true) => {
-    setHasFocus(focus);
+  const setFocus = useCallback(
+    (focus: boolean, cursor = true) => {
+      setHasFocus(focus);
 
-    if (inGame) {
-      // @ts-ignore - FiveM native
-      SetNuiFocus(focus, cursor);
-    }
-  }, [inGame]);
+      if (inGame) {
+        fetchNui('SetNuiFocus', {
+          hasFocus: focus,
+          hasCursor: cursor,
+        });
+      }
+    },
+    [inGame]
+  );
 
-  const sendCallback = useCallback(async <T = unknown,>(
-    event: string,
-    data?: unknown
-  ): Promise<T> => {
-    if (!inGame) {
-      console.warn(`[NUI] sendCallback called outside game context: ${event}`);
-      return Promise.reject(new Error('Not in game'));
-    }
+  const sendCallback = useCallback(
+    async <T = unknown,>(event: string, data?: unknown): Promise<T> => {
+      if (!inGame) {
+        console.warn(`[NUI] sendCallback called outside game context: ${event}`);
+        return Promise.reject(new Error('Not in game'));
+      }
 
-    // @ts-ignore - FiveM global
-    const resourceName = typeof GetParentResourceName !== 'undefined' ? GetParentResourceName() : 'esx_garages';
+      // @ts-ignore - FiveM global
+      const resourceName = (window as any).GetParentResourceName();
 
-    const response = await fetch(`https://${resourceName}/${event}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data ?? {})
-    });
+      const response = await fetch(`https://${resourceName}/${event}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data ?? {}),
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (!result.success) {
-      throw new Error(result.error ?? 'Unknown error');
-    }
-
-    return result.data as T;
-  }, [inGame]);
+      return result as T;
+    },
+    [inGame]
+  );
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent<NuiMessage>) => {
@@ -104,12 +113,8 @@ export const NuiProvider: React.FC<PropsWithChildren> = ({ children }) => {
     isInGame: inGame,
     setVisible,
     setFocus,
-    sendCallback
+    sendCallback,
   };
 
-  return (
-    <NuiContext.Provider value={value}>
-      {children}
-    </NuiContext.Provider>
-  );
+  return <NuiContext.Provider value={value}>{children}</NuiContext.Provider>;
 };

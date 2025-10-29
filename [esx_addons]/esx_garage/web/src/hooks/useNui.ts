@@ -45,38 +45,37 @@ export const useNui = () => {
    * @param {string} options.errorMessage - Custom error message
    * @returns {Promise<T|null>} Response data or null on error
    */
-  const safeCallback = useCallback(async <T = unknown,>(
-    event: string,
-    data?: unknown,
-    options?: {
-      showSuccess?: boolean;
-      showError?: boolean;
-      successMessage?: string;
-      errorMessage?: string;
-    }
-  ): Promise<T | null> => {
-    try {
-      const result = await sendCallback<T>(event, data);
-
-      if (options?.showSuccess) {
-        showNotification(
-          options.successMessage ?? t('notifications.success'),
-          { type: 'success' }
-        );
+  const safeCallback = useCallback(
+    async <T = unknown>(
+      event: string,
+      data?: unknown,
+      options?: {
+        showSuccess?: boolean;
+        showError?: boolean;
+        successMessage?: string;
+        errorMessage?: string;
       }
+    ): Promise<T | null> => {
+      try {
+        const result = await sendCallback<T>(event, data);
 
-      return result;
-    } catch (error) {
-      if (options?.showError) {
-        const message = error instanceof Error ? error.message : t('notifications.error');
-        showNotification(
-          options.errorMessage ?? message,
-          { type: 'error' }
-        );
+        if (options?.showSuccess) {
+          showNotification(options.successMessage ?? t('notifications.success'), {
+            type: 'success',
+          });
+        }
+
+        return result;
+      } catch (error) {
+        if (options?.showError) {
+          const message = error instanceof Error ? error.message : t('notifications.error');
+          showNotification(options.errorMessage ?? message, { type: 'error' });
+        }
+        return null;
       }
-      return null;
-    }
-  }, [sendCallback, showNotification, t]);
+    },
+    [sendCallback, showNotification, t]
+  );
 
   /**
    * Closes the NUI and removes focus.
@@ -92,6 +91,6 @@ export const useNui = () => {
     setVisible,
     setFocus,
     sendCallback: safeCallback,
-    close
+    close,
   };
 };

@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,8 +16,8 @@ export default defineConfig({
       '@store': path.resolve(__dirname, './src/store'),
       '@styles': path.resolve(__dirname, './src/styles'),
       '@services': path.resolve(__dirname, './src/services'),
-      '@constants': path.resolve(__dirname, './src/constants')
-    }
+      '@constants': path.resolve(__dirname, './src/constants'),
+    },
   },
   build: {
     outDir: 'dist',
@@ -28,22 +28,17 @@ export default defineConfig({
     // Target CEF 103 (Chrome 103) for FiveM
     target: 'chrome103',
 
-    // Remove console logs and debugger statements in production
-    esbuild: {
-      drop: ['console', 'debugger']
-    },
-
     // Split vendor chunks for better caching
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor': ['react', 'react-dom', 'styled-components', 'framer-motion']
-        }
-      }
-    }
+          vendor: ['react', 'react-dom', 'styled-components', 'framer-motion'],
+        },
+      },
+    },
   },
   server: {
     port: 3000,
-    open: true
-  }
-})
+    open: true,
+  },
+});

@@ -51,7 +51,7 @@ export async function fetchNui<T = unknown>(
 ): Promise<T> {
   // In development, return mock data if provided
   if (!isInGame() && mockData !== undefined) {
-    await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Simulate network delay
     return mockData;
   }
 
@@ -62,9 +62,9 @@ export async function fetchNui<T = unknown>(
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data || {})
+      body: JSON.stringify(data || {}),
     });
 
     const result: NuiCallbackResponse<T> = await response.json();
@@ -95,6 +95,9 @@ export const closeNui = (): void => {
  * @param {string} message - The notification message
  * @param {'success' | 'error' | 'info'} type - The notification type
  */
-export const sendNotification = (message: string, type: 'success' | 'error' | 'info' = 'info'): void => {
+export const sendNotification = (
+  message: string,
+  type: 'success' | 'error' | 'info' = 'info'
+): void => {
   fetchNui('notification', { message, type }, true).catch(console.error);
 };
