@@ -72,3 +72,32 @@
 ---@field header string Notification title text (will be sanitized)
 ---@field description string Notification body text (will be sanitized)
 ---@field duration number|nil Duration in milliseconds (default: 5000, min: 1000, max: 30000)
+
+---Trick-or-Treat configuration
+---@class TrickOrTreatConfig
+---@field enabled boolean Enable/disable trick-or-treat feature
+---@field roundFrequencyMinutes number Minutes between round starts
+---@field doorsPerRound number Number of random houses per round
+---@field candyPerDoor number Candy amount per door collection
+---@field notifications table Notification duration settings
+---@field blips table Blip color and sprite settings
+---@field rewards table Reward probability and items
+---@field interaction table Interaction distance and keybind
+---@field houses table Array of house location data
+
+---Trick-or-Treat house location data
+---@class HouseLocation
+---@field coords vector3 House position coordinates
+---@field heading number NPC heading/direction
+---@field pedModel string Ped model for NPC at house
+
+---Trick-or-Treat state tracking (client)
+---@class TrickOrTreatState
+---@field hudVisible boolean Whether HUD is currently showing
+---@field currentHouses number Houses collected in current round
+---@field totalHouses number Total houses available in round
+---@field timeRemaining number Time left in round (ms)
+---@field rewardVisible boolean Whether reward popup is showing
+---@field rewardType "treat"|"trick" Type of reward (treat or trick)
+---@field rewardItem string Item name for reward
+---@field rewardAmount number Item amount for reward

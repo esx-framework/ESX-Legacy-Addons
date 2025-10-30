@@ -40,6 +40,9 @@ Config = {
         }
     },
 
+    -- Trick-or-Treat event configuration (loaded via shared_scripts)
+    TrickOrTreat = TrickOrTreatConfig or {},
+
     -- Admin permissions for /ghost command
     AdminGroups = {
         'admin',

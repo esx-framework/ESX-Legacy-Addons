@@ -114,9 +114,56 @@ local function EnableGhostMode(fromDeath)
         scareKey = Config.Ghost.abilities.scare.keybind
     })
 
-    -- Start ghost mode threads (will terminate automatically when ghostState.isGhost becomes false)
-    StartGhostControlThread()
-    StartGhostDurationThread()
+    -- Start Ghost Control Thread (only runs while player is a ghost)
+    CreateThread(function()
+        while ghostState.isGhost do
+            Wait(0) -- Must be 0 for DisableControlAction to work
+
+            -- GHOST CONTROL DISABLING (every frame)
+            DisableControlAction(0, 24, true)   -- Attack
+            DisableControlAction(0, 25, true)   -- Aim
+            DisableControlAction(0, 140, true)  -- Melee light attack
+            DisableControlAction(0, 141, true)  -- Melee heavy attack
+            DisableControlAction(0, 142, true)  -- Melee alternate attack
+
+            -- Check exit keybind
+            if IsControlJustPressed(0, exitKey) then
+                DisableGhostMode()
+                break
+            end
+
+            -- Check scare keybind
+            if Config.Ghost.abilities.scare.enabled and IsControlJustPressed(0, scareKey) then
+                local currentTime = GetGameTimer()
+                if currentTime - ghostState.lastScareTime >= Config.Ghost.abilities.scare.cooldown then
+                    local playerPed = PlayerPedId()
+                    local playerCoords = GetEntityCoords(playerPed)
+                    local closestPlayer, closestDistance = ESX.Game.GetClosestPlayer(playerCoords)
+
+                    if closestPlayer ~= -1 and closestDistance and closestDistance <= Config.Ghost.abilities.scare.range then
+                        local targetId = GetPlayerServerId(closestPlayer)
+                        TriggerServerEvent(Events.TRIGGER_SCARE, targetId)
+                        ghostState.lastScareTime = currentTime
+                    end
+                end
+            end
+        end
+    end)
+
+    -- Start Ghost Duration Check Thread (only runs while player is a ghost)
+    CreateThread(function()
+        while ghostState.isGhost do
+            Wait(1000)
+
+            if ghostState.startTime > 0 then
+                local elapsed = GetGameTimer() - ghostState.startTime
+                if elapsed >= Config.Ghost.maxDuration then
+                    DisableGhostMode()
+                    break
+                end
+            end
+        end
+    end)
 
     return true
 end
@@ -173,6 +220,15 @@ AddEventHandler('esx:onPlayerDeath', function()
             SendNUIMessage({
                 type = 'showGhostChoice'
             })
+
+            -- Auto-clear focus after 30 seconds to prevent permanent input blocking
+            ESX.SetTimeout(30000, function()
+                if pendingGhostFromDeath then
+                    SetNuiFocus(false, false)
+                    pendingGhostFromDeath = false
+                    SendNUIMessage({ type = 'hideGhostChoice' })
+                end
+            end)
         end)
     end
 end)
@@ -180,17 +236,34 @@ end)
 -- Show ghost choice (admin command)
 RegisterNetEvent(Events.SHOW_GHOST_CHOICE)
 AddEventHandler(Events.SHOW_GHOST_CHOICE, function(forced)
+    -- Validate parameter type
+    if type(forced) ~= "boolean" then
+        forced = false
+    end
+
     pendingGhostFromDeath = false
     SetNuiFocus(true, true)
     SendNUIMessage({
         type = 'showGhostChoice',
-        forced = forced or false
+        forced = forced
     })
+
+    -- Auto-clear focus after 30 seconds to prevent permanent input blocking
+    ESX.SetTimeout(30000, function()
+        SetNuiFocus(false, false)
+        SendNUIMessage({ type = 'hideGhostChoice' })
+    end)
 end)
 
 -- Server response to ghost mode request
 RegisterNetEvent(Events.GHOST_MODE_RESPONSE)
 AddEventHandler(Events.GHOST_MODE_RESPONSE, function(approved, reason)
+    -- Validate parameter types
+    if type(approved) ~= "boolean" then
+        print('^1[ESX Halloween] Invalid ghost mode response^7')
+        return
+    end
+
     if not ghostState.pendingRequest then return end
 
     if approved then
@@ -208,7 +281,7 @@ AddEventHandler(Events.GHOST_MODE_RESPONSE, function(approved, reason)
             ghostRequestTimeout = nil
         end
 
-        if reason then
+        if type(reason) == "string" then
             print('^3[ESX Halloween] ' .. reason .. '^7')
         end
     end
@@ -236,119 +309,19 @@ end)
 local exitKey = KEYBIND_MAP[Config.Ghost.exitKeybind] or 73
 local scareKey = KEYBIND_MAP[Config.Ghost.abilities.scare.keybind] or 38
 
---- Starts control disable thread for ghost mode
---- Runs only while player is a ghost, terminates automatically when ghost mode ends
---- MUST run every frame (Wait(0)) for DisableControlAction to work properly
----@return nil
-local function StartGhostControlThread()
-    CreateThread(function()
-        while ghostState.isGhost do
-            Wait(0) -- CRITICAL: Must be 0 for DisableControlAction to work
-
-            -- Disable combat controls
-            DisableControlAction(0, 24, true) -- Attack
-            DisableControlAction(0, 25, true) -- Aim
-            DisableControlAction(0, 140, true) -- Melee light attack
-            DisableControlAction(0, 141, true) -- Melee heavy attack
-            DisableControlAction(0, 142, true) -- Melee alternate attack
-
-            -- Check exit keybind
-            if IsControlJustPressed(0, exitKey) then
-                DisableGhostMode()
-            end
-
-            -- Check scare keybind
-            if Config.Ghost.abilities.scare.enabled and IsControlJustPressed(0, scareKey) then
-                local currentTime = GetGameTimer()
-                if currentTime - ghostState.lastScareTime >= Config.Ghost.abilities.scare.cooldown then
-
-                    local playerPed = PlayerPedId()
-                    local playerCoords = GetEntityCoords(playerPed)
-
-                    local closestPlayer, closestDistance = ESX.Game.GetClosestPlayer(playerCoords)
-
-                    if closestPlayer ~= -1 and closestDistance and closestDistance <= Config.Ghost.abilities.scare.range then
-                        local targetId = GetPlayerServerId(closestPlayer)
-                        TriggerServerEvent(Events.TRIGGER_SCARE, targetId)
-                        ghostState.lastScareTime = currentTime
-                    end
-                end
-            end
-        end
-    end)
-end
-
---- Starts auto-exit thread for ghost mode
---- Monitors elapsed time and automatically exits ghost mode after maxDuration
---- Runs only while player is a ghost, terminates automatically when ghost mode ends
----@return nil
-local function StartGhostDurationThread()
-    CreateThread(function()
-        while ghostState.isGhost do
-            Wait(1000)
-
-            if ghostState.startTime > 0 then
-                local elapsed = GetGameTimer() - ghostState.startTime
-                if elapsed >= Config.Ghost.maxDuration then
-                    DisableGhostMode()
-                end
-            end
-        end
-    end)
-end
-
--- Receive scare effect
-RegisterNetEvent(Events.RECEIVE_SCARE)
-AddEventHandler(Events.RECEIVE_SCARE, function(ghostName)
-    SendNUIMessage({
-        type = 'triggerJumpscare',
-        soundVolume = Config.Ghost.abilities.scare.effects.soundVolume
-    })
-
-    if Config.Ghost.abilities.scare.effects.screenShake then
-        ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.3)
-    end
-
-    if Config.Ghost.abilities.scare.effects.sound then
-        PlaySoundFrontend(-1, 'CHECKPOINT_MISSED', 'HUD_MINI_GAME_SOUNDSET', true)
-    end
-
-    -- Show notification AFTER jumpscare effect (2 second delay)
-    ESX.SetTimeout(2000, function()
-        SendNUIMessage({
-            type = 'showNotification',
-            size = 'large',
-            position = 'bottom-center',
-            header = 'You were scared!',
-            description = (ghostName or 'A ghost') .. ' has haunted you as a ghost!',
-            duration = 4000
-        })
-    end)
-end)
-
--- Sync ghost states from server
-RegisterNetEvent(Events.SYNC_GHOST_STATE)
-AddEventHandler(Events.SYNC_GHOST_STATE, function(playerId, isGhost)
-    if isGhost then
-        otherGhostPlayers[playerId] = true
-    else
-        otherGhostPlayers[playerId] = nil
-    end
-end)
-
--- Ghost visibility thread
+--- Ghost Visibility Thread
+--- Updates alpha/visibility for other ghost players based on distance
+--- Performance: Checks every 500ms, only when other ghosts exist
 CreateThread(function()
-    -- Localize config values to avoid constant global table access
     local visibilityRange = Config.Ghost.visibility.range
     local visibilityAlpha = Config.Ghost.visibility.alpha
 
     while true do
-        -- Check if any ghosts exist
+        Wait(500)
+
         local hasGhosts = next(otherGhostPlayers) ~= nil
 
         if hasGhosts then
-            Wait(500) -- 500ms when ghosts active
-
             local playerPed = PlayerPedId()
             local playerCoords = GetEntityCoords(playerPed)
 
@@ -369,11 +342,62 @@ CreateThread(function()
                     end
                 end
             end
-        else
-            Wait(2000) -- 2000ms when idle (no ghosts)
         end
     end
 end)
+
+-- Receive scare effect
+RegisterNetEvent(Events.RECEIVE_SCARE)
+AddEventHandler(Events.RECEIVE_SCARE, function(ghostName)
+    -- Validate parameter type
+    if type(ghostName) ~= "string" then
+        ghostName = "A ghost"
+    end
+
+    SendNUIMessage({
+        type = 'triggerJumpscare',
+        soundVolume = Config.Ghost.abilities.scare.effects.soundVolume
+    })
+
+    if Config.Ghost.abilities.scare.effects.screenShake then
+        ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', 0.3)
+    end
+
+    if Config.Ghost.abilities.scare.effects.sound then
+        PlaySoundFrontend(-1, 'CHECKPOINT_MISSED', 'HUD_MINI_GAME_SOUNDSET', true)
+    end
+
+    -- Show notification AFTER jumpscare effect (2 second delay)
+    ESX.SetTimeout(2000, function()
+        SendNUIMessage({
+            type = 'showNotification',
+            size = 'large',
+            position = 'bottom-center',
+            header = 'You were scared!',
+            description = ghostName .. ' has haunted you as a ghost!',
+            duration = 4000
+        })
+    end)
+end)
+
+-- Sync ghost states from server
+RegisterNetEvent(Events.SYNC_GHOST_STATE)
+AddEventHandler(Events.SYNC_GHOST_STATE, function(playerId, isGhost)
+    -- Validate parameter types
+    if type(playerId) ~= "number" or type(isGhost) ~= "boolean" then
+        print('^1[ESX Halloween] Invalid sync ghost state data^7')
+        return
+    end
+
+    if isGhost then
+        otherGhostPlayers[playerId] = true
+    else
+        otherGhostPlayers[playerId] = nil
+    end
+end)
+
+--- Ghost visibility thread
+--- Note: Ghost visibility is now handled by master thread in main_thread.lua
 
 -- Cleanup on resource stop
 AddEventHandler('onResourceStop', function(resourceName)

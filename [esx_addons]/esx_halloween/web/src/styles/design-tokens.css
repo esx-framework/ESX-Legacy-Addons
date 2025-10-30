@@ -10,6 +10,10 @@
   --color-brand: var(--primary-color);
   --color-brand-rgb: 251, 155, 4;
 
+  /* Danger/Zone Colors (for Domain Zones) */
+  --color-danger: #ff3b3b;
+  --color-danger-rgb: 255, 59, 59;
+
   /* Dark Shades */
   --color-darkest: #161616;
   --color-darkest-rgb: 22, 22, 22;
@@ -78,6 +82,8 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-brand: 0 0 20px rgba(var(--color-brand-rgb), 0.3);
   --shadow-brand-strong: 0 0 30px rgba(var(--color-brand-rgb), 0.5);
+  --shadow-danger: 0 0 30px rgba(var(--color-danger-rgb), 0.2);
+  --shadow-danger-strong: 0 0 50px rgba(var(--color-danger-rgb), 0.6);
 
   /* Transitions */
   --transition-fast: 150ms ease-in-out;

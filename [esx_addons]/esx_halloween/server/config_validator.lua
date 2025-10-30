@@ -76,6 +76,44 @@ local function ValidateConfig()
         Config.Ghost.security.requestTimeout = 5000
     end
 
+    -- Validate TrickOrTreat.enabled
+    if type(Config.TrickOrTreat.enabled) ~= 'boolean' then
+        print('^3[ESX Halloween] Config warning: TrickOrTreat.enabled must be boolean, defaulting to true^7')
+        Config.TrickOrTreat.enabled = true
+    end
+
+    -- Validate TrickOrTreat.roundFrequencyMinutes
+    if type(Config.TrickOrTreat.roundFrequencyMinutes) ~= 'number' or Config.TrickOrTreat.roundFrequencyMinutes < 1 then
+        print('^3[ESX Halloween] Config warning: TrickOrTreat.roundFrequencyMinutes must be >= 1, defaulting to 5^7')
+        Config.TrickOrTreat.roundFrequencyMinutes = 5
+    end
+
+    -- Validate TrickOrTreat.doorsPerRound
+    if type(Config.TrickOrTreat.doorsPerRound) ~= 'number' or Config.TrickOrTreat.doorsPerRound < 1 then
+        print('^3[ESX Halloween] Config warning: TrickOrTreat.doorsPerRound must be >= 1, defaulting to 12^7')
+        Config.TrickOrTreat.doorsPerRound = 12
+    end
+
+    -- Validate TrickOrTreat.candyPerDoor
+    if type(Config.TrickOrTreat.candyPerDoor) ~= 'number' or Config.TrickOrTreat.candyPerDoor < 1 then
+        print('^3[ESX Halloween] Config warning: TrickOrTreat.candyPerDoor must be >= 1, defaulting to 3^7')
+        Config.TrickOrTreat.candyPerDoor = 3
+    end
+
+    -- Validate TrickOrTreat.houses table exists
+    if type(Config.TrickOrTreat.houses) ~= 'table' or #Config.TrickOrTreat.houses == 0 then
+        print('^3[ESX Halloween] Config warning: TrickOrTreat.houses must be non-empty table, skipping feature^7')
+        Config.TrickOrTreat.enabled = false
+    end
+
+    -- Validate reward chances sum to 100
+    local rewardTotal = (Config.TrickOrTreat.rewards.candy.chance or 0) +
+                       (Config.TrickOrTreat.rewards.rareCandy.chance or 0) +
+                       (Config.TrickOrTreat.rewards.trick.chance or 0)
+    if rewardTotal ~= 100 then
+        print('^3[ESX Halloween] Config warning: TrickOrTreat reward chances must sum to 100 (currently ' .. rewardTotal .. ')^7')
+    end
+
     print('^2[ESX Halloween] Config validation completed - All values are valid^7')
     return isValid
 end
