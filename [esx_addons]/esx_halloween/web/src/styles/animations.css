@@ -1,0 +1,180 @@
+/**
+ * Halloween Event Custom Animations
+ * Includes animations for Trick-or-Treat feature
+ */
+
+/**
+ * TRICK-OR-TREAT ANIMATIONS
+ */
+
+/* Candy falling particle effect (used in TrickOrTreatReward.svelte) */
+@keyframes candyFall {
+  0% {
+    opacity: 1;
+    transform: translateY(calc(-100px * var(--hud-scale))) rotateZ(0deg);
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(calc(400px * var(--hud-scale))) rotateZ(360deg);
+  }
+}
+
+/* Pumpkin floating animation (used in TrickOrTreatHUD.svelte) */
+@keyframes pumpkinFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(calc(-8px * var(--hud-scale)));
+  }
+}
+
+/* HUD slide-in from left (used in TrickOrTreatHUD.svelte) */
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-50px * var(--hud-scale)));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Reward popup scale-in (used in TrickOrTreatReward.svelte) */
+@keyframes rewardScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Shake animation for trick popup (used in TrickOrTreatReward.svelte) */
+@keyframes trickShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(calc(-5px * var(--hud-scale)));
+  }
+
+  50% {
+    transform: translateX(calc(5px * var(--hud-scale)));
+  }
+
+  75% {
+    transform: translateX(calc(-5px * var(--hud-scale)));
+  }
+}
+
+/**
+ * UNIVERSAL ANIMATIONS
+ */
+
+/* Smooth fade-in (used throughout) */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Smooth fade-out (used throughout) */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+/* Gentle spin (used for loading states) */
+@keyframes spin {
+  from {
+    transform: rotateZ(0deg);
+  }
+
+  to {
+    transform: rotateZ(360deg);
+  }
+}
+
+/* Border glow pulse (used in card headers) */
+@keyframes borderGlowPulse {
+  0%, 100% {
+    border-color: rgba(173, 6, 67, 0.3);
+  }
+
+  50% {
+    border-color: rgba(173, 6, 67, 0.6);
+  }
+}
+
+/* Text glow pulse (used in important text) */
+@keyframes textGlowPulse {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(173, 6, 67, 0.3);
+  }
+
+  50% {
+    text-shadow: 0 0 20px rgba(173, 6, 67, 0.6);
+  }
+}
+
+/**
+ * TIMING PRESETS
+ * Use with: animation: <name> <timing>;
+ */
+
+/* Fast animations: for immediate feedback */
+.animation-fast {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Medium animations: for standard UI transitions */
+.animation-medium {
+  animation-duration: 600ms;
+  animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Slow animations: for background effects */
+.animation-slow {
+  animation-duration: 1s;
+  animation-timing-function: ease-in-out;
+}
+
+/* Continuous animations: for looping effects */
+.animation-continuous {
+  animation-iteration-count: infinite;
+}
+
+/**
+ * PREFERS-REDUCED-MOTION ACCESSIBILITY
+ * Respect user's motion preferences
+ */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
