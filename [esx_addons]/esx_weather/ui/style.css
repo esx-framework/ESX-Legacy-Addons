@@ -1,0 +1,12 @@
+/**
+ * ESX Weather Admin Panel - Main Stylesheet
+ * Modular CSS Architecture (DRY Principle)
+ */
+
+@import url('css/variables.css');
+@import url('css/base.css');
+@import url('css/layout.css');
+@import url('css/components.css');
+@import url('css/forms.css');
+@import url('css/animations.css');
+@import url('css/responsive.css');
