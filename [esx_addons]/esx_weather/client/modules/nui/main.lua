@@ -30,10 +30,10 @@ function Modules.NUI.updateWeatherZones(WeatherByZone)
     })
 end
 
----@param Data {zone: Zone, weatherType: WeatherType}
+---@param Data {zoneName: Zone, weatherType: WeatherType}
 ---@param cb fun(success:boolean)
 RegisterNUICallback("setZoneWeather", function(Data, cb)
-    TriggerServerEvent("esx_weather:server:setZoneWeather", Data.zone, Data.weatherType)
+    TriggerServerEvent("esx_weather:server:setZoneWeather", Data.zoneName, Data.weatherType)
     cb(true)
 end)
 
