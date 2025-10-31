@@ -7,7 +7,7 @@
 ---@field coords vector4
 ---@field model string | number -- Model Hash
 
----@class Garage
+---@class GarageConfig
 ---@field id string
 ---@field label string
 ---@field entryPoint vector3
@@ -36,6 +36,12 @@
 ---@field customName string?
 ---@field lastUsed integer
 ---@field props ESXVehicleProperties
+---@field secondOwners GarageSecondOwner[]
+
+---@class GarageSecondOwner
+---@field identifier string
+---@field firstname string
+---@field lastname string
 
 ---@class GarageVehicleDB
 ---@field owner string
@@ -47,3 +53,18 @@
 ---@field parking string
 ---@field model string?
 ---@field favorite 0 | 1
+---@field nickname string?
+---@field last_used integer|nil
+---@field second_nickname string?
+---@field second_favorite 0 | 1?
+---@field second_owners GarageSecondOwner[]
+---@field mileage integer
+
+---@class GaragePayload
+---@field garage { id: string, name: string, type: string, label: string}
+---@field vehicles GarageVehicle[]
+
+---@class CallbackResult
+---@field success boolean
+---@field data any
+---@field error string

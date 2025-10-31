@@ -26,10 +26,10 @@ export const VehicleType = {
   AIRCRAFT: 'aircraft',
   BICYCLE: 'bicycle',
   TRUCK: 'truck',
-  EMERGENCY: 'emergency'
+  EMERGENCY: 'emergency',
 } as const;
 
-export type VehicleType = typeof VehicleType[keyof typeof VehicleType];
+export type VehicleType = (typeof VehicleType)[keyof typeof VehicleType];
 
 export interface VehicleProps {
   color1?: number[];

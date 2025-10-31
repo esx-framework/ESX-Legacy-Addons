@@ -17,23 +17,24 @@ files {
     'web/dist/index.html',
     'web/dist/**/*',
     'vehicleImages/**/*',
-    'locales/*.lua',
 }
 
 shared_scripts {
     '@es_extended/imports.lua',
     '@es_extended/locale.lua',
-    'locales/*.lua',
     'config.lua',
 }
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/init.lua'
+    'server/modules/**/*',
+    'server/init.lua',
+    'locales/*.lua',
 }
 
 client_scripts {
     '@es_extended/locale.lua',
     'client/modules/**/*',
-    'client/init.lua'
+    'client/init.lua',
+    'locales/*.lua',
 }
