@@ -45,7 +45,7 @@ const defaultFilter: VehicleFilter = {
   type: 'all',
   stored: 'all',
   impounded: 'all',
-  favorite: 'all'
+  favorite: 'all',
 };
 
 export const useGarageStore = create<GarageState>()(
@@ -62,48 +62,57 @@ export const useGarageStore = create<GarageState>()(
         total: 0,
         stored: 0,
         out: 0,
-        impounded: 0
+        impounded: 0,
       },
 
       // UI Actions
-      setOpen: (open) => set((state) => {
-        state.isOpen = open;
-        if (!open) {
-          // Reset state when closing
-          state.selectedGarage = null;
-          state.vehicles = [];
+      setOpen: (open) =>
+        set((state) => {
+          state.isOpen = open;
+          if (!open) {
+            // Reset state when closing
+            state.selectedGarage = null;
+            state.vehicles = [];
+            state.filter = defaultFilter;
+          }
+        }),
+
+      setLoading: (loading) =>
+        set((state) => {
+          state.isLoading = loading;
+        }),
+
+      selectGarage: (garage) =>
+        set((state) => {
+          state.selectedGarage = garage;
+        }),
+
+      selectVehicle: (vehicle) =>
+        set((state) => {
+          state.selectedVehicle = vehicle;
+        }),
+
+      updateVehicles: (vehicles) =>
+        set((state) => {
+          state.vehicles = vehicles;
+          get().updateStats();
+        }),
+
+      setFilter: (filter) =>
+        set((state) => {
+          state.filter = { ...state.filter, ...filter };
+        }),
+
+      resetFilter: () =>
+        set((state) => {
           state.filter = defaultFilter;
-        }
-      }),
-
-      setLoading: (loading) => set((state) => {
-        state.isLoading = loading;
-      }),
-
-      selectGarage: (garage) => set((state) => {
-        state.selectedGarage = garage;
-      }),
-
-      selectVehicle: (vehicle) => set((state) => {
-        state.selectedVehicle = vehicle;
-      }),
-
-      updateVehicles: (vehicles) => set((state) => {
-        state.vehicles = vehicles;
-        get().updateStats();
-      }),
-
-      setFilter: (filter) => set((state) => {
-        state.filter = { ...state.filter, ...filter };
-      }),
-
-      resetFilter: () => set((state) => {
-        state.filter = defaultFilter;
-      }),
+        }),
 
       // Vehicle Actions
       retrieveVehicle: async (vehicleId) => {
-        set((state) => { state.isLoading = true; });
+        set((state) => {
+          state.isLoading = true;
+        });
 
         try {
           const result = await fetchNui<boolean>(
@@ -114,7 +123,7 @@ export const useGarageStore = create<GarageState>()(
 
           if (result) {
             set((state) => {
-              const vehicle = state.vehicles.find(v => v.id === vehicleId);
+              const vehicle = state.vehicles.find((v) => v.id === vehicleId);
               if (vehicle) {
                 vehicle.stored = false;
                 vehicle.garage = undefined;
@@ -125,12 +134,16 @@ export const useGarageStore = create<GarageState>()(
         } catch (error) {
           console.error('Failed to retrieve vehicle:', error);
         } finally {
-          set((state) => { state.isLoading = false; });
+          set((state) => {
+            state.isLoading = false;
+          });
         }
       },
 
       storeVehicle: async (vehicleId) => {
-        set((state) => { state.isLoading = true; });
+        set((state) => {
+          state.isLoading = true;
+        });
 
         try {
           const result = await fetchNui<boolean>(
@@ -141,7 +154,7 @@ export const useGarageStore = create<GarageState>()(
 
           if (result) {
             set((state) => {
-              const vehicle = state.vehicles.find(v => v.id === vehicleId);
+              const vehicle = state.vehicles.find((v) => v.id === vehicleId);
               if (vehicle) {
                 vehicle.stored = true;
                 vehicle.garage = state.selectedGarage?.id;
@@ -152,7 +165,9 @@ export const useGarageStore = create<GarageState>()(
         } catch (error) {
           console.error('Failed to store vehicle:', error);
         } finally {
-          set((state) => { state.isLoading = false; });
+          set((state) => {
+            state.isLoading = false;
+          });
         }
       },
 
@@ -166,7 +181,7 @@ export const useGarageStore = create<GarageState>()(
 
           if (result) {
             set((state) => {
-              const vehicle = state.vehicles.find(v => v.id === vehicleId);
+              const vehicle = state.vehicles.find((v) => v.id === vehicleId);
               if (vehicle) {
                 vehicle.customName = newName;
               }
@@ -179,7 +194,7 @@ export const useGarageStore = create<GarageState>()(
 
       toggleFavorite: async (vehicleId) => {
         try {
-          const vehicle = get().vehicles.find(v => v.id === vehicleId);
+          const vehicle = get().vehicles.find((v) => v.id === vehicleId);
           if (!vehicle) return;
 
           const newFavoriteStatus = !vehicle.isFavorite;
@@ -192,7 +207,7 @@ export const useGarageStore = create<GarageState>()(
 
           if (result) {
             set((state) => {
-              const vehicle = state.vehicles.find(v => v.id === vehicleId);
+              const vehicle = state.vehicles.find((v) => v.id === vehicleId);
               if (vehicle) {
                 vehicle.isFavorite = newFavoriteStatus;
               }
@@ -211,32 +226,33 @@ export const useGarageStore = create<GarageState>()(
         // Search filter
         if (state.filter.search) {
           const search = state.filter.search.toLowerCase();
-          filtered = filtered.filter(v =>
-            v.name.toLowerCase().includes(search) ||
-            v.customName?.toLowerCase().includes(search) ||
-            v.plate.toLowerCase().includes(search) ||
-            v.model.toLowerCase().includes(search)
+          filtered = filtered.filter(
+            (v) =>
+              v.name.toLowerCase().includes(search) ||
+              v.customName?.toLowerCase().includes(search) ||
+              v.plate.toLowerCase().includes(search) ||
+              v.model.toLowerCase().includes(search)
           );
         }
 
         // Type filter
         if (state.filter.type && state.filter.type !== 'all') {
-          filtered = filtered.filter(v => v.type === state.filter.type);
+          filtered = filtered.filter((v) => v.type === state.filter.type);
         }
 
         // Stored filter
         if (state.filter.stored !== 'all') {
-          filtered = filtered.filter(v => v.stored === state.filter.stored);
+          filtered = filtered.filter((v) => v.stored === state.filter.stored);
         }
 
         // Impounded filter
         if (state.filter.impounded !== 'all') {
-          filtered = filtered.filter(v => v.impounded === state.filter.impounded);
+          filtered = filtered.filter((v) => v.impounded === state.filter.impounded);
         }
 
         // Favorite filter
         if (state.filter.favorite !== 'all') {
-          filtered = filtered.filter(v => v.isFavorite === state.filter.favorite);
+          filtered = filtered.filter((v) => v.isFavorite === state.filter.favorite);
         }
 
         // Sort: Favorites first, then by last used
@@ -249,15 +265,16 @@ export const useGarageStore = create<GarageState>()(
         return filtered;
       },
 
-      updateStats: () => set((state) => {
-        const vehicles = state.vehicles;
-        state.stats = {
-          total: vehicles.length,
-          stored: vehicles.filter(v => v.stored && !v.impounded).length,
-          out: vehicles.filter(v => !v.stored && !v.impounded).length,
-          impounded: vehicles.filter(v => v.impounded).length
-        };
-      })
+      updateStats: () =>
+        set((state) => {
+          const vehicles = state.vehicles;
+          state.stats = {
+            total: vehicles.length,
+            stored: vehicles.filter((v) => v.stored && !v.impounded).length,
+            out: vehicles.filter((v) => !v.stored && !v.impounded).length,
+            impounded: vehicles.filter((v) => v.impounded).length,
+          };
+        }),
     }))
   )
 );

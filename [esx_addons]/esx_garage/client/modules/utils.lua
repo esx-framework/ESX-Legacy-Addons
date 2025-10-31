@@ -23,13 +23,17 @@ function Utils.CreateBlip(coords, sprite, scale, color, name)
 end
 
 ---@param model string | number
----@param coords any
+---@param coords vector4
 function Utils.SpawnFrozenPed(model, coords)
     local model_hash = ESX.Streaming.RequestModel(model)
 
     if not model_hash then
         return
     end
+
+    RequestCollisionAtCoord(coords.x, coords.y, coords.y)
+
+    Citizen.Wait(500)
 
     local _, correct_z = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, false)
 
