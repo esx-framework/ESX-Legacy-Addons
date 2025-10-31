@@ -9,9 +9,11 @@ Locales['tr'] = {
     ['access_bank']    = 'Bankaya Erişim',
     ['banking_blip']       = 'Banka',
     ['cant_do_it']       = "Yapamazsınız!",
+    ['error_deposit_money']       = "Para yatırma işleminde bir hata oluştu, daha sonra tekrar deneyin!",
+    ['error_withdraw_money']       = "Para çekme işleminde bir hata oluştu, daha sonra tekrar deneyin!",
+    ['error_transfer_money']       = "Transfer işleminde bir hata oluştu, daha sonra tekrar deneyin!",
     ['not_enough_money'] = "Yetersiz bakiye! %s para gerekiyor!",
     ['pincode_not_found'] = "Geçersiz PIN kodu",
     ['pincode_found'] = "Geçerli PIN kodu...",
     ['bank_name'] = "Fleeca Bank"
   }
-  
