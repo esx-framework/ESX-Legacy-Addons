@@ -118,6 +118,29 @@ RegisterNetEvent("esx_property:syncProperties", function(properties, lastPropert
   RefreshBlips()
 end)
 
+RegisterNetEvent("esx_property:updateProperty", function(PropertyId, propertyData)
+  while not ESX.PlayerLoaded and not ESX.PlayerData.identifier do
+    Wait(0)
+  end
+  -- Update only the specific property instead of syncing all properties
+  if PropertyId and propertyData then
+    Properties[PropertyId] = propertyData
+    
+    -- Update player keys if needed
+    if propertyData.Keys then
+      for ident, values in pairs(propertyData.Keys) do
+        if values and ident == ESX.PlayerData.identifier then
+          PlayerKeys[PropertyId] = true
+        else
+          PlayerKeys[PropertyId] = nil
+        end
+      end
+    end
+    
+    RefreshBlips()
+  end
+end)
+
 RegisterNetEvent("esx_property:giveKeyAccess", function(Property)
   ESX.TriggerServerCallback("esx_property:ShouldHaveKey", function(Should)
     if Should then
