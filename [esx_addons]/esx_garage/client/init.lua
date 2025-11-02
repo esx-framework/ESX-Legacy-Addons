@@ -1,5 +1,6 @@
 local created_peds = {}
 local return_vehicle = false
+local return_vehicle_locale = (TranslateCap('park-vehicle', Keybinds.GetName()))
 
 ---@type false | integer
 PLAYER_VEHICLE = false
@@ -18,34 +19,20 @@ end)
 AddEventHandler('esx:enteredVehicle', function(vehicle, plate, seat, displayName, netId)
     PLAYER_VEHICLE = vehicle
     Mileage.StartLoop()
+
+    if return_vehicle then
+        exports['esx_textui']:TextUI(return_vehicle_locale)
+    end
 end)
 
 AddEventHandler('esx:exitedVehicle', function()
     PLAYER_VEHICLE = false
+
+    if return_vehicle then
+        exports['esx_textui']:HideUI()
+    end
 end)
 
-local function displayReturn()
-    Citizen.CreateThread(function()
-        local displayed = false
-
-        local return_vehicle_locale = (TranslateCap('park-vehicle', Keybinds.GetName()))
-
-        while true do
-            if not return_vehicle then
-                break
-            end
-
-            if PLAYER_VEHICLE and not displayed and not GARAGE_POINT then
-                exports['esx_textui']:TextUI(return_vehicle_locale)
-                displayed = true
-            end
-
-            Citizen.Wait(1000)
-        end
-
-        exports['esx_textui']:HideUI()
-    end)
-end
 
 Citizen.CreateThread(function()
     for i = 1, #Config.Garages do
@@ -80,10 +67,13 @@ Citizen.CreateThread(function()
             distance = 50,
             enter = function()
                 return_vehicle = true
-                displayReturn()
+                if PLAYER_VEHICLE then
+                    exports['esx_textui']:TextUI(return_vehicle_locale)
+                end
             end,
             leave = function()
                 return_vehicle = false
+                exports['esx_textui']:HideUI()
             end
         })
     end
