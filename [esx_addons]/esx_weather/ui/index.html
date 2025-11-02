@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/performance.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
@@ -20,12 +21,20 @@
                     <h1>Weather Control Panel</h1>
                     <p class="modal-subtitle">Control the forecast. Shape the atmosphere. Rule the skies.</p>
                 </div>
-                <button class="close-btn" id="closeBtn" aria-label="Close panel">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
+                <div class="header-controls">
+                    <button class="perf-toggle-btn" id="perfToggleBtn" aria-label="Toggle performance mode">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                        </svg>
+                        <span>Performance</span>
+                    </button>
+                    <button class="close-btn" id="closeBtn" aria-label="Close panel">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="modal-body">
@@ -45,7 +54,6 @@
     <script src="js/core/constants.js"></script>
 
     <!-- Utilities -->
-    <script src="js/utils/sanitizer.js"></script>
     <script src="js/utils/helpers.js"></script>
 
     <!-- Services -->
