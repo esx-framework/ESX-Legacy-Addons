@@ -27,7 +27,7 @@ end
 VERSION = {
     Check = function(err, response, headers)
         local resourceName = GetCurrentResourceName()
-        local currentVersion = GetResourceMetadata(resourceName, "version", 0)
+        local currentVersion = GetResourceMetadata(resourceName, "legacyversion", 0)
         if not currentVersion then return end
 
         local manifestURL = HUD.VersionCheckBaseURL .. resourceName .. "/fxmanifest.lua"
