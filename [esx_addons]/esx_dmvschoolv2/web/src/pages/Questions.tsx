@@ -133,8 +133,6 @@ export default function Questions({ questions }: QuestionsProps) {
 							</button>
 						</div>
 					</div>
-
-
 				</div>
 			</div>
 		</PageWrapper >
