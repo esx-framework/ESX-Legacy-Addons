@@ -205,6 +205,8 @@ function OpenShopMenu()
 					end, vehicleData.model)
 				else
 					local generatedPlate = GeneratePlate()
+					local vehicleProps = ESX.Game.GetVehicleProperties(currentDisplayVehicle)
+					vehicleProps.plate = generatedPlate
 
 					ESX.TriggerServerCallback('esx_vehicleshop:buyVehicle', function(success)
 						if success then
@@ -217,7 +219,7 @@ function OpenShopMenu()
 						else
 							ESX.ShowNotification(TranslateCap('not_enough_money'))
 						end
-					end, vehicleData.model, generatedPlate)
+					end, vehicleData.model, vehicleProps)
 				end
 			else
 				menu2.close()
