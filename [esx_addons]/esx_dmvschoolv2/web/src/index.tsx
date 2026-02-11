@@ -15,7 +15,7 @@ console.log('Current URL:', window.location.href);
 
 export function App() {
 	const params = new URLSearchParams(window.location.search);
-	const isDui = !navigator.userAgent.includes('Firefox') && params.get('dui') === 'yes';
+	const isDui = navigator.userAgent.includes('Firefox') || params.get('dui') === 'yes';
 	console.log(navigator.userAgent.includes('Mozilla'), params.get('dui'), isDui);
 	const [currentPage, setCurrentPage] = useState(params.get('page')?.toLowerCase() || 'none');
 	console.log('Initial page:', currentPage);
