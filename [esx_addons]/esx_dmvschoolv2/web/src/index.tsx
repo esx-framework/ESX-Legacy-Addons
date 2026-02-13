@@ -1,5 +1,6 @@
 import { render } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
+import { ConfigProvider, useConfig } from './context/ConfigContext';
 
 import './styles/fonts.css'
 import './styles/style.css';
@@ -15,10 +16,13 @@ console.log('Current URL:', window.location.href);
 
 export function App() {
 	const params = new URLSearchParams(window.location.search);
-	const isDui = navigator.userAgent.includes('Firefox') || params.get('dui') === 'yes';
+	// @ts-ignore
+	const isDui = navigator.userAgent.includes('Firefox') || params.get('dui') === 'yes' || import.meta.env.DEV;
 	console.log(navigator.userAgent.includes('Mozilla'), params.get('dui'), isDui);
 	const [currentPage, setCurrentPage] = useState(params.get('page')?.toLowerCase() || 'none');
 	console.log('Initial page:', currentPage);
+
+	const { config } = useConfig();
 
 	useEffect(() => {
 		console.log('isDui value changed:', isDui);
@@ -30,7 +34,8 @@ export function App() {
 		console.log('DUI Mode:', isDui);
 	}, [isDui]);
 
-	if (!isDui || currentPage == 'none') return;
+	// @ts-ignore
+	if ((!isDui || currentPage == 'none') && !import.meta.env.DEV) return;
 
 	return (
 		<div className={'w-screen h-screen font-poppins'}>
@@ -46,26 +51,17 @@ export function App() {
 					case 'progress':
 						return <Progress />;
 					case 'licenseresult':
-						return <LicenseResult licensed={true} progress={25} age={20} fullname='Name Lastname' category='b' />;
+						return config ? (
+							<LicenseResult
+								licensed={config.licenseresult.licensed}
+								progress={config.licenseresult.progress}
+								age={config.licenseresult.age}
+								fullname={config.licenseresult.fullname}
+								category={config.licenseresult.category}
+							/>
+						) : null;
 					case 'questions':
-						return <Questions questions={[
-							{
-								question: "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-								options: ["Lorem Ipsum is simply dummy text of the printing and typesetting industry.", "Lorem Ipsum is simply dummy text of the printing and typesetting industry.", "Lorem Ipsum is simply dummy text of the printing and typesetting industry.", "Lorem Ipsum is simply dummy text of the printing and typesetting industry."],
-								selected: 0,
-								imageSrc: '../assets/questions-image.png'
-							},
-							{
-								question: "What is 2 + 2?",
-								options: ["3", "4", "5", "6"],
-								selected: 0
-							},
-							{
-								question: "Some question?",
-								options: ["Text Text Text", "Text Text Text", "Text Text Text", "Text Text Text"],
-								selected: 0
-							}
-						]} />;
+						return config ? <Questions questions={config.questions} /> : null;
 					default:
 						return null;
 				}
@@ -75,4 +71,9 @@ export function App() {
 	);
 }
 
-render(<App />, document.getElementById('app'));
+render(
+	<ConfigProvider>
+		<App />
+	</ConfigProvider>,
+	document.getElementById('app')
+);

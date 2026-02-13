@@ -135,6 +135,6 @@ export default function Questions({ questions }: QuestionsProps) {
 					</div>
 				</div>
 			</div>
-		</PageWrapper >
+		</PageWrapper>
 	)
 }

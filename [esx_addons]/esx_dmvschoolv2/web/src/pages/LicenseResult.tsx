@@ -64,7 +64,7 @@ export default function LicenseResult({ licensed = false, fullname, age, categor
 														stroke="currentColor"
 														strokeWidth="4"
 														strokeLinejoin="round"
-														style={{ color: licensed ? 'rgb(0, 251, 113)': 'rgb(251,0,0)', filter: licensed ? 'drop-shadow(0px 0px 13px rgba(0, 251, 113, 0.5))':  'drop-shadow(0px 0px 13px rgba(251, 0, 0, 0.5))' }}
+														style={{ color: licensed ? 'rgb(0, 251, 113)' : 'rgb(251,0,0)', filter: licensed ? 'drop-shadow(0px 0px 13px rgba(0, 251, 113, 0.5))' : 'drop-shadow(0px 0px 13px rgba(251, 0, 0, 0.5))' }}
 													/>
 												);
 											})()}
