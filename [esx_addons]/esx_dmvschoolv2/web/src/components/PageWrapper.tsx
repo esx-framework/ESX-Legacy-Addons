@@ -4,7 +4,7 @@ import Logo from '../assets/logo.png';
 import LightEllipse from "./LightEllipse";
 
 export default function PageWrapper({ children }: { children: ComponentChild }) {
-	return <>
+	return <div className="w-screen h-screen bg-[rgb(22,22,22)]">
 		<div className={'fixed top-[60px] left-[60px] z-10'}>
 			<img src={Logo} alt="Logo" className="w-[127px] h-full" />
 		</div>
@@ -25,5 +25,6 @@ export default function PageWrapper({ children }: { children: ComponentChild }) 
 		<div className="absolute -z-10 bottom-[-40vh] left-[-23vw]" style={{ width: '50vw', height: '80vh' }}>
 			<LightEllipse id="orange-ellipse" color={'rgb(251,155,4)'} opacity={0.2} />
 		</div>
-	</>
+	</div>
+
 }

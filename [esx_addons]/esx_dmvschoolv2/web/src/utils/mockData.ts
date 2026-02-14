@@ -44,5 +44,14 @@ export const mockConfig = {
         age: 25,
         category: "B",
         progress: 100
+    },
+    resourceName: "esx_dmvschool",
+    studentDrivingTest: {
+        defaultTime: 0,
+        maxMistakes: 5,
+        currentObjective: "Wait for instructor",
+        progress: 0,
+        checkpointsLeft: 10,
+        mistakes: 0
     }
 };

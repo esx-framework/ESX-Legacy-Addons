@@ -9,12 +9,12 @@
 }
 
 body {
-    overflow: hidden;
-    background: rgba(22, 22, 22, 1);
+	overflow: hidden;
+	background: transparent;
 }
 
 ::-webkit-scrollbar {
-    display: none;
+	display: none;
 }
 
 /*body, button, input, select, textarea {

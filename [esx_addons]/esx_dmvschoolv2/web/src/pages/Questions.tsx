@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import PageWrapper from "../components/PageWrapper"
+import { formatTime } from "../utils/formatTime"
 const images = import.meta.glob('../assets/*', { eager: true });
 
 interface Question {
@@ -31,12 +32,6 @@ export default function Questions({ questions }: QuestionsProps) {
 
 		return () => clearInterval(interval)
 	}, [])
-
-	const formatTime = (seconds: number) => {
-		const mins = Math.floor(seconds / 60)
-		const secs = seconds % 60
-		return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`
-	}
 
 	const letterIndex = (index: number) => {
 		return String.fromCharCode(65 + index)

@@ -30,6 +30,14 @@ export interface Config {
         progress: number;
     };
     resourceName: string;
+    studentDrivingTest: {
+        defaultTime: number;
+        maxMistakes: number;
+        currentObjective: string;
+        progress: number;
+        checkpointsLeft: number;
+        mistakes: number;
+    };
 }
 
 interface ConfigContextType {
