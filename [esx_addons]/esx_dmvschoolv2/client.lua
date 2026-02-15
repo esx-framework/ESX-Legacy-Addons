@@ -159,7 +159,6 @@ RegisterNUICallback("ready", function(_, cb)
             },
             resourceName = GetCurrentResourceName(),
             studentDrivingTest = {
-                defaultTime = 0,
                 maxMistakes = 5,
                 currentObjective = "Wait for instructor",
                 progress = 0,

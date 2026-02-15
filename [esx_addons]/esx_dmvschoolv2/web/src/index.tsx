@@ -12,6 +12,8 @@ import Progress from './pages/Progress';
 import LicenseResult from './pages/LicenseResult';
 import Questions from './pages/Questions';
 import StudentDrivingTest from './pages/StudentDrivingTest';
+import InstructorDrivingTest from './pages/InstructorDrivingTest';
+import TabletWelcome from './pages/TabletWelcome';
 
 console.log('Current URL:', window.location.href);
 
@@ -84,6 +86,10 @@ export function App() {
 						return config ? <Questions questions={config.questions} /> : null;
 					case 'studentdrivingtest':
 						return <StudentDrivingTest />;
+					case 'instructordrivingtest':
+						return <InstructorDrivingTest />;
+					case 'tabletwelcome':
+						return <TabletWelcome />;
 					default:
 						return null;
 				}

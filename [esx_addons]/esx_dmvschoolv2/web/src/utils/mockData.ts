@@ -1,3 +1,5 @@
+import InstructorDrivingTest from "../pages/InstructorDrivingTest";
+
 export const mockConfig = {
     licenses: {
         "motorcycle": {
@@ -47,11 +49,17 @@ export const mockConfig = {
     },
     resourceName: "esx_dmvschool",
     studentDrivingTest: {
-        defaultTime: 0,
         maxMistakes: 5,
         currentObjective: "Wait for instructor",
         progress: 0,
         checkpointsLeft: 10,
         mistakes: 0
-    }
+    },
+	instructorDrivingTest: {
+		maxMistakes: 5,
+		speeding: 0,
+		unitSystem: "metrics",
+		progress: 0,
+		mistakes: 0
+	}
 };

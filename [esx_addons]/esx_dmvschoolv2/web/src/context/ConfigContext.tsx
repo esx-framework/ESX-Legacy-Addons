@@ -31,11 +31,17 @@ export interface Config {
     };
     resourceName: string;
     studentDrivingTest: {
-        defaultTime: number;
         maxMistakes: number;
         currentObjective: string;
         progress: number;
         checkpointsLeft: number;
+        mistakes: number;
+    };
+	instructorDrivingTest: {
+        maxMistakes: number;
+        speeding: number;
+        unitSystem: string;
+		progress: number;
         mistakes: number;
     };
 }
