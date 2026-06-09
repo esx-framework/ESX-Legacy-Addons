@@ -59,6 +59,9 @@ const init = async () => {
             return;
         }
 
+        // Initialize performance mode based on saved setting
+        UIController.initPerformanceMode();
+
         // Initialize event handlers
         EventHandlers.init();
 
@@ -66,6 +69,7 @@ const init = async () => {
         window.addEventListener('message', handleNUIMessage);
 
         console.log('[Init] Weather Admin Panel initialized successfully');
+        console.log(`[Init] Performance Mode: ${State.performanceMode ? 'ON' : 'OFF'}`);
     } catch (error) {
         console.error('[Init] Initialization failed:', error);
     }
