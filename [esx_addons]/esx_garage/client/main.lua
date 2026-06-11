@@ -66,16 +66,16 @@ RegisterNUICallback('spawnVehicle', function(data, cb)
 end)
 
 RegisterNUICallback('impound', function(data, cb)
-    local poundCoords = {
-        x = data.poundSpawnPoint.x,
-        y = data.poundSpawnPoint.y
-    }
+    local impound = Config.Impounds[data.poundName]
 
-    TriggerServerEvent('esx_garage:setImpound', data.poundName, data.vehicleProps)
+    if impound then
+        SetNewWaypoint(
+            impound.GetOutPoint.x,
+            impound.GetOutPoint.y
+        )
+    end
+
     TriggerEvent('esx_garage:closemenu')
-
-    SetNewWaypoint(poundCoords.x, poundCoords.y)
-
     cb('ok')
 end)
 
@@ -289,7 +289,8 @@ CreateThread(function()
                                                 table.insert(vehiclesImpoundedList, {
                                                     model = GetDisplayNameFromVehicleModel(vehicles[i].vehicle.model),
                                                     plate = vehicles[i].plate,
-                                                    props = vehicles[i].vehicle
+                                                    props = vehicles[i].vehicle,
+                                                    pound = vehicles[i].pound
                                                 })
                                             end
 

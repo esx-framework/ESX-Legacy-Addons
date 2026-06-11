@@ -171,9 +171,8 @@ $(window).ready(function () {
       html +=
         "<div class='condition'><span>Condition</span><div class='bar'><div class='fill' style='width:" + vehicleDamagePercent + "'></div></div><strong class='percent'>" + vehicleDamagePercent + "</strong></div>";
       html +=
-        "<button data-button='impounded' class='vehicle-action red unstyled-button' data-vehprops='" +
-        JSON.stringify(vehicleData[i].props) +
-        "'>" +
+        "<button data-button='impounded' class='vehicle-action red unstyled-button' data-vehprops='" + JSON.stringify(vehicleData[i].props) + "' \
+          data-pound='" + vehicleData[i].pound + "'>" +
         locale.impound_action +
         "</button>";
       html += "</div>";
@@ -255,14 +254,12 @@ $(window).ready(function () {
     "button[data-button='impounded'].vehicle-action",
     function (event) {
       let vehicleProps = $(this).data("vehprops");
-      let poundName = $(".impounded_content").data("poundName");
-      let poundSpawnPoint = $(".impounded_content").data("poundSpawnPoint");
+      let poundName = $(this).data("pound");
       $.post(
         "https://esx_garage/impound",
         JSON.stringify({
           vehicleProps: vehicleProps,
-          poundName: poundName,
-          poundSpawnPoint: poundSpawnPoint,
+          poundName: poundName
         })
       );
 
