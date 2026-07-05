@@ -1,6 +1,7 @@
 RegisterServerEvent('esx_clotheshop:saveOutfit')
 AddEventHandler('esx_clotheshop:saveOutfit', function(label, skin)
 	local xPlayer = ESX.Player(source)
+	if not xPlayer then return end
 
 	TriggerEvent('esx_datastore:getDataStore', 'property', xPlayer.getIdentifier(), function(store)
 		local dressing = store.get('dressing')
@@ -21,6 +22,7 @@ end)
 
 ESX.RegisterServerCallback('esx_clotheshop:buyClothes', function(source, cb, newSkin, oldSkin)
 	local xPlayer = ESX.Player(source)
+	if not xPlayer then return cb(false) end
 	local purchaseCost = 0
 
 	if(Config.ChargePerPiece) then
@@ -44,6 +46,7 @@ end)
 
 ESX.RegisterServerCallback('esx_clotheshop:checkPropertyDataStore', function(source, cb)
 	local xPlayer = ESX.Player(source)
+	if not xPlayer then return cb(false) end
 	local foundStore = false
 
 	TriggerEvent('esx_datastore:getDataStore', 'property', xPlayer.getIdentifier(), function(store)
