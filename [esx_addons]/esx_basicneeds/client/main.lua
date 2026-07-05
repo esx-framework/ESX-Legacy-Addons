@@ -67,6 +67,7 @@ end)
 
 local function handleAnimation(itemType, propName, anim, pos, rot)
     if IsAnimated then return end
+    if type(anim) ~= 'table' or not anim.dict or not anim.name or not anim.settings then return end
 
     IsAnimated = true
     local playerPed = PlayerPedId()
