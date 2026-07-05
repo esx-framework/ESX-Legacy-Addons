@@ -1,0 +1,620 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+:root {
+  font-family: "Poppins", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* Optional Scrollbar CSS */
+*::-webkit-scrollbar {
+  display: none;
+  width: 0.55vh;
+  height: 0.55vh;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(242, 242, 242, 0.04);
+  border-radius: 0.3vh;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(242, 242, 242, 0.18);
+  border-radius: 0.3vh;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 155, 4, 0.65);
+}
+/* Optional Scrollbar CSS */
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.esx-adminmenu-container {
+  background-color: #161616;
+  aspect-ratio: 7/4;
+  height: 74vh;
+  border-radius: 1vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1.9vh;
+  box-sizing: border-box;
+  padding: 1.6vh 2vh;
+  color: #F2F2F2;
+  animation: slideUp 0.5s ease-in-out forwards;
+}
+
+.menu-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 1.8vh;
+  animation: fadeIn 2s ease-in-out forwards;
+  overflow: hidden;
+}
+
+.tab-container {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  background: rgba(37, 37, 37, 0.3);
+  border: 0.1vh solid #2E2E2C;
+  border-radius: 0.5vh;
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 400;
+  user-select: none;
+  font-size: 1.3vh;
+  color: #F2F2F2;
+  padding: 1.4vh 2.3vh;
+  overflow: hidden;
+}
+
+.tab-wrapper {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.spectate-tooltip-container {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  height: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spectate-tooltip {
+  width: auto;
+  height: auto;
+  padding: 0.7vh 1.5vh;
+  color: #F2F2F2;
+  margin-bottom: 2vh;
+  background: #161616;
+  border-radius: 0.5vh;
+  font-size: 1.5vh;
+}
+
+.notifications {
+  position: absolute;
+  right: 2vh;
+  top: 2vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+  width: min(38vh, calc(100vw - 4vh));
+  z-index: 50;
+  pointer-events: none;
+}
+
+.notification {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.2vh;
+  align-items: center;
+  gap: 1vh;
+  box-sizing: border-box;
+  min-height: 4.4vh;
+  padding: 1vh 1.1vh;
+  border: 0.1vh solid rgba(242, 242, 242, 0.16);
+  border-left: 0.35vh solid #f2f2f2;
+  border-radius: 0.5vh;
+  background: #161616;
+  box-shadow: 0 1vh 3vh rgba(0, 0, 0, 0.35);
+  color: #f2f2f2;
+  font-family: "Poppins", sans-serif;
+  font-size: 1.25vh;
+  pointer-events: auto;
+  animation: slideDown 0.18s ease-out;
+}
+
+.notification.error {
+  border-left-color: #f23f3f;
+}
+
+.notification.success {
+  border-left-color: #4ade80;
+}
+
+.notification.info {
+  border-left-color: #fb9b04;
+}
+
+.notification span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.notification button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2vh;
+  height: 2.2vh;
+  border: 0;
+  border-radius: 0.4vh;
+  background: rgba(242, 242, 242, 0.08);
+  color: #f2f2f2;
+  cursor: pointer;
+}
+
+.notification button:hover {
+  background: rgba(242, 242, 242, 0.16);
+}
+
+.notification svg {
+  width: 1vh;
+  height: 1vh;
+  fill: currentColor;
+}
+
+.admin-menu-panel {
+  position: absolute;
+  right: 1.6vh;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+  width: 30.5vh;
+  max-height: min(82vh, calc(100vh - 3.2vh));
+  box-sizing: border-box;
+  padding: 1vh;
+  border: 0.1vh solid #2E2E2C;
+  border-radius: 0.5vh;
+  background: linear-gradient(180deg, rgba(36, 36, 36, 0.98), rgba(22, 22, 22, 0.98));
+  color: #F2F2F2;
+  font-family: "Poppins", sans-serif;
+  box-shadow: 0 2vh 5vh rgba(0, 0, 0, 0.45);
+  animation: fadeIn 0.16s ease-out;
+}
+
+.admin-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1vh;
+}
+
+.admin-menu-heading {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.admin-menu-controls {
+  display: flex;
+  flex: 0 0 auto !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.45vh;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.admin-menu-title {
+  font-size: 1.55vh;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.admin-menu-subtitle {
+  font-size: 1.08vh;
+  line-height: 1.2;
+  color: rgba(242, 242, 242, 0.55);
+}
+
+.admin-menu-close,
+.admin-menu-dashboard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.55vh;
+  height: 2.55vh;
+  border: 0;
+  border-radius: 0.5vh;
+  background: rgba(242, 242, 242, 0.08);
+  color: #F2F2F2;
+  cursor: pointer;
+}
+
+.admin-menu-dashboard {
+  border: 0.1vh solid #2E2E2C;
+}
+
+.admin-menu-panel button:focus,
+.admin-menu-panel button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.admin-menu-dashboard:hover,
+.admin-menu-close:hover {
+  background: rgba(242, 242, 242, 0.14);
+}
+
+.admin-menu-dashboard.selected,
+.admin-menu-close.selected {
+  background: rgba(251, 155, 4, 0.16);
+  color: #FB9B04;
+  box-shadow: inset 0 0 0 0.1vh rgba(251, 155, 4, 0.62);
+}
+
+.admin-menu-close svg,
+.admin-menu-dashboard svg {
+  width: 1.2vh;
+  height: 1.2vh;
+  fill: currentColor;
+}
+
+.admin-menu-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.6vh, 1fr));
+  gap: 0.45vh;
+}
+
+.admin-menu-categories button {
+  min-width: 0;
+  min-height: 2.8vh;
+  box-sizing: border-box;
+  padding: 0 0.6vh;
+  border: 0.1vh solid #2E2E2C;
+  border-radius: 0.28vh;
+  background: rgba(37, 37, 37, 0.58);
+  color: rgba(242, 242, 242, 0.72);
+  font-family: "Poppins", sans-serif;
+  font-size: 1.02vh;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-menu-categories button:hover,
+.admin-menu-categories button.active,
+.admin-menu-categories button.selected {
+  border-color: rgba(251, 155, 4, 0.72);
+  background: rgba(251, 155, 4, 0.16);
+  color: #FB9B04;
+}
+
+.admin-menu-categories button.selected {
+  box-shadow: inset 0 0 0 0.1vh rgba(251, 155, 4, 0.35);
+}
+
+.admin-menu-categories button:active {
+  background: rgba(251, 155, 4, 0.24);
+  color: #F2F2F2;
+}
+
+.admin-menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45vh;
+  max-height: min(59vh, calc(100vh - 15vh));
+  overflow-y: auto;
+  padding: 0.1vh 0.25vh 0.1vh 0;
+}
+
+.admin-menu-actions button,
+.admin-menu-input-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8vh;
+  min-width: 0;
+  width: 100%;
+  min-height: 3.55vh;
+  box-sizing: border-box;
+  padding: 0.68vh 0.9vh 0.68vh 1vh;
+  border: 0.1vh solid #2E2E2C;
+  border-radius: 0.32vh;
+  background: rgba(37, 37, 37, 0.6);
+  color: #F2F2F2;
+  font-family: "Poppins", sans-serif;
+  font-size: 1.16vh;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-menu-input-row {
+  align-items: stretch;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.45vh;
+  min-height: auto;
+  padding: 0.75vh 0.9vh;
+  cursor: text;
+}
+
+.admin-menu-actions button:hover,
+.admin-menu-actions button.selected,
+.admin-menu-input-row:hover,
+.admin-menu-input-row.selected {
+  border-color: rgba(251, 155, 4, 0.65);
+  background: rgba(251, 155, 4, 0.12);
+}
+
+.admin-menu-actions button.active {
+  border-color: #FB9B04;
+  background: rgba(251, 155, 4, 0.16);
+}
+
+.admin-menu-actions button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.admin-menu-actions button > span,
+.admin-menu-input-row > span {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.admin-menu-input-row > span {
+  flex: none;
+  width: 100%;
+  color: rgba(242, 242, 242, 0.78);
+}
+
+.admin-menu-input-row input {
+  min-width: 0;
+  width: 100%;
+  height: 2.9vh;
+  box-sizing: border-box;
+  border: 0.1vh solid rgba(242, 242, 242, 0.14);
+  border-radius: 0.22vh;
+  background: rgba(0, 0, 0, 0.22);
+  color: #F2F2F2;
+  font-family: "Poppins", sans-serif;
+  font-size: 1.08vh;
+  text-align: left;
+  outline: none;
+  padding: 0 0.65vh;
+}
+
+.admin-menu-input-row input:focus {
+  border-color: #FB9B04;
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.admin-menu-actions button small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 3.8vh;
+  min-height: 1.8vh;
+  padding: 0 0.6vh;
+  border: 0.1vh solid rgba(242, 242, 242, 0.12);
+  border-radius: 0.18vh;
+  background: rgba(242, 242, 242, 0.09);
+  color: rgba(242, 242, 242, 0.58);
+  font-size: 0.98vh;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.admin-menu-actions button.active small {
+  border-color: #FB9B04;
+  background: #FB9B04;
+  color: #161616;
+}
+
+.admin-menu-actions button .value-badge {
+  min-width: 5.2vh;
+  max-width: 12vh;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+}
+
+.admin-menu-actions button .selector-badge {
+  justify-content: space-between;
+  gap: 0.45vh;
+  min-width: 7.6vh;
+}
+
+.admin-menu-actions button .page-badge {
+  min-width: 2.4vh;
+  max-width: 2.4vh;
+  border-color: rgba(251, 155, 4, 0.72);
+  background: rgba(251, 155, 4, 0.16);
+  color: #FB9B04;
+  font-size: 1.2vh;
+}
+
+.admin-menu-actions button:hover .page-badge,
+.admin-menu-actions button.selected .page-badge {
+  background: #FB9B04;
+  color: #161616;
+}
+
+.admin-menu-actions button .selector-badge span {
+  display: inline;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-menu-actions button .selector-badge .selector-arrow {
+  flex: 0 0 auto;
+  color: rgba(242, 242, 242, 0.42);
+}
+
+.admin-menu-back {
+  border-style: dashed !important;
+  color: rgba(242, 242, 242, 0.72) !important;
+}
+
+.admin-menu-footer {
+  color: rgba(242, 242, 242, 0.45);
+  font-size: 1vh;
+  line-height: 1.25;
+  user-select: none;
+}
+
+.admin-menu-section-label {
+  margin: 0.35vh 0 0.05vh;
+  color: rgba(242, 242, 242, 0.36);
+  font-size: 0.9vh;
+  font-weight: 600;
+  line-height: 1;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.admin-menu-section-label:first-child {
+  margin-top: 0;
+}
+
+/* SPINNER */
+.spinner-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 40vh;
+}
+
+.spinner {
+  width: 4vh;
+  height: 4vh;
+  border: 0.4vh solid rgba(242, 242, 242, 0.2);
+  border-top: 0.4vh solid #fb9b04;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(50%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0%);
+  }
+}
+
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes sway {
+  0% {
+    transform: translateY(0vh);
+  }
+  50% {
+    transform: translateY(-0.2vh);
+  }
+  100% {
+    transform: translateY(0vh);
+  }
+}
+
+@keyframes fadeInSway {
+  0% { opacity: 0; transform: translateY(0.2vh); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0.2vh); }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
