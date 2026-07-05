@@ -44,6 +44,10 @@ RegisterServerEvent('esx_society:checkSocietyBalance')
 AddEventHandler('esx_society:checkSocietyBalance', function(society)
 	local xPlayer = ESX.Player(source)
 	local society = GetSociety(society)
+	if not society then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to check balance of a non-existing society!'):format(source))
+		return
+	end
 
 	if xPlayer.getJob().name ~= society.name then
 		print(('esx_society: %s attempted to call checkSocietyBalance!'):format(xPlayer.getIdentifier()))
@@ -135,6 +139,14 @@ AddEventHandler('esx_society:putVehicleInGarage', function(societyName, vehicle)
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to put vehicle in non-existing society garage - ^5%s^7!'):format(source, societyName))
 		return
 	end
+	local xPlayer = ESX.Player(source)
+	if not xPlayer or xPlayer.getJob().name ~= society.name then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to put vehicle in society garage - ^5%s^7!'):format(source, society.name))
+		return
+	end
+	if type(vehicle) ~= 'table' or not vehicle.plate then
+		return
+	end
 	TriggerEvent('esx_datastore:getSharedDataStore', society.datastore, function(store)
 		local garage = store.get('garage') or {}
 		table.insert(garage, vehicle)
@@ -148,6 +160,14 @@ AddEventHandler('esx_society:removeVehicleFromGarage', function(societyName, veh
 	local society = GetSociety(societyName)
 	if not society then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to remove vehicle from non-existing society garage - ^5%s^7!'):format(source, societyName))
+		return
+	end
+	local xPlayer = ESX.Player(source)
+	if not xPlayer or xPlayer.getJob().name ~= society.name then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to remove vehicle from society garage - ^5%s^7!'):format(source, society.name))
+		return
+	end
+	if type(vehicle) ~= 'table' or not vehicle.plate then
 		return
 	end
 	TriggerEvent('esx_datastore:getSharedDataStore', society.datastore, function(store)
@@ -222,23 +242,27 @@ ESX.RegisterServerCallback('esx_society:getEmployees', function(source, cb, soci
 			end
 
 			if not alreadyInTable then
-				local name = TranslateCap('name_not_found')
+				local grade = Jobs[society] and Jobs[society].grades[tostring(row.job_grade)]
 
-				if Config.EnableESXIdentity then
-					name = row.firstname .. ' ' .. row.lastname 
+				if grade then
+					local name = TranslateCap('name_not_found')
+
+					if Config.EnableESXIdentity then
+						name = row.firstname .. ' ' .. row.lastname
+					end
+
+					table.insert(employees, {
+						name = name,
+						identifier = identifier,
+						job = {
+							name = society,
+							label = Jobs[society].label,
+							grade = row.job_grade,
+							grade_name = grade.name,
+							grade_label = grade.label
+						}
+					})
 				end
-				
-				table.insert(employees, {
-					name = name,
-					identifier = identifier,
-					job = {
-						name = society,
-						label = Jobs[society].label,
-						grade = row.job_grade,
-						grade_name = Jobs[society].grades[tostring(row.job_grade)].name,
-						grade_label = Jobs[society].grades[tostring(row.job_grade)].label
-					}
-				})
 			end
 		end
 
@@ -270,13 +294,38 @@ end)
 
 ESX.RegisterServerCallback('esx_society:setJob', function(source, cb, identifier, job, grade, actionType)
 	local xPlayer = ESX.Player(source)
-	local isBoss = Config.BossGrades[xPlayer.getJob().grade_name]
-	local xTarget = ESX.Player(identifier)
+	if not xPlayer then return cb() end
+	local xPlayerJob = xPlayer.getJob()
+	local isBoss = Config.BossGrades[xPlayerJob.grade_name]
 
 	if not isBoss then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted to setJob for Player ^5%s^7!'):format(source, xTarget.src))
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to setJob!'):format(source))
 		return cb()
 	end
+
+	if type(identifier) ~= 'string' then
+		return cb()
+	end
+
+	local society = xPlayerJob.name
+
+	if actionType == 'fire' then
+		job, grade = 'unemployed', 0
+	else
+		grade = tonumber(grade)
+		local gradeData = grade and Jobs[society] and Jobs[society].grades[tostring(grade)]
+		if not gradeData then
+			print(('[^3WARNING^7] Player ^5%s^7 attempted to setJob with an invalid grade for ^5%s^7!'):format(source, society))
+			return cb()
+		end
+		if actionType == 'promote' and grade > xPlayerJob.grade then
+			print(('[^3WARNING^7] Player ^5%s^7 attempted to promote above own grade in ^5%s^7!'):format(source, society))
+			return cb()
+		end
+		job = society
+	end
+
+	local xTarget = ESX.Player(identifier)
 
 	if not xTarget then
 		MySQL.update('UPDATE users SET job = ?, job_grade = ? WHERE identifier = ?', {job, grade, identifier},
@@ -284,6 +333,11 @@ ESX.RegisterServerCallback('esx_society:setJob', function(source, cb, identifier
 			cb()
 		end)
 		return
+	end
+
+	if actionType ~= 'hire' and xTarget.getJob().name ~= society then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to setJob for a non-member of ^5%s^7!'):format(source, society))
+		return cb()
 	end
 
 	xTarget.setJob(job, grade)
