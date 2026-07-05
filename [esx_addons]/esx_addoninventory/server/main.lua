@@ -82,6 +82,7 @@ MySQL.ready(function()
 end)
 
 function GetInventory(name, owner)
+	if not Inventories[name] then return nil end
 	for i=1, #Inventories[name], 1 do
 		if Inventories[name][i].owner == owner then
 			return Inventories[name][i]
