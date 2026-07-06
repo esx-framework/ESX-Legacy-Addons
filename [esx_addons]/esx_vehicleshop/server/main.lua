@@ -304,6 +304,10 @@ end)
 ESX.RegisterServerCallback('esx_vehicleshop:resellVehicle', function(source, cb, plate, model)
 	local xPlayer, resellPrice = ESX.Player(source)
 
+	if not xPlayer then
+		return cb(false)
+	end
+
 	if xPlayer.getJob().name == 'cardealer' or not Config.EnablePlayerManagement then
 		-- calculate the resell price
 		for i=1, #vehicles, 1 do
@@ -354,6 +358,11 @@ end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:getPlayerInventory', function(source, cb)
 	local xPlayer = ESX.Player(source)
+
+	if not xPlayer then
+		return cb(false)
+	end
+
 	local items = xPlayer.getInventory(true)
 
 	cb({items = items})
@@ -368,6 +377,10 @@ end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:retrieveJobVehicles', function(source, cb, type)
 	local xPlayer = ESX.Player(source)
+
+	if not xPlayer then
+		return cb(false)
+	end
 
 	MySQL.query('SELECT * FROM owned_vehicles WHERE owner = ? AND type = ? AND job = ?', {xPlayer.getIdentifier(), type, xPlayer.getJob().name},
 	function(result)
