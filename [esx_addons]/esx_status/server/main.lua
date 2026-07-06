@@ -49,17 +49,7 @@ RegisterNetEvent('esx_status:update', function(status)
 		return
 	end
 
-	local merged, index = {}, {}
-	local current = xPlayer.get('status') or {}
-
-	for i = 1, #current do
-		local entry = current[i]
-		if type(entry) == 'table' and type(entry.name) == 'string' then
-			local copy = { name = entry.name, val = entry.val, percent = entry.percent }
-			merged[#merged + 1] = copy
-			index[entry.name] = copy
-		end
-	end
+	local validated = {}
 
 	for i = 1, #status do
 		local entry = status[i]
@@ -71,19 +61,9 @@ RegisterNetEvent('esx_status:update', function(status)
 				val = Config.StatusMax
 			end
 
-			local existing = index[entry.name]
-			if existing then
-				if type(existing.val) ~= 'number' or val < existing.val then
-					existing.val = val
-					existing.percent = (val / Config.StatusMax) * 100
-				end
-			else
-				local copy = { name = entry.name, val = val, percent = (val / Config.StatusMax) * 100 }
-				merged[#merged + 1] = copy
-				index[entry.name] = copy
-			end
+			validated[#validated + 1] = { name = entry.name, val = val, percent = (val / Config.StatusMax) * 100 }
 		end
 	end
 
-	xPlayer.set('status', merged)
+	xPlayer.set('status', validated)
 end)
