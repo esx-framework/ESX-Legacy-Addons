@@ -48,7 +48,7 @@ RegisterNetEvent('esx_vehicleshop:setVehicleOwnedPlayerId')
 AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, vehicleProps, model, label)
 	local xPlayer, xTarget = ESX.Player(source), ESX.Player(playerId)
 
-	if xPlayer.getJob().name ~= 'cardealer' or not xTarget then
+	if not xPlayer or xPlayer.getJob().name ~= 'cardealer' or not xTarget then
 		return
 	end
 	local xTargetName = xTarget.getName()
@@ -83,7 +83,7 @@ RegisterNetEvent('esx_vehicleshop:rentVehicle')
 AddEventHandler('esx_vehicleshop:rentVehicle', function(vehicle, plate, rentPrice, playerId)
 	local xPlayer, xTarget = ESX.Player(source), ESX.Player(playerId)
 
-	if xPlayer.getJob().name ~= 'cardealer' or not xTarget then
+	if not xPlayer or xPlayer.getJob().name ~= 'cardealer' or not xTarget then
 		return
 	end
 	local xTargetName = xTarget.getName()
@@ -112,6 +112,15 @@ AddEventHandler('esx_vehicleshop:getStockItem', function(itemName, count)
 	local source = source
 	local xPlayer = ESX.Player(source)
 
+	if not xPlayer or xPlayer.getJob().name ~= 'cardealer' then
+		return
+	end
+
+	count = tonumber(count)
+	if not count or count <= 0 or count % 1 ~= 0 then
+		return
+	end
+
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_cardealer', function(inventory)
 		local item = inventory.getItem(itemName)
 
@@ -136,8 +145,22 @@ AddEventHandler('esx_vehicleshop:putStockItems', function(itemName, count)
 	local source = source
 	local xPlayer = ESX.Player(source)
 
+	if not xPlayer or xPlayer.getJob().name ~= 'cardealer' then
+		return
+	end
+
+	count = tonumber(count)
+	if not count or count <= 0 or count % 1 ~= 0 then
+		return
+	end
+
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_cardealer', function(inventory)
 		local item = inventory.getItem(itemName)
+
+		local pItem = xPlayer.getInventoryItem(itemName)
+		if not pItem or pItem.count < count then
+			return xPlayer.showNotification(TranslateCap('invalid_amount'))
+		end
 
 		if item.count >= 0 then
 			xPlayer.removeInventoryItem(itemName, count)
@@ -151,7 +174,11 @@ end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:buyVehicle', function(source, cb, model, plate)
 	local xPlayer = ESX.Player(source)
-	local modelPrice = getVehicleFromModel(model).price
+	if not xPlayer then return cb(false) end
+
+	local v = getVehicleFromModel(model)
+	if not v then return cb(false) end
+	local modelPrice = v.price
 
 	if modelPrice and xPlayer.getMoney() >= modelPrice then
 		xPlayer.removeMoney(modelPrice, "Vehicle Purchase")
@@ -181,10 +208,12 @@ end)
 ESX.RegisterServerCallback('esx_vehicleshop:buyCarDealerVehicle', function(source, cb, model)
 	local xPlayer = ESX.Player(source)
 
-	if xPlayer.getJob().name ~= 'cardealer' then
+	if not xPlayer or xPlayer.getJob().name ~= 'cardealer' then
 		return cb(false)
 	end
-	local modelPrice = getVehicleFromModel(model).price
+	local v = getVehicleFromModel(model)
+	if not v then return cb(false) end
+	local modelPrice = v.price
 
 	if not modelPrice then
 		return cb(false)
@@ -207,7 +236,11 @@ RegisterNetEvent('esx_vehicleshop:returnProvider')
 AddEventHandler('esx_vehicleshop:returnProvider', function(vehicleModel)
 	local xPlayer = ESX.Player(source)
 
-	if xPlayer.getJob().name ~= 'cardealer' then
+	if not xPlayer or xPlayer.getJob().name ~= 'cardealer' then
+		return
+	end
+	local vData = getVehicleFromModel(vehicleModel)
+	if not vData then
 		return
 	end
 	MySQL.single('SELECT id, price FROM cardealer_vehicles WHERE vehicle = ?', {vehicleModel},
@@ -225,7 +258,7 @@ AddEventHandler('esx_vehicleshop:returnProvider', function(vehicleModel)
 			end
 			TriggerEvent('esx_addonaccount:getSharedAccount', 'society_cardealer', function(account)
 				local price = ESX.Math.Round(result.price * 0.75)
-				local vehicleLabel = getVehicleFromModel(vehicleModel).name
+				local vehicleLabel = vData.name
 
 				account.addMoney(price)
 				xPlayer.showNotification(TranslateCap('vehicle_sold_for', vehicleLabel, ESX.Math.GroupDigits(price)))
@@ -270,6 +303,10 @@ end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:resellVehicle', function(source, cb, plate, model)
 	local xPlayer, resellPrice = ESX.Player(source)
+
+	if not xPlayer then
+		return cb(false)
+	end
 
 	if xPlayer.getJob().name == 'cardealer' or not Config.EnablePlayerManagement then
 		-- calculate the resell price
@@ -321,6 +358,11 @@ end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:getPlayerInventory', function(source, cb)
 	local xPlayer = ESX.Player(source)
+
+	if not xPlayer then
+		return cb(false)
+	end
+
 	local items = xPlayer.getInventory(true)
 
 	cb({items = items})
@@ -336,6 +378,10 @@ end)
 ESX.RegisterServerCallback('esx_vehicleshop:retrieveJobVehicles', function(source, cb, type)
 	local xPlayer = ESX.Player(source)
 
+	if not xPlayer then
+		return cb(false)
+	end
+
 	MySQL.query('SELECT * FROM owned_vehicles WHERE owner = ? AND type = ? AND job = ?', {xPlayer.getIdentifier(), type, xPlayer.getJob().name},
 	function(result)
 		cb(result)
@@ -345,6 +391,7 @@ end)
 RegisterNetEvent('esx_vehicleshop:setJobVehicleState')
 AddEventHandler('esx_vehicleshop:setJobVehicleState', function(plate, state)
 	local xPlayer = ESX.Player(source)
+	if not xPlayer then return end
 
 	MySQL.update('UPDATE owned_vehicles SET `stored` = ? WHERE plate = ? AND job = ?', {state, plate, xPlayer.getJob().name},
 	function(rowsChanged)

@@ -12,7 +12,9 @@ AddEventHandler('onResourceStart', function(resourceName)
 					DataStoresIndex[#DataStoresIndex + 1] = data.name
 					DataStores[data.name] = {}
 				end
-				DataStores[data.name][#DataStores[data.name] + 1] = CreateDataStore(data.name, data.owner, json.decode(data.data))
+				if data.data then
+					DataStores[data.name][#DataStores[data.name] + 1] = CreateDataStore(data.name, data.owner, json.decode(data.data))
+				end
 			else
 				if data.data then
 					SharedDataStores[data.name] = CreateDataStore(data.name, nil, json.decode(data.data))
@@ -32,7 +34,23 @@ AddEventHandler('onResourceStart', function(resourceName)
 	end
 end)
 
+AddEventHandler('onResourceStop', function(resourceName)
+	if resourceName ~= GetCurrentResourceName() then return end
+
+	for _, stores in pairs(DataStores) do
+		for i=1, #stores, 1 do
+			stores[i].flush()
+		end
+	end
+
+	for _, store in pairs(SharedDataStores) do
+		store.flush()
+	end
+end)
+
 function GetDataStore(name, owner)
+	if not DataStores[name] then return nil end
+
 	for i=1, #DataStores[name], 1 do
 		if DataStores[name][i].owner == owner then
 			return DataStores[name][i]
@@ -42,6 +60,8 @@ end
 
 function GetDataStoreOwners(name)
 	local identifiers = {}
+
+	if not DataStores[name] then return identifiers end
 
 	for i=1, #DataStores[name], 1 do
 		table.insert(identifiers, DataStores[name][i].owner)

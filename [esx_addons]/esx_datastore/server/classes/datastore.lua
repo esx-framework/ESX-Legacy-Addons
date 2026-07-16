@@ -18,6 +18,7 @@ function CreateDataStore(name, owner, data)
 	self.name  = name
 	self.owner = owner
 	self.data  = type(data) == 'string' and json.decode(data) or data
+	self.dirty = false
 
 	local timeoutCallbacks = {}
 
@@ -30,14 +31,15 @@ function CreateDataStore(name, owner, data)
 		local path = stringsplit(key, '.')
 		local obj  = self.data
 
-		for i=1, #path, 1 do
-			obj = obj[path[i]]
+		for j=1, #path, 1 do
+			if type(obj) ~= 'table' then return nil end
+			obj = obj[path[j]]
 		end
 
 		if i == nil then
 			return obj
 		else
-			return obj[i]
+			return type(obj) == 'table' and obj[i] or nil
 		end
 	end
 
@@ -45,12 +47,13 @@ function CreateDataStore(name, owner, data)
 		local path = stringsplit(key, '.')
 		local obj  = self.data
 
-		for i=1, #path, 1 do
-			obj = obj[path[i]]
+		for j=1, #path, 1 do
+			if type(obj) ~= 'table' then return 0 end
+			obj = obj[path[j]]
 		end
 
 		if i ~= nil then
-			obj = obj[i]
+			obj = type(obj) == 'table' and obj[i] or nil
 		end
 
 		if obj == nil then
@@ -61,6 +64,8 @@ function CreateDataStore(name, owner, data)
 	end
 
 	function self.save()
+		self.dirty = true
+
 		for i=1, #timeoutCallbacks, 1 do
 			ESX.ClearTimeout(timeoutCallbacks[i])
 			timeoutCallbacks[i] = nil
@@ -72,9 +77,27 @@ function CreateDataStore(name, owner, data)
 			else
 				MySQL.update('UPDATE datastore_data SET data = ? WHERE name = ? and owner = ?', {json.encode(self.data), self.name, self.owner})
 			end
+			self.dirty = false
 		end)
 
 		table.insert(timeoutCallbacks, timeoutCallback)
+	end
+
+	function self.flush()
+		if not self.dirty then return end
+
+		for i=1, #timeoutCallbacks, 1 do
+			ESX.ClearTimeout(timeoutCallbacks[i])
+			timeoutCallbacks[i] = nil
+		end
+
+		if self.owner == nil then
+			MySQL.update.await('UPDATE datastore_data SET data = ? WHERE name = ?', {json.encode(self.data), self.name})
+		else
+			MySQL.update.await('UPDATE datastore_data SET data = ? WHERE name = ? and owner = ?', {json.encode(self.data), self.name, self.owner})
+		end
+
+		self.dirty = false
 	end
 
 	return self

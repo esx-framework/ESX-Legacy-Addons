@@ -1,5 +1,10 @@
 function GetItemFromShop(itemName, zone)
-	local zoneItems = Config.Zones[zone].Items
+	local zoneData = Config.Zones[zone]
+	if not zoneData then
+		return false
+	end
+
+	local zoneItems = zoneData.Items
 	local item = nil
 
 	for _, itemData in pairs(zoneItems) do
@@ -20,13 +25,26 @@ RegisterServerEvent('esx_shops:buyItem')
 AddEventHandler('esx_shops:buyItem', function(itemName, amount, zone)
 	local source = source
 	local xPlayer = ESX.Player(source)
-	local Exists, price, label = GetItemFromShop(itemName, zone)
-	amount = ESX.Math.Round(amount)
+	if not xPlayer then return end
 
-	if amount < 0 then
+	if type(zone) ~= 'string' or not Config.Zones[zone] then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to exploit the shop!'):format(source))
 		return
 	end
+
+	amount = tonumber(amount)
+	if not amount then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to exploit the shop!'):format(source))
+		return
+	end
+	amount = ESX.Math.Round(amount)
+
+	if amount <= 0 or amount > 25 then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to exploit the shop!'):format(source))
+		return
+	end
+
+	local Exists, price, label = GetItemFromShop(itemName, zone)
 
 	if not Exists then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to exploit the shop!'):format(source))

@@ -69,7 +69,8 @@ AddEventHandler('esx_banking:doingType', function(typeData)
             BANK.Pincode(amount, identifier)
         elseif typeData.transfer then
             -- transfer
-            if tonumber(typeData.transfer.playerId) <= 0 then
+            local targetId = tonumber(typeData.transfer.playerId)
+            if not targetId or targetId <= 0 then
                 TriggerClientEvent("esx:showNotification", source, TranslateCap("cant_do_it"), "error")
                 return
             end
@@ -79,7 +80,7 @@ AddEventHandler('esx_banking:doingType', function(typeData)
                 return
             end
 
-            local xTarget = ESX.Player(tonumber(typeData.transfer.playerId))
+            local xTarget = ESX.Player(targetId)
             if not BANK.Transfer(xTarget, xPlayer, amount, key) then
                 return
             end

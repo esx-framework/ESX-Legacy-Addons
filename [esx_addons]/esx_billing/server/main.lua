@@ -83,8 +83,10 @@ end)
 ESX.RegisterServerCallback('esx_billing:payBill', function(source, cb, billId)
 	local xPlayer = ESX.Player(source)
 
-	local result = MySQL.single.await('SELECT sender, target_type, target, amount FROM billing WHERE id = ?', { billId })
-	if not result then return end
+	if type(billId) ~= 'number' or billId ~= math.floor(billId) or billId <= 0 then return cb(false) end
+
+	local result = MySQL.single.await('SELECT sender, target_type, target, amount FROM billing WHERE id = ? AND identifier = ?', { billId, xPlayer.getIdentifier() })
+	if not result then return cb(false) end
 
 	local amount = result.amount
 	local xTarget = ESX.Player(result.sender)
@@ -119,11 +121,13 @@ ESX.RegisterServerCallback('esx_billing:payBill', function(source, cb, billId)
 	end
 
 	TriggerEvent('esx_addonaccount:getSharedAccount', result.target, function(account)
+		if not account then return cb(false) end
+
 		local paymentAccount = 'money'
 		if xPlayer.getMoney() < amount then
 			paymentAccount = 'bank'
 			if xPlayer.getAccount('bank').money < amount then
-				xTarget.showNotification(TranslateCap('target_no_money'))
+				if xTarget then xTarget.showNotification(TranslateCap('target_no_money')) end
 				xPlayer.showNotification(TranslateCap('no_money'))
 				return cb()
 			end

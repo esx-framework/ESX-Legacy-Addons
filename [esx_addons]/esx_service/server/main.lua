@@ -4,6 +4,10 @@ local MaxInService = {}
 function GetInServiceCount(name)
 	local count = 0
 
+	if not InService[name] then
+		return count
+	end
+
 	for k,v in pairs(InService[name]) do
 		if v == true then
 			count = count + 1
@@ -13,7 +17,6 @@ function GetInServiceCount(name)
 	return count
 end
 
-RegisterServerEvent('esx_service:activateService')
 AddEventHandler('esx_service:activateService', function(name, max)
 	InService[name] = {}
 	MaxInService[name] = max
@@ -22,12 +25,16 @@ end)
 
 RegisterServerEvent('esx_service:disableService')
 AddEventHandler('esx_service:disableService', function(name)
+	if not InService[name] then return end
+
 	InService[name][source] = nil
 	GlobalState[name] = GetInServiceCount(name)
 end)
 
 RegisterServerEvent('esx_service:notifyAllInService')
 AddEventHandler('esx_service:notifyAllInService', function(notification, name)
+	if not InService[name] then return end
+
 	for k,v in pairs(InService[name]) do
 		if v == true then
 			TriggerClientEvent('esx_service:notifyAllInService', k, notification, source)
@@ -36,8 +43,14 @@ AddEventHandler('esx_service:notifyAllInService', function(notification, name)
 end)
 
 ESX.RegisterServerCallback('esx_service:enableService', function(source, cb, name)
+	local xPlayer = ESX.GetPlayerFromId(source)
+
+	if not xPlayer or not InService[name] or xPlayer.getJob().name ~= name then
+		return cb(false, MaxInService[name], GetInServiceCount(name))
+	end
+
 	local inServiceCount = GetInServiceCount(name)
-	
+
 	if inServiceCount >= MaxInService[name] then
 		cb(false, MaxInService[name], inServiceCount)
 	else
@@ -63,9 +76,13 @@ end)
 
 ESX.RegisterServerCallback('esx_service:isPlayerInService', function(source, cb, name, target)
 	local isPlayerInService = false
-	local targetXPlayer = ESX.Player(target)
+	local targetXPlayer = ESX.GetPlayerFromId(target)
 
-	if InService[name][targetXPlayer.src] then
+	if not targetXPlayer or not InService[name] then
+		return cb(false)
+	end
+
+	if InService[name][targetXPlayer.source] then
 		isPlayerInService = true
 	end
 

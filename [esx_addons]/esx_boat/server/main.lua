@@ -14,7 +14,16 @@ end)
 
 ESX.RegisterServerCallback('esx_boat:buyBoat', function(source, cb, vehicleProps)
 	local xPlayer = ESX.Player(source)
-	local price   = getPriceFromModel(vehicleProps.model)
+
+	if not xPlayer then
+		return cb(false)
+	end
+
+	if type(vehicleProps) ~= 'table' or type(vehicleProps.model) ~= 'number' or type(vehicleProps.plate) ~= 'string' then
+		return cb(false)
+	end
+
+	local price = getPriceFromModel(vehicleProps.model)
 
 	-- vehicle model not found
 	if price == 0 then

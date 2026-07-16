@@ -55,15 +55,29 @@ end, false)
 
 RegisterCommand('msg', function(source, args, user)
 
-	if GetPlayerName(tonumber(args[1])) then
-		local player = tonumber(args[1])
-		table.remove(args, 1)
+	local player = tonumber(args[1])
 
-		TriggerClientEvent('chat:addMessage', player, {args = {"^1PM from "..GetPlayerName(source).. "[" .. source .. "]: ^7" ..table.concat(args, " ")}, color = {255, 153, 0}})
-		TriggerClientEvent('chat:addMessage', source, {args = {"^1PM SEND TO "..GetPlayerName(player).. "[" .. player .. "]: ^7" ..table.concat(args, " ")}, color = {255, 153, 0}})
-	else
+	if not player or not GetPlayerName(player) then
 		TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Specified Player Does Not Exist!")
+		return
 	end
+
+	if player == source then
+		TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "You Cannot Message Yourself!")
+		return
+	end
+
+	table.remove(args, 1)
+
+	if #args == 0 then
+		TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "You Must Specify A Message!")
+		return
+	end
+
+	local message = string.sub(table.concat(args, " "), 1, 256)
+
+	TriggerClientEvent('chat:addMessage', player, {args = {"^1PM from "..GetPlayerName(source).. "[" .. source .. "]: ^7" ..message}, color = {255, 153, 0}})
+	TriggerClientEvent('chat:addMessage', source, {args = {"^1PM SEND TO "..GetPlayerName(player).. "[" .. player .. "]: ^7" ..message}, color = {255, 153, 0}})
 
 end,false)
 
