@@ -1,0 +1,181 @@
+.upper-display-container {
+    display: flex;
+    align-items: center;
+    height: 3.8vh;
+    gap: 1vh;
+}
+
+.menu-icon {
+    aspect-ratio: 1/1;
+    height: 100%;
+    animation: sway 1s ease-in-out infinite;
+}
+
+.menu-titles {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: start;
+    user-select: none;
+}
+
+.menu-title {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 1.8vh;
+}
+
+.menu-subtitle {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 1.3vh;
+    line-height: 1.2vh;
+    color: rgba(242, 242, 242, 0.5);
+}
+
+.data-components {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    height: 3.9vh;
+    margin-left: auto;
+    gap: 0.8vh;
+}
+
+.main-search-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 1.5vh;
+    box-sizing: border-box;
+    padding: 0 1.6vh;
+    background: rgba(37, 37, 37, 0.3);
+    border: 0.1vh solid #2E2E2C;
+    border-radius: 0.5vh;
+    width: 37vh;
+    height: 100%;
+    color: #F2F2F2;
+    overflow: hidden;
+    user-select: none;
+}
+
+.main-search-icon {
+    aspect-ratio: 1/1;
+    height: 1.3vh;
+}
+
+.main-search-icon path {
+    stroke-opacity: 0.5;
+    transition: stroke-opacity 0.1s ease-in-out;
+}
+
+.main-search-bar {
+    width: 100%;
+    max-height: 50%;
+    font-size: 1.3vh;
+    color: #F2F2F2;
+    font-family: 'Poppins';
+    background: none;
+    border: none;
+    outline: none;
+    user-select: none;
+}
+
+.main-search-bar::placeholder {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 1.3vh;
+    color: rgba(242, 242, 242, 0.5);
+    transition: color 0.1s ease-in-out;
+    user-select: none;
+}
+
+.main-search-bar-container:hover .main-search-bar::placeholder {
+    color: rgba(242, 242, 242, 0.7);
+}
+
+.main-search-bar-container:focus .main-search-bar::placeholder {
+    color: rgba(242, 242, 242, 0.7);
+}
+
+.main-search-bar-container:hover svg path {
+    stroke-opacity: 0.7; 
+}
+
+.data-component {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1.4vh;
+    width: auto;
+    height: 100%;
+    background: rgba(37, 37, 37, 0.3);
+    border: 0.1vh solid #2E2E2C;
+    border-radius: 0.5vh;
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 1.25vh;
+    gap: 1.5vh;
+    transition: padding 0.1s ease-in-out;
+    user-select: none;
+}
+
+.data-component-icon {
+    height: 1.2vh;
+    width: auto;
+}
+
+.data-component:hover {
+    padding: 0 1.8vh;
+}
+
+.close-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1/1;
+    height: 100%;
+    border-radius: 0.5vh;
+    background: radial-gradient(50% 50% at 50% 50%, #C33535 0%, #F23F3F 100%);
+    transition: transform 50ms ease-in-out;
+    outline: none;
+    border: none;
+}
+
+.switch-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1/1;
+    height: 100%;
+    border-radius: 0.5vh;
+    background: rgba(37, 37, 37, 0.3);
+    border: 0.1vh solid #2E2E2C;
+    color: #F2F2F2;
+    cursor: pointer;
+    transition: border 0.1s ease-in-out, background 0.1s ease-in-out;
+}
+
+.switch-button:hover {
+    border-color: rgba(242, 242, 242, 0.4);
+    background: rgba(242, 242, 242, 0.08);
+}
+
+.switch-button svg {
+    width: 1.7vh;
+    height: 1.7vh;
+    fill: currentColor;
+}
+
+.close-icon {
+    aspect-ratio: 1/1;
+    height: 1.4vh;
+}
+
+.close-button:active {
+    transform: translateY(0.1vh);
+}
