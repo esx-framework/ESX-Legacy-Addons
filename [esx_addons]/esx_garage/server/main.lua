@@ -83,7 +83,7 @@ end)
 ESX.RegisterServerCallback('esx_garage:getVehiclesImpounded', function(source, cb)
 	local xPlayer  = ESX.Player(source)
 
-	MySQL.query('SELECT * FROM `owned_vehicles` WHERE `owner` = @identifier AND `stored` = 0',
+	MySQL.query('SELECT * FROM `owned_vehicles` WHERE `owner` = @identifier AND (stored = 0 OR stored = 2)',
 	{
 		['@identifier'] 	= xPlayer.getIdentifier(),
 	}, function(result)
@@ -92,7 +92,8 @@ ESX.RegisterServerCallback('esx_garage:getVehiclesImpounded', function(source, c
 		for i = 1, #result, 1 do
 			table.insert(vehicles, {
 				vehicle 	= json.decode(result[i].vehicle),
-				plate 		= result[i].plate
+				plate 		= result[i].plate,
+				pound 		= result[i].pound
 			})
 		end
 
