@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { AnimatePresence, motion } from 'framer-motion';
 import { theme } from '@/styles/theme';
@@ -82,12 +82,19 @@ export const GarageMenu: React.FC = () => {
   const {
     isOpen,
     isLoading,
+    selectedGarage,
     selectedVehicle,
     setOpen,
     selectGarage,
     selectVehicle,
     updateVehicles
   } = useGarageStore();
+
+  const activeTheme = useMemo(() => {
+    const accent = selectedGarage?.color;
+    if (!accent) return theme;
+    return { ...theme, colors: { ...theme.colors, primary: accent, brand: accent } } as typeof theme;
+  }, [selectedGarage?.color]);
 
   // Listen for NUI events
   useNuiEvent<OpenGarageData>(NuiEventType.OPEN_GARAGE, (data) => {
@@ -105,7 +112,7 @@ export const GarageMenu: React.FC = () => {
   });
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={activeTheme}>
       <AnimatePresence>
         {isOpen && (
           <Container>

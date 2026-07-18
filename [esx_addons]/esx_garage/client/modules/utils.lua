@@ -31,7 +31,10 @@ function Utils.SpawnFrozenPed(model, coords)
         return
     end
 
-    local _, correct_z = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, false)
+    local success, correct_z = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, false)
+    if not success then
+        correct_z = coords.z
+    end
 
     local ped = CreatePed(0, model_hash, coords.x, coords.y, correct_z, coords.w, false, true)
     FreezeEntityPosition(ped, true)
@@ -39,4 +42,6 @@ function Utils.SpawnFrozenPed(model, coords)
     SetBlockingOfNonTemporaryEvents(ped, true)
 
     SetModelAsNoLongerNeeded(model)
+
+    return ped
 end

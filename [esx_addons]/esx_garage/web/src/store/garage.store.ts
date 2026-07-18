@@ -71,6 +71,7 @@ export const useGarageStore = create<GarageState>()(
         if (!open) {
           // Reset state when closing
           state.selectedGarage = null;
+          state.selectedVehicle = null;
           state.vehicles = [];
           state.filter = defaultFilter;
         }
@@ -88,10 +89,12 @@ export const useGarageStore = create<GarageState>()(
         state.selectedVehicle = vehicle;
       }),
 
-      updateVehicles: (vehicles) => set((state) => {
-        state.vehicles = vehicles;
+      updateVehicles: (vehicles) => {
+        set((state) => {
+          state.vehicles = vehicles;
+        });
         get().updateStats();
-      }),
+      },
 
       setFilter: (filter) => set((state) => {
         state.filter = { ...state.filter, ...filter };
@@ -170,10 +173,14 @@ export const useGarageStore = create<GarageState>()(
               if (vehicle) {
                 vehicle.customName = newName;
               }
+              if (state.selectedVehicle?.id === vehicleId) {
+                state.selectedVehicle.customName = newName;
+              }
             });
           }
         } catch (error) {
           console.error('Failed to rename vehicle:', error);
+          throw error;
         }
       },
 
@@ -184,20 +191,21 @@ export const useGarageStore = create<GarageState>()(
 
           const newFavoriteStatus = !vehicle.isFavorite;
 
-          const result = await fetchNui<boolean>(
+          await fetchNui<boolean>(
             NuiCallbackType.TOGGLE_FAVORITE,
             { vehicleId, isFavorite: newFavoriteStatus },
             true // Mock success in dev
           );
 
-          if (result) {
-            set((state) => {
-              const vehicle = state.vehicles.find(v => v.id === vehicleId);
-              if (vehicle) {
-                vehicle.isFavorite = newFavoriteStatus;
-              }
-            });
-          }
+          set((state) => {
+            const target = state.vehicles.find(v => v.id === vehicleId);
+            if (target) {
+              target.isFavorite = newFavoriteStatus;
+            }
+            if (state.selectedVehicle?.id === vehicleId) {
+              state.selectedVehicle.isFavorite = newFavoriteStatus;
+            }
+          });
         } catch (error) {
           console.error('Failed to toggle favorite:', error);
         }

@@ -10,13 +10,11 @@ legacyversion '1.13.4'
 
 lua54 'yes'
 
--- React NUI
 ui_page 'web/dist/index.html'
--- ui_page 'http://localhost:3000'
+
 files {
     'web/dist/index.html',
     'web/dist/**/*',
-    'vehicleImages/**/*',
     'locales/*.lua',
 }
 
@@ -29,11 +27,16 @@ shared_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/init.lua'
+    'server/modules/*.lua'
 }
 
 client_scripts {
     '@es_extended/locale.lua',
     'client/modules/**/*',
     'client/init.lua'
+}
+
+dependencies {
+    'es_extended',
+    'oxmysql'
 }

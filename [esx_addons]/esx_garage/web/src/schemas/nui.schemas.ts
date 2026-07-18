@@ -89,7 +89,10 @@ export const GarageSchema = z.object({
   }).optional(),
   job: z.string().optional(),
   gang: z.string().optional(),
-  maxVehicles: z.number().optional()
+  maxVehicles: z.number().optional(),
+  logo: z.string().optional(),
+  color: z.string().optional(),
+  keys: z.boolean().optional()
 });
 
 export const OpenGarageDataSchema = z.object({

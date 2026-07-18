@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { MdSettings } from 'react-icons/md';
 import type { Vehicle } from '@/types/vehicle.types';
 import { useGarageStore } from '@/store/garage.store';
+import { useNotifications } from '@/providers/NotificationProvider';
 import { fetchNui } from '@/utils/nui';
 import { NuiCallbackType } from '@/types/nui.types';
 import { getVehicleImagePath } from '@/utils/vehicle';
+import { errorMessage } from '@/utils/errors';
 
 const DetailsContainer = styled(motion.div)`
   background: ${props => props.theme.colors.background};
@@ -257,46 +259,90 @@ const SpawnButton = styled(ActionButton)`
   align-self: stretch;
 `;
 
+const ActionInput = styled.input`
+  display: flex;
+  height: 2.5rem;
+  padding: 0 0.625rem;
+  align-self: stretch;
+  border-radius: 0.125rem;
+  background: rgba(242, 242, 242, 0.10);
+  border: 1px solid ${props => props.theme.colors.primary};
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 0.75rem;
+  outline: none;
+
+  &::placeholder {
+    color: ${props => props.theme.colors.text.disabled};
+  }
+`;
+
 interface VehicleDetailsProps {
   vehicle: Vehicle;
   onClose: () => void;
 }
 
 export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ vehicle, onClose }) => {
-  const { setLoading } = useGarageStore();
+  const { setLoading, selectedGarage, renameVehicle } = useGarageStore();
+  const { showNotification } = useNotifications();
+  const [mode, setMode] = useState<null | 'rename' | 'transfer'>(null);
+  const [input, setInput] = useState('');
+
+  const isImpoundLot = selectedGarage?.type === 'impound';
+  const isOut = !vehicle.stored && !vehicle.impounded;
+  const canTake = isImpoundLot ? (vehicle.impounded || isOut) : vehicle.stored;
 
   const handleSpawn = async () => {
     setLoading(true);
     try {
       await fetchNui(NuiCallbackType.RETRIEVE_VEHICLE, { vehicleId: vehicle.id });
       onClose();
+    } catch (e) {
+      showNotification(errorMessage(e, 'Cannot retrieve vehicle'), { type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   const handleGiveKeys = async () => {
-    await fetchNui(NuiCallbackType.GIVE_KEYS, { vehicleId: vehicle.id });
-  };
-
-  const handleRename = async () => {
-    const newName = prompt('Enter new vehicle name:', vehicle.customName || vehicle.name);
-    if (newName) {
-      await fetchNui(NuiCallbackType.RENAME_VEHICLE, {
-        vehicleId: vehicle.id,
-        name: newName
-      });
+    try {
+      await fetchNui(NuiCallbackType.GIVE_KEYS, { vehicleId: vehicle.id });
+    } catch (e) {
+      showNotification(errorMessage(e, 'Cannot give keys'), { type: 'error' });
     }
   };
 
-  const handleTransfer = async () => {
-    const playerId = prompt('Enter player ID to transfer vehicle:');
-    if (playerId) {
-      await fetchNui(NuiCallbackType.TRANSFER_VEHICLE, {
-        vehicleId: vehicle.id,
-        targetId: playerId
-      });
+  const openRename = () => {
+    setInput(vehicle.customName || vehicle.name);
+    setMode('rename');
+  };
+
+  const openTransfer = () => {
+    setInput('');
+    setMode('transfer');
+  };
+
+  const confirmAction = async () => {
+    const value = input.trim();
+    if (!value) {
+      setMode(null);
+      return;
     }
+    try {
+      if (mode === 'rename') {
+        await renameVehicle(vehicle.id, value);
+      } else if (mode === 'transfer') {
+        const targetId = parseInt(value, 10);
+        if (Number.isNaN(targetId)) {
+          showNotification('Enter a valid player ID', { type: 'error' });
+          return;
+        }
+        await fetchNui(NuiCallbackType.TRANSFER_VEHICLE, { vehicleId: vehicle.id, targetId });
+        showNotification('Vehicle transferred', { type: 'success' });
+      }
+    } catch (e) {
+      showNotification(errorMessage(e, 'Action failed'), { type: 'error' });
+    }
+    setMode(null);
   };
 
   return (
@@ -375,20 +421,48 @@ export const VehicleDetails: React.FC<VehicleDetailsProps> = ({ vehicle, onClose
           <MdSettings />
           Vehicle Actions
         </ActionsHeader>
-        <ActionButton $primary onClick={handleGiveKeys}>
-          Give Keys
-        </ActionButton>
-        <ActionButton onClick={handleRename}>
-          Rename Vehicle
-        </ActionButton>
-        <ActionButton onClick={handleTransfer}>
-          Transfer Vehicle
-        </ActionButton>
+        {mode ? (
+          <>
+            <ActionInput
+              autoFocus
+              value={input}
+              placeholder={mode === 'transfer' ? 'Player ID' : 'New name'}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') confirmAction();
+                if (e.key === 'Escape') setMode(null);
+              }}
+            />
+            <ActionButton $primary onClick={confirmAction}>
+              Confirm
+            </ActionButton>
+            <ActionButton onClick={() => setMode(null)}>
+              Cancel
+            </ActionButton>
+          </>
+        ) : (
+          <>
+            {selectedGarage?.keys && (
+              <ActionButton $primary onClick={handleGiveKeys}>
+                Give Keys
+              </ActionButton>
+            )}
+            <ActionButton onClick={openRename}>
+              Rename Vehicle
+            </ActionButton>
+            <ActionButton onClick={openTransfer}>
+              Transfer Vehicle
+            </ActionButton>
+          </>
+        )}
       </ActionsSection>
 
-      <SpawnButton onClick={handleSpawn}>
-        Spawn Vehicle
-      </SpawnButton>
+      {canTake && (
+        <SpawnButton onClick={handleSpawn}>
+          {vehicle.impounded ? 'Retrieve' : isOut ? 'Recover' : 'Spawn Vehicle'}
+          {(vehicle.impoundFee ?? 0) > 0 && ` ($${vehicle.impoundFee})`}
+        </SpawnButton>
+      )}
     </DetailsContainer>
   );
 };

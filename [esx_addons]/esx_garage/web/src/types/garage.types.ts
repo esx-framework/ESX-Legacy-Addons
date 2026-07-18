@@ -9,6 +9,9 @@ export interface Garage {
   job?: string;
   gang?: string;
   maxVehicles?: number;
+  logo?: string;
+  color?: string;
+  keys?: boolean;
 }
 
 export const GarageType = {

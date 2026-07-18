@@ -267,11 +267,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({ vehicle, onClick }) =>
       </InfoContainer>
 
       <BottomContainer>
+        {(vehicle.impoundFee ?? 0) > 0 && <PriceTag>${vehicle.impoundFee}</PriceTag>}
         {vehicle.impounded ? (
-          <>
-            {vehicle.impoundFee && <PriceTag>${vehicle.impoundFee}</PriceTag>}
-            <StatusIndicator $impounded>Impounded</StatusIndicator>
-          </>
+          <StatusIndicator $impounded>Impounded</StatusIndicator>
         ) : (
           <StatusIndicator>{vehicle.stored ? 'Stored' : 'Out'}</StatusIndicator>
         )}

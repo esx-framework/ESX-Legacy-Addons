@@ -70,13 +70,10 @@ interface VehicleGridProps {
 }
 
 export const VehicleGrid: React.FC<VehicleGridProps> = ({ onVehicleClick }) => {
-  const { getFilteredVehicles, retrieveVehicle } = useGarageStore();
+  const { getFilteredVehicles } = useGarageStore();
   const vehicles = getFilteredVehicles();
 
   const handleVehicleClick = (vehicle: Vehicle) => {
-    if (vehicle.stored) {
-      retrieveVehicle(vehicle.id);
-    }
     onVehicleClick?.(vehicle);
   };
 

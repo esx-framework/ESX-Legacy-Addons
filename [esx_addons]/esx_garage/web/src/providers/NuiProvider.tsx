@@ -49,7 +49,7 @@ export const NuiProvider: React.FC<PropsWithChildren> = ({ children }) => {
         fetchNui('SetNuiFocus', {
           hasFocus: focus,
           hasCursor: cursor,
-        });
+        }).catch(() => {});
       }
     },
     [inGame]

@@ -1,127 +1,391 @@
-local created_peds = {}
+local blips = {}
+local peds = {}
+local points = {}
+local markers = {}
 
-GARAGE_POINT = nil
+---@type table<string, Impound>
+local impoundsById = {}
 
-local function openGarage()
-    if not GARAGE_POINT then
-        return
-    end
+---@type { id: string, spawns: vector4[], garage: table, impound: boolean }?
+local currentLocation = nil
 
-    local garage = Config.Garages[GARAGE_POINT]
+local PED_DECOR = 'esx_garage_ped'
 
-    if not garage then
-        ESX.ShowNotification('Couldn\'t open garage menu', 'error')
-        return
-    end
+if not DecorIsRegisteredAsType(PED_DECOR, 2) then
+    DecorRegister(PED_DECOR, 2)
+end
 
-    ---@type GarageVehicleDB[]
-    local owned_vehicles = ESX.AwaitServerCallback('esx_garages/getOwnedVehicles')
-
-    ---@type GarageVehicle[]
-    local wrapped_vehicles = {}
-
-    for i = 1, #owned_vehicles do
-        local vehicle = owned_vehicles[i]
-        ---@type ESXVehicleProperties
-        local properties = json.decode(vehicle.vehicle)
-
-        if not properties then
-            ESX.ShowNotification('One of your vehicles, have invalid properties. Contact server owner', 'error')
-            return
+local function sweepGaragePeds()
+    for _, ped in ipairs(GetGamePool('CPed')) do
+        if not IsPedAPlayer(ped) and DecorExistOn(ped, PED_DECOR) then
+            SetEntityAsMissionEntity(ped, true, true)
+            DeleteEntity(ped)
         end
-
-        local display_name = GetDisplayNameFromVehicleModel(properties.model):lower()
-
-        wrapped_vehicles[i] = {
-            id = vehicle.plate,
-            plate = vehicle.plate,
-            model = vehicle.model or display_name:lower(),
-            name = display_name,
-            type = vehicle.type,
-            garageId = vehicle.parking,
-            impouned = Config.GarageState.IMPOUNDED == vehicle.stored,
-            impoundFee = Config.ImpoundFee,
-            mileage = 0,
-            fuel = properties.fuelLevel,
-            engine = properties.engineHealth / 10,
-            body = properties.bodyHealth / 10,
-            stored = Config.GarageState.STORED == vehicle.stored,
-            isFavorite = false,
-            customName = nil,
-            lastUsed = 0,
-            props = properties,
-        }
     end
+end
+
+local function clearWorld()
+    for i = 1, #blips do
+        RemoveBlip(blips[i])
+    end
+
+    for i = 1, #peds do
+        if DoesEntityExist(peds[i]) then
+            SetEntityAsMissionEntity(peds[i], true, true)
+            DeleteEntity(peds[i])
+        end
+    end
+
+    for i = 1, #points do
+        local point = points[i]
+        if point and ESX.Point and ESX.Point.delete then
+            ESX.Point.delete(point)
+        end
+    end
+
+    blips, peds, points, markers = {}, {}, {}, {}
+    currentLocation = nil
+
+    if ESX.HideUI then
+        ESX.HideUI()
+    end
+end
+
+---@param location table
+---@param isImpound boolean
+local function addLocation(location, isImpound)
+    local raw = isImpound and location.getOutPoint or location.entryPoint
+    local coords = vector3(raw.x, raw.y, raw.z)
+
+    if location.blip then
+        blips[#blips + 1] = Utils.CreateBlip(coords, location.blip.sprite, location.blip.scale, location.blip.color, location.label)
+    end
+
+    markers[#markers + 1] = coords
+
+    if location.ped then
+        local pc = location.ped.coords
+        local ped = Utils.SpawnFrozenPed(location.ped.model, vector4(pc.x, pc.y, pc.z, pc.w))
+        if ped then
+            DecorSetBool(ped, PED_DECOR, true)
+            peds[#peds + 1] = ped
+        end
+    end
+
+    points[#points + 1] = ESX.Point:new({
+        coords = coords,
+        distance = Config.Settings.interactionDistance,
+        enter = function()
+            currentLocation = { id = location.id, spawns = location.spawns, garage = location, impound = isImpound }
+            ESX.TextUI(isImpound and 'Press [E] to open Impound' or 'Press [E] to open Garage')
+        end,
+        leave = function()
+            currentLocation = nil
+            ESX.HideUI()
+        end
+    })
+end
+
+local refreshing = false
+local refreshPending = false
+
+local function refresh()
+    if refreshing then
+        refreshPending = true
+        return
+    end
+    refreshing = true
+
+    local ok, data = pcall(ESX.AwaitServerCallback, 'esx_garage:getGarages')
+    if ok and type(data) == 'table' and type(data.garages) == 'table' and type(data.impounds) == 'table' then
+        pcall(function()
+            clearWorld()
+
+            impoundsById = {}
+
+            for i = 1, #data.impounds do
+                impoundsById[data.impounds[i].id] = data.impounds[i]
+            end
+
+            for i = 1, #data.garages do
+                addLocation(data.garages[i], false)
+            end
+
+            for i = 1, #data.impounds do
+                addLocation(data.impounds[i], true)
+            end
+        end)
+    end
+
+    refreshing = false
+
+    if refreshPending then
+        refreshPending = false
+        refresh()
+    end
+end
+
+---@param row OwnedVehicleRow
+---@param currentLot Impound? lot the player is standing at, when the menu is an impound
+---@return GarageVehicle
+local function wrap(row, currentLot)
+    local props = json.decode(row.vehicle) or {}
+    local model = props.model
+    local displayName = model and GetDisplayNameFromVehicleModel(model) or 'VEHICLE'
+    local impounded = row.stored == 1 and row.pound ~= nil
+    local outOfSync = row.stored ~= 1
+
+    local fee
+    if impounded or outOfSync then
+        local lot = (row.pound and impoundsById[row.pound]) or currentLot
+        fee = (lot and lot.cost) or Config.Settings.defaultImpoundFee
+    end
+
+    return {
+        id = row.plate,
+        plate = row.plate,
+        model = displayName:lower(),
+        name = displayName,
+        type = row.type or (model and ESX.GetVehicleTypeClient(model)) or 'car',
+        stored = row.stored == 1 and row.pound == nil,
+        impounded = impounded,
+        garage = row.parking,
+        impoundFee = fee,
+        mileage = row.mileage or 0,
+        fuel = props.fuelLevel,
+        engine = props.engineHealth and props.engineHealth / 10.0 or nil,
+        body = props.bodyHealth and props.bodyHealth / 10.0 or nil,
+        isFavorite = row.is_favorite == 1,
+        customName = row.custom_name,
+        lastUsed = row.last_used,
+        props = props,
+    }
+end
+
+---@param name string
+---@param payload any
+---@return any
+local function serverCall(name, payload)
+    local ok, result = pcall(ESX.AwaitServerCallback, name, payload)
+    if not ok then
+        return nil
+    end
+
+    return result
+end
+
+local function openMenu()
+    local loc = currentLocation
+    if not loc then
+        return
+    end
+
+    local rows = serverCall('esx_garage:getVehicles', loc.id)
+    if not rows then
+        return ESX.ShowNotification('You cannot access this garage', 'error')
+    end
+
+    local currentLot = impoundsById[loc.id]
+
+    local vehicles = {}
+    for i = 1, #rows do
+        vehicles[#vehicles + 1] = wrap(rows[i], currentLot)
+    end
+
+    local garage = loc.garage
+
+    SendNUIMessage({ type = 'setLocale', payload = Config.Locale })
 
     SendNUIMessage({
         type = 'openGarage',
         payload = {
             garage = {
                 id = garage.id,
-                name = garage.id,
-                type = 'public',
+                name = garage.label,
+                type = garage.type or (loc.impound and 'impound' or 'public'),
                 label = garage.label,
+                logo = garage.logo,
+                color = garage.color,
+                keys = Config.Settings.vehicleKeys,
             },
-            vehicles = wrapped_vehicles
+            vehicles = vehicles,
         }
     })
 
     SetNuiFocus(true, true)
 end
 
-ESX.RegisterInput('openGarage', 'Opens Garage Menu', 'keyboard', 'E', openGarage)
-
-Citizen.CreateThread(function()
-    for i = 1, #Config.Garages do
-        local garage = Config.Garages[i]
-        local blip = garage.blip
-
-        Utils.CreateBlip(garage.entryPoint, blip.sprite, blip.scale, blip.color, TranslateCap('parking_blip_name'))
-
-        created_peds[#created_peds + 1] = Utils.SpawnFrozenPed(garage.ped.model, garage.ped.coords)
-
-        ESX.Point:new({
-            coords = garage.entryPoint,
-            distance = 3,
-            enter = function()
-                GARAGE_POINT = i
-                exports['esx_textui']:TextUI('Press [E] to open Garage Menu')
-            end,
-            leave = function()
-                GARAGE_POINT = nil
-                exports['esx_textui']:HideUI()
-            end
-        })
-    end
-end)
-
-
-AddEventHandler('onResourceStop', function(resource_name)
-    if resource_name ~= GetCurrentResourceName() then
+local function storeCurrentVehicle()
+    if not currentLocation then
         return
     end
 
-    for i = 1, #created_peds do
-        local ped = created_peds[i]
-        if DoesEntityExist(ped) then
-            DeleteEntity(ped)
+    local ped = PlayerPedId()
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    if vehicle == 0 then
+        return ESX.ShowNotification('You are not in a vehicle', 'error')
+    end
+
+    local props = ESX.Game.GetVehicleProperties(vehicle)
+    if not props or not props.plate then
+        return
+    end
+
+    local netId = NetworkGetNetworkIdFromEntity(vehicle)
+
+    local result = serverCall('esx_garage:storeVehicle', {
+        plate = props.plate,
+        garageId = currentLocation.id,
+        props = props,
+        netId = netId,
+    })
+
+    if result and result.success then
+        ESX.ShowNotification('Vehicle stored', 'success')
+    else
+        ESX.ShowNotification('Unable to store this vehicle', 'error')
+    end
+end
+
+local function onInteract()
+    if not currentLocation then
+        return
+    end
+
+    if not currentLocation.impound and IsPedInAnyVehicle(PlayerPedId(), false) then
+        storeCurrentVehicle()
+    else
+        openMenu()
+    end
+end
+
+ESX.RegisterInput('esx_garage_interact', 'Open Garage', 'keyboard', 'E', onInteract)
+
+---@param spawns vector4[]
+---@return vector4?
+local function pickClearSpawn(spawns)
+    if not spawns then
+        return nil
+    end
+
+    for i = 1, #spawns do
+        local spawn = spawns[i]
+        if ESX.Game.IsSpawnPointClear(vector3(spawn.x, spawn.y, spawn.z), 2.5) then
+            return spawn
         end
+    end
+
+    return nil
+end
+
+local function closeMenu()
+    SetNuiFocus(false, false)
+    SendNUIMessage({ type = 'closeGarage', payload = {} })
+end
+
+RegisterNUICallback('garage:retrieveVehicle', function(data, cb)
+    if not currentLocation then
+        return cb({ success = false, error = 'no_location' })
+    end
+
+    local spawn = pickClearSpawn(currentLocation.spawns)
+    if not spawn then
+        return cb({ success = false, error = 'blocked' })
+    end
+
+    local result = serverCall('esx_garage:retrieveVehicle', {
+        plate = data.vehicleId,
+        garageId = currentLocation.id,
+        spawn = { x = spawn.x, y = spawn.y, z = spawn.z, w = spawn.w },
+    })
+
+    if result and result.success and result.data and result.data.netId then
+        local vehicle = NetworkGetEntityFromNetworkId(result.data.netId)
+        local tries = 0
+        while not DoesEntityExist(vehicle) and tries < 50 do
+            Wait(10)
+            vehicle = NetworkGetEntityFromNetworkId(result.data.netId)
+            tries = tries + 1
+        end
+
+        if DoesEntityExist(vehicle) then
+            TaskWarpPedIntoVehicle(PlayerPedId(), vehicle, -1)
+        end
+
+        closeMenu()
+    end
+
+    cb(result or { success = false })
+end)
+
+RegisterNUICallback('garage:toggleFavorite', function(data, cb)
+    local result = serverCall('esx_garage:toggleFavorite', { plate = data.vehicleId, isFavorite = data.isFavorite })
+    cb(result or { success = false })
+end)
+
+RegisterNUICallback('garage:renameVehicle', function(data, cb)
+    local result = serverCall('esx_garage:renameVehicle', { plate = data.vehicleId, name = data.newName or data.name })
+    cb(result or { success = false })
+end)
+
+RegisterNUICallback('garage:transferVehicle', function(data, cb)
+    local result = serverCall('esx_garage:transferVehicle', { plate = data.vehicleId, targetId = data.targetId })
+    cb(result or { success = false })
+end)
+
+RegisterNUICallback('garage:giveKeys', function(data, cb)
+    local result = serverCall('esx_garage:giveKeys', { plate = data.vehicleId })
+    cb(result or { success = false })
+end)
+
+RegisterNUICallback('garage:closeUI', function(_, cb)
+    closeMenu()
+    cb({ success = true })
+end)
+
+RegisterNUICallback('SetNuiFocus', function(data, cb)
+    SetNuiFocus(data.hasFocus, data.hasCursor)
+    cb({ success = true })
+end)
+
+RegisterNetEvent('esx_garage:refresh', refresh)
+AddEventHandler('esx:playerLoaded', refresh)
+AddEventHandler('esx:setJob', refresh)
+
+AddEventHandler('onResourceStop', function(resource)
+    if resource == GetCurrentResourceName() then
+        clearWorld()
+        sweepGaragePeds()
     end
 end)
 
----@param body { vehicleId: string, isFavorite: boolean }
----@param cb function
-RegisterNUICallback('garage:toggleFavorite', function(body, cb)
-    local result = ESX.AwaitServerCallback('esx_garages/toggleFavorite', body)
-    cb(result)
+CreateThread(function()
+    sweepGaragePeds()
+
+    while not ESX.IsPlayerLoaded() do
+        Wait(500)
+    end
+
+    refresh()
 end)
 
----@param body { hasFocus: boolean, hasCursor: boolean }
----@param cb function
-RegisterNUICallback('SetNuiFocus', function(body, cb)
-    SetNuiFocus(body.hasFocus, body.hasCursor)
+CreateThread(function()
+    while true do
+        local sleep = 1000
 
-    cb({
-        success = true
-    })
+        if #markers > 0 then
+            local pcoords = GetEntityCoords(PlayerPedId())
+
+            for i = 1, #markers do
+                local m = markers[i]
+                if #(pcoords - m) < 20.0 then
+                    sleep = 0
+                    ---@diagnostic disable-next-line: missing-parameter
+                    DrawMarker(1, m.x, m.y, m.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.5, 1.5, 1.0, 65, 130, 255, 120, false, false, 2, false)
+                end
+            end
+        end
+
+        Wait(sleep)
+    end
 end)

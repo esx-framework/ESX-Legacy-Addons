@@ -38,6 +38,13 @@ const GarageIcon = styled.div`
     height: 1.25rem;
     color: ${(props) => props.theme.colors.background};
   }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+  }
 `;
 
 const GarageTitle = styled.h2`
@@ -182,8 +189,8 @@ const CloseButton = styled.button`
 // Spacer removed - use margin-left: auto instead
 
 export const GarageHeader: React.FC = () => {
-  const { selectedGarage, stats, filter, setFilter } = useGarageStore();
-  const { close } = useNui();
+  const { selectedGarage, stats, filter, setFilter, setOpen } = useGarageStore();
+  const { sendCallback } = useNui();
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState('');
 
@@ -193,7 +200,8 @@ export const GarageHeader: React.FC = () => {
   };
 
   const handleClose = () => {
-    close();
+    sendCallback('garage:closeUI');
+    setOpen(false);
   };
 
   const handleStoredFilter = () => {
@@ -216,7 +224,7 @@ export const GarageHeader: React.FC = () => {
     <HeaderContainer>
       <GarageName>
         <GarageIcon>
-          <MdGarage />
+          {selectedGarage?.logo ? <img src={selectedGarage.logo} alt="" /> : <MdGarage />}
         </GarageIcon>
         <GarageTitle>{selectedGarage?.label || t('garage.title')}</GarageTitle>
       </GarageName>
