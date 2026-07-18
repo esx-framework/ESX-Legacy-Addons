@@ -22,13 +22,6 @@ client_scripts {
 	'client/*.lua'
 }
 
-ui_page 'html/medal.html'
-
-files {
-	'html/medal.html',
-	'html/medal.js'
-}
-
 dependencies {
 	'es_extended',
 	'esx_skin',
