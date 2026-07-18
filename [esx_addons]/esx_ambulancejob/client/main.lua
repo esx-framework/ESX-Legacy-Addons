@@ -424,3 +424,7 @@ end)
 if Config.LoadIpl then
   RequestIpl('Coroner_Int_on') -- Morgue
 end
+
+function TriggerMedalDeathClip()
+  xLib.medal.triggerClip()
+end
