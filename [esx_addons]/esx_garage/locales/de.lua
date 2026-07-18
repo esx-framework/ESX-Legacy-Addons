@@ -21,5 +21,9 @@ Locales["de"] = {
     ['pay_impound'] = 'Abschleppkosten bezahlen',
     ['veh_block'] = 'Fahrzeug konnte nicht zurückgeholt werden, Ausparkpunkt belegt.',
     ['pay_Impound_bill'] = 'Du hast erfolgreich ~g~%s€~s~ an den Abschlepphof gezahlt.',
-    ['missing_money'] = 'Du hast nicht genug Geld!'
+    ['missing_money'] = 'Du hast nicht genug Geld!',
+    ['not_in_vehicle'] = 'du sitzt in keinem Fahrzeug.',
+    ['cannot_store'] = 'dieses Fahrzeug kann nicht eingeparkt werden.',
+    ['cannot_access_garage'] = 'du hast keinen Zugriff auf diese Garage.',
+    ['received_vehicle'] = 'du hast ein Fahrzeug erhalten (Kennzeichen: %s).'
 }

@@ -21,5 +21,9 @@ Locales["hu"] = {
   ['pay_impound'] = 'Lefoglalás fizetése',
   ['veh_block'] = 'Jármű lekérés sikertelen, a spawn hely foglalt.',
   ['pay_Impound_bill'] = 'Kiváltottad a járművet ~g~%s$~s~-ért',
-  ['missing_money'] = 'Nincs elég pénzed!'
+  ['missing_money'] = 'Nincs elég pénzed!',
+  ['not_in_vehicle'] = 'nem ülsz járműben.',
+  ['cannot_store'] = 'a járművet nem lehet eltárolni.',
+  ['cannot_access_garage'] = 'nincs hozzáférésed ehhez a garázshoz.',
+  ['received_vehicle'] = 'kaptál egy járművet (rendszám: %s).'
 }

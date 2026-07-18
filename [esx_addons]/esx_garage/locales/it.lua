@@ -21,5 +21,9 @@ Locales["it"] = {
     ['pay_impound' ] =  ' Paga sequestro ' ,
     ['veh_block' ] =  ' Impossibile recuperare il veicolo, la posizione di spawn è bloccata. ' ,
     ['pay_Impound_bill' ] =  'hai pagato ~g~$%s~s~ al sequestro. ' ,
-    ['missing_money' ] =  ' Non hai abbastanza soldi. '
+    ['missing_money' ] =  ' Non hai abbastanza soldi. ',
+    ['not_in_vehicle'] = 'non sei in un veicolo.',
+    ['cannot_store'] = 'impossibile parcheggiare questo veicolo.',
+    ['cannot_access_garage'] = 'non hai accesso a questo garage.',
+    ['received_vehicle'] = 'hai ricevuto un veicolo (targa: %s).'
 }

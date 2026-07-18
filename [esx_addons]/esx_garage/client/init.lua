@@ -9,14 +9,52 @@ local impoundsById = {}
 ---@type { id: string, spawns: vector4[], garage: table, impound: boolean }?
 local currentLocation = nil
 
-local PED_DECOR = 'esx_garage_ped'
+local PED_DECOR <const> = "esx_garage_ped"
 
 if not DecorIsRegisteredAsType(PED_DECOR, 2) then
     DecorRegister(PED_DECOR, 2)
 end
 
+---@type table<string, boolean>
+local NUI_VEHICLE_TYPES <const> = {
+    car = true, motorcycle = true, boat = true, aircraft = true,
+    bicycle = true, truck = true, emergency = true,
+}
+
+---Maps the raw game vocabulary (ESX.GetVehicleTypeClient, owned_vehicles.type)
+---to the NUI enum; anything unknown falls back to "car" so the zod schema
+---never rejects the payload.
+---@type table<string, string>
+local NUI_TYPE_MAP <const> = {
+    automobile = "car",
+    quadbike = "car",
+    amphibious_automobile = "car",
+    amphibious_quadbike = "car",
+    bike = "motorcycle",
+    heli = "aircraft",
+    plane = "aircraft",
+    blimp = "aircraft",
+    submarine = "boat",
+    trailer = "truck",
+    train = "truck",
+}
+
+---@param raw any
+---@return string
+local function nuiVehicleType(raw)
+    if type(raw) ~= "string" then
+        return "car"
+    end
+
+    if NUI_VEHICLE_TYPES[raw] then
+        return raw
+    end
+
+    return NUI_TYPE_MAP[raw] or "car"
+end
+
 local function sweepGaragePeds()
-    for _, ped in ipairs(GetGamePool('CPed')) do
+    for _, ped in ipairs(GetGamePool("CPed")) do
         if not IsPedAPlayer(ped) and DecorExistOn(ped, PED_DECOR) then
             SetEntityAsMissionEntity(ped, true, true)
             DeleteEntity(ped)
@@ -77,7 +115,7 @@ local function addLocation(location, isImpound)
         distance = Config.Settings.interactionDistance,
         enter = function()
             currentLocation = { id = location.id, spawns = location.spawns, garage = location, impound = isImpound }
-            ESX.TextUI(isImpound and 'Press [E] to open Impound' or 'Press [E] to open Garage')
+            ESX.TextUI(isImpound and TranslateCap("access_Impound") or TranslateCap("access_parking"))
         end,
         leave = function()
             currentLocation = nil
@@ -96,8 +134,8 @@ local function refresh()
     end
     refreshing = true
 
-    local ok, data = pcall(ESX.AwaitServerCallback, 'esx_garage:getGarages')
-    if ok and type(data) == 'table' and type(data.garages) == 'table' and type(data.impounds) == 'table' then
+    local ok, data = pcall(ESX.AwaitServerCallback, "esx_garage:getGarages")
+    if ok and type(data) == "table" and type(data.garages) == "table" and type(data.impounds) == "table" then
         pcall(function()
             clearWorld()
 
@@ -131,7 +169,7 @@ end
 local function wrap(row, currentLot)
     local props = json.decode(row.vehicle) or {}
     local model = props.model
-    local displayName = model and GetDisplayNameFromVehicleModel(model) or 'VEHICLE'
+    local displayName = model and GetDisplayNameFromVehicleModel(model) or "VEHICLE"
     local impounded = row.stored == 1 and row.pound ~= nil
     local outOfSync = row.stored ~= 1
 
@@ -146,7 +184,7 @@ local function wrap(row, currentLot)
         plate = row.plate,
         model = displayName:lower(),
         name = displayName,
-        type = row.type or (model and ESX.GetVehicleTypeClient(model)) or 'car',
+        type = nuiVehicleType(row.type or (model and ESX.GetVehicleTypeClient(model))),
         stored = row.stored == 1 and row.pound == nil,
         impounded = impounded,
         garage = row.parking,
@@ -180,9 +218,9 @@ local function openMenu()
         return
     end
 
-    local rows = serverCall('esx_garage:getVehicles', loc.id)
+    local rows = serverCall("esx_garage:getVehicles", loc.id)
     if not rows then
-        return ESX.ShowNotification('You cannot access this garage', 'error')
+        return ESX.ShowNotification(TranslateCap("cannot_access_garage"), "error")
     end
 
     local currentLot = impoundsById[loc.id]
@@ -194,15 +232,15 @@ local function openMenu()
 
     local garage = loc.garage
 
-    SendNUIMessage({ type = 'setLocale', payload = Config.Locale })
+    SendNUIMessage({ type = "setLocale", payload = Config.Locale })
 
     SendNUIMessage({
-        type = 'openGarage',
+        type = "openGarage",
         payload = {
             garage = {
                 id = garage.id,
                 name = garage.label,
-                type = garage.type or (loc.impound and 'impound' or 'public'),
+                type = garage.type or (loc.impound and "impound" or "public"),
                 label = garage.label,
                 logo = garage.logo,
                 color = garage.color,
@@ -223,7 +261,7 @@ local function storeCurrentVehicle()
     local ped = PlayerPedId()
     local vehicle = GetVehiclePedIsIn(ped, false)
     if vehicle == 0 then
-        return ESX.ShowNotification('You are not in a vehicle', 'error')
+        return ESX.ShowNotification(TranslateCap("not_in_vehicle"), "error")
     end
 
     local props = ESX.Game.GetVehicleProperties(vehicle)
@@ -233,7 +271,7 @@ local function storeCurrentVehicle()
 
     local netId = NetworkGetNetworkIdFromEntity(vehicle)
 
-    local result = serverCall('esx_garage:storeVehicle', {
+    local result = serverCall("esx_garage:storeVehicle", {
         plate = props.plate,
         garageId = currentLocation.id,
         props = props,
@@ -241,9 +279,9 @@ local function storeCurrentVehicle()
     })
 
     if result and result.success then
-        ESX.ShowNotification('Vehicle stored', 'success')
+        ESX.ShowNotification(TranslateCap("veh_stored"), "success")
     else
-        ESX.ShowNotification('Unable to store this vehicle', 'error')
+        ESX.ShowNotification(TranslateCap("cannot_store"), "error")
     end
 end
 
@@ -259,7 +297,7 @@ local function onInteract()
     end
 end
 
-ESX.RegisterInput('esx_garage_interact', 'Open Garage', 'keyboard', 'E', onInteract)
+ESX.RegisterInput("esx_garage_interact", "Open Garage", "keyboard", "E", onInteract)
 
 ---@param spawns vector4[]
 ---@return vector4?
@@ -280,20 +318,20 @@ end
 
 local function closeMenu()
     SetNuiFocus(false, false)
-    SendNUIMessage({ type = 'closeGarage', payload = {} })
+    SendNUIMessage({ type = "closeGarage", payload = {} })
 end
 
-RegisterNUICallback('garage:retrieveVehicle', function(data, cb)
+RegisterNUICallback("garage:retrieveVehicle", function(data, cb)
     if not currentLocation then
-        return cb({ success = false, error = 'no_location' })
+        return cb({ success = false, error = "no_location" })
     end
 
     local spawn = pickClearSpawn(currentLocation.spawns)
     if not spawn then
-        return cb({ success = false, error = 'blocked' })
+        return cb({ success = false, error = "blocked" })
     end
 
-    local result = serverCall('esx_garage:retrieveVehicle', {
+    local result = serverCall("esx_garage:retrieveVehicle", {
         plate = data.vehicleId,
         garageId = currentLocation.id,
         spawn = { x = spawn.x, y = spawn.y, z = spawn.z, w = spawn.w },
@@ -318,41 +356,41 @@ RegisterNUICallback('garage:retrieveVehicle', function(data, cb)
     cb(result or { success = false })
 end)
 
-RegisterNUICallback('garage:toggleFavorite', function(data, cb)
-    local result = serverCall('esx_garage:toggleFavorite', { plate = data.vehicleId, isFavorite = data.isFavorite })
+RegisterNUICallback("garage:toggleFavorite", function(data, cb)
+    local result = serverCall("esx_garage:toggleFavorite", { plate = data.vehicleId, isFavorite = data.isFavorite })
     cb(result or { success = false })
 end)
 
-RegisterNUICallback('garage:renameVehicle', function(data, cb)
-    local result = serverCall('esx_garage:renameVehicle', { plate = data.vehicleId, name = data.newName or data.name })
+RegisterNUICallback("garage:renameVehicle", function(data, cb)
+    local result = serverCall("esx_garage:renameVehicle", { plate = data.vehicleId, name = data.newName or data.name })
     cb(result or { success = false })
 end)
 
-RegisterNUICallback('garage:transferVehicle', function(data, cb)
-    local result = serverCall('esx_garage:transferVehicle', { plate = data.vehicleId, targetId = data.targetId })
+RegisterNUICallback("garage:transferVehicle", function(data, cb)
+    local result = serverCall("esx_garage:transferVehicle", { plate = data.vehicleId, targetId = data.targetId })
     cb(result or { success = false })
 end)
 
-RegisterNUICallback('garage:giveKeys', function(data, cb)
-    local result = serverCall('esx_garage:giveKeys', { plate = data.vehicleId })
+RegisterNUICallback("garage:giveKeys", function(data, cb)
+    local result = serverCall("esx_garage:giveKeys", { plate = data.vehicleId })
     cb(result or { success = false })
 end)
 
-RegisterNUICallback('garage:closeUI', function(_, cb)
+RegisterNUICallback("garage:closeUI", function(_, cb)
     closeMenu()
     cb({ success = true })
 end)
 
-RegisterNUICallback('SetNuiFocus', function(data, cb)
+RegisterNUICallback("SetNuiFocus", function(data, cb)
     SetNuiFocus(data.hasFocus, data.hasCursor)
     cb({ success = true })
 end)
 
-RegisterNetEvent('esx_garage:refresh', refresh)
-AddEventHandler('esx:playerLoaded', refresh)
-AddEventHandler('esx:setJob', refresh)
+RegisterNetEvent("esx_garage:refresh", refresh)
+RegisterNetEvent("esx:playerLoaded", refresh)
+RegisterNetEvent("esx:setJob", refresh)
 
-AddEventHandler('onResourceStop', function(resource)
+AddEventHandler("onResourceStop", function(resource)
     if resource == GetCurrentResourceName() then
         clearWorld()
         sweepGaragePeds()

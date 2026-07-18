@@ -38,7 +38,7 @@ function CanAccessGarage(source, garage)
     if access.authorize then
         local ok, result = pcall(access.authorize, source, garage)
         if not ok then
-            print(('[esx_garage] garage %s: access.authorize errored: %s'):format(tostring(garage.id), tostring(result)))
+            print(("[esx_garage] garage %s: access.authorize errored: %s"):format(tostring(garage.id), tostring(result)))
             return false
         end
 
@@ -46,6 +46,17 @@ function CanAccessGarage(source, garage)
     end
 
     return false
+end
+
+---@param v any
+---@return boolean
+local function hasXYZ(v)
+    local t = type(v)
+    if t ~= "table" and t ~= "vector3" and t ~= "vector4" then
+        return false
+    end
+
+    return tonumber(v.x) ~= nil and tonumber(v.y) ~= nil and tonumber(v.z) ~= nil
 end
 
 ---@param v vector3 | vector4
@@ -130,7 +141,7 @@ local function accessiblePayload(source)
     return { garages = garages, impounds = impounds }
 end
 
-ESX.RegisterServerCallback('esx_garage:getGarages', function(source, cb)
+ESX.RegisterServerCallback("esx_garage:getGarages", function(source, cb)
     local payload = accessiblePayload(source)
 
     cb(payload)
@@ -138,9 +149,16 @@ end)
 
 ---@param def Garage
 local function registerGarage(def)
-    assert(type(def) == 'table' and type(def.id) == 'string', 'registerGarage: a garage table with a string id is required')
+    assert(type(def) == "table" and type(def.id) == "string", "registerGarage: a garage table with a string id is required")
+    assert(hasXYZ(def.entryPoint), ("registerGarage: garage %s needs a valid entryPoint (x, y, z)"):format(def.id))
+    assert(type(def.spawns) == "table" and #def.spawns > 0, ("registerGarage: garage %s needs at least one spawn"):format(def.id))
+
+    for i = 1, #def.spawns do
+        assert(hasXYZ(def.spawns[i]), ("registerGarage: garage %s spawn #%d is not a valid coordinate"):format(def.id, i))
+    end
+
     Garages[def.id] = def
-    TriggerClientEvent('esx_garage:refresh', -1)
+    TriggerClientEvent("esx_garage:refresh", -1)
 end
 
 ---@param registry table<string, table>
@@ -153,24 +171,24 @@ local function asList(registry)
     return out
 end
 
-exports('getGarages', function()
+exports("getGarages", function()
     return asList(Garages)
 end)
 
-exports('getImpounds', function()
+exports("getImpounds", function()
     return asList(Impounds)
 end)
 
-exports('registerGarage', registerGarage)
+exports("registerGarage", registerGarage)
 
-exports('registerGarages', function(list)
-    assert(type(list) == 'table', 'registerGarages: expected a list of garages')
+exports("registerGarages", function(list)
+    assert(type(list) == "table", "registerGarages: expected a list of garages")
     for i = 1, #list do
         registerGarage(list[i])
     end
 end)
 
-exports('unregisterGarage', function(id)
+exports("unregisterGarage", function(id)
     Garages[id] = nil
-    TriggerClientEvent('esx_garage:refresh', -1)
+    TriggerClientEvent("esx_garage:refresh", -1)
 end)

@@ -21,5 +21,9 @@ Locales["en"] = {
     ['pay_impound'] = 'Betal beslaglægnings afgiften',
     ['veh_block'] = 'Kan ikke hente køretøjet, Spawn-positionen er blokeret.',
     ['pay_Impound_bill'] = 'Betalte ~g~DKK%s~s~ med succes til beslaglæggelsen.',
-    ['missing_money'] = 'Du har ikke penge nok.'
+    ['missing_money'] = 'Du har ikke penge nok.',
+    ['not_in_vehicle'] = 'du sidder ikke i et køretøj.',
+    ['cannot_store'] = 'køretøjet kan ikke parkeres.',
+    ['cannot_access_garage'] = 'du har ikke adgang til denne garage.',
+    ['received_vehicle'] = 'du har modtaget et køretøj (nummerplade: %s).'
 }
