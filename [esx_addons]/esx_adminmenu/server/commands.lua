@@ -9,10 +9,10 @@ local function showActionError(result, showError)
 	showError((result and result.err) or "Action failed.")
 end
 
-ESX.RegisterCommand(
-	"vec2",
-	allowedPermissions,
-	function(xPlayer, args, showError)
+-- Helper commands that copy a computed string to the clipboard all share the
+-- same player/permission/ped guards; only the computed text differs.
+local function registerCopyCommand(names, help, computeText)
+	ESX.RegisterCommand(names, allowedPermissions, function(xPlayer, args, showError)
 		if not xPlayer or xPlayer.source == 0 then
 			showError("Invalid player.")
 			return
@@ -29,238 +29,59 @@ ESX.RegisterCommand(
 			return
 		end
 
-		local coords = GetEntityCoords(ped)
-
-		local text = string.format("vec2(%.2f, %.2f)", coords.x, coords.y)
+		local text, err = computeText(xPlayer, ped)
+		if not text then
+			showError(err or "Action failed.")
+			return
+		end
 
 		TriggerClientEvent("esx-adminmenu:client:copyToClipboard", xPlayer.source, text)
-	end,
-	false,
-	{
-		help = "Copy your current position as vec2(x, y)",
-	}
-)
+	end, false, { help = help })
+end
 
---  VEC3
+registerCopyCommand("vec2", "Copy your current position as vec2(x, y)", function(_, ped)
+	local coords = GetEntityCoords(ped)
+	return string.format("vec2(%.2f, %.2f)", coords.x, coords.y)
+end)
 
-ESX.RegisterCommand(
-	"vec3",
-	allowedPermissions,
-	function(xPlayer, args, showError)
-		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
-			return
-		end
+registerCopyCommand("vec3", "Copy your current position as vec3(x, y, z)", function(_, ped)
+	local coords = GetEntityCoords(ped)
+	return string.format("vec3(%.2f, %.2f, %.2f)", coords.x, coords.y, coords.z)
+end)
 
-		if not Helpers.hasFeaturePermission(xPlayer.source, "helperCommands") then
-			showError("You do not have permission to use this command.")
-			return
-		end
+registerCopyCommand("vec4", "Copy your current position as vec4(x, y, z, heading)", function(_, ped)
+	local coords = GetEntityCoords(ped)
+	return string.format("vec4(%.2f, %.2f, %.2f, %.2f)", coords.x, coords.y, coords.z, GetEntityHeading(ped))
+end)
 
-		local ped = GetPlayerPed(xPlayer.source)
-		if ped == 0 then
-			showError("Failed to get player ped.")
-			return
-		end
+registerCopyCommand("heading", "Copy your current heading.", function(_, ped)
+	return string.format("%.2f", GetEntityHeading(ped))
+end)
 
-		local coords = GetEntityCoords(ped)
+registerCopyCommand({ "coords", "copycoords" }, "Copy your current coordinates and heading as fields.", function(_, ped)
+	local coords = GetEntityCoords(ped)
+	local heading = GetEntityHeading(ped)
+	return string.format("x = %.2f, y = %.2f, z = %.2f, heading = %.2f", coords.x, coords.y, coords.z, heading)
+end)
 
-		local text = string.format("vec3(%.2f, %.2f, %.2f)", coords.x, coords.y, coords.z)
+registerCopyCommand({ "rot", "rotation" }, "Copy your current rotation as vec3(x, y, z).", function(_, ped)
+	local rotation = GetEntityRotation(ped, 2)
+	return string.format("vec3(%.2f, %.2f, %.2f)", rotation.x, rotation.y, rotation.z)
+end)
 
-		TriggerClientEvent("esx-adminmenu:client:copyToClipboard", xPlayer.source, text)
-	end,
-	false,
-	{
-		help = "Copy your current position as vec3(x, y, z)",
-	}
-)
+registerCopyCommand({ "model", "entitymodel" }, "Copy your current ped or vehicle model hash.", function(_, ped)
+	local vehicle = GetVehiclePedIsIn(ped, false)
+	local entity = vehicle ~= 0 and vehicle or ped
+	return tostring(GetEntityModel(entity))
+end)
 
---  VEC4
-
-ESX.RegisterCommand(
-	"vec4",
-	allowedPermissions,
-	function(xPlayer, args, showError)
-		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
-			return
-		end
-
-		if not Helpers.hasFeaturePermission(xPlayer.source, "helperCommands") then
-			showError("You do not have permission to use this command.")
-			return
-		end
-
-		local ped = GetPlayerPed(xPlayer.source)
-		if ped == 0 then
-			showError("Failed to get player ped.")
-			return
-		end
-
-		local coords = GetEntityCoords(ped)
-		local heading = GetEntityHeading(ped)
-
-		local text = string.format("vec4(%.2f, %.2f, %.2f, %.2f)", coords.x, coords.y, coords.z, heading)
-
-		TriggerClientEvent("esx-adminmenu:client:copyToClipboard", xPlayer.source, text)
-	end,
-	false,
-	{
-		help = "Copy your current position as vec4(x, y, z, heading)",
-	}
-)
-
-ESX.RegisterCommand(
-	"heading",
-	allowedPermissions,
-	function(xPlayer, args, showError)
-		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
-			return
-		end
-
-		if not Helpers.hasFeaturePermission(xPlayer.source, "helperCommands") then
-			showError("You do not have permission to use this command.")
-			return
-		end
-
-		local ped = GetPlayerPed(xPlayer.source)
-		if ped == 0 then
-			showError("Failed to get player ped.")
-			return
-		end
-
-		TriggerClientEvent("esx-adminmenu:client:copyToClipboard", xPlayer.source, string.format("%.2f", GetEntityHeading(ped)))
-	end,
-	false,
-	{
-		help = "Copy your current heading.",
-	}
-)
-
-ESX.RegisterCommand(
-	{ "coords", "copycoords" },
-	allowedPermissions,
-	function(xPlayer, args, showError)
-		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
-			return
-		end
-
-		if not Helpers.hasFeaturePermission(xPlayer.source, "helperCommands") then
-			showError("You do not have permission to use this command.")
-			return
-		end
-
-		local ped = GetPlayerPed(xPlayer.source)
-		if ped == 0 then
-			showError("Failed to get player ped.")
-			return
-		end
-
-		local coords = GetEntityCoords(ped)
-		local heading = GetEntityHeading(ped)
-		local text = string.format("x = %.2f, y = %.2f, z = %.2f, heading = %.2f", coords.x, coords.y, coords.z, heading)
-
-		TriggerClientEvent("esx-adminmenu:client:copyToClipboard", xPlayer.source, text)
-	end,
-	false,
-	{
-		help = "Copy your current coordinates and heading as fields.",
-	}
-)
-
-ESX.RegisterCommand(
-	{ "rot", "rotation" },
-	allowedPermissions,
-	function(xPlayer, args, showError)
-		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
-			return
-		end
-
-		if not Helpers.hasFeaturePermission(xPlayer.source, "helperCommands") then
-			showError("You do not have permission to use this command.")
-			return
-		end
-
-		local ped = GetPlayerPed(xPlayer.source)
-		if ped == 0 then
-			showError("Failed to get player ped.")
-			return
-		end
-
-		local rotation = GetEntityRotation(ped, 2)
-		local text = string.format("vec3(%.2f, %.2f, %.2f)", rotation.x, rotation.y, rotation.z)
-
-		TriggerClientEvent("esx-adminmenu:client:copyToClipboard", xPlayer.source, text)
-	end,
-	false,
-	{
-		help = "Copy your current rotation as vec3(x, y, z).",
-	}
-)
-
-ESX.RegisterCommand(
-	{ "model", "entitymodel" },
-	allowedPermissions,
-	function(xPlayer, args, showError)
-		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
-			return
-		end
-
-		if not Helpers.hasFeaturePermission(xPlayer.source, "helperCommands") then
-			showError("You do not have permission to use this command.")
-			return
-		end
-
-		local ped = GetPlayerPed(xPlayer.source)
-		if ped == 0 then
-			showError("Failed to get player ped.")
-			return
-		end
-
-		local vehicle = GetVehiclePedIsIn(ped, false)
-		local entity = vehicle ~= 0 and vehicle or ped
-
-		TriggerClientEvent("esx-adminmenu:client:copyToClipboard", xPlayer.source, tostring(GetEntityModel(entity)))
-	end,
-	false,
-	{
-		help = "Copy your current ped or vehicle model hash.",
-	}
-)
-
-ESX.RegisterCommand(
-	{ "vehplate", "copyplate" },
-	allowedPermissions,
-	function(xPlayer, args, showError)
-		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
-			return
-		end
-
-		if not Helpers.hasFeaturePermission(xPlayer.source, "helperCommands") then
-			showError("You do not have permission to use this command.")
-			return
-		end
-
-		local ped = GetPlayerPed(xPlayer.source)
-		local vehicle = GetVehiclePedIsIn(ped, false)
-
-		if vehicle == 0 then
-			showError("You must be in a vehicle.")
-			return
-		end
-
-		TriggerClientEvent("esx-adminmenu:client:copyToClipboard", xPlayer.source, ESX.Math.Trim(GetVehicleNumberPlateText(vehicle)))
-	end,
-	false,
-	{
-		help = "Copy the current vehicle plate.",
-	}
-)
+registerCopyCommand({ "vehplate", "copyplate" }, "Copy the current vehicle plate.", function(_, ped)
+	local vehicle = GetVehiclePedIsIn(ped, false)
+	if vehicle == 0 then
+		return nil, "You must be in a vehicle."
+	end
+	return ESX.Math.Trim(GetVehicleNumberPlateText(vehicle))
+end)
 
 ESX.RegisterCommand(
 	{ "admin" },
@@ -383,7 +204,7 @@ ESX.RegisterCommand(
 		end
 
 		ESX.TriggerClientCallback(xPlayer.source, "esx-adminmenu:client:adminCarVehicleProps", function(props)
-			if not props then
+			if not props or type(props) ~= "table" then
 				showError("Failed to get vehicle properties.")
 				return
 			end
@@ -405,12 +226,18 @@ ESX.RegisterCommand(
 
 			props.plate = plate
 
+			local maxBytes = tonumber(Config.AdminLimits and Config.AdminLimits.MaxVehiclePropsBytes) or 16384
+			local encoded = json.encode(props)
+			if type(encoded) ~= "string" or #encoded > maxBytes then
+				showError("Vehicle properties are too large.")
+				return
+			end
+
 			MySQL.insert("INSERT INTO owned_vehicles (owner, plate, vehicle) VALUES (?, ?, ?)", {
 				xPlayer.getIdentifier(),
 				plate,
-				json.encode(props),
+				encoded,
 			}, function()
-				Helpers.invalidateVehicles()
 				xPlayer.showNotification("Vehicle registered to you.")
 			end)
 		end, {

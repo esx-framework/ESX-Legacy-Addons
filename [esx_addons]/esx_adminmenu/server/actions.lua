@@ -1,5 +1,11 @@
 Actions = Actions or {}
 
+---@class AdminActionResult
+---@field success boolean
+---@field err string?
+---@field playerOnline boolean?
+---@field isAdmin boolean?
+
 local function async(fn)
 	CreateThread(function()
 		local ok, err = pcall(fn)
@@ -35,13 +41,7 @@ local function clampNumber(value, min, max, fallback)
 	return number
 end
 
-local function trimString(value)
-	if type(value) ~= "string" then
-		return ""
-	end
-
-	return value:match("^%s*(.-)%s*$")
-end
+local trimString = Helpers.trim
 
 local function limitString(value, maxLength, fallback)
 	local text = trimString(value)
@@ -188,7 +188,7 @@ local function normalizeNotificationType(notificationType)
 	return "info"
 end
 
-local function getPlayerIdentifier(xPlayer, source)
+local function getPlayerIdentifier(xPlayer)
 	if xPlayer and xPlayer.identifier then
 		return xPlayer.identifier
 	end
@@ -225,7 +225,7 @@ local function setStatusMeta(target, targetId, key, value)
 end
 
 local function getOnlineCharacterIdentifier(target, targetId)
-	local identifier = getPlayerIdentifier(target, targetId)
+	local identifier = getPlayerIdentifier(target)
 
 	if type(identifier) ~= "string" or identifier == "" then
 		return nil
@@ -258,23 +258,13 @@ local function revivePlayer(targetId)
 end
 
 local function getServerActionPermission(action)
-	local serverConfig = Config.ServerManagement or {}
-	local actionPermissions = serverConfig.ActionPermissions or {}
-
-	return actionPermissions[action] or "serverManagement"
+	return Helpers.getActionPermission("serverManagement", action) or "serverManagement"
 end
 
 local function withServerData(data)
 	data = data or {}
 	data.serverData = Helpers.getServerData()
 	return data
-end
-
-local function getPlayerActionPermission(action)
-	local playerConfig = Config.PlayerActions or {}
-	local actionPermissions = playerConfig.ActionPermissions or {}
-
-	return actionPermissions[action]
 end
 
 -- TELEPORT
@@ -291,8 +281,8 @@ function Actions.Goto(src, data)
 		return { success = false, playerOnline = false }
 	end
 
-	local admin = ESX.Player(src)
-	local target = ESX.Player(targetId)
+	local admin = ESX.GetPlayerFromId(src)
+	local target = ESX.GetPlayerFromId(targetId)
 	if not admin or not target then
 		return { success = false, playerOnline = target ~= nil }
 	end
@@ -301,8 +291,8 @@ function Actions.Goto(src, data)
 	return { success = true, playerOnline = true }
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:goto", function(source, cb, data)
-	cb(Actions.Goto(source, data))
+Helpers.registerCallback("esx-adminmenu:server:goto", function(source, data)
+	return Actions.Goto(source, data)
 end)
 
 function Actions.Bring(src, data)
@@ -317,8 +307,8 @@ function Actions.Bring(src, data)
 		return { success = false, playerOnline = false }
 	end
 
-	local admin = ESX.Player(src)
-	local target = ESX.Player(targetId)
+	local admin = ESX.GetPlayerFromId(src)
+	local target = ESX.GetPlayerFromId(targetId)
 	if not admin or not target then
 		return { success = false, playerOnline = target ~= nil }
 	end
@@ -327,8 +317,8 @@ function Actions.Bring(src, data)
 	return { success = true, playerOnline = true }
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:bring", function(source, cb, data)
-	cb(Actions.Bring(source, data))
+Helpers.registerCallback("esx-adminmenu:server:bring", function(source, data)
+	return Actions.Bring(source, data)
 end)
 
 -- SPECTATE
@@ -358,17 +348,21 @@ function Actions.Spectate(src, data)
 	return { success = true, playerOnline = true, targetCoords = targetCoords, isAdmin = true }
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:spectate", function(source, cb, data)
-	cb(Actions.Spectate(source, data))
+Helpers.registerCallback("esx-adminmenu:server:spectate", function(source, data)
+	return Actions.Spectate(source, data)
 end)
 
 function Actions.StopSpectate(src)
+	if not Helpers.hasFeaturePermission(src, "spectate") then
+		return { success = false, err = "Insufficient Permissions" }
+	end
+
 	Helpers.stopSpectate(src)
 	return { success = true }
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:spectate:stop", function(source, cb)
-	cb(Actions.StopSpectate(source))
+Helpers.registerCallback("esx-adminmenu:server:spectate:stop", function(source)
+	return Actions.StopSpectate(source)
 end)
 
 -- KICK
@@ -389,23 +383,24 @@ function Actions.Kick(src, data)
 		return { success = false, err = "You cannot kick yourself.", playerOnline = true, isAdmin = true }
 	end
 
-	async(function()
-		local identifier = Helpers.getPlayerLicenseIdentifier(targetId)
-		local reason = limitString(data.reason, getLimits().MaxReasonLength, "Kicked by admin")
+	local identifier = Helpers.getPlayerLicenseIdentifier(targetId)
+	local reason = limitString(data.reason, getLimits().MaxReasonLength, "Kicked by admin")
 
+	-- Log the kick best-effort; a DB failure must never prevent the actual drop.
+	pcall(function()
 		MySQL.insert.await(
 			"INSERT INTO kicks (identifier, reason, kicked_by) VALUES (?, ?, ?)",
 			{ identifier, reason, GetPlayerName(src) }
 		)
-
-		DropPlayer(targetId, reason)
 	end)
+
+	DropPlayer(targetId, reason)
 
 	return { success = true, playerOnline = true, isAdmin = true }
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:kick", function(source, cb, data)
-	cb(Actions.Kick(source, data))
+Helpers.registerCallback("esx-adminmenu:server:kick", function(source, data)
+	return Actions.Kick(source, data)
 end)
 
 -- BAN
@@ -431,95 +426,92 @@ function Actions.Ban(src, data)
 		return { success = false, err = "Missing player license identifier.", playerOnline = true, isAdmin = true }
 	end
 
-	async(function()
-		local duration = normalizeBanDuration(data.duration)
-		local seconds = duration and (os.time() + duration * 60) or nil
-		local bannedAt = os.time()
-		local adminName = GetPlayerName(src)
-		local reason = limitString(data.reason, getLimits().MaxReasonLength, "Banned by admin")
+	local duration = normalizeBanDuration(data.duration)
+	local seconds = duration and (os.time() + duration * 60) or nil
+	local bannedAt = os.time()
+	local adminName = GetPlayerName(src)
+	local reason = limitString(data.reason, getLimits().MaxReasonLength, "Banned by admin")
 
-		local banId = insertBan(identifier, reason, adminName, seconds, bannedAt)
+	local ok, banId = pcall(insertBan, identifier, reason, adminName, seconds, bannedAt)
+	if not ok or not banId then
+		print(("[esx-adminmenu] Failed to persist ban for %s: %s"):format(tostring(identifier), tostring(banId)))
+		return { success = false, err = "Failed to persist ban.", playerOnline = true, isAdmin = true }
+	end
 
-		BanCache.add({
-			id = banId,
-			identifier = identifier,
-			reason = reason,
-			banned_by = adminName,
-			banned_at = bannedAt,
-			expires_at = seconds,
-		})
+	BanCache.add({
+		id = banId,
+		identifier = identifier,
+		reason = reason,
+		banned_by = adminName,
+		banned_at = bannedAt,
+		expires_at = seconds,
+	})
 
-		DropPlayer(targetId, reason)
-	end)
+	DropPlayer(targetId, reason)
 	return { success = true, playerOnline = true, isAdmin = true }
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:ban", function(source, cb, data)
-	cb(Actions.Ban(source, data))
+Helpers.registerCallback("esx-adminmenu:server:ban", function(source, data)
+	return Actions.Ban(source, data)
 end)
 
 -- OFFLINE BAN
 
-ESX.RegisterServerCallback("esx-adminmenu:server:ban:offline", function(source, cb, data)
-	local src = source
+Helpers.registerCallback("esx-adminmenu:server:ban:offline", function(source, data)
 	if not Helpers.hasFeaturePermission(source, "banManagement") then
-		cb({ success = false, err = "Insufficient Permissions", isAdmin = false })
-		return
+		return { success = false, err = "Insufficient Permissions", isAdmin = false }
 	end
 
 	data = data or {}
 
 	local normalizedIdentifier = Helpers.normalizeLicenseIdentifier(data.identifier)
 	if not normalizedIdentifier then
-		cb({ success = false, err = "Invalid Identifier", isAdmin = true })
-		return
+		return { success = false, err = "Invalid Identifier", isAdmin = true }
 	end
 
-	cb({ success = true, isAdmin = true })
+	local duration = normalizeBanDuration(data.duration)
+	local seconds = duration and (os.time() + duration * 60) or nil
+	local bannedAt = os.time()
+	local adminName = GetPlayerName(source)
+	local reason = limitString(data.reason, getLimits().MaxReasonLength, "Banned by admin")
 
-	async(function()
-		local duration = normalizeBanDuration(data.duration)
-		local seconds = duration and (os.time() + duration * 60) or nil
-		local bannedAt = os.time()
-		local identifier = normalizedIdentifier
-		local adminName = GetPlayerName(src)
-		local reason = limitString(data.reason, getLimits().MaxReasonLength, "Banned by admin")
+	local ok, banId = pcall(insertBan, normalizedIdentifier, reason, adminName, seconds, bannedAt)
+	if not ok or not banId then
+		print(("[esx-adminmenu] Failed to persist offline ban for %s: %s"):format(tostring(normalizedIdentifier), tostring(banId)))
+		return { success = false, err = "Failed to persist ban.", isAdmin = true }
+	end
 
-		local banId = insertBan(identifier, reason, adminName, seconds, bannedAt)
+	BanCache.add({
+		id = banId,
+		identifier = normalizedIdentifier,
+		reason = reason,
+		banned_by = adminName,
+		banned_at = bannedAt,
+		expires_at = seconds,
+	})
 
-		BanCache.add({
-			id = banId,
-			identifier = identifier,
-			reason = reason,
-			banned_by = adminName,
-			banned_at = bannedAt,
-			expires_at = seconds,
-		})
-	end)
+	return { success = true, isAdmin = true }
 end)
 
 -- CHANGE EXPIRY
 
-ESX.RegisterServerCallback("esx-adminmenu:server:ban:changeExpiry", function(source, cb, data)
+Helpers.registerCallback("esx-adminmenu:server:ban:changeExpiry", function(source, data)
 	if not Helpers.hasFeaturePermission(source, "banManagement") then
-		cb({ success = false, err = "Insufficient Permissions", isAdmin = false })
-		return
+		return { success = false, err = "Insufficient Permissions", isAdmin = false }
 	end
 
 	data = data or {}
 
 	local normalizedIdentifier = Helpers.normalizeLicenseIdentifier(data.identifier)
 	if not normalizedIdentifier then
-		cb({ success = false, err = "Invalid Identifier", isAdmin = true })
-		return
+		return { success = false, err = "Invalid Identifier", isAdmin = true }
 	end
 
 	local seconds = nil
 	if data.newDate ~= nil then
 		local newDate = tonumber(data.newDate)
 		if not newDate then
-			cb({ success = false, err = "Invalid expiry date.", isAdmin = true })
-			return
+			return { success = false, err = "Invalid expiry date.", isAdmin = true }
 		end
 
 		local now = os.time()
@@ -535,44 +527,49 @@ ESX.RegisterServerCallback("esx-adminmenu:server:ban:changeExpiry", function(sou
 		end
 	end
 
-	cb({ success = true, isAdmin = true })
-
-	async(function()
+	local ok = pcall(function()
 		updateBanExpiry(normalizedIdentifier, seconds)
 		BanCache.updateExpiry(normalizedIdentifier, seconds)
 	end)
+
+	if not ok then
+		return { success = false, err = "Failed to update ban expiry.", isAdmin = true }
+	end
+
+	return { success = true, isAdmin = true }
 end)
 
 -- REVOKE
 
-ESX.RegisterServerCallback("esx-adminmenu:server:ban:revoke", function(source, cb, data)
+Helpers.registerCallback("esx-adminmenu:server:ban:revoke", function(source, data)
 	if not Helpers.hasFeaturePermission(source, "banManagement") then
-		cb({ success = false, err = "Insufficient Permissions", isAdmin = false })
-		return
+		return { success = false, err = "Insufficient Permissions", isAdmin = false }
 	end
 
 	data = data or {}
 
 	local normalizedIdentifier = Helpers.normalizeLicenseIdentifier(data.identifier)
 	if not normalizedIdentifier then
-		cb({ success = false, err = "Invalid Identifier", isAdmin = true })
-		return
+		return { success = false, err = "Invalid Identifier", isAdmin = true }
 	end
 
-	cb({ success = true, isAdmin = true })
-
-	async(function()
+	local ok = pcall(function()
 		expireBan(normalizedIdentifier)
 		BanCache.remove(normalizedIdentifier)
 	end)
+
+	if not ok then
+		return { success = false, err = "Failed to revoke ban.", isAdmin = true }
+	end
+
+	return { success = true, isAdmin = true }
 end)
 
 -- VEHICLES
 
-local function vehicleAsync(source, cb, data, query, params, feature)
+local function vehicleUpdate(source, data, query, params, feature)
 	if not Helpers.hasFeaturePermission(source, feature or "vehicleManagement") then
-		cb({ success = false, err = "Insufficient Permissions" })
-		return
+		return { success = false, err = "Insufficient Permissions" }
 	end
 
 	data = data or {}
@@ -580,32 +577,29 @@ local function vehicleAsync(source, cb, data, query, params, feature)
 	local plate = normalizePlate(data.plate)
 
 	if not plate then
-		cb({ success = false, err = "Missing plate" })
-		return
+		return { success = false, err = "Missing plate" }
 	end
 
 	params[#params + 1] = plate
-	cb({ success = true })
 
 	async(function()
-		MySQL.update.await(query, params)
-		Helpers.invalidateVehicles()
+		Helpers.safeUpdate(query, params)
 	end)
+
+	return { success = true }
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:vehicleImpound", function(source, cb, data)
+Helpers.registerCallback("esx-adminmenu:server:vehicleImpound", function(source, data)
 	data = data or {}
 	local impoundName = trimString(data.impoundName)
 	local impounds = Helpers.getImpounds() or {}
 
 	if impoundName == "" or not impounds[impoundName] then
-		cb({ success = false, err = "Invalid impound." })
-		return
+		return { success = false, err = "Invalid impound." }
 	end
 
-	vehicleAsync(
+	return vehicleUpdate(
 		source,
-		cb,
 		data,
 		"UPDATE owned_vehicles SET pound = ? WHERE plate = ?",
 		{ impoundName },
@@ -613,16 +607,12 @@ ESX.RegisterServerCallback("esx-adminmenu:server:vehicleImpound", function(sourc
 	)
 end)
 
-ESX.RegisterServerCallback("esx-adminmenu:server:vehicleUnimpound", function(source, cb, data)
-	data = data or {}
-
-	vehicleAsync(source, cb, data, "UPDATE owned_vehicles SET pound = NULL WHERE plate = ?", {}, "vehicleManagement")
+Helpers.registerCallback("esx-adminmenu:server:vehicleUnimpound", function(source, data)
+	return vehicleUpdate(source, data or {}, "UPDATE owned_vehicles SET pound = NULL WHERE plate = ?", {}, "vehicleManagement")
 end)
 
-ESX.RegisterServerCallback("esx-adminmenu:server:vehicleDelete", function(source, cb, data)
-	data = data or {}
-
-	vehicleAsync(source, cb, data, "DELETE FROM owned_vehicles WHERE plate = ?", {}, "vehicleDestructive")
+Helpers.registerCallback("esx-adminmenu:server:vehicleDelete", function(source, data)
+	return vehicleUpdate(source, data or {}, "DELETE FROM owned_vehicles WHERE plate = ?", {}, "vehicleDestructive")
 end)
 
 -- NOTIFY
@@ -657,8 +647,8 @@ function Actions.Notify(src, data)
 	return { success = true, playerOnline = true, isAdmin = true }
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:notify", function(source, cb, data)
-	cb(Actions.Notify(source, data))
+Helpers.registerCallback("esx-adminmenu:server:notify", function(source, data)
+	return Actions.Notify(source, data)
 end)
 
 -- SELF ACTIONS
@@ -671,8 +661,7 @@ function Actions.SelfAction(src, data)
 	end
 
 	local action = data.action
-	local actionPermissions = Config.AdminMenu and Config.AdminMenu.ActionPermissions or {}
-	local feature = actionPermissions[action]
+	local feature = Helpers.getActionPermission("adminMenu", action)
 
 	if not feature or not Helpers.hasFeaturePermission(src, feature) then
 		return { success = false, err = "Insufficient Permissions" }
@@ -686,12 +675,160 @@ function Actions.SelfAction(src, data)
 	return { success = false, err = "Unknown self action." }
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:selfAction", function(source, cb, data)
-	cb(Actions.SelfAction(source, data))
+Helpers.registerCallback("esx-adminmenu:server:selfAction", function(source, data)
+	return Actions.SelfAction(source, data)
 end)
 
 -- SERVER MANAGEMENT
 
+-- action -> handler(src, payload) -> AdminActionResult. The dispatcher enforces
+-- the base serverManagement gate plus getServerActionPermission(action) uniformly.
+local ServerHandlers = {}
+
+local function regServer(action, handler)
+	ServerHandlers[action] = handler
+end
+
+local function deletePool(pool)
+	TriggerClientEvent("esx-adminmenu:client:deletePool", -1, pool)
+	return { success = true }
+end
+
+regServer("weather", function(_, payload)
+	local weather = trimString(payload.weather):upper()
+	local allowedWeather = Config.ServerManagement and Config.ServerManagement.WeatherTypes or {}
+	if not allowedWeather[weather] then
+		weather = "CLEAR"
+	end
+
+	Helpers.setServerEnvironment({ weather = weather })
+	TriggerClientEvent("esx-adminmenu:client:setWeather", -1, weather)
+	return withServerData({ success = true })
+end)
+
+regServer("time", function(_, payload)
+	local hour = math.floor(clampNumber(payload.hour, 0, 23, 12))
+	local minute = math.floor(clampNumber(payload.minute, 0, 59, 0))
+
+	Helpers.setServerEnvironment({ hour = hour, minute = minute })
+	TriggerClientEvent("esx-adminmenu:client:setTime", -1, hour, minute)
+	return withServerData({ success = true })
+end)
+
+regServer("blackout", function(_, payload)
+	local enabled = getBoolean(payload.enabled)
+	Helpers.setServerEnvironment({ blackout = enabled })
+	TriggerClientEvent("esx-adminmenu:client:setBlackout", -1, enabled)
+	return withServerData({ success = true })
+end)
+
+regServer("pvp", function(_, payload)
+	local enabled = getBoolean(payload.enabled)
+	Helpers.setServerEnvironment({ pvp = enabled })
+	TriggerClientEvent("esx-adminmenu:client:setPvp", -1, enabled)
+	return withServerData({ success = true })
+end)
+
+regServer("freezeAll", function()
+	TriggerClientEvent("esx-adminmenu:client:setFrozen", -1, true)
+	return { success = true }
+end)
+
+regServer("unfreezeAll", function()
+	TriggerClientEvent("esx-adminmenu:client:setFrozen", -1, false)
+	return { success = true }
+end)
+
+regServer("bringAll", function(src)
+	local admin = ESX.GetPlayerFromId(src)
+	if not admin then
+		return { success = false, err = "Admin player not found." }
+	end
+
+	local coords = admin.getCoords(true)
+	local players = ESX.ExtendedPlayers()
+
+	for i = 1, #players do
+		if players[i].src ~= src then
+			players[i].setCoords(coords)
+		end
+	end
+
+	return { success = true }
+end)
+
+regServer("killAll", function()
+	TriggerClientEvent("esx-adminmenu:client:kill", -1)
+	return { success = true }
+end)
+
+regServer("reviveAll", function()
+	revivePlayer(-1)
+	return { success = true }
+end)
+
+regServer("kickAll", function(src, payload)
+	local reason = limitString(
+		payload.reason,
+		getLimits().MaxReasonLength,
+		(Config.ServerManagement and Config.ServerManagement.DefaultKickReason) or "Kicked by admin"
+	)
+
+	for _, playerSource in ipairs(GetPlayers()) do
+		local targetId = tonumber(playerSource)
+		if targetId and targetId ~= src then
+			DropPlayer(targetId, reason)
+		end
+	end
+
+	return { success = true }
+end)
+
+regServer("deleteVehicles", function() return deletePool("CVehicle") end)
+regServer("deletePeds", function() return deletePool("CPed") end)
+regServer("deleteObjects", function() return deletePool("CObject") end)
+
+regServer("notifyAll", function(_, payload)
+	local message = limitString(payload.message, getLimits().MaxNotificationLength, "Notification by Admin")
+	local notificationType = normalizeNotificationType(payload.notificationType)
+	local duration = math.floor(clampNumber(payload.duration, 1000, getLimits().MaxNotificationDuration or 30000, 5000))
+	local title = limitString(payload.title, 80, "")
+
+	TriggerClientEvent(
+		"esx:showNotification",
+		-1,
+		message,
+		notificationType,
+		duration,
+		title ~= "" and title or nil,
+		"top-left"
+	)
+	return { success = true }
+end)
+
+regServer("giveMoneyAll", function(_, payload)
+	local amount = normalizeMoneyAmount(payload.amount)
+	local account = normalizeMoneyAccount(payload.account)
+
+	if amount <= 0 then
+		return { success = false, err = "Amount must be greater than 0." }
+	end
+
+	local players = ESX.ExtendedPlayers()
+	for i = 1, #players do
+		if account == "money" then
+			players[i].addMoney(amount, "Admin menu")
+		else
+			players[i].addAccountMoney(account, amount, "Admin menu")
+		end
+	end
+
+	return { success = true }
+end)
+
+---@param src number
+---@param data table
+---@return AdminActionResult
 function Actions.ServerManagement(src, data)
 	data = data or {}
 
@@ -700,165 +837,292 @@ function Actions.ServerManagement(src, data)
 	end
 
 	local action = data.action
-	local payload = data.payload or {}
+	local handler = ServerHandlers[action]
+	if not handler then
+		return { success = false, err = "Unknown server action." }
+	end
 
 	if not Helpers.hasFeaturePermission(src, getServerActionPermission(action)) then
 		return { success = false, err = "Insufficient Permissions" }
 	end
 
-	if action == "weather" then
-		local weather = trimString(payload.weather):upper()
-		local allowedWeather = Config.ServerManagement and Config.ServerManagement.WeatherTypes or {}
-		if not allowedWeather[weather] then
-			weather = "CLEAR"
-		end
-
-		Helpers.setServerEnvironment({ weather = weather })
-		TriggerClientEvent("esx-adminmenu:client:setWeather", -1, weather)
-		return withServerData({ success = true })
-	end
-
-	if action == "time" then
-		local hour = math.floor(clampNumber(payload.hour, 0, 23, 12))
-		local minute = math.floor(clampNumber(payload.minute, 0, 59, 0))
-
-		Helpers.setServerEnvironment({ hour = hour, minute = minute })
-		TriggerClientEvent("esx-adminmenu:client:setTime", -1, hour, minute)
-		return withServerData({ success = true })
-	end
-
-	if action == "blackout" then
-		local enabled = getBoolean(payload.enabled)
-		Helpers.setServerEnvironment({ blackout = enabled })
-		TriggerClientEvent("esx-adminmenu:client:setBlackout", -1, enabled)
-		return withServerData({ success = true })
-	end
-
-	if action == "pvp" then
-		local enabled = getBoolean(payload.enabled)
-		Helpers.setServerEnvironment({ pvp = enabled })
-		TriggerClientEvent("esx-adminmenu:client:setPvp", -1, enabled)
-		return withServerData({ success = true })
-	end
-
-	if action == "freezeAll" then
-		TriggerClientEvent("esx-adminmenu:client:setFrozen", -1, true)
-		return { success = true }
-	end
-
-	if action == "unfreezeAll" then
-		TriggerClientEvent("esx-adminmenu:client:setFrozen", -1, false)
-		return { success = true }
-	end
-
-	if action == "bringAll" then
-		local admin = ESX.Player(src)
-		if not admin then
-			return { success = false, err = "Admin player not found." }
-		end
-
-		local coords = admin.getCoords(true)
-		local players = ESX.ExtendedPlayers()
-
-		for i = 1, #players do
-			if players[i].src ~= src then
-				players[i].setCoords(coords)
-			end
-		end
-
-		return { success = true }
-	end
-
-	if action == "killAll" then
-		TriggerClientEvent("esx-adminmenu:client:kill", -1)
-		return { success = true }
-	end
-
-	if action == "reviveAll" then
-		revivePlayer(-1)
-		return { success = true }
-	end
-
-	if action == "kickAll" then
-		local reason = limitString(
-			payload.reason,
-			getLimits().MaxReasonLength,
-			(Config.ServerManagement and Config.ServerManagement.DefaultKickReason) or "Kicked by admin"
-		)
-
-		for _, playerSource in ipairs(GetPlayers()) do
-			local targetId = tonumber(playerSource)
-			if targetId and targetId ~= src then
-				DropPlayer(targetId, reason)
-			end
-		end
-
-		return { success = true }
-	end
-
-	if action == "deleteVehicles" then
-		TriggerClientEvent("esx-adminmenu:client:deletePool", -1, "CVehicle")
-		return { success = true }
-	end
-
-	if action == "deletePeds" then
-		TriggerClientEvent("esx-adminmenu:client:deletePool", -1, "CPed")
-		return { success = true }
-	end
-
-	if action == "deleteObjects" then
-		TriggerClientEvent("esx-adminmenu:client:deletePool", -1, "CObject")
-		return { success = true }
-	end
-
-	if action == "notifyAll" then
-		local message = limitString(payload.message, getLimits().MaxNotificationLength, "Notification by Admin")
-		local notificationType = normalizeNotificationType(payload.notificationType)
-		local duration = math.floor(clampNumber(payload.duration, 1000, getLimits().MaxNotificationDuration or 30000,
-			5000))
-		local title = limitString(payload.title, 80, "")
-
-		TriggerClientEvent(
-			"esx:showNotification",
-			-1,
-			message,
-			notificationType,
-			duration,
-			title ~= "" and title or nil,
-			"top-left"
-		)
-		return { success = true }
-	end
-
-	if action == "giveMoneyAll" then
-		local amount = normalizeMoneyAmount(payload.amount)
-		local account = normalizeMoneyAccount(payload.account)
-
-		if amount <= 0 then
-			return { success = false, err = "Amount must be greater than 0." }
-		end
-
-		local players = ESX.ExtendedPlayers()
-		for i = 1, #players do
-			if account == "money" then
-				players[i].addMoney(amount, "Admin menu")
-			else
-				players[i].addAccountMoney(account, amount, "Admin menu")
-			end
-		end
-
-		return { success = true }
-	end
-
-	return { success = false, err = "Unknown server action." }
+	return handler(src, data.payload or {})
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:serverAction", function(source, cb, data)
-	cb(Actions.ServerManagement(source, data))
+Helpers.registerCallback("esx-adminmenu:server:serverAction", function(source, data)
+	return Actions.ServerManagement(source, data)
 end)
 
 -- PLAYER MANAGEMENT
 
+-- action -> { offline = boolean?, handler = function(ctx) -> AdminActionResult }.
+-- ctx = { src, targetId, target, payload }. Permission is sourced once from
+-- Config.PlayerActions.ActionPermissions by the dispatcher, so a handler never
+-- re-checks it and a new action cannot silently ship without a gate.
+local PlayerHandlers = {}
+
+local function regPlayer(action, spec)
+	PlayerHandlers[action] = spec
+end
+
+local function moneyHandler(ctx, isGive)
+	local amount = normalizeMoneyAmount(ctx.payload.amount)
+	local account = normalizeMoneyAccount(ctx.payload.account)
+
+	if amount <= 0 then
+		return { success = false, err = "Amount must be greater than 0.", playerOnline = true }
+	end
+
+	local method
+	if isGive then
+		method = account == "money" and "addMoney" or "addAccountMoney"
+	else
+		method = account == "money" and "removeMoney" or "removeAccountMoney"
+	end
+
+	if type(ctx.target[method]) ~= "function" then
+		return { success = false, err = "This ESX version does not expose " .. method .. ".", playerOnline = true }
+	end
+
+	local ok = pcall(function()
+		if account == "money" then
+			ctx.target[method](amount, "Admin menu")
+		else
+			ctx.target[method](account, amount, "Admin menu")
+		end
+	end)
+
+	if not ok then
+		return { success = false, err = "Failed to update balance.", playerOnline = true }
+	end
+
+	return { success = true, playerOnline = true }
+end
+
+regPlayer("deleteCharacter", { offline = true, handler = function(ctx)
+	local identifier = trimString(ctx.payload.identifier)
+
+	if not isValidCharacterIdentifier(identifier) then
+		return { success = false, err = "Missing character identifier." }
+	end
+
+	if ctx.target then
+		local targetIdentifier = getOnlineCharacterIdentifier(ctx.target, ctx.targetId)
+
+		if targetIdentifier ~= identifier then
+			return { success = false, err = "Character identifier does not match the selected player.", playerOnline = true }
+		end
+	end
+
+	async(function()
+		Helpers.safeUpdate("DELETE FROM users WHERE identifier = ?", { identifier })
+		Helpers.safeUpdate("DELETE FROM owned_vehicles WHERE owner = ?", { identifier })
+	end)
+
+	if ctx.targetId and Helpers.isOnline(ctx.targetId) then
+		DropPlayer(ctx.targetId, "Character deleted by an admin.")
+	end
+
+	return { success = true, playerOnline = ctx.targetId and Helpers.isOnline(ctx.targetId) or false }
+end })
+
+regPlayer("giveMoney", { handler = function(ctx) return moneyHandler(ctx, true) end })
+regPlayer("takeMoney", { handler = function(ctx) return moneyHandler(ctx, false) end })
+
+regPlayer("setHealth", { handler = function(ctx)
+	TriggerClientEvent("esx-adminmenu:client:setPlayerStats", ctx.targetId, clampNumber(ctx.payload.amount, 0, 100, 100), nil)
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("setArmor", { handler = function(ctx)
+	TriggerClientEvent("esx-adminmenu:client:setPlayerStats", ctx.targetId, nil, clampNumber(ctx.payload.amount, 0, 100, 100))
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("cleanInventory", { handler = function(ctx)
+	if type(ctx.target.getInventory) ~= "function" then
+		return { success = false, err = "This ESX version does not expose getInventory.", playerOnline = true }
+	end
+
+	local inventory = ctx.target.getInventory()
+	if type(inventory) ~= "table" then
+		return { success = false, err = "Failed to read inventory.", playerOnline = true }
+	end
+
+	for i = 1, #inventory do
+		local item = inventory[i]
+		if item.count and item.count > 0 then
+			pcall(function()
+				ctx.target.removeInventoryItem(item.name, item.count)
+			end)
+		end
+	end
+
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("killPlayer", { handler = function(ctx)
+	TriggerClientEvent("esx-adminmenu:client:kill", ctx.targetId)
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("revivePlayer", { handler = function(ctx)
+	revivePlayer(ctx.targetId)
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("freezePlayer", { handler = function(ctx)
+	TriggerClientEvent("esx-adminmenu:client:setFrozen", ctx.targetId, ctx.payload.enabled == true)
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("setModel", { handler = function(ctx)
+	local model = limitString(ctx.payload.model, 64)
+	if model == "" then
+		return { success = false, err = "Missing model.", playerOnline = true }
+	end
+
+	TriggerClientEvent("esx-adminmenu:client:setModel", ctx.targetId, model)
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("openClothing", { handler = function(ctx)
+	TriggerClientEvent("esx-adminmenu:client:openClothing", ctx.targetId)
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("giveAllWeapons", { handler = function(ctx)
+	local weapons = Config.AdminWeapons or {}
+
+	for i = 1, #weapons do
+		local weapon = weapons[i]
+		local name = weapon.name
+
+		if name and name ~= "" then
+			if ctx.target.hasWeapon and ctx.target.hasWeapon(name) and ctx.target.addWeaponAmmo then
+				pcall(function()
+					ctx.target.addWeaponAmmo(name, tonumber(weapon.ammo) or 250)
+				end)
+			elseif ctx.target.addWeapon then
+				pcall(function()
+					ctx.target.addWeapon(name, tonumber(weapon.ammo) or 250)
+				end)
+			end
+		end
+	end
+
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("setRoutingBucket", { handler = function(ctx)
+	local bucket = math.floor(clampNumber(ctx.payload.bucket, 0, getLimits().MaxRoutingBucket or 2147483647, 0))
+	SetPlayerRoutingBucket(ctx.targetId, bucket)
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("setRadio", { handler = function(ctx)
+	local channel = math.floor(clampNumber(ctx.payload.channel, 0, getLimits().MaxRadioChannel or 10000, 0))
+	TriggerClientEvent("esx-adminmenu:client:setRadioChannel", ctx.targetId, channel)
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("setJob", { handler = function(ctx)
+	local job = limitString(ctx.payload.job, 48)
+	local grade = math.floor(clampNumber(ctx.payload.grade, 0, 100, 0))
+
+	if job == "" or not job:match("^[%w_%-]+$") then
+		return { success = false, err = "Missing job name.", playerOnline = true }
+	end
+
+	if ESX.DoesJobExist and not ESX.DoesJobExist(job, grade) then
+		return { success = false, err = "Invalid job or grade.", playerOnline = true }
+	end
+
+	if not ctx.target.setJob then
+		return { success = false, err = "This ESX version does not expose setJob.", playerOnline = true }
+	end
+
+	local ok, err = pcall(function()
+		ctx.target.setJob(job, grade)
+	end)
+
+	if not ok then
+		return { success = false, err = err or "Failed to set job.", playerOnline = true }
+	end
+
+	return { success = true, playerOnline = true }
+end })
+
+regPlayer("setName", { handler = function(ctx)
+	local firstName = limitString(trimString(ctx.payload.firstName), 32)
+	local lastName = limitString(trimString(ctx.payload.lastName), 32)
+
+	if firstName == "" or lastName == "" then
+		return { success = false, err = "Missing first or last name.", playerOnline = true }
+	end
+
+	local identifier = getPlayerIdentifier(ctx.target)
+	if not identifier then
+		return { success = false, err = "Missing character identifier.", playerOnline = true }
+	end
+
+	Helpers.safeUpdate("UPDATE users SET firstname = ?, lastname = ? WHERE identifier = ?", {
+		firstName,
+		lastName,
+		identifier,
+	})
+
+	if ctx.target.setName then
+		pcall(function()
+			ctx.target.setName(firstName .. " " .. lastName)
+		end)
+	end
+
+	return { success = true, playerOnline = true }
+end })
+
+local function statusHandler(ctx, statusName)
+	setStatusMeta(ctx.target, ctx.targetId, statusName, ctx.payload.amount)
+	return { success = true, playerOnline = true }
+end
+
+regPlayer("setThirst", { handler = function(ctx) return statusHandler(ctx, "thirst") end })
+regPlayer("setHunger", { handler = function(ctx) return statusHandler(ctx, "hunger") end })
+
+local function aceHandler(ctx, isAdd)
+	local group = normalizeAceGroup(ctx.payload.group or ctx.payload.permission)
+	if not group then
+		return { success = false, err = "Invalid ACE group.", playerOnline = true }
+	end
+
+	local identifier = Helpers.getPlayerLicenseIdentifier(ctx.targetId)
+	if not isValidIdentifier(identifier) then
+		return { success = false, err = "Missing player identifier.", playerOnline = true }
+	end
+
+	local command = isAdd and "add_principal" or "remove_principal"
+	ExecuteCommand(("%s identifier.%s group.%s"):format(command, identifier, group))
+
+	return { success = true, playerOnline = true }
+end
+
+regPlayer("aceAdd", { handler = function(ctx) return aceHandler(ctx, true) end })
+regPlayer("aceRemove", { handler = function(ctx) return aceHandler(ctx, false) end })
+
+regPlayer("troll", { handler = function(ctx)
+	local trollAction = trimString(ctx.payload.trollAction)
+	local allowedTrollActions = Config.TrollActions or {}
+	if not allowedTrollActions[trollAction] then
+		return { success = false, err = "Invalid troll action.", playerOnline = true }
+	end
+
+	TriggerClientEvent("esx-adminmenu:client:troll", ctx.targetId, trollAction)
+	return { success = true, playerOnline = true }
+end })
+
+---@param src number
+---@param data table
+---@return AdminActionResult
 function Actions.PlayerAction(src, data)
 	data = data or {}
 
@@ -866,299 +1130,26 @@ function Actions.PlayerAction(src, data)
 		return { success = false, err = "Insufficient Permissions" }
 	end
 
-	local action = data.action
-	local payload = data.payload or {}
+	local spec = PlayerHandlers[data.action]
+	if not spec then
+		return { success = false, err = "Unknown player action.", playerOnline = true }
+	end
+
 	local targetId = getTargetId(data)
 	local target = targetId and ESX.GetPlayerFromId(targetId) or nil
-	local actionPermission = getPlayerActionPermission(action)
 
-	if actionPermission and not Helpers.hasFeaturePermission(src, actionPermission) then
+	local permission = Helpers.getActionPermission("playerActions", data.action)
+	if permission and not Helpers.hasFeaturePermission(src, permission) then
 		return { success = false, err = "Insufficient Permissions", playerOnline = target ~= nil }
 	end
 
-	if action == "deleteCharacter" then
-		local identifier = trimString(payload.identifier)
-
-		if not isValidCharacterIdentifier(identifier) then
-			return { success = false, err = "Missing character identifier." }
-		end
-
-		if target then
-			local targetIdentifier = getOnlineCharacterIdentifier(target, targetId)
-
-			if targetIdentifier ~= identifier then
-				return { success = false, err = "Character identifier does not match the selected player.", playerOnline = true }
-			end
-		end
-
-		async(function()
-			MySQL.update.await("DELETE FROM users WHERE identifier = ?", { identifier })
-			MySQL.update.await("DELETE FROM owned_vehicles WHERE owner = ?", { identifier })
-		end)
-
-		if targetId and Helpers.isOnline(targetId) then
-			DropPlayer(targetId, "Character deleted by an admin.")
-		end
-
-		return { success = true, playerOnline = targetId and Helpers.isOnline(targetId) or false }
-	end
-
-	if not target then
+	if not spec.offline and not target then
 		return { success = false, err = "Player Not Online", playerOnline = false }
 	end
 
-	if action == "giveMoney" or action == "takeMoney" then
-		if not Helpers.hasFeaturePermission(src, "money") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local amount = normalizeMoneyAmount(payload.amount)
-		local account = normalizeMoneyAccount(payload.account)
-
-		if amount <= 0 then
-			return { success = false, err = "Amount must be greater than 0.", playerOnline = true }
-		end
-
-		if action == "giveMoney" then
-			if account == "money" then
-				target.addMoney(amount, "Admin menu")
-			else
-				target.addAccountMoney(account, amount, "Admin menu")
-			end
-		else
-			if account == "money" then
-				target.removeMoney(amount, "Admin menu")
-			else
-				target.removeAccountMoney(account, amount, "Admin menu")
-			end
-		end
-
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "setHealth" then
-		TriggerClientEvent("esx-adminmenu:client:setPlayerStats", targetId, clampNumber(payload.amount, 0, 100, 100), nil)
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "setArmor" then
-		TriggerClientEvent("esx-adminmenu:client:setPlayerStats", targetId, nil, clampNumber(payload.amount, 0, 100, 100))
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "cleanInventory" then
-		local inventory = target.getInventory()
-
-		for i = 1, #inventory do
-			local item = inventory[i]
-			if item.count and item.count > 0 then
-				target.removeInventoryItem(item.name, item.count)
-			end
-		end
-
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "killPlayer" then
-		TriggerClientEvent("esx-adminmenu:client:kill", targetId)
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "revivePlayer" then
-		revivePlayer(targetId)
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "freezePlayer" then
-		TriggerClientEvent("esx-adminmenu:client:setFrozen", targetId, payload.enabled == true)
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "setModel" then
-		if not Helpers.hasFeaturePermission(src, "setModel") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local model = limitString(payload.model, 64)
-		if model == "" then
-			return { success = false, err = "Missing model.", playerOnline = true }
-		end
-
-		TriggerClientEvent("esx-adminmenu:client:setModel", targetId, model)
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "openClothing" then
-		if not Helpers.hasFeaturePermission(src, "openClothing") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		TriggerClientEvent("esx-adminmenu:client:openClothing", targetId)
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "giveAllWeapons" then
-		if not Helpers.hasFeaturePermission(src, "weapons") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local weapons = Config.AdminWeapons or {}
-
-		for i = 1, #weapons do
-			local weapon = weapons[i]
-			local name = weapon.name
-
-			if name and name ~= "" then
-				if target.hasWeapon and target.hasWeapon(name) and target.addWeaponAmmo then
-					pcall(function()
-						target.addWeaponAmmo(name, tonumber(weapon.ammo) or 250)
-					end)
-				elseif target.addWeapon then
-					pcall(function()
-						target.addWeapon(name, tonumber(weapon.ammo) or 250)
-					end)
-				end
-			end
-		end
-
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "setRoutingBucket" then
-		if not Helpers.hasFeaturePermission(src, "routingBucket") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local bucket = math.floor(clampNumber(payload.bucket, 0, getLimits().MaxRoutingBucket or 2147483647, 0))
-		SetPlayerRoutingBucket(targetId, bucket)
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "setRadio" then
-		if not Helpers.hasFeaturePermission(src, "playerData") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local channel = math.floor(clampNumber(payload.channel, 0, getLimits().MaxRadioChannel or 10000, 0))
-		TriggerClientEvent("esx-adminmenu:client:setRadioChannel", targetId, channel)
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "setJob" then
-		if not Helpers.hasFeaturePermission(src, "playerData") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local job = limitString(payload.job, 48)
-		local grade = math.floor(clampNumber(payload.grade, 0, 100, 0))
-
-		if job == "" or not job:match("^[%w_%-]+$") then
-			return { success = false, err = "Missing job name.", playerOnline = true }
-		end
-
-		if ESX.DoesJobExist and not ESX.DoesJobExist(job, grade) then
-			return { success = false, err = "Invalid job or grade.", playerOnline = true }
-		end
-
-		if not target.setJob then
-			return { success = false, err = "This ESX version does not expose setJob.", playerOnline = true }
-		end
-
-		local ok, err = pcall(function()
-			target.setJob(job, grade)
-		end)
-
-		if not ok then
-			return { success = false, err = err or "Failed to set job.", playerOnline = true }
-		end
-
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "setName" then
-		if not Helpers.hasFeaturePermission(src, "playerData") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local firstName = trimString(payload.firstName)
-		local lastName = trimString(payload.lastName)
-
-		firstName = limitString(firstName, 32)
-		lastName = limitString(lastName, 32)
-
-		if firstName == "" or lastName == "" then
-			return { success = false, err = "Missing first or last name.", playerOnline = true }
-		end
-
-		local identifier = getPlayerIdentifier(target, targetId)
-		if not identifier then
-			return { success = false, err = "Missing character identifier.", playerOnline = true }
-		end
-
-		MySQL.update.await("UPDATE users SET firstname = ?, lastname = ? WHERE identifier = ?", {
-			firstName,
-			lastName,
-			identifier,
-		})
-
-		if target.setName then
-			pcall(function()
-				target.setName(firstName .. " " .. lastName)
-			end)
-		end
-
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "setThirst" or action == "setHunger" then
-		if not Helpers.hasFeaturePermission(src, "playerData") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local statusName = action == "setThirst" and "thirst" or "hunger"
-		setStatusMeta(target, targetId, statusName, payload.amount)
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "aceAdd" or action == "aceRemove" then
-		if not Helpers.hasFeaturePermission(src, "acePermissions") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local group = normalizeAceGroup(payload.group or payload.permission)
-		if not group then
-			return { success = false, err = "Invalid ACE group.", playerOnline = true }
-		end
-
-		local identifier = Helpers.getPlayerLicenseIdentifier(targetId)
-		if not isValidIdentifier(identifier) then
-			return { success = false, err = "Missing player identifier.", playerOnline = true }
-		end
-
-		local command = action == "aceAdd" and "add_principal" or "remove_principal"
-		ExecuteCommand(("%s identifier.%s group.%s"):format(command, identifier, group))
-
-		return { success = true, playerOnline = true }
-	end
-
-	if action == "troll" then
-		if not Helpers.hasFeaturePermission(src, "troll") then
-			return { success = false, err = "Insufficient Permissions", playerOnline = true }
-		end
-
-		local trollAction = trimString(payload.trollAction)
-		local allowedTrollActions = Config.TrollActions or {}
-		if not allowedTrollActions[trollAction] then
-			return { success = false, err = "Invalid troll action.", playerOnline = true }
-		end
-
-		TriggerClientEvent("esx-adminmenu:client:troll", targetId, trollAction)
-		return { success = true, playerOnline = true }
-	end
-
-	return { success = false, err = "Unknown player action.", playerOnline = true }
+	return spec.handler({ src = src, targetId = targetId, target = target, payload = data.payload or {} })
 end
 
-ESX.RegisterServerCallback("esx-adminmenu:server:playerAction", function(source, cb, data)
-	cb(Actions.PlayerAction(source, data))
+Helpers.registerCallback("esx-adminmenu:server:playerAction", function(source, data)
+	return Actions.PlayerAction(source, data)
 end)

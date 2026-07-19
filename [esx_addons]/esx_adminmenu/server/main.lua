@@ -1,14 +1,13 @@
-ESX.RegisterServerCallback("esx-adminmenu:server:getInitData", function(source, cb)
+Helpers.registerCallback("esx-adminmenu:server:getInitData", function(source)
 	if not Helpers.hasPermission(source) then
-		cb({ error = "Insufficient Permissions." })
-		return
+		return { err = "Insufficient Permissions." }
 	end
 
 	local translations = Helpers.getTranslations()
 	local impounds = Helpers.getImpounds()
 	local vehicleConfig = Config.VehicleSpawner or {}
 
-	cb({
+	return {
 		translations = translations, -- can be empty safely
 		serverData = Helpers.getServerData(),
 		impounds = impounds,
@@ -21,111 +20,99 @@ ESX.RegisterServerCallback("esx-adminmenu:server:getInitData", function(source, 
 			wheelCategories = vehicleConfig.WheelCategories or {},
 			wheelDesigns = vehicleConfig.WheelDesigns or {},
 		},
-	})
+	}
 end)
 
-ESX.RegisterServerCallback("esx-adminmenu:server:canOpen", function(source, cb)
+Helpers.registerCallback("esx-adminmenu:server:canOpen", function(source)
 	if not Helpers.hasPermission(source) then
-		cb({ success = false, err = "Insufficient Permissions." })
-		return
+		return { success = false, err = "Insufficient Permissions." }
 	end
 
-	cb({
+	return {
 		success = true,
 		serverData = Helpers.getServerData(),
-	})
+	}
 end)
 
-ESX.RegisterServerCallback("esx-adminmenu:server:canUseAdminAction", function(source, cb, data)
+Helpers.registerCallback("esx-adminmenu:server:canUseAdminAction", function(source, data)
 	if not Helpers.hasPermission(source) then
-		cb({ success = false, err = "Insufficient Permissions." })
-		return
+		return { success = false, err = "Insufficient Permissions." }
 	end
 
 	local action = type(data) == "table" and data.action or data
 	if type(action) ~= "string" or action == "" then
-		cb({ success = false, err = "Invalid admin action." })
-		return
+		return { success = false, err = "Invalid admin action." }
 	end
 
-	local actionPermissions = Config.AdminMenu and Config.AdminMenu.ActionPermissions or {}
-	local feature = actionPermissions[action]
-
+	local feature = Helpers.getActionPermission("adminMenu", action)
 	if not feature then
-		cb({ success = false, err = "Invalid admin action." })
-		return
+		return { success = false, err = "Invalid admin action." }
 	end
 
-	if feature and not Helpers.hasFeaturePermission(source, feature) then
-		cb({ success = false, err = "Insufficient Permissions." })
-		return
+	if not Helpers.hasFeaturePermission(source, feature) then
+		return { success = false, err = "Insufficient Permissions." }
 	end
 
-	cb({
+	return {
 		success = true,
 		serverData = Helpers.getServerData(),
-	})
+	}
 end)
 
-ESX.RegisterServerCallback("esx-adminmenu:server:openDashboard", function(source, cb)
+Helpers.registerCallback("esx-adminmenu:server:openDashboard", function(source)
 	if not Helpers.hasPermission(source) then
-		cb({ success = false, err = "Insufficient Permissions." })
-		return
+		return { success = false, err = "Insufficient Permissions." }
 	end
 
-	cb({
+	return {
 		success = true,
 		players = Helpers.getPlayerList(source) or {},
 		serverData = Helpers.getServerData(),
-	})
+	}
 end)
 
-ESX.RegisterServerCallback("esx-adminmenu:server:getVehicles", function(source, cb, data)
+Helpers.registerCallback("esx-adminmenu:server:getVehicles", function(source, data)
 	if not Helpers.hasPermission(source) then
-		cb({ success = false, err = "Insufficient Permissions." })
-		return
+		return { success = false, err = "Insufficient Permissions." }
 	end
 
-	local result = Helpers.getVehiclesPage(data)
+	local canSeeSensitive = Helpers.hasFeaturePermission(source, "sensitiveInfo")
+	local result = Helpers.getVehiclesPage(data, canSeeSensitive)
 	result.success = true
 
-	cb(result)
+	return result
 end)
 
-ESX.RegisterServerCallback("esx-adminmenu:server:getBans", function(source, cb, data)
+Helpers.registerCallback("esx-adminmenu:server:getBans", function(source, data)
 	if not Helpers.hasFeaturePermission(source, "banManagement") then
-		cb({ success = false, err = "Insufficient Permissions." })
-		return
+		return { success = false, err = "Insufficient Permissions." }
 	end
 
 	local result = Helpers.getActiveBansPage(data)
 	result.success = true
 
-	cb(result)
+	return result
 end)
 
-ESX.RegisterServerCallback("esx-adminmenu:server:getRecentPlayers", function(source, cb)
+Helpers.registerCallback("esx-adminmenu:server:getRecentPlayers", function(source)
 	if not Helpers.hasPermission(source) then
-		cb({ success = false, err = "Insufficient Permissions." })
-		return
+		return { success = false, err = "Insufficient Permissions." }
 	end
 
-	cb({
+	return {
 		success = true,
 		players = Helpers.getRecentPlayers(source),
-	})
+	}
 end)
 
-ESX.RegisterServerCallback("esx-adminmenu:server:getRadioChannelPlayers", function(source, cb, data)
+Helpers.registerCallback("esx-adminmenu:server:getRadioChannelPlayers", function(source, data)
 	if not Helpers.hasFeaturePermission(source, "radioLookup") then
-		cb({ success = false, err = "Insufficient Permissions." })
-		return
+		return { success = false, err = "Insufficient Permissions." }
 	end
 
 	local channel = tonumber(data and data.channel) or 0
 	if channel <= 0 then
-		cb({ success = false, err = "Enter a valid radio channel." })
-		return
+		return { success = false, err = "Enter a valid radio channel." }
 	end
 
 	local players = {}
@@ -145,35 +132,31 @@ ESX.RegisterServerCallback("esx-adminmenu:server:getRadioChannelPlayers", functi
 		end
 	end
 
-	cb({ success = true, players = players })
+	return { success = true, players = players }
 end)
 
-local MAX_RESULTS = 25
+local MAX_RESULTS = tonumber(Config.AdminLimits and Config.AdminLimits.OfflineSearchResults) or 25
 
-ESX.RegisterServerCallback("esx-adminmenu:server:searchOfflinePlayer", function(source, cb, data)
+Helpers.registerCallback("esx-adminmenu:server:searchOfflinePlayer", function(source, data)
 	local src = source
 
 	if not Helpers.hasPermission(src) then
-		cb({ err = "Insufficient Permissions" })
-		return
+		return { err = "Insufficient Permissions" }
 	end
 
 	local canSeeSensitive = Helpers.hasFeaturePermission(src, "sensitiveInfo")
 
 	if not data or type(data.identifier) ~= "string" then
-		cb({ players = {} })
-		return
+		return { players = {} }
 	end
 
 	local inputIdentifier = data.identifier:match("^%s*(.-)%s*$")
 	if inputIdentifier == "" then
-		cb({ players = {} })
-		return
+		return { players = {} }
 	end
 
 	if #inputIdentifier > 100 then
-		cb({ players = {} })
-		return
+		return { players = {} }
 	end
 
 	local function getBase(identifier)
@@ -193,11 +176,10 @@ ESX.RegisterServerCallback("esx-adminmenu:server:searchOfflinePlayer", function(
 	if inputIdentifier:match("^license:[%w%-_]+$") then
 		local base = getBase(inputIdentifier)
 		if not base then
-			cb({ players = {} })
-			return
+			return { players = {} }
 		end
 
-		rows = MySQL.query.await(
+		rows = Helpers.safeQuery(
 			[[SELECT identifier, firstname, lastname, sex, job, job_grade, accounts, metadata, last_seen
 			FROM users
 			WHERE SUBSTRING_INDEX(identifier, ':', -1) = ?
@@ -207,7 +189,7 @@ ESX.RegisterServerCallback("esx-adminmenu:server:searchOfflinePlayer", function(
 
 	-- CHAR SEARCH (In cases of char identifier being inputted)
 	elseif inputIdentifier:match("^char%d+:[%w%-_]+$") then
-		rows = MySQL.query.await(
+		rows = Helpers.safeQuery(
 			[[SELECT identifier, firstname, lastname, sex, job, job_grade, accounts, metadata, last_seen
 			FROM users
 			WHERE identifier = ?
@@ -215,13 +197,11 @@ ESX.RegisterServerCallback("esx-adminmenu:server:searchOfflinePlayer", function(
 			{ inputIdentifier, MAX_RESULTS + 1 }
 		)
 	else
-		cb({ players = {} })
-		return
+		return { players = {} }
 	end
 
 	if not rows or #rows == 0 then
-		cb({ players = {} })
-		return
+		return { players = {} }
 	end
 
 	local players = {}
@@ -282,5 +262,5 @@ ESX.RegisterServerCallback("esx-adminmenu:server:searchOfflinePlayer", function(
 		::continue::
 	end
 
-	cb({ players = players })
+	return { players = players }
 end)
