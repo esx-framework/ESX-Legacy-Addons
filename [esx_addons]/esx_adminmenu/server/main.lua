@@ -179,12 +179,14 @@ Helpers.registerCallback("esx-adminmenu:server:searchOfflinePlayer", function(so
 			return { players = {} }
 		end
 
+		-- Sargable: match the two license prefixes directly so the identifier
+		-- index is used instead of SUBSTRING_INDEX forcing a full table scan.
 		rows = Helpers.safeQuery(
 			[[SELECT identifier, firstname, lastname, sex, job, job_grade, accounts, metadata, last_seen
 			FROM users
-			WHERE SUBSTRING_INDEX(identifier, ':', -1) = ?
+			WHERE identifier IN (?, ?)
 			LIMIT ?]],
-			{ base, MAX_RESULTS + 1 }
+			{ "license:" .. base, "license2:" .. base, MAX_RESULTS + 1 }
 		)
 
 	-- CHAR SEARCH (In cases of char identifier being inputted)
