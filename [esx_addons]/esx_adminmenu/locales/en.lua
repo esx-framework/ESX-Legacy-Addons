@@ -201,4 +201,13 @@ Locales["en"] = {
 	["unimpound"] = "Unimpound",
 	["delete_vehicle"] = "Delete Vehicle",
 	["select_impound"] = "Select Impound",
+
+	-- Server-facing error strings
+	["insufficient_permissions"] = "Insufficient Permissions.",
+	["player_not_online"] = "Player Not Online",
+	["invalid_action"] = "Invalid admin action.",
+	["amount_must_be_positive"] = "Amount must be greater than 0.",
+	["must_be_in_vehicle"] = "You must be in a vehicle.",
+	["no_permission_command"] = "You do not have permission to use this command.",
+	["database_unavailable"] = "Database unavailable.",
 }

@@ -62,6 +62,63 @@ The main permission setup lives in `shared/config.lua`.
 
 By default this project is set up around the ESX `admin` group. If your server uses more groups, add them in config instead of hard-coding checks in random files.
 
+### Feature permission catalog
+
+`Config.FeaturePermissions` maps each feature key to the ESX groups allowed to use it. Every key holds a `{ group = true }` table, so you can build a granular "moderator" group by only enabling the features you want it to reach and leaving the sensitive ones to `admin`.
+
+The action-to-feature maps (`Config.AdminMenu.ActionPermissions`, `Config.PlayerActions.ActionPermissions`, `Config.ServerManagement.ActionPermissions`) decide which feature key each concrete action is checked against. If an action's feature key has no entry in `Config.FeaturePermissions`, the code falls back to the base `Config.AllowedGroups` check.
+
+Self and utility:
+
+- `selfTools` - self noclip, godmode, invisible, revive, heal, armor, waypoint teleport.
+- `playerVisibility` - show player names and blips.
+- `infiniteAmmo` - infinite ammo toggle.
+- `helperCommands` - coordinate/model/plate helper commands and copy coords.
+
+Player information:
+
+- `sensitiveInfo` - identifiers, IP addresses, owner fields, and other sensitive columns in player, recent-player, and vehicle data.
+- `playerData` - read/write player data such as radio, job, name, thirst, and hunger.
+- `playerTeleport` - goto and bring a player.
+- `spectate` - spectate a player.
+- `playerNotify` - notify a single player.
+
+Player moderation:
+
+- `playerModeration` - set health/armor, kill, revive, freeze players.
+- `destructive` - clean inventory and delete character.
+- `troll` - burn, explode, sky/random teleport, nausea troll actions.
+- `banManagement` - view, edit expiry, and revoke bans.
+- `money` - give/take money from a player.
+- `weapons` - give all weapons.
+- `routingBucket` - change a player's routing bucket.
+- `setModel` - change a player's ped model.
+- `openClothing` - open the clothing menu on a player.
+- `acePermissions` - add and remove ACE groups.
+
+Vehicles:
+
+- `vehicleSpawner` - spawn a vehicle.
+- `vehicleTools` - repair, clean, flip a vehicle.
+- `vehiclePerformance` - performance levels, turbo, xenon, neon, colors, tint, wheels, discs, tires, customization presets.
+- `vehicleManagement` - impound and unimpound owned vehicles.
+- `vehicleDestructive` - delete a vehicle.
+- `vehicleOwnership` - see and act on vehicle ownership data.
+
+Server management:
+
+- `serverManagement` - general server management access.
+- `serverEnvironment` - weather, time, blackout, and PvP toggles.
+- `serverPlayerModeration` - freeze/unfreeze all, bring all, revive all.
+- `serverPlayerDestructive` - kick all and kill all.
+- `serverCleanup` - delete world vehicles, peds, and objects.
+- `serverBroadcast` - broadcast a notification to all players.
+- `serverEconomy` - give money to all players.
+
+Integrations:
+
+- `radioLookup` - look up a player's radio channel (pma-voice).
+
 ## Commands
 
 Menu commands:
