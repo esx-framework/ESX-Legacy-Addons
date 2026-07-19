@@ -1,7 +1,7 @@
 -- Initiate the database if it already doesn't exist.
 local function initDB()
 	--  BANS TABLE
-	MySQL.query.await([[
+	Helpers.safeQuery([[
         CREATE TABLE IF NOT EXISTS bans (
             id INT AUTO_INCREMENT PRIMARY KEY,
             identifier VARCHAR(64) NOT NULL,
@@ -16,7 +16,7 @@ local function initDB()
     ]])
 
 	--  KICKS TABLE
-	MySQL.query.await([[
+	Helpers.safeQuery([[
         CREATE TABLE IF NOT EXISTS kicks (
             id INT AUTO_INCREMENT PRIMARY KEY,
             identifier VARCHAR(64) NOT NULL,
@@ -28,7 +28,7 @@ local function initDB()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
 
-	local hasBannedAt = MySQL.scalar.await(
+	local hasBannedAt = Helpers.safeScalar(
 		[[SELECT COUNT(*)
 		FROM INFORMATION_SCHEMA.COLUMNS
 		WHERE TABLE_SCHEMA = DATABASE()
@@ -37,10 +37,10 @@ local function initDB()
 	)
 
 	if tonumber(hasBannedAt) == 0 then
-		MySQL.query.await("ALTER TABLE bans ADD COLUMN banned_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP")
+		Helpers.safeQuery("ALTER TABLE bans ADD COLUMN banned_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP")
 	end
 
-	MySQL.update.await([[
+	Helpers.safeUpdate([[
 		UPDATE bans
 		SET banned_at = CURRENT_TIMESTAMP
 		WHERE banned_at IS NULL
@@ -48,7 +48,7 @@ local function initDB()
 			OR CAST(banned_at AS CHAR) = '0000-00-00 00:00:00'
 	]])
 
-	MySQL.update.await([[
+	Helpers.safeUpdate([[
 		UPDATE bans
 		SET identifier = CONCAT('license:', identifier)
 		WHERE identifier IS NOT NULL
@@ -62,6 +62,8 @@ AddEventHandler("onResourceStart", function(resource)
 	if resource ~= GetCurrentResourceName() then
 		return
 	end
-	initDB()
-	BanCache.load()
+	-- Isolate schema setup from cache warmup: a failed migration must not
+	-- prevent ban enforcement from loading (and vice versa).
+	pcall(initDB)
+	pcall(BanCache.load)
 end)

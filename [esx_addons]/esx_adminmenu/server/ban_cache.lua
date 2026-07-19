@@ -1,84 +1,43 @@
 BanCache = {}
-local translations
 local bans = {}
 
+-- Single source of truth lives in Helpers; ban_cache.lua loads after helpers.lua.
 local function normalizeIdentifier(identifier)
-	if Helpers and Helpers.normalizeLicenseIdentifier then
-		return Helpers.normalizeLicenseIdentifier(identifier) or identifier
-	end
-
-	if type(identifier) ~= "string" or identifier == "" then
-		return identifier
-	end
-
-	if identifier:match("^license:[%w%-_]+$") then
-		return identifier
-	end
-
-	if not identifier:find(":") and identifier:match("^[%w%-_]+$") then
-		return "license:" .. identifier
-	end
-
-	return identifier
+	return Helpers.normalizeLicenseIdentifier(identifier) or identifier
 end
 
 local function normalizeTimestamp(value)
-	if Helpers and Helpers.normalizeTimestamp then
-		return Helpers.normalizeTimestamp(value)
-	end
+	return Helpers.normalizeTimestamp(value)
+end
 
-	if value == nil or value == "" then
-		return nil
-	end
+-- Single expiry predicate shared by the reader and the maintenance prune.
+local function isExpired(ban, now)
+	local expires = normalizeTimestamp(ban.expires_at)
+	return expires ~= nil and now >= expires
+end
 
-	if type(value) == "number" then
-		if value <= 0 then
-			return nil
-		end
+-- Maintenance: owns all expiry-driven cache mutation so readers stay side-effect free.
+function BanCache.prune()
+	local now = os.time()
 
-		if value > 1e12 then
-			return math.floor(value / 1000)
-		end
-
-		return math.floor(value)
-	end
-
-	if type(value) == "string" then
-		value = value:match("^%s*(.-)%s*$")
-		if value == "" or value:find("^0000%-00%-00") then
-			return nil
-		end
-
-		local numeric = tonumber(value)
-		if numeric then
-			return normalizeTimestamp(numeric)
-		end
-
-		local year, month, day, hour, min, sec = value:match("^(%d%d%d%d)%-(%d%d)%-(%d%d)[ T](%d%d):(%d%d):(%d%d)")
-		if year then
-			local ok, timestamp = pcall(os.time, {
-				year = tonumber(year),
-				month = tonumber(month),
-				day = tonumber(day),
-				hour = tonumber(hour),
-				min = tonumber(min),
-				sec = tonumber(sec),
-			})
-
-			if ok and timestamp and timestamp > 0 then
-				return timestamp
+	for identifier, list in pairs(bans) do
+		for i = #list, 1, -1 do
+			if isExpired(list[i], now) then
+				table.remove(list, i)
 			end
 		end
-	end
 
-	return nil
+		if #list == 0 then
+			bans[identifier] = nil
+		end
+	end
 end
 
 function BanCache.load()
 	-- Clear existing cache for ex. command usage.
 	bans = {}
 
-	local rows = MySQL.query.await("SELECT * FROM bans ORDER BY id ASC")
+	local rows = Helpers.safeQuery("SELECT * FROM bans ORDER BY id ASC")
 	if not rows then
 		return
 	end
@@ -96,6 +55,8 @@ function BanCache.load()
 	end
 end
 
+-- Read-only: returns the most recent still-active ban for the identifier, or nil.
+-- Expired entries are left for BanCache.prune to reap, never removed on read.
 function BanCache.get(identifier)
 	identifier = normalizeIdentifier(identifier)
 	if not identifier then
@@ -111,12 +72,9 @@ function BanCache.get(identifier)
 
 	for i = #list, 1, -1 do
 		local ban = list[i]
-
 		local expires = normalizeTimestamp(ban.expires_at)
 
-		if expires and now >= expires then
-			table.remove(list, i)
-		else
+		if not (expires and now >= expires) then
 			if expires then
 				local remaining = expires - now
 				ban.remaining_seconds = remaining
@@ -128,10 +86,6 @@ function BanCache.get(identifier)
 
 			return ban
 		end
-	end
-
-	if #list == 0 then
-		bans[identifier] = nil
 	end
 
 	return nil
@@ -165,31 +119,11 @@ function BanCache.updateExpiry(identifier, newExpiry)
 		return
 	end
 
-	for i = #list, 1, -1 do
-		local ban = list[i]
-		ban.expires_at = newExpiry
-		return
-	end
-end
-
--- No need for this at the moment but in case the logic changes this might be useful.
-function BanCache.expireNow(identifier)
-	identifier = normalizeIdentifier(identifier)
-	if not identifier then
-		return
+	for i = 1, #list do
+		list[i].expires_at = newExpiry
 	end
 
-	local list = bans[identifier]
-	if not list then
-		return
-	end
-
-	local now = os.time()
-
-	for i = #list, 1, -1 do
-		local ban = list[i]
-		ban.expires_at = now
-	end
+	BanCache.prune()
 end
 
 function BanCache.remove(identifier)
@@ -204,5 +138,13 @@ end
 function BanCache.getAll()
 	return bans
 end
+
+-- Low-frequency maintenance so expired entries never accumulate unbounded.
+CreateThread(function()
+	while true do
+		Wait(60000)
+		BanCache.prune()
+	end
+end)
 
 return BanCache
