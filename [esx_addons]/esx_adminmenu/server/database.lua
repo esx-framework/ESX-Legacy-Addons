@@ -5,6 +5,7 @@ local function initDB()
         CREATE TABLE IF NOT EXISTS bans (
             id INT AUTO_INCREMENT PRIMARY KEY,
             identifier VARCHAR(64) NOT NULL,
+            identifiers TEXT NULL,
             reason TEXT,
             banned_by VARCHAR(64),
             expires_at DATETIME NULL,
@@ -38,6 +39,18 @@ local function initDB()
 
 	if tonumber(hasBannedAt) == 0 then
 		Helpers.safeQuery("ALTER TABLE bans ADD COLUMN banned_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP")
+	end
+
+	local hasIdentifiers = Helpers.safeScalar(
+		[[SELECT COUNT(*)
+		FROM INFORMATION_SCHEMA.COLUMNS
+		WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = 'bans'
+			AND COLUMN_NAME = 'identifiers']]
+	)
+
+	if tonumber(hasIdentifiers) == 0 then
+		Helpers.safeQuery("ALTER TABLE bans ADD COLUMN identifiers TEXT NULL")
 	end
 
 	Helpers.safeUpdate([[

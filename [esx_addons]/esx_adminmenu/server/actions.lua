@@ -92,22 +92,24 @@ local function normalizeBanDuration(minutes)
 	return math.floor(clampNumber(duration, 1, getLimits().MaxBanDurationMinutes or 2628000, 1))
 end
 
-local function insertBan(identifier, reason, bannedBy, expiresAt, bannedAt)
+local function insertBan(identifier, reason, bannedBy, expiresAt, bannedAt, identifiers)
 	identifier = Helpers.normalizeLicenseIdentifier(identifier)
 	if not identifier then
 		return nil
 	end
 
+	local identifiersJson = (type(identifiers) == "table" and #identifiers > 0) and json.encode(identifiers) or nil
+
 	if expiresAt then
 		return MySQL.insert.await(
-			"INSERT INTO bans (identifier, reason, banned_by, expires_at, banned_at) VALUES (?, ?, ?, FROM_UNIXTIME(?), FROM_UNIXTIME(?))",
-			{ identifier, reason, bannedBy, expiresAt, bannedAt }
+			"INSERT INTO bans (identifier, identifiers, reason, banned_by, expires_at, banned_at) VALUES (?, ?, ?, ?, FROM_UNIXTIME(?), FROM_UNIXTIME(?))",
+			{ identifier, identifiersJson, reason, bannedBy, expiresAt, bannedAt }
 		)
 	end
 
 	return MySQL.insert.await(
-		"INSERT INTO bans (identifier, reason, banned_by, expires_at, banned_at) VALUES (?, ?, ?, NULL, FROM_UNIXTIME(?))",
-		{ identifier, reason, bannedBy, bannedAt }
+		"INSERT INTO bans (identifier, identifiers, reason, banned_by, expires_at, banned_at) VALUES (?, ?, ?, ?, NULL, FROM_UNIXTIME(?))",
+		{ identifier, identifiersJson, reason, bannedBy, bannedAt }
 	)
 end
 
@@ -426,13 +428,17 @@ function Actions.Ban(src, data)
 		return { success = false, err = "Missing player license identifier.", playerOnline = true, isAdmin = true }
 	end
 
+	-- Capture every enabled identifier so the ban matches on reconnect even if
+	-- the player changes their license.
+	local banIdentifiers = Helpers.getBanIdentifiers(targetId)
+
 	local duration = normalizeBanDuration(data.duration)
 	local seconds = duration and (os.time() + duration * 60) or nil
 	local bannedAt = os.time()
 	local adminName = GetPlayerName(src)
 	local reason = limitString(data.reason, getLimits().MaxReasonLength, "Banned by admin")
 
-	local ok, banId = pcall(insertBan, identifier, reason, adminName, seconds, bannedAt)
+	local ok, banId = pcall(insertBan, identifier, reason, adminName, seconds, bannedAt, banIdentifiers)
 	if not ok or not banId then
 		print(("[esx-adminmenu] Failed to persist ban for %s: %s"):format(tostring(identifier), tostring(banId)))
 		return { success = false, err = "Failed to persist ban.", playerOnline = true, isAdmin = true }
@@ -441,6 +447,7 @@ function Actions.Ban(src, data)
 	BanCache.add({
 		id = banId,
 		identifier = identifier,
+		identifiers = banIdentifiers,
 		reason = reason,
 		banned_by = adminName,
 		banned_at = bannedAt,

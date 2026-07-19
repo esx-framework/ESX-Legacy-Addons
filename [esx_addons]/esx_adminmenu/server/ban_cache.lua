@@ -1,9 +1,20 @@
 BanCache = {}
-local bans = {}
 
--- Single source of truth lives in Helpers; ban_cache.lua loads after helpers.lua.
-local function normalizeIdentifier(identifier)
-	return Helpers.normalizeLicenseIdentifier(identifier) or identifier
+-- Flat list of ban records (each may carry an `identifiers` array of raw
+-- identifier strings), plus an index mapping every identifier -> ban refs so a
+-- connecting player is matched on ANY of their identifiers, not just license.
+local banList = {}
+local index = {}
+local generation = 0
+
+-- Bumped on every mutation so read-side caches (e.g. the sorted ban page) can
+-- detect staleness without re-sorting on every request.
+local function bump()
+	generation = generation + 1
+end
+
+function BanCache.getGeneration()
+	return generation
 end
 
 local function normalizeTimestamp(value)
@@ -16,54 +27,92 @@ local function isExpired(ban, now)
 	return expires ~= nil and now >= expires
 end
 
+-- Every identifier a ban should be matchable by: the primary plus its array, deduped.
+local function banIdentifiers(ban)
+	local seen = {}
+	local out = {}
+
+	local function push(id)
+		if type(id) == "string" and id ~= "" and not seen[id] then
+			seen[id] = true
+			out[#out + 1] = id
+		end
+	end
+
+	push(ban.identifier)
+	if type(ban.identifiers) == "table" then
+		for i = 1, #ban.identifiers do
+			push(ban.identifiers[i])
+		end
+	end
+
+	return out
+end
+
+local function addToIndex(ban)
+	for _, id in ipairs(banIdentifiers(ban)) do
+		if not index[id] then
+			index[id] = {}
+		end
+		index[id][#index[id] + 1] = ban
+	end
+end
+
+local function rebuildIndex()
+	index = {}
+	for i = 1, #banList do
+		addToIndex(banList[i])
+	end
+end
+
 -- Maintenance: owns all expiry-driven cache mutation so readers stay side-effect free.
 function BanCache.prune()
 	local now = os.time()
+	local changed = false
 
-	for identifier, list in pairs(bans) do
-		for i = #list, 1, -1 do
-			if isExpired(list[i], now) then
-				table.remove(list, i)
-			end
+	for i = #banList, 1, -1 do
+		if isExpired(banList[i], now) then
+			table.remove(banList, i)
+			changed = true
 		end
+	end
 
-		if #list == 0 then
-			bans[identifier] = nil
-		end
+	if changed then
+		rebuildIndex()
+		bump()
 	end
 end
 
 function BanCache.load()
-	-- Clear existing cache for ex. command usage.
-	bans = {}
+	banList = {}
+	index = {}
 
 	local rows = Helpers.safeQuery("SELECT * FROM bans ORDER BY id ASC")
-	if not rows then
-		return
-	end
+	if rows then
+		for i = 1, #rows do
+			local ban = rows[i]
 
-	for i = 1, #rows do
-		local ban = rows[i]
-		local identifier = normalizeIdentifier(ban.identifier)
-		ban.identifier = identifier
+			if type(ban.identifiers) == "string" and ban.identifiers ~= "" then
+				local ok, decoded = pcall(json.decode, ban.identifiers)
+				ban.identifiers = (ok and type(decoded) == "table") and decoded or nil
+			end
 
-		if not bans[identifier] then
-			bans[identifier] = {}
+			banList[#banList + 1] = ban
+			addToIndex(ban)
 		end
-
-		bans[identifier][#bans[identifier] + 1] = ban
 	end
+
+	bump()
 end
 
--- Read-only: returns the most recent still-active ban for the identifier, or nil.
--- Expired entries are left for BanCache.prune to reap, never removed on read.
+-- Read-only: most recent still-active ban matching this identifier, or nil.
+-- Expired entries are left for BanCache.prune, never removed on read.
 function BanCache.get(identifier)
-	identifier = normalizeIdentifier(identifier)
-	if not identifier then
+	if type(identifier) ~= "string" or identifier == "" then
 		return nil
 	end
 
-	local list = bans[identifier]
+	local list = index[identifier]
 	if not list then
 		return nil
 	end
@@ -96,47 +145,60 @@ function BanCache.add(ban)
 		ban.banned_at = os.time()
 	end
 
-	ban.identifier = normalizeIdentifier(ban.identifier)
-	if not ban.identifier then
+	if type(ban.identifier) ~= "string" or ban.identifier == "" then
 		return
 	end
 
-	if not bans[ban.identifier] then
-		bans[ban.identifier] = {}
-	end
-
-	bans[ban.identifier][#bans[ban.identifier] + 1] = ban
+	banList[#banList + 1] = ban
+	addToIndex(ban)
+	bump()
 end
 
+-- Bans are keyed for update/remove by their primary identifier (license).
 function BanCache.updateExpiry(identifier, newExpiry)
-	identifier = normalizeIdentifier(identifier)
-	if not identifier then
+	if type(identifier) ~= "string" then
 		return
 	end
 
-	local list = bans[identifier]
-	if not list then
-		return
+	local changed = false
+
+	for i = 1, #banList do
+		if banList[i].identifier == identifier then
+			banList[i].expires_at = newExpiry
+			changed = true
+		end
 	end
 
-	for i = 1, #list do
-		list[i].expires_at = newExpiry
+	if changed then
+		-- Drop any that just became expired and refresh the index/generation.
+		BanCache.prune()
+		bump()
 	end
-
-	BanCache.prune()
 end
 
 function BanCache.remove(identifier)
-	identifier = normalizeIdentifier(identifier)
-	if not identifier then
+	if type(identifier) ~= "string" then
 		return
 	end
 
-	bans[identifier] = nil
+	local changed = false
+
+	for i = #banList, 1, -1 do
+		if banList[i].identifier == identifier then
+			table.remove(banList, i)
+			changed = true
+		end
+	end
+
+	if changed then
+		rebuildIndex()
+		bump()
+	end
 end
 
+-- Flat ban list, consumed by the active-ban pagination in Helpers.
 function BanCache.getAll()
-	return bans
+	return banList
 end
 
 -- Low-frequency maintenance so expired entries never accumulate unbounded.

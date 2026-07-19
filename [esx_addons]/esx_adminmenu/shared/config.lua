@@ -320,6 +320,22 @@ Config.AdminLimits = {
 	},
 }
 
+Config.Ban = {
+	-- Identifier types captured at ban time and matched on connect. A banned
+	-- player is blocked if ANY connecting identifier matches ANY of these.
+	-- ip is off by default (shared IPs / CGNAT cause false positives).
+	Identifiers = {
+		license = true,
+		license2 = true,
+		discord = true,
+		steam = true,
+		xbl = true,
+		live = true,
+		fivem = true,
+		ip = false,
+	},
+}
+
 Config.Plate = {
 	Letters = 3,
 	Numbers = 3,

@@ -6,8 +6,15 @@ AddEventHandler("playerConnecting", function(name, _, deferrals)
     deferrals.update(Helpers.getTranslation("finalizing_connection"))
 
     local ok, ban = pcall(function()
-        local identifier = Helpers.getPlayerLicenseIdentifier(src)
-        return identifier and Helpers.isBanned(identifier) or nil
+        -- Match on ANY of the connecting player's identifiers, not just license.
+        local identifiers = GetPlayerIdentifiers(src) or {}
+        for i = 1, #identifiers do
+            local hit = Helpers.isBanned(identifiers[i])
+            if hit then
+                return hit
+            end
+        end
+        return nil
     end)
 
     if not ok then

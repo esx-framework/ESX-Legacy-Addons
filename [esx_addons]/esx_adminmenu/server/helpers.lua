@@ -252,6 +252,27 @@ function Helpers.getPlayerLicenseIdentifier(source)
     return Helpers.normalizeLicenseIdentifier(ESX.GetIdentifier(source))
 end
 
+-- Collects the identifier strings a ban should capture and be matched by,
+-- filtered to the types enabled in Config.Ban.Identifiers.
+function Helpers.getBanIdentifiers(source)
+    local wanted = (Config.Ban and Config.Ban.Identifiers) or {}
+    local result = {}
+    local seen = {}
+    local identifiers = GetPlayerIdentifiers(source) or {}
+
+    for i = 1, #identifiers do
+        local id = identifiers[i]
+        local prefix = type(id) == "string" and id:match("^([^:]+):") or nil
+
+        if prefix and wanted[prefix] and not seen[id] then
+            seen[id] = true
+            result[#result + 1] = id
+        end
+    end
+
+    return result
+end
+
 local function getIdentifierMap(source)
     local result = {}
     local identifiers = GetPlayerIdentifiers(source) or {}
@@ -521,7 +542,9 @@ function Helpers.getVehiclesPage(data, canSeeSensitive)
     local where = ""
 
     if search ~= "" then
-        local pattern = "%" .. search .. "%"
+        -- Prefix (anchored) match so the plate/owner/type indexes can be used
+        -- instead of forcing a full table scan with a leading wildcard.
+        local pattern = search .. "%"
 
         -- Only expose owner as a searchable/returned field to sensitive-tier admins.
         if canSeeSensitive then
@@ -633,6 +656,9 @@ local function normalizeBanRecord(ban, now)
         normalized[key] = value
     end
 
+    -- The raw identifier set stays server-side; it is not sent to the ban list UI.
+    normalized.identifiers = nil
+
     normalized.banned_at = toMilliseconds(bannedAt)
     normalized.expires_at = toMilliseconds(expires)
 
@@ -693,28 +719,37 @@ function Helpers.formatRemainingTime(seconds)
     return table.concat(parts, ", ")
 end
 
--- Read-only: builds the active-ban view without mutating the shared cache.
--- Expiry pruning is owned by BanCache (on add/revoke and a maintenance timer).
-function Helpers.getActiveBans()
-    local all = BanCache.getAll()
-    if not all then
-        return {}
+-- Caches the SORTED set of active raw ban records, rebuilt only when the ban
+-- cache changes (via the generation counter). Only the requested page is
+-- normalized, per request, so the remaining-time countdown stays fresh while
+-- the O(n log n) sort is amortized across pages.
+local sortedActiveCache = nil
+local sortedActiveGen = -1
+
+local function getSortedActiveBanRecords()
+    local gen = BanCache.getGeneration and BanCache.getGeneration() or 0
+    if sortedActiveCache and sortedActiveGen == gen then
+        return sortedActiveCache
     end
 
+    local all = BanCache.getAll() or {}
     local now = os.time()
-    local result = {}
+    local active = {}
 
-    for _, list in pairs(all) do
-        for i = 1, #list do
-            local normalized, expires = normalizeBanRecord(list[i], now)
-
-            if not (expires and now >= expires) then
-                result[#result + 1] = normalized
-            end
+    for i = 1, #all do
+        local expires = normalizeTimestamp(all[i].expires_at)
+        if not (expires and now >= expires) then
+            active[#active + 1] = all[i]
         end
     end
 
-    return result
+    table.sort(active, function(a, b)
+        return (tonumber(a.id) or 0) > (tonumber(b.id) or 0)
+    end)
+
+    sortedActiveCache = active
+    sortedActiveGen = gen
+    return active
 end
 
 function Helpers.getActiveBansPage(data)
@@ -726,21 +761,19 @@ function Helpers.getActiveBansPage(data)
     local offset = tonumber(data.offset) or 0
     offset = math.max(0, offset)
 
-    local bans = Helpers.getActiveBans()
-    table.sort(bans, function(a, b)
-        return (tonumber(a.id) or 0) > (tonumber(b.id) or 0)
-    end)
+    local records = getSortedActiveBanRecords()
+    local now = os.time()
 
     local result = {}
-    local lastIndex = math.min(#bans, offset + limit)
+    local lastIndex = math.min(#records, offset + limit)
 
     for i = offset + 1, lastIndex do
-        result[#result + 1] = bans[i]
+        result[#result + 1] = (normalizeBanRecord(records[i], now))
     end
 
     return {
         bans = result,
-        hasMore = lastIndex < #bans,
+        hasMore = lastIndex < #records,
         nextOffset = lastIndex,
         limit = limit,
     }
