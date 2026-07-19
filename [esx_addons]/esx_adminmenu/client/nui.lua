@@ -209,18 +209,6 @@ local function runAdminCommandAction(action, handler)
     end)
 end
 
-RegisterCommand("noclip", function()
-    runAdminCommandAction("noclip", ClientActions.ToggleNoClip)
-end, false)
-
-RegisterCommand("names", function()
-    runAdminCommandAction("names", ClientActions.ToggleNames)
-end, false)
-
-RegisterCommand("blips", function()
-    runAdminCommandAction("blips", ClientActions.ToggleBlips)
-end, false)
-
 RegisterKeyMapping("adminmenu", "Open Admin Menu", "keyboard", Config.Keybinds.AdminMenu)
 RegisterKeyMapping("admindashboard", "Open Admin Dashboard", "keyboard", Config.Keybinds.AdminDashboard)
 
@@ -232,57 +220,67 @@ RegisterNUICallback("openAdminMenu", function(data, cb)
     openAdminMenu(cb)
 end)
 
-RegisterNUICallback("adminMenu:noclip", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:noclip]", function()
-        local active = ClientActions.ToggleNoClip()
-        sendQuickMenuState("noclip", active)
-        if ClientActions.IsInvisibleActive then
-            sendQuickMenuState("invisible", ClientActions.IsInvisibleActive())
-        end
-        return true, nil, { active = active }
-    end, "noclip")
-end)
+-- D2: quick-action / toggle registry ----------------------------------------
+-- Simple toggles share one envelope: flip state, mirror it to the web via
+-- sendQuickMenuState and return the { active } extra. Entries flagged with
+-- command = true also expose the same permission-gated command path.
+local toggleActions = {
+    { action = "noclip", toggle = ClientActions.ToggleNoClip, command = true, mirrorInvisible = true },
+    { action = "names", toggle = ClientActions.ToggleNames, command = true },
+    { action = "blips", toggle = ClientActions.ToggleBlips, command = true },
+    { action = "godmode", toggle = ClientActions.ToggleGodmode },
+    { action = "invisible", toggle = ClientActions.ToggleInvisible },
+    { action = "infiniteAmmo", toggle = ClientActions.ToggleInfiniteAmmo },
+}
 
-RegisterNUICallback("adminMenu:names", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:names]", function()
-        local active = ClientActions.ToggleNames()
-        sendQuickMenuState("names", active)
-        return true, nil, { active = active }
-    end, "names")
-end)
+for _, entry in ipairs(toggleActions) do
+    RegisterNUICallback("adminMenu:" .. entry.action, function(data, cb)
+        runProtectedClientAction(cb, "[esx-adminmenu:" .. entry.action .. "]", function()
+            local active = entry.toggle()
+            sendQuickMenuState(entry.action, active)
+            if entry.mirrorInvisible and ClientActions.IsInvisibleActive then
+                sendQuickMenuState("invisible", ClientActions.IsInvisibleActive())
+            end
+            return true, nil, { active = active }
+        end, entry.action)
+    end)
 
-RegisterNUICallback("adminMenu:blips", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:blips]", function()
-        local active = ClientActions.ToggleBlips()
-        sendQuickMenuState("blips", active)
-        return true, nil, { active = active }
-    end, "blips")
-end)
+    if entry.command then
+        RegisterCommand(entry.action, function()
+            runAdminCommandAction(entry.action, entry.toggle)
+        end, false)
+    end
+end
 
-RegisterNUICallback("adminMenu:godmode", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:godmode]", function()
-        local active = ClientActions.ToggleGodmode()
-        sendQuickMenuState("godmode", active)
-        return true, nil, { active = active }
-    end, "godmode")
-end)
+-- Direct actions just run a ClientActions function under a permission gate.
+-- run receives the raw NUI data; functions that ignore arguments are safe to
+-- reference bare.
+local directActions = {
+    { name = "heal", permission = "heal", run = ClientActions.Heal },
+    { name = "armor", permission = "armor", run = function() return ClientActions.SetArmor(100) end },
+    { name = "repairVehicle", permission = "repairVehicle", run = ClientActions.RepairVehicle },
+    { name = "cleanVehicle", permission = "cleanVehicle", run = ClientActions.CleanVehicle },
+    { name = "deleteVehicle", permission = "deleteVehicle", run = ClientActions.DeleteVehicle },
+    { name = "waypoint", permission = "waypoint", run = ClientActions.TeleportToWaypoint },
+    { name = "spawnVehicle", permission = "spawnVehicle", run = function(data) return ClientActions.SpawnVehicle(data or {}) end },
+    { name = "flipVehicle", permission = "flipVehicle", run = ClientActions.FlipVehicle },
+    { name = "customizeVehicle", permission = "customizeVehicle", run = function(data) return ClientActions.CustomizeVehicle(data or {}) end },
+    { name = "copyCoords", permission = "copyCoords", run = ClientActions.CopyCoords },
+    { name = "cycleVehicleTransmission", permission = "transmissionLevel", run = ClientActions.CycleVehicleTransmission },
+    { name = "cycleVehicleSuspension", permission = "suspensionLevel", run = ClientActions.CycleVehicleSuspension },
+    { name = "cycleVehicleArmor", permission = "armorLevel", run = ClientActions.CycleVehicleArmor },
+    { name = "cycleVehicleNeonColor", permission = "neonColorCycle", run = ClientActions.CycleVehicleNeonColor },
+}
 
-RegisterNUICallback("adminMenu:invisible", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:invisible]", function()
-        local active = ClientActions.ToggleInvisible()
-        sendQuickMenuState("invisible", active)
-        return true, nil, { active = active }
-    end, "invisible")
-end)
+for _, entry in ipairs(directActions) do
+    RegisterNUICallback("adminMenu:" .. entry.name, function(data, cb)
+        runProtectedClientAction(cb, "[esx-adminmenu:" .. entry.name .. "]", function()
+            return entry.run(data)
+        end, entry.permission)
+    end)
+end
 
-RegisterNUICallback("adminMenu:infiniteAmmo", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:infiniteAmmo]", function()
-        local active = ClientActions.ToggleInfiniteAmmo()
-        sendQuickMenuState("infiniteAmmo", active)
-        return true, nil, { active = active }
-    end, "infiniteAmmo")
-end)
-
+-- Bespoke closures: quick actions that emit extra menu state on success.
 RegisterNUICallback("adminMenu:revive", function(data, cb)
     ESX.TriggerServerCallback("esx-adminmenu:server:selfAction", function(res)
         if not res or not res.success then
@@ -292,42 +290,6 @@ RegisterNUICallback("adminMenu:revive", function(data, cb)
 
         cb({ success = true })
     end, { action = "revive" })
-end)
-
-RegisterNUICallback("adminMenu:heal", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:heal]", ClientActions.Heal, "heal")
-end)
-
-RegisterNUICallback("adminMenu:armor", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:armor]", function()
-        return ClientActions.SetArmor(100)
-    end, "armor")
-end)
-
-RegisterNUICallback("adminMenu:repairVehicle", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:repairVehicle]", ClientActions.RepairVehicle, "repairVehicle")
-end)
-
-RegisterNUICallback("adminMenu:cleanVehicle", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:cleanVehicle]", ClientActions.CleanVehicle, "cleanVehicle")
-end)
-
-RegisterNUICallback("adminMenu:deleteVehicle", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:deleteVehicle]", ClientActions.DeleteVehicle, "deleteVehicle")
-end)
-
-RegisterNUICallback("adminMenu:waypoint", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:waypoint]", ClientActions.TeleportToWaypoint, "waypoint")
-end)
-
-RegisterNUICallback("adminMenu:spawnVehicle", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:spawnVehicle]", function()
-        return ClientActions.SpawnVehicle(data or {})
-    end, "spawnVehicle")
-end)
-
-RegisterNUICallback("adminMenu:flipVehicle", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:flipVehicle]", ClientActions.FlipVehicle, "flipVehicle")
 end)
 
 RegisterNUICallback("adminMenu:setVehiclePerformance", function(data, cb)
@@ -341,12 +303,6 @@ RegisterNUICallback("adminMenu:setVehiclePerformance", function(data, cb)
         end
 
         return success, err, extra
-    end, "customizeVehicle")
-end)
-
-RegisterNUICallback("adminMenu:customizeVehicle", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:customizeVehicle]", function()
-        return ClientActions.CustomizeVehicle(data or {})
     end, "customizeVehicle")
 end)
 
@@ -370,24 +326,6 @@ RegisterNUICallback("adminMenu:cycleVehicleBrakes", function(data, cb)
     end, "brakeLevel")
 end)
 
-RegisterNUICallback("adminMenu:cycleVehicleTransmission", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:cycleVehicleTransmission]", function()
-        return ClientActions.CycleVehicleTransmission()
-    end, "transmissionLevel")
-end)
-
-RegisterNUICallback("adminMenu:cycleVehicleSuspension", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:cycleVehicleSuspension]", function()
-        return ClientActions.CycleVehicleSuspension()
-    end, "suspensionLevel")
-end)
-
-RegisterNUICallback("adminMenu:cycleVehicleArmor", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:cycleVehicleArmor]", function()
-        return ClientActions.CycleVehicleArmor()
-    end, "armorLevel")
-end)
-
 RegisterNUICallback("adminMenu:cycleVehicleColor", function(data, cb)
     runProtectedClientAction(cb, "[esx-adminmenu:cycleVehicleColor]", function()
         local success, err, extra = ClientActions.CycleVehicleColor()
@@ -396,12 +334,6 @@ RegisterNUICallback("adminMenu:cycleVehicleColor", function(data, cb)
         end
         return success, err, extra
     end, "colorCycle")
-end)
-
-RegisterNUICallback("adminMenu:cycleVehicleNeonColor", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:cycleVehicleNeonColor]", function()
-        return ClientActions.CycleVehicleNeonColor()
-    end, "neonColorCycle")
 end)
 
 RegisterNUICallback("adminMenu:maxVehiclePerformance", function(data, cb)
@@ -414,136 +346,212 @@ RegisterNUICallback("adminMenu:maxVehiclePerformance", function(data, cb)
     end, "maxPerformance")
 end)
 
-RegisterNUICallback("adminMenu:copyCoords", function(data, cb)
-    runProtectedClientAction(cb, "[esx-adminmenu:copyCoords]", ClientActions.CopyCoords, "copyCoords")
-end)
+-- D1: server-callback bridge factory ----------------------------------------
+-- The proxy callbacks all share one shape: trigger a server callback, on error
+-- report + respond, on success forward a fixed subset of fields to the web.
+-- Soft entries return an empty collection (with optional paging) instead of a
+-- hard failure, and special cases hook in via onSuccess / mapItem.
+local function registerServerBridge(spec)
+    RegisterNUICallback(spec.name, function(data, cb)
+        local function handler(res)
+            if not res or res.err then
+                if spec.soft then
+                    print(spec.label, res and res.err)
+                    local out = { success = false, err = getCallbackError(res, spec.softError) }
+                    out[spec.collection] = {}
+                    cb(out)
+                else
+                    respondFailure(cb, spec.label, res)
+                end
+                return
+            end
 
-RegisterNUICallback("server:action", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:serverAction", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:serverAction]", res)
-            return
+            if spec.onSuccess then
+                spec.onSuccess(res, cb, data)
+                return
+            end
+
+            if spec.soft then
+                local coll = res[spec.collection] or {}
+                if spec.mapItem then
+                    for i = 1, #coll do
+                        spec.mapItem(coll[i])
+                    end
+                end
+
+                local out = { success = true }
+                out[spec.collection] = coll
+                if spec.paging then
+                    out.hasMore = res.hasMore == true
+                    out.nextOffset = res.nextOffset or #coll
+                    out.limit = res.limit
+                end
+                cb(out)
+                return
+            end
+
+            local out = { success = spec.successTrue and true or res.success }
+            if spec.forward then
+                for _, field in ipairs(spec.forward) do
+                    if type(field) == "table" then
+                        local val = res[field.key]
+                        if val == nil then
+                            val = field.default
+                        end
+                        out[field.key] = val
+                    else
+                        out[field] = res[field]
+                    end
+                end
+            end
+            cb(out)
         end
 
-        cb({ success = res.success, serverData = res.serverData })
-    end, data)
-end)
-
-RegisterNUICallback("server:radioPlayers", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:getRadioChannelPlayers", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:radioPlayers]", res)
-            return
+        if spec.passData == false then
+            ESX.TriggerServerCallback(spec.event, handler)
+        else
+            ESX.TriggerServerCallback(spec.event, handler, data)
         end
+    end)
+end
 
-        cb({ success = true, players = res.players or {} })
-    end, data)
-end)
+local serverBridges = {
+    {
+        name = "server:action",
+        event = "esx-adminmenu:server:serverAction",
+        label = "[esx-adminmenu:serverAction]",
+        forward = { "serverData" },
+    },
+    {
+        name = "server:radioPlayers",
+        event = "esx-adminmenu:server:getRadioChannelPlayers",
+        label = "[esx-adminmenu:radioPlayers]",
+        successTrue = true,
+        forward = { { key = "players", default = {} } },
+    },
+    {
+        name = "player:action",
+        event = "esx-adminmenu:server:playerAction",
+        label = "[esx-adminmenu:playerAction]",
+        forward = { "playerOnline" },
+    },
+    {
+        name = "goto",
+        event = "esx-adminmenu:server:goto",
+        label = "[esx-adminmenu:goto]",
+        forward = { "playerOnline" },
+    },
+    {
+        name = "bring",
+        event = "esx-adminmenu:server:bring",
+        label = "[esx-adminmenu:bring]",
+        forward = { "playerOnline" },
+    },
+    {
+        name = "spectate",
+        event = "esx-adminmenu:server:spectate",
+        label = "[esx-adminmenu:spectate]",
+        onSuccess = function(res, cb, data)
+            if not res.isAdmin or not res.playerOnline then
+                cb({ success = false, err = getCallbackError(res), playerOnline = res.playerOnline })
+                return
+            end
 
-RegisterNUICallback("player:action", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:playerAction", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:playerAction]", res)
-            return
-        end
+            cb({ success = true, playerOnline = res.playerOnline })
+            Spectate(data.id, res.targetCoords)
+        end,
+    },
+    {
+        name = "kick",
+        event = "esx-adminmenu:server:kick",
+        label = "[esx-adminmenu:kick]",
+        forward = { "playerOnline" },
+    },
+    {
+        name = "ban",
+        event = "esx-adminmenu:server:ban",
+        label = "[esx-adminmenu:ban]",
+        forward = { "playerOnline" },
+    },
+    {
+        name = "ban:offline",
+        event = "esx-adminmenu:server:ban:offline",
+        label = "[esx-adminmenu:banOffline]",
+    },
+    {
+        name = "ban:changeExpiry",
+        event = "esx-adminmenu:server:ban:changeExpiry",
+        label = "[esx-adminmenu:changeExpiry]",
+    },
+    {
+        name = "ban:revoke",
+        event = "esx-adminmenu:server:ban:revoke",
+        label = "[esx-adminmenu:revokeBan]",
+    },
+    {
+        name = "player:notify",
+        event = "esx-adminmenu:server:notify",
+        label = "[esx-adminmenu:notifyPlayer]",
+        forward = { "playerOnline" },
+    },
+    {
+        name = "vehicle:impound",
+        event = "esx-adminmenu:server:vehicleImpound",
+        label = "[esx-adminmenu:vehicleImpound]",
+    },
+    {
+        name = "vehicle:unimpound",
+        event = "esx-adminmenu:server:vehicleUnimpound",
+        label = "[esx-adminmenu:vehicleUnimpound]",
+    },
+    {
+        name = "vehicle:delete",
+        event = "esx-adminmenu:server:vehicleDelete",
+        label = "[esx-adminmenu:vehicleDelete]",
+    },
+    {
+        name = "getBans",
+        event = "esx-adminmenu:server:getBans",
+        label = "[esx-adminmenu:getBans]",
+        soft = true,
+        collection = "bans",
+        softError = "Failed to fetch bans.",
+        paging = true,
+    },
+    {
+        name = "getVehicles",
+        event = "esx-adminmenu:server:getVehicles",
+        label = "[esx-adminmenu:getVehicles]",
+        soft = true,
+        collection = "vehicles",
+        softError = "Failed to fetch vehicles.",
+        paging = true,
+        mapItem = function(v)
+            v.name = Helpers.resolveVehicleName(v.model)
+        end,
+    },
+    {
+        name = "getRecentPlayers",
+        event = "esx-adminmenu:server:getRecentPlayers",
+        label = "[esx-adminmenu:getRecentPlayers]",
+        soft = true,
+        collection = "players",
+        softError = "Failed to fetch recent players.",
+        passData = false,
+    },
+    {
+        name = "player:searchOffline",
+        event = "esx-adminmenu:server:searchOfflinePlayer",
+        label = "[esx-adminmenu:searchOffline]",
+        soft = true,
+        collection = "players",
+        softError = "Failed to search offline players.",
+    },
+}
 
-        cb({ success = res.success, playerOnline = res.playerOnline })
-    end, data)
-end)
-
-RegisterNUICallback("goto", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:goto", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:goto]", res)
-            return
-        end
-
-        cb({ success = res.success, playerOnline = res.playerOnline })
-    end, data)
-end)
-
-RegisterNUICallback("bring", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:bring", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:bring]", res)
-            return
-        end
-
-        cb({ success = res.success, playerOnline = res.playerOnline })
-    end, data)
-end)
-
-RegisterNUICallback("spectate", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:spectate", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:spectate]", res)
-            return
-        end
-
-        if not res.isAdmin or not res.playerOnline then
-            cb({ success = false, err = getCallbackError(res), playerOnline = res.playerOnline })
-            return
-        end
-
-        cb({ success = true, playerOnline = res.playerOnline })
-        Spectate(data.id, res.targetCoords)
-    end, data)
-end)
-
-RegisterNUICallback("kick", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:kick", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:kick]", res)
-            return
-        end
-
-        cb({ success = res.success, playerOnline = res.playerOnline })
-    end, data)
-end)
-
-RegisterNUICallback("ban", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:ban", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:ban]", res)
-            return
-        end
-
-        cb({ success = res.success, playerOnline = res.playerOnline })
-    end, data)
-end)
-
-RegisterNUICallback("ban:offline", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:ban:offline", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:banOffline]", res)
-            return
-        end
-
-        cb({ success = res.success })
-    end, data)
-end)
-
-RegisterNUICallback("ban:changeExpiry", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:ban:changeExpiry", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:changeExpiry]", res)
-            return
-        end
-
-        cb({ success = res.success })
-    end, data)
-end)
-
-RegisterNUICallback("ban:revoke", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:ban:revoke", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:revokeBan]", res)
-            return
-        end
-
-        cb({ success = res.success })
-    end, data)
-end)
+for _, spec in ipairs(serverBridges) do
+    registerServerBridge(spec)
+end
 
 RegisterNUICallback("releaseFocus", function(data, cb)
     ToggleNUIFocus(false)
@@ -564,117 +572,6 @@ RegisterNUICallback("adminMenu:setInputFocus", function(data, cb)
     end
 
     cb({ success = true })
-end)
-
-RegisterNUICallback("getVehicles", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:getVehicles", function(res)
-        if not res or res.err then
-            print("[esx-adminmenu:getVehicles]", res and res.err)
-            cb({ success = false, err = getCallbackError(res, "Failed to fetch vehicles."), vehicles = {} })
-            return
-        end
-
-        local vehicles = res.vehicles or {}
-
-        for i = 1, #vehicles do
-            local v = vehicles[i]
-            v.name = Helpers.resolveVehicleName(v.model)
-        end
-
-        cb({
-            success = true,
-            vehicles = vehicles,
-            hasMore = res.hasMore == true,
-            nextOffset = res.nextOffset or #vehicles,
-            limit = res.limit,
-        })
-    end, data)
-end)
-
-RegisterNUICallback("player:notify", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:notify", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:notifyPlayer]", res)
-            return
-        end
-
-        cb({ success = res.success, playerOnline = res.playerOnline })
-    end, data)
-end)
-
-RegisterNUICallback("getBans", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:getBans", function(res)
-        if not res or res.err then
-            print("[esx-adminmenu:getBans]", res and res.err)
-            cb({ success = false, err = getCallbackError(res, "Failed to fetch bans."), bans = {} })
-            return
-        end
-
-        cb({
-            success = true,
-            bans = res.bans or {},
-            hasMore = res.hasMore == true,
-            nextOffset = res.nextOffset or #(res.bans or {}),
-            limit = res.limit,
-        })
-    end, data)
-end)
-
-RegisterNUICallback("getRecentPlayers", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:getRecentPlayers", function(res)
-        if not res or res.err then
-            print("[esx-adminmenu:getRecentPlayers]", res and res.err)
-            cb({ success = false, err = getCallbackError(res, "Failed to fetch recent players."), players = {} })
-            return
-        end
-
-        cb({ success = true, players = res.players or {} })
-    end)
-end)
-
-RegisterNUICallback("player:searchOffline", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:searchOfflinePlayer", function(res)
-        if not res or res.err then
-            print("[esx-adminmenu:searchOffline]", res and res.err)
-            cb({ success = false, err = getCallbackError(res, "Failed to search offline players."), players = {} })
-            return
-        end
-
-        cb({ success = true, players = res.players or {} })
-    end, data)
-end)
-
-RegisterNUICallback("vehicle:impound", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:vehicleImpound", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:vehicleImpound]", res)
-            return
-        end
-
-        cb({ success = res.success })
-    end, data)
-end)
-
-RegisterNUICallback("vehicle:unimpound", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:vehicleUnimpound", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:vehicleUnimpound]", res)
-            return
-        end
-
-        cb({ success = res.success })
-    end, data)
-end)
-
-RegisterNUICallback("vehicle:delete", function(data, cb)
-    ESX.TriggerServerCallback("esx-adminmenu:server:vehicleDelete", function(res)
-        if not res or res.err then
-            respondFailure(cb, "[esx-adminmenu:vehicleDelete]", res)
-            return
-        end
-
-        cb({ success = res.success })
-    end, data)
 end)
 
 RegisterNetEvent("esx-adminmenu:client:copyToClipboard", function(text)
@@ -712,8 +609,9 @@ RegisterNetEvent("esx-adminmenu:client:openInformation", function(data)
 end)
 
 CreateThread(function()
+    local interval = (Config.AdminMenu and Config.AdminMenu.ServerDataInterval) or 60000
     while true do
-        Wait(60000)
+        Wait(interval)
         pushServerData()
     end
 end)

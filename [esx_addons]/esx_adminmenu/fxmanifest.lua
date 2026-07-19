@@ -14,14 +14,17 @@ shared_scripts({
 })
 
 client_scripts({
-	"client/*.lua",
+	"client/helpers.lua",
+	"client/actions.lua",
+	"client/nui.lua",
+	"client/init.lua",
 })
 
 server_scripts({
 	"@oxmysql/lib/MySQL.lua",
+	"server/helpers.lua",
 	"server/ban_cache.lua",
 	"server/database.lua",
-	"server/helpers.lua",
 	"server/actions.lua",
 	"server/commands.lua",
 	"server/events.lua",

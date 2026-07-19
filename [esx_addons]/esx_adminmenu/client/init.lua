@@ -1,7 +1,7 @@
 ESX.TriggerServerCallback('esx-adminmenu:server:getInitData', function(data)
-    if not data or data.error then
-        if data.error and Config.Debug then
-            print(data.error)
+    if not data or data.err then
+        if data.err and Config.Debug then
+            print(data.err)
         end
         return
     end
@@ -10,4 +10,3 @@ ESX.TriggerServerCallback('esx-adminmenu:server:getInitData', function(data)
         data = data
     })
 end)
-

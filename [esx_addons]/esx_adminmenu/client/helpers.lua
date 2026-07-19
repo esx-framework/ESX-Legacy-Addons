@@ -1,5 +1,46 @@
 Helpers = {}
 
+function Helpers.trim(value)
+	if type(value) ~= "string" then
+		return ""
+	end
+
+	return value:match("^%s*(.-)%s*$")
+end
+
+-- Consolidated RequestModel + poll helper.
+-- opts = { timeout = <ms>, requireVehicle = <bool> }
+-- Returns (hash) on success or (nil, errString) on failure.
+function Helpers.loadModel(model, opts)
+	opts = opts or {}
+
+	local hash = model
+	if type(model) == "string" then
+		hash = joaat(model)
+	end
+
+	if not IsModelInCdimage(hash) or not IsModelValid(hash) then
+		return nil, "invalid_model"
+	end
+
+	if opts.requireVehicle and not IsModelAVehicle(hash) then
+		return nil, "invalid_model"
+	end
+
+	local timeout = tonumber(opts.timeout) or (Config.AdminMenu and Config.AdminMenu.ModelLoadTimeout) or 5000
+
+	RequestModel(hash)
+	local deadline = GetGameTimer() + timeout
+	while not HasModelLoaded(hash) do
+		Wait(0)
+		if GetGameTimer() > deadline then
+			return nil, "model_load_timeout"
+		end
+	end
+
+	return hash
+end
+
 function Helpers.resolveVehicleName(hash)
 	if not hash then
 		return "Unknown"
@@ -19,19 +60,6 @@ function Helpers.resolveVehicleName(hash)
 end
 
 -- Callback helper for the /admincar command.
-ESX.RegisterClientCallback("esx-adminmenu:client:getVehicleProps", function(cb)
-	local ped = PlayerPedId()
-	local vehicle = GetVehiclePedIsIn(ped, false)
-
-	if vehicle == 0 then
-		cb(nil)
-		return
-	end
-
-	local props = ESX.Game.GetVehicleProperties(vehicle)
-	cb(props)
-end)
-
 ESX.RegisterClientCallback("esx-adminmenu:client:adminCarVehicleProps", function(cb, data)
 	data = data or {}
 	local ped = PlayerPedId()
@@ -39,20 +67,10 @@ ESX.RegisterClientCallback("esx-adminmenu:client:adminCarVehicleProps", function
 	local plate = data.plate
 
 	if data.model and data.model ~= "" then
-		local model = joaat(data.model)
-		if not IsModelInCdimage(model) or not IsModelAVehicle(model) then
+		local model = Helpers.loadModel(data.model, { requireVehicle = true })
+		if not model then
 			cb(nil)
 			return
-		end
-
-		RequestModel(model)
-		local timeout = GetGameTimer() + 5000
-		while not HasModelLoaded(model) do
-			Wait(0)
-			if GetGameTimer() > timeout then
-				cb(nil)
-				return
-			end
 		end
 
 		local coords = GetEntityCoords(ped)

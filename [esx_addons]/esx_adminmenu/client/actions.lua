@@ -12,13 +12,36 @@ local noClipEntity = nil
 local godmodeVehicle = nil
 local invisibleVehicle = nil
 local playerBlips = {}
-local vehicleEngineLevel = 1
-local vehicleBrakeLevel = 1
-local vehicleTransmissionLevel = 1
-local vehicleSuspensionLevel = 1
-local vehicleArmorLevel = 1
+local vehicleLevels = { engine = 1, brake = 1, transmission = 1, suspension = 1, armor = 1 }
 local vehicleColorIndex = 1
 local neonColorIndex = 1
+local runningLoops = {}
+
+local MOD = {
+	engine = 11,
+	brakes = 12,
+	transmission = 13,
+	suspension = 15,
+	armor = 16,
+	turbo = 18,
+	xenon = 22,
+	wheelFront = 23,
+	wheelRear = 24,
+}
+
+local CONTROL = {
+	sprint = 21,
+	slow = 36,
+	moveLeftRight = 30,
+	moveUpDown = 31,
+	moveForward = 32,
+	moveBackward = 33,
+	moveLeft = 34,
+	moveRight = 35,
+	up = 22,
+	down = 44,
+	exitVehicle = 75,
+}
 
 ClientActions = ClientActions or {}
 
@@ -57,31 +80,12 @@ local function drawWorldText(coords, text)
 	DrawText(screenX, screenY)
 end
 
-local function requestModel(model)
-	local modelHash = type(model) == "number" and model or joaat(model)
-	if not IsModelInCdimage(modelHash) or not IsModelValid(modelHash) then
-		return nil, "Invalid model."
-	end
-
-	RequestModel(modelHash)
-
-	local timeout = GetGameTimer() + 5000
-	while not HasModelLoaded(modelHash) do
-		Wait(0)
-		if GetGameTimer() > timeout then
-			return nil, "Model load timed out."
-		end
-	end
-
-	return modelHash
+local function trimString(value)
+	return Helpers.trim(value)
 end
 
-local function trimString(value)
-	if type(value) ~= "string" then
-		return ""
-	end
-
-	return value:match("^%s*(.-)%s*$")
+local function requestModel(model, options)
+	return Helpers.loadModel(model, options)
 end
 
 local function getVehicleConfig()
@@ -220,16 +224,16 @@ local function applyVehicleWheels(vehicle, categoryId, design)
 	SetVehicleModKit(vehicle, 0)
 	SetVehicleWheelType(vehicle, wheelType)
 
-	local frontCount = GetNumVehicleMods(vehicle, 23)
+	local frontCount = GetNumVehicleMods(vehicle, MOD.wheelFront)
 	if frontCount > 0 then
 		local frontIndex = math.max(-1, math.min(wheelDesign, frontCount - 1))
-		SetVehicleMod(vehicle, 23, frontIndex, false)
+		SetVehicleMod(vehicle, MOD.wheelFront, frontIndex, false)
 	end
 
-	local rearCount = GetNumVehicleMods(vehicle, 24)
+	local rearCount = GetNumVehicleMods(vehicle, MOD.wheelRear)
 	if rearCount > 0 then
 		local rearIndex = math.max(-1, math.min(wheelDesign, rearCount - 1))
-		SetVehicleMod(vehicle, 24, rearIndex, false)
+		SetVehicleMod(vehicle, MOD.wheelRear, rearIndex, false)
 	end
 end
 
@@ -258,28 +262,28 @@ local function applyVehicleCustomizations(vehicle, data)
 	data = data or {}
 	local useMaxPerformance = data.maxPerformance == true
 
-	local engineLevel = applyVehicleModLevel(vehicle, 11, useMaxPerformance and 5 or data.engineLevel or vehicleEngineLevel)
-	local brakeLevel = applyVehicleModLevel(vehicle, 12, useMaxPerformance and 5 or data.brakeLevel or vehicleBrakeLevel)
-	local transmissionLevel = applyVehicleModLevel(vehicle, 13, useMaxPerformance and 5 or data.transmissionLevel or vehicleTransmissionLevel)
-	local suspensionLevel = applyVehicleModLevel(vehicle, 15, useMaxPerformance and 5 or data.suspensionLevel or vehicleSuspensionLevel)
-	local armorLevel = applyVehicleModLevel(vehicle, 16, useMaxPerformance and 5 or data.armorLevel or vehicleArmorLevel)
+	local engineLevel = applyVehicleModLevel(vehicle, MOD.engine, useMaxPerformance and 5 or data.engineLevel or vehicleLevels.engine)
+	local brakeLevel = applyVehicleModLevel(vehicle, MOD.brakes, useMaxPerformance and 5 or data.brakeLevel or vehicleLevels.brake)
+	local transmissionLevel = applyVehicleModLevel(vehicle, MOD.transmission, useMaxPerformance and 5 or data.transmissionLevel or vehicleLevels.transmission)
+	local suspensionLevel = applyVehicleModLevel(vehicle, MOD.suspension, useMaxPerformance and 5 or data.suspensionLevel or vehicleLevels.suspension)
+	local armorLevel = applyVehicleModLevel(vehicle, MOD.armor, useMaxPerformance and 5 or data.armorLevel or vehicleLevels.armor)
 
-	vehicleEngineLevel = engineLevel
-	vehicleBrakeLevel = brakeLevel
-	vehicleTransmissionLevel = transmissionLevel
-	vehicleSuspensionLevel = suspensionLevel
-	vehicleArmorLevel = armorLevel
+	vehicleLevels.engine = engineLevel
+	vehicleLevels.brake = brakeLevel
+	vehicleLevels.transmission = transmissionLevel
+	vehicleLevels.suspension = suspensionLevel
+	vehicleLevels.armor = armorLevel
 
 	if useMaxPerformance then
-		ToggleVehicleMod(vehicle, 18, true)
+		ToggleVehicleMod(vehicle, MOD.turbo, true)
 	end
 
 	if data.turbo ~= nil then
-		ToggleVehicleMod(vehicle, 18, data.turbo == true)
+		ToggleVehicleMod(vehicle, MOD.turbo, data.turbo == true)
 	end
 
 	if data.xenon ~= nil then
-		ToggleVehicleMod(vehicle, 22, data.xenon == true)
+		ToggleVehicleMod(vehicle, MOD.xenon, data.xenon == true)
 	end
 
 	if data.primaryColor or data.secondaryColor then
@@ -319,9 +323,9 @@ local function applyVehiclePerformance(vehicle, engineLevel, brakeLevel, maxPerf
 	local levels = applyVehicleCustomizations(vehicle, {
 		engineLevel = engineLevel,
 		brakeLevel = brakeLevel,
-		transmissionLevel = maxPerformance and 5 or vehicleTransmissionLevel,
-		suspensionLevel = maxPerformance and 5 or vehicleSuspensionLevel,
-		armorLevel = maxPerformance and 5 or vehicleArmorLevel,
+		transmissionLevel = maxPerformance and 5 or vehicleLevels.transmission,
+		suspensionLevel = maxPerformance and 5 or vehicleLevels.suspension,
+		armorLevel = maxPerformance and 5 or vehicleLevels.armor,
 		turbo = maxPerformance and true or nil,
 		maxPerformance = maxPerformance,
 	})
@@ -344,6 +348,74 @@ local function setNoClipEntityState(entity, enabled)
 	SetEntityCollision(entity, not enabled, not enabled)
 	SetEntityInvincible(entity, enabled)
 	SetEntityVelocity(entity, 0.0, 0.0, 0.0)
+end
+
+-- Per-flag ped-state restore helpers. Reused by the normal toggle-off paths and
+-- by the onResourceStop teardown so the local player is always cleaned up.
+local function restoreVisibility(ped)
+	ped = ped or PlayerPedId()
+	SetEntityVisible(ped, true, false)
+	NetworkSetEntityInvisibleToNetwork(ped, false)
+end
+
+local function restoreInvincibility(ped)
+	ped = ped or PlayerPedId()
+	SetPlayerInvincible(PlayerId(), false)
+	SetEntityInvincible(ped, false)
+end
+
+local function restoreNoClip(entity)
+	setNoClipEntityState(entity, false)
+end
+
+local function restoreInfiniteAmmo(ped)
+	ped = ped or PlayerPedId()
+	SetPedInfiniteAmmoClip(ped, false)
+end
+
+local function clearPlayerBlips()
+	for serverId, blip in pairs(playerBlips) do
+		if DoesBlipExist(blip) then
+			RemoveBlip(blip)
+		end
+		playerBlips[serverId] = nil
+	end
+end
+
+local function restoreSpectatePed()
+	local ped = PlayerPedId()
+
+	FreezeEntityPosition(ped, false)
+	SetEntityCollision(ped, true, true)
+	restoreVisibility(ped)
+	SetPlayerInvincible(PlayerId(), false)
+
+	if lastCoords then
+		SetEntityCoords(ped, lastCoords)
+	end
+end
+
+-- Shared toggle-loop runner: refuses to start a second loop of the same name,
+-- ticks while isActiveFn() is true, then runs onStop once and clears the flag.
+local function startToggleLoop(name, isActiveFn, interval, onTick, onStop)
+	if runningLoops[name] then
+		return
+	end
+
+	runningLoops[name] = true
+
+	CreateThread(function()
+		while isActiveFn() do
+			onTick()
+			Wait(interval)
+		end
+
+		if onStop then
+			onStop()
+		end
+
+		runningLoops[name] = nil
+	end)
 end
 
 local function applyGodmodeVehicle(vehicle)
@@ -375,23 +447,21 @@ local function applyInvisibleVehicle(vehicle)
 end
 
 local function watchGodmodeVehicle()
-	CreateThread(function()
-		while godmodeActive do
-			applyGodmodeVehicle(GetVehiclePedIsIn(PlayerPedId(), false))
-			Wait(500)
-		end
-
+	startToggleLoop("godmodeVehicle", function()
+		return godmodeActive
+	end, 500, function()
+		applyGodmodeVehicle(GetVehiclePedIsIn(PlayerPedId(), false))
+	end, function()
 		applyGodmodeVehicle(0)
 	end)
 end
 
 local function watchInvisibleVehicle()
-	CreateThread(function()
-		while invisibleActive do
-			applyInvisibleVehicle(GetVehiclePedIsIn(PlayerPedId(), false))
-			Wait(500)
-		end
-
+	startToggleLoop("invisibleVehicle", function()
+		return invisibleActive
+	end, 500, function()
+		applyInvisibleVehicle(GetVehiclePedIsIn(PlayerPedId(), false))
+	end, function()
 		applyInvisibleVehicle(0)
 	end)
 end
@@ -423,67 +493,65 @@ local function setInvisibleActive(enabled)
 end
 
 local function runNoClip()
-	CreateThread(function()
-		local entity, ped = getControlledEntity()
-		noClipEntity = entity
-		setNoClipEntityState(entity, true)
+	local entity, ped = getControlledEntity()
+	noClipEntity = entity
+	setNoClipEntityState(entity, true)
 
-		while noClipActive do
-			Wait(0)
-
-			local currentEntity, currentPed = getControlledEntity()
-			if currentEntity ~= entity then
-				setNoClipEntityState(entity, false)
-				entity = currentEntity
-				noClipEntity = entity
-				setNoClipEntityState(entity, true)
-			end
-
-			ped = currentPed
-			local coords = GetEntityCoords(entity)
-			local forward = getCameraDirection()
-			local right = vector3(forward.y, -forward.x, 0.0)
-			local speed = getNoClipSpeed()
-
-			if IsDisabledControlPressed(0, 21) then
-				speed = speed * 3.0
-			elseif IsDisabledControlPressed(0, 36) then
-				speed = speed * 0.35
-			end
-
-			DisableControlAction(0, 30, true)
-			DisableControlAction(0, 31, true)
-			DisableControlAction(0, 32, true)
-			DisableControlAction(0, 33, true)
-			DisableControlAction(0, 34, true)
-			DisableControlAction(0, 35, true)
-			DisableControlAction(0, 22, true)
-			DisableControlAction(0, 44, true)
-			DisableControlAction(0, 75, true)
-
-			if IsDisabledControlPressed(0, 32) then
-				coords = coords + forward * speed
-			end
-			if IsDisabledControlPressed(0, 33) then
-				coords = coords - forward * speed
-			end
-			if IsDisabledControlPressed(0, 34) then
-				coords = coords - right * speed
-			end
-			if IsDisabledControlPressed(0, 35) then
-				coords = coords + right * speed
-			end
-			if IsDisabledControlPressed(0, 22) then
-				coords = coords + vector3(0.0, 0.0, speed)
-			end
-			if IsDisabledControlPressed(0, 44) then
-				coords = coords - vector3(0.0, 0.0, speed)
-			end
-
-			SetEntityCoordsNoOffset(entity, coords.x, coords.y, coords.z, true, true, true)
-			SetEntityHeading(entity, GetGameplayCamRot(0).z)
+	startToggleLoop("noclip", function()
+		return noClipActive
+	end, 0, function()
+		local currentEntity, currentPed = getControlledEntity()
+		if currentEntity ~= entity then
+			setNoClipEntityState(entity, false)
+			entity = currentEntity
+			noClipEntity = entity
+			setNoClipEntityState(entity, true)
 		end
 
+		ped = currentPed
+		local coords = GetEntityCoords(entity)
+		local forward = getCameraDirection()
+		local right = vector3(forward.y, -forward.x, 0.0)
+		local speed = getNoClipSpeed()
+
+		if IsDisabledControlPressed(0, CONTROL.sprint) then
+			speed = speed * 3.0
+		elseif IsDisabledControlPressed(0, CONTROL.slow) then
+			speed = speed * 0.35
+		end
+
+		DisableControlAction(0, CONTROL.moveLeftRight, true)
+		DisableControlAction(0, CONTROL.moveUpDown, true)
+		DisableControlAction(0, CONTROL.moveForward, true)
+		DisableControlAction(0, CONTROL.moveBackward, true)
+		DisableControlAction(0, CONTROL.moveLeft, true)
+		DisableControlAction(0, CONTROL.moveRight, true)
+		DisableControlAction(0, CONTROL.up, true)
+		DisableControlAction(0, CONTROL.down, true)
+		DisableControlAction(0, CONTROL.exitVehicle, true)
+
+		if IsDisabledControlPressed(0, CONTROL.moveForward) then
+			coords = coords + forward * speed
+		end
+		if IsDisabledControlPressed(0, CONTROL.moveBackward) then
+			coords = coords - forward * speed
+		end
+		if IsDisabledControlPressed(0, CONTROL.moveLeft) then
+			coords = coords - right * speed
+		end
+		if IsDisabledControlPressed(0, CONTROL.moveRight) then
+			coords = coords + right * speed
+		end
+		if IsDisabledControlPressed(0, CONTROL.up) then
+			coords = coords + vector3(0.0, 0.0, speed)
+		end
+		if IsDisabledControlPressed(0, CONTROL.down) then
+			coords = coords - vector3(0.0, 0.0, speed)
+		end
+
+		SetEntityCoordsNoOffset(entity, coords.x, coords.y, coords.z, true, true, true)
+		SetEntityHeading(entity, GetGameplayCamRot(0).z)
+	end, function()
 		setNoClipEntityState(entity, false)
 		noClipEntity = nil
 	end)
@@ -599,16 +667,12 @@ function ClientActions.ToggleInfiniteAmmo()
 	SetPedInfiniteAmmoClip(ped, infiniteAmmoActive)
 
 	if infiniteAmmoActive then
-		CreateThread(function()
-			while infiniteAmmoActive do
-				ped = PlayerPedId()
-
-				SetPedInfiniteAmmoClip(ped, true)
-
-				Wait(500)
-			end
-
-			SetPedInfiniteAmmoClip(PlayerPedId(), false)
+		startToggleLoop("infiniteAmmo", function()
+			return infiniteAmmoActive
+		end, 500, function()
+			SetPedInfiniteAmmoClip(PlayerPedId(), true)
+		end, function()
+			restoreInfiniteAmmo()
 		end)
 	end
 
@@ -619,25 +683,23 @@ function ClientActions.ToggleNames()
 	namesActive = not namesActive
 
 	if namesActive then
-		CreateThread(function()
-			while namesActive do
-				Wait(0)
+		startToggleLoop("names", function()
+			return namesActive
+		end, 0, function()
+			local myPed = PlayerPedId()
+			local myCoords = GetEntityCoords(myPed)
+			local maxDistance = (Config.AdminMenu and Config.AdminMenu.NamesDistance) or 75.0
 
-				local myPed = PlayerPedId()
-				local myCoords = GetEntityCoords(myPed)
-				local maxDistance = (Config.AdminMenu and Config.AdminMenu.NamesDistance) or 75.0
+			for _, player in ipairs(GetActivePlayers()) do
+				if player ~= PlayerId() then
+					local ped = GetPlayerPed(player)
+					if ped ~= 0 and DoesEntityExist(ped) then
+						local coords = GetEntityCoords(ped)
+						local distance = #(myCoords - coords)
 
-				for _, player in ipairs(GetActivePlayers()) do
-					if player ~= PlayerId() then
-						local ped = GetPlayerPed(player)
-						if ped ~= 0 and DoesEntityExist(ped) then
-							local coords = GetEntityCoords(ped)
-							local distance = #(myCoords - coords)
-
-							if distance <= maxDistance then
-								local serverId = GetPlayerServerId(player)
-								drawWorldText(coords + vector3(0.0, 0.0, 1.05), ("[%s] %s"):format(serverId, GetPlayerName(player)))
-							end
+						if distance <= maxDistance then
+							local serverId = GetPlayerServerId(player)
+							drawWorldText(coords + vector3(0.0, 0.0, 1.05), ("[%s] %s"):format(serverId, GetPlayerName(player)))
 						end
 					end
 				end
@@ -652,52 +714,46 @@ function ClientActions.ToggleBlips()
 	blipsActive = not blipsActive
 
 	if not blipsActive then
-		for serverId, blip in pairs(playerBlips) do
-			if DoesBlipExist(blip) then
-				RemoveBlip(blip)
-			end
-			playerBlips[serverId] = nil
-		end
+		clearPlayerBlips()
 
 		return false
 	end
 
-	CreateThread(function()
-		while blipsActive do
-			local activeServerIds = {}
+	startToggleLoop("blips", function()
+		return blipsActive
+	end, 1500, function()
+		local blipConfig = (Config.AdminMenu and Config.AdminMenu.Blip) or {}
+		local activeServerIds = {}
 
-			for _, player in ipairs(GetActivePlayers()) do
-				if player ~= PlayerId() then
-					local ped = GetPlayerPed(player)
-					local serverId = GetPlayerServerId(player)
-					activeServerIds[serverId] = true
+		for _, player in ipairs(GetActivePlayers()) do
+			if player ~= PlayerId() then
+				local ped = GetPlayerPed(player)
+				local serverId = GetPlayerServerId(player)
+				activeServerIds[serverId] = true
 
-					if ped ~= 0 and DoesEntityExist(ped) then
-						if not playerBlips[serverId] or not DoesBlipExist(playerBlips[serverId]) then
-							local blip = AddBlipForEntity(ped)
-							SetBlipSprite(blip, 1)
-							SetBlipScale(blip, 0.85)
-							SetBlipColour(blip, 5)
-							ShowHeadingIndicatorOnBlip(blip, true)
-							BeginTextCommandSetBlipName("STRING")
-							AddTextComponentString(("[%s] %s"):format(serverId, GetPlayerName(player)))
-							EndTextCommandSetBlipName(blip)
-							playerBlips[serverId] = blip
-						end
+				if ped ~= 0 and DoesEntityExist(ped) then
+					if not playerBlips[serverId] or not DoesBlipExist(playerBlips[serverId]) then
+						local blip = AddBlipForEntity(ped)
+						SetBlipSprite(blip, blipConfig.sprite or 1)
+						SetBlipScale(blip, blipConfig.scale or 0.85)
+						SetBlipColour(blip, blipConfig.colour or 5)
+						ShowHeadingIndicatorOnBlip(blip, true)
+						BeginTextCommandSetBlipName("STRING")
+						AddTextComponentString(("[%s] %s"):format(serverId, GetPlayerName(player)))
+						EndTextCommandSetBlipName(blip)
+						playerBlips[serverId] = blip
 					end
 				end
 			end
+		end
 
-			for serverId, blip in pairs(playerBlips) do
-				if not activeServerIds[serverId] then
-					if DoesBlipExist(blip) then
-						RemoveBlip(blip)
-					end
-					playerBlips[serverId] = nil
+		for serverId, blip in pairs(playerBlips) do
+			if not activeServerIds[serverId] then
+				if DoesBlipExist(blip) then
+					RemoveBlip(blip)
 				end
+				playerBlips[serverId] = nil
 			end
-
-			Wait(1500)
 		end
 	end)
 
@@ -761,13 +817,9 @@ function ClientActions.SpawnVehicle(data)
 		model = vehicleConfig.DefaultModel or "sultan"
 	end
 
-	local modelHash, err = requestModel(model)
+	local modelHash, err = requestModel(model, { requireVehicle = true })
 	if not modelHash then
 		return false, err or "Invalid vehicle model."
-	end
-	if not IsModelAVehicle(modelHash) then
-		SetModelAsNoLongerNeeded(modelHash)
-		return false, "Model must be a vehicle."
 	end
 
 	local ped = PlayerPedId()
@@ -855,80 +907,39 @@ function ClientActions.CustomizeVehicle(data)
 	return ClientActions.SetVehiclePerformance(data)
 end
 
-function ClientActions.CycleVehicleEngine()
-	local vehicle, err = getCurrentVehicle()
-	if not vehicle then
-		return false, err
-	end
+local function makeCycle(key, applyFn)
+	return function()
+		local vehicle, err = getCurrentVehicle()
+		if not vehicle then
+			return false, err
+		end
 
-	vehicleEngineLevel = vehicleEngineLevel + 1
-	if vehicleEngineLevel > 5 then
-		vehicleEngineLevel = 1
-	end
+		vehicleLevels[key] = vehicleLevels[key] % 5 + 1
+		applyFn(vehicle)
 
-	applyVehiclePerformance(vehicle, vehicleEngineLevel, vehicleBrakeLevel, false)
-	return true, nil, { active = true, value = ("%s/5"):format(vehicleEngineLevel) }
+		return true, nil, { active = true, value = ("%s/5"):format(vehicleLevels[key]) }
+	end
 end
 
-function ClientActions.CycleVehicleBrakes()
-	local vehicle, err = getCurrentVehicle()
-	if not vehicle then
-		return false, err
-	end
+ClientActions.CycleVehicleEngine = makeCycle("engine", function(vehicle)
+	applyVehiclePerformance(vehicle, vehicleLevels.engine, vehicleLevels.brake, false)
+end)
 
-	vehicleBrakeLevel = vehicleBrakeLevel + 1
-	if vehicleBrakeLevel > 5 then
-		vehicleBrakeLevel = 1
-	end
+ClientActions.CycleVehicleBrakes = makeCycle("brake", function(vehicle)
+	applyVehiclePerformance(vehicle, vehicleLevels.engine, vehicleLevels.brake, false)
+end)
 
-	applyVehiclePerformance(vehicle, vehicleEngineLevel, vehicleBrakeLevel, false)
-	return true, nil, { active = true, value = ("%s/5"):format(vehicleBrakeLevel) }
-end
+ClientActions.CycleVehicleTransmission = makeCycle("transmission", function(vehicle)
+	applyVehicleCustomizations(vehicle, { transmissionLevel = vehicleLevels.transmission })
+end)
 
-function ClientActions.CycleVehicleTransmission()
-	local vehicle, err = getCurrentVehicle()
-	if not vehicle then
-		return false, err
-	end
+ClientActions.CycleVehicleSuspension = makeCycle("suspension", function(vehicle)
+	applyVehicleCustomizations(vehicle, { suspensionLevel = vehicleLevels.suspension })
+end)
 
-	vehicleTransmissionLevel = vehicleTransmissionLevel + 1
-	if vehicleTransmissionLevel > 5 then
-		vehicleTransmissionLevel = 1
-	end
-
-	applyVehicleCustomizations(vehicle, { transmissionLevel = vehicleTransmissionLevel })
-	return true, nil, { active = true, value = ("%s/5"):format(vehicleTransmissionLevel) }
-end
-
-function ClientActions.CycleVehicleSuspension()
-	local vehicle, err = getCurrentVehicle()
-	if not vehicle then
-		return false, err
-	end
-
-	vehicleSuspensionLevel = vehicleSuspensionLevel + 1
-	if vehicleSuspensionLevel > 5 then
-		vehicleSuspensionLevel = 1
-	end
-
-	applyVehicleCustomizations(vehicle, { suspensionLevel = vehicleSuspensionLevel })
-	return true, nil, { active = true, value = ("%s/5"):format(vehicleSuspensionLevel) }
-end
-
-function ClientActions.CycleVehicleArmor()
-	local vehicle, err = getCurrentVehicle()
-	if not vehicle then
-		return false, err
-	end
-
-	vehicleArmorLevel = vehicleArmorLevel + 1
-	if vehicleArmorLevel > 5 then
-		vehicleArmorLevel = 1
-	end
-
-	applyVehicleCustomizations(vehicle, { armorLevel = vehicleArmorLevel })
-	return true, nil, { active = true, value = ("%s/5"):format(vehicleArmorLevel) }
-end
+ClientActions.CycleVehicleArmor = makeCycle("armor", function(vehicle)
+	applyVehicleCustomizations(vehicle, { armorLevel = vehicleLevels.armor })
+end)
 
 function ClientActions.CycleVehicleColor()
 	local vehicle, err = getCurrentVehicle()
@@ -997,7 +1008,11 @@ function ClientActions.TeleportToWaypoint()
 	local foundGround = false
 	local groundZ = coords.z
 
-	for height = 0, 1000, 25 do
+	local scan = (Config.AdminMenu and Config.AdminMenu.WaypointScan) or {}
+	local maxHeight = scan.max or 1000
+	local step = scan.step or 25
+
+	for height = 0, maxHeight, step do
 		SetEntityCoordsNoOffset(entity, coords.x, coords.y, height + 0.0, false, false, false)
 		Wait(0)
 
@@ -1147,23 +1162,59 @@ RegisterNetEvent("esx-adminmenu:client:setRadioChannel", function(channel)
 	end
 end)
 
+local TROLL = {
+	burn = function(ped, coords)
+		StartEntityFire(ped)
+	end,
+	explode = function(ped, coords)
+		AddExplosion(coords.x, coords.y, coords.z, 2, 1.0, true, false, 1.0)
+	end,
+	sky = function(ped, coords)
+		local skyHeight = (Config.AdminMenu and Config.AdminMenu.Troll and Config.AdminMenu.Troll.skyHeight) or 120.0
+		SetEntityCoordsNoOffset(ped, coords.x, coords.y, coords.z + skyHeight, false, false, false)
+	end,
+	randomTeleport = function(ped, coords)
+		local troll = (Config.AdminMenu and Config.AdminMenu.Troll) or {}
+		local range = troll.randomRange or 500
+		local height = troll.randomHeight or 40.0
+		local xOffset = math.random(-range, range) + 0.0
+		local yOffset = math.random(-range, range) + 0.0
+		SetEntityCoordsNoOffset(ped, coords.x + xOffset, coords.y + yOffset, coords.z + height, false, false, false)
+	end,
+	nausea = function(ped, coords)
+		local duration = (Config.AdminMenu and Config.AdminMenu.Troll and Config.AdminMenu.Troll.nauseaDuration) or 5000
+		ShakeGameplayCam("DRUNK_SHAKE", 1.0)
+		AnimpostfxPlay("DrugsMichaelAliensFight", duration, false)
+	end,
+}
+
 RegisterNetEvent("esx-adminmenu:client:troll", function(action)
+	local handler = TROLL[action]
+	if not handler then
+		return
+	end
+
 	local ped = PlayerPedId()
 	local coords = GetEntityCoords(ped)
 
-	if action == "burn" then
-		StartEntityFire(ped)
-	elseif action == "explode" then
-		AddExplosion(coords.x, coords.y, coords.z, 2, 1.0, true, false, 1.0)
-	elseif action == "sky" then
-		SetEntityCoordsNoOffset(ped, coords.x, coords.y, coords.z + 120.0, false, false, false)
-	elseif action == "randomTeleport" then
-		local xOffset = math.random(-500, 500) + 0.0
-		local yOffset = math.random(-500, 500) + 0.0
-		SetEntityCoordsNoOffset(ped, coords.x + xOffset, coords.y + yOffset, coords.z + 40.0, false, false, false)
-	elseif action == "nausea" then
-		ShakeGameplayCam("DRUNK_SHAKE", 1.0)
-		AnimpostfxPlay("DrugsMichaelAliensFight", 5000, false)
+	handler(ped, coords)
+end)
+
+-- Reapply active self-toggles after the ped handle changes on respawn.
+RegisterNetEvent("esx:onPlayerSpawn", function()
+	local ped = PlayerPedId()
+
+	if godmodeActive then
+		SetEntityInvincible(ped, true)
+	end
+
+	if invisibleActive then
+		SetEntityVisible(ped, false, false)
+		NetworkSetEntityInvisibleToNetwork(ped, true)
+	end
+
+	if infiniteAmmoActive then
+		SetPedInfiniteAmmoClip(ped, true)
 	end
 end)
 
@@ -1177,15 +1228,7 @@ local function StopSpectate()
 
 	NetworkSetInSpectatorMode(false, ped)
 
-	FreezeEntityPosition(ped, false)
-	SetEntityVisible(ped, true, false)
-	SetEntityCollision(ped, true, true)
-	SetPlayerInvincible(PlayerId(), false)
-	NetworkSetEntityInvisibleToNetwork(ped, false)
-
-	if lastCoords then
-		SetEntityCoords(ped, lastCoords)
-	end
+	restoreSpectatePed()
 
 	spectating = false
 
@@ -1197,6 +1240,11 @@ end
 
 function Spectate(targetId, targetCoords)
 	ToggleNUIFocus(false)
+
+	local spectateConfig = (Config.AdminMenu and Config.AdminMenu.Spectate) or {}
+	local spectateHeight = spectateConfig.height or 15.0
+	local escCooldown = spectateConfig.escCooldown or 5000
+	local streamWait = spectateConfig.streamWait or 500
 
 	if spectating then
 		StopSpectate()
@@ -1212,13 +1260,14 @@ function Spectate(targetId, targetCoords)
 	SetPlayerInvincible(PlayerId(), true)
 	NetworkSetEntityInvisibleToNetwork(myPed, true)
 
-	SetEntityCoordsNoOffset(myPed, targetCoords.x, targetCoords.y, targetCoords.z + 15.0, false, false, false)
+	SetEntityCoordsNoOffset(myPed, targetCoords.x, targetCoords.y, targetCoords.z + spectateHeight, false, false, false)
 
-	Wait(500)
+	Wait(streamWait)
 	local targetPlayer = GetPlayerFromServerId(targetId)
 
 	if targetPlayer == -1 then
 		print("Spectate failed: player not streamed")
+		restoreSpectatePed()
 		return
 	end
 
@@ -1226,6 +1275,7 @@ function Spectate(targetId, targetCoords)
 
 	if not DoesEntityExist(targetPed) then
 		print("Spectate failed: ped missing")
+		restoreSpectatePed()
 		return
 	end
 
@@ -1236,10 +1286,16 @@ function Spectate(targetId, targetCoords)
 		while spectating do
 			Wait(0)
 
+			local currentTarget = GetPlayerFromServerId(targetId)
+			if currentTarget == -1 or not DoesEntityExist(GetPlayerPed(currentTarget)) then
+				StopSpectate()
+				break
+			end
+
 			DisableFrontendThisFrame()
 
 			if IsDisabledControlJustPressed(0, 322) and GetGameTimer() >= escCooldownUntil then
-				escCooldownUntil = GetGameTimer() + 5000
+				escCooldownUntil = GetGameTimer() + escCooldown
 
 				ESX.TriggerServerCallback("esx-adminmenu:server:spectate:stop", function(res)
 					if not res or res.err then
@@ -1253,3 +1309,23 @@ function Spectate(targetId, targetCoords)
 		end
 	end)
 end
+
+AddEventHandler("onResourceStop", function(resource)
+	if resource ~= GetCurrentResourceName() then
+		return
+	end
+
+	local ped = PlayerPedId()
+
+	if spectating then
+		StopSpectate()
+	end
+
+	restoreVisibility(ped)
+	restoreInvincibility(ped)
+	restoreNoClip(ped)
+	restoreInfiniteAmmo(ped)
+	clearPlayerBlips()
+	SetNuiFocus(false, false)
+	SetNuiFocusKeepInput(false)
+end)
