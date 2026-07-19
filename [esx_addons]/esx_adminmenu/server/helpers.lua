@@ -3,12 +3,11 @@ local translations = nil
 local allowedGroups = {}
 local Spectators = {}
 local impounds = nil
-local vehicles = {}
-local vehiclesFetchedAt = 0
-local MAX_VEHICLE_PAGE_SIZE = 100
-local MAX_BAN_PAGE_SIZE = 100
+local ADMIN_LIMITS = Config.AdminLimits or {}
+local MAX_VEHICLE_PAGE_SIZE = tonumber(ADMIN_LIMITS.VehiclePageSize) or 100
+local MAX_BAN_PAGE_SIZE = tonumber(ADMIN_LIMITS.BanPageSize) or 100
 local recentPlayers = {}
-local MAX_RECENT_PLAYERS = 100
+local MAX_RECENT_PLAYERS = tonumber(ADMIN_LIMITS.RecentPlayersCap) or 100
 local serverStartedAt = os.time()
 local serverManagementConfig = Config.ServerManagement or {}
 local serverEnvironment = {
@@ -38,9 +37,71 @@ local function trim(str)
     return str:match("^%s*(.-)%s*$")
 end
 
+Helpers.trim = trim
+
+-- =============================================
+-- Safe DB wrappers: an await that raises must never abort a callback mid-flight.
+-- =============================================
+function Helpers.safeQuery(query, params)
+    local ok, result = pcall(MySQL.query.await, query, params)
+    if not ok then
+        print(("[esx-adminmenu] DB query failed: %s"):format(tostring(result)))
+        return nil
+    end
+    return result
+end
+
+function Helpers.safeScalar(query, params)
+    local ok, result = pcall(MySQL.scalar.await, query, params)
+    if not ok then
+        print(("[esx-adminmenu] DB scalar failed: %s"):format(tostring(result)))
+        return nil
+    end
+    return result
+end
+
+function Helpers.safeUpdate(query, params)
+    local ok, result = pcall(MySQL.update.await, query, params)
+    if not ok then
+        print(("[esx-adminmenu] DB update failed: %s"):format(tostring(result)))
+        return nil
+    end
+    return result
+end
+
+-- Wraps a server callback so a raised error still answers the client exactly once.
+-- The handler receives (source, ...) and RETURNS its response table.
+function Helpers.registerCallback(name, handler)
+    ESX.RegisterServerCallback(name, function(source, cb, ...)
+        local ok, result = pcall(handler, source, ...)
+        if not ok then
+            print(("[esx-adminmenu] Callback %s errored: %s"):format(name, tostring(result)))
+            cb({ success = false, err = "Internal error." })
+            return
+        end
+        cb(result)
+    end)
+end
+
+-- Single accessor for the three action -> feature permission maps.
+local ACTION_PERMISSION_MAPS = {
+    adminMenu = function() return Config.AdminMenu and Config.AdminMenu.ActionPermissions or {} end,
+    playerActions = function() return Config.PlayerActions and Config.PlayerActions.ActionPermissions or {} end,
+    serverManagement = function() return Config.ServerManagement and Config.ServerManagement.ActionPermissions or {} end,
+}
+
+function Helpers.getActionPermission(namespace, action)
+    local getter = ACTION_PERMISSION_MAPS[namespace]
+    if not getter then
+        return nil
+    end
+    return getter()[action]
+end
+
 function Helpers.getFormattedPlayTime(playtime)
-    if playtime == 0 or playtime < 0 then
-        return 0
+    playtime = tonumber(playtime) or 0
+    if playtime <= 0 then
+        return { days = 0, hours = 0, minutes = 0 }
     end
     local days = math.floor(playtime / 86400)
     local hours = math.floor((playtime % 86400) / 3600)
@@ -221,10 +282,6 @@ function Helpers.getPlayerRadioChannel(source)
     return tonumber(state.radioChannel or state.radio or state.radio_channel or 0) or 0
 end
 
-function Helpers.getPlayerIdentifiers(source)
-    return getIdentifierMap(source)
-end
-
 local function loadLastSeenFor(identifiers)
     if #identifiers == 0 then
         return {}
@@ -235,7 +292,7 @@ local function loadLastSeenFor(identifiers)
         placeholders[i] = "?"
     end
 
-    local rows = MySQL.query.await(
+    local rows = Helpers.safeQuery(
         ("SELECT identifier, last_seen FROM users WHERE identifier IN (%s)"):format(table.concat(placeholders, ",")),
         identifiers
     )
@@ -393,219 +450,14 @@ function Helpers.stopSpectate(adminSrc)
     Spectators[adminSrc] = nil
 end
 
-function Helpers.getSpectateTarget(adminSrc)
-    return Spectators[adminSrc]
-end
-
-function Helpers.getSpectators()
-    return Spectators
-end
-
+-- Derives the key set directly from the active locale table so en.lua stays the
+-- single source of truth (no hand-maintained key mirror to drift out of sync).
 function Helpers.getTranslations()
     if not translations then
-        local keys = {
-            "admin_menu",
-            "admin_dashboard",
-            "dashboard_home",
-            "dashboard_snapshot",
-            "admin_menu_desc",
-            "quick_admin_menu",
-            "quick_actions",
-            "open_admin_dashboard",
-            "open_admin_menu",
-            "admin_menu_self",
-            "admin_menu_vehicle",
-            "admin_menu_utility",
-            "search_anything",
-            "server_online",
-            "server_uptime",
-            "players",
-            "search_player",
-            "search_vehicle",
-            "search_banned_identifier",
-            "player_management",
-            "players_list",
-            "vehicles_list",
-            "player_search",
-            "recent_players",
-            "no_players_found",
-            "bans_list",
-
-            "id",
-            "name",
-            "money",
-            "total_money",
-            "avg_money",
-            "avg_money_per_player",
-            "active_staff",
-            "non_staff",
-            "available_slots",
-            "money_distribution",
-            "economy_summary",
-            "median_money",
-            "richest_player",
-            "avg_money_breakdown",
-            "health_distribution",
-            "avg_health",
-            "avg_armor",
-            "player_counts",
-            "player_condition",
-            "staff_overview",
-            "active_player_job_distribution",
-            "top_jobs",
-            "wealth_bands",
-            "bank_money",
-            "black_money",
-            "health",
-            "armor",
-            "last_visited",
-            "gender",
-            "male",
-            "female",
-            "job",
-            "job_grade",
-            "identifier",
-            "ip_address",
-            "char_identifier",
-            "play_time",
-            "position",
-            "identifiers",
-            "routing_bucket",
-            "radio_channel",
-            "thirst",
-            "hunger",
-
-            "player_information",
-            "information",
-            "teleport",
-            "bring",
-            "spectate",
-            "notify_player",
-            "notification_message",
-            "give_money",
-            "take_money",
-            "set_health",
-            "set_armor",
-            "clean_inventory",
-            "player_tools",
-            "kill_player",
-            "revive_player",
-            "freeze_player",
-            "unfreeze_player",
-            "set_model",
-            "open_clothing",
-            "give_all_weapons",
-            "set_bucket",
-            "set_radio",
-            "set_job",
-            "set_name",
-            "set_thirst",
-            "set_hunger",
-            "ace_add",
-            "ace_remove",
-            "model_name",
-            "ace_group",
-            "first_name",
-            "last_name",
-            "delete_character",
-            "troll_options",
-            "troll_burn",
-            "troll_explode",
-            "troll_sky",
-            "troll_random",
-            "troll_nausea",
-            "noclip",
-            "show_names",
-            "show_blips",
-            "godmode",
-            "invisible",
-            "infinite_ammo",
-            "revive",
-            "heal",
-            "spawn_vehicle",
-            "vehicle_spawner",
-            "vehicle_model",
-            "vehicle_color",
-            "primary_color",
-            "secondary_color",
-            "customize_vehicle",
-            "customize_vehicle_hint",
-            "spawn_tuned",
-            "engine_level",
-            "brake_level",
-            "transmission_level",
-            "suspension_level",
-            "vehicle_armor",
-            "turbo",
-            "xenon_lights",
-            "neon_lights",
-            "neon_color",
-            "window_tint",
-            "wheel_category",
-            "wheel_design",
-            "bulletproof_tires",
-            "apply_performance",
-            "apply_customization",
-            "max_performance",
-            "repair_vehicle",
-            "clean_vehicle",
-            "flip_vehicle",
-            "teleport_waypoint",
-            "copy_coords",
-            "delete_current_vehicle",
-            "quick_menu_hint",
-            "quick_menu_edit_hint",
-            "back",
-            "kick",
-            "ban",
-            "never",
-            "copied_to_clipboard",
-            "online",
-            "offline",
-            "on",
-            "off",
-            "player",
-            "reason",
-            "kick_reason_placeholder",
-            "ban_reason_placeholder",
-            "duration",
-            "minutes",
-            "hours",
-            "days",
-            "months",
-            "years",
-            "permanent",
-            "duration_desc",
-            "cancel",
-            "confirm",
-            "escape_spectate",
-            "default_ban",
-            "finalizing_connection",
-
-            "banned_by",
-            "banned_at",
-            "expires_at",
-            "change_expiry",
-            "revoke",
-            "new_expiry_date",
-
-            "plate",
-            "owner",
-            "vehicle_name",
-            "vehicle_type",
-            "mileage",
-            "impounded",
-            "copy_plate",
-            "copy_owner",
-            "impound",
-            "unimpound",
-            "delete_vehicle",
-            "select_impound"
-        }
         translations = {}
 
-        for i = 1, #keys do
-            local key = keys[i]
+        local localeTable = Locales and (Locales[Config.Locale] or Locales["en"]) or {}
+        for key in pairs(localeTable) do
             translations[key] = Translate(key)
         end
     end
@@ -623,60 +475,6 @@ function Helpers.getTranslation(key)
     return translations[key] or key
 end
 
-function Helpers.getAllVehicles()
-    -- Return if vehicles has been cached within 20 seconds.
-    if vehiclesFetchedAt ~= 0 and (os.time() - vehiclesFetchedAt) < 20 then
-        return vehicles
-    end
-
-    local rows = MySQL.query.await("SELECT owner, plate, vehicle, stored, pound, type FROM owned_vehicles")
-    if not rows then return vehicles end
-
-    -- clear existing cache instead of reassigning (important if referenced elsewhere)
-    for k in pairs(vehicles) do
-        vehicles[k] = nil
-    end
-
-    for i = 1, #rows do
-        local v = rows[i]
-
-        local vehicleProps = {}
-        if v.vehicle then
-            local ok, decoded = pcall(json.decode, v.vehicle)
-            if ok and type(decoded) == "table" then
-                vehicleProps = decoded
-            end
-        end
-
-        local vehicleHash = tonumber(vehicleProps.model)
-        if not vehicleHash then
-            goto continue
-        end
-
-        vehicles[#vehicles + 1] = {
-            plate = v.plate,
-            owner = v.owner,
-            model = vehicleHash,
-            type = capitalize(v.type or 'car'),
-            stored = v.stored == 1 or v.stored == "1" or v.stored == true,
-            impounded = v.pound ~= nil,
-        }
-
-        ::continue::
-    end
-
-    vehiclesFetchedAt = os.time()
-    return vehicles
-end
-
-function Helpers.invalidateVehicles()
-    for k in pairs(vehicles) do
-        vehicles[k] = nil
-    end
-
-    vehiclesFetchedAt = 0
-end
-
 local function decodeVehicleProps(rawVehicle)
     if not rawVehicle then
         return {}
@@ -690,7 +488,7 @@ local function decodeVehicleProps(rawVehicle)
     return {}
 end
 
-local function toVehicleRecord(row)
+local function toVehicleRecord(row, canSeeSensitive)
     local vehicleProps = decodeVehicleProps(row.vehicle)
     local vehicleHash = tonumber(vehicleProps.model)
 
@@ -700,7 +498,7 @@ local function toVehicleRecord(row)
 
     return {
         plate = row.plate,
-        owner = row.owner,
+        owner = canSeeSensitive and row.owner or nil,
         model = vehicleHash,
         type = capitalize(row.type or "car"),
         stored = row.stored == 1 or row.stored == "1" or row.stored == true,
@@ -709,7 +507,7 @@ local function toVehicleRecord(row)
     }
 end
 
-function Helpers.getVehiclesPage(data)
+function Helpers.getVehiclesPage(data, canSeeSensitive)
     data = data or {}
 
     local limit = tonumber(data.limit) or MAX_VEHICLE_PAGE_SIZE
@@ -724,16 +522,24 @@ function Helpers.getVehiclesPage(data)
 
     if search ~= "" then
         local pattern = "%" .. search .. "%"
-        where = " WHERE plate LIKE ? OR owner LIKE ? OR type LIKE ?"
-        params[#params + 1] = pattern
-        params[#params + 1] = pattern
-        params[#params + 1] = pattern
+
+        -- Only expose owner as a searchable/returned field to sensitive-tier admins.
+        if canSeeSensitive then
+            where = " WHERE plate LIKE ? OR owner LIKE ? OR type LIKE ?"
+            params[#params + 1] = pattern
+            params[#params + 1] = pattern
+            params[#params + 1] = pattern
+        else
+            where = " WHERE plate LIKE ? OR type LIKE ?"
+            params[#params + 1] = pattern
+            params[#params + 1] = pattern
+        end
     end
 
     params[#params + 1] = limit + 1
     params[#params + 1] = offset
 
-    local rows = MySQL.query.await(
+    local rows = Helpers.safeQuery(
         ("SELECT owner, plate, vehicle, stored, pound, type FROM owned_vehicles%s ORDER BY plate ASC LIMIT ? OFFSET ?")
         :format(where),
         params
@@ -744,7 +550,7 @@ function Helpers.getVehiclesPage(data)
     local count = math.min(rowCount, limit)
 
     for i = 1, count do
-        local vehicle = toVehicleRecord(rows[i])
+        local vehicle = toVehicleRecord(rows[i], canSeeSensitive)
 
         if vehicle then
             result[#result + 1] = vehicle
@@ -887,6 +693,8 @@ function Helpers.formatRemainingTime(seconds)
     return table.concat(parts, ", ")
 end
 
+-- Read-only: builds the active-ban view without mutating the shared cache.
+-- Expiry pruning is owned by BanCache (on add/revoke and a maintenance timer).
 function Helpers.getActiveBans()
     local all = BanCache.getAll()
     if not all then
@@ -896,21 +704,13 @@ function Helpers.getActiveBans()
     local now = os.time()
     local result = {}
 
-    for identifier, list in pairs(all) do
-        for i = #list, 1, -1 do
-            local ban = list[i]
+    for _, list in pairs(all) do
+        for i = 1, #list do
+            local normalized, expires = normalizeBanRecord(list[i], now)
 
-            local normalized, expires = normalizeBanRecord(ban, now)
-
-            if expires and now >= expires then
-                table.remove(list, i)
-            else
+            if not (expires and now >= expires) then
                 result[#result + 1] = normalized
             end
-        end
-
-        if #list == 0 then
-            all[identifier] = nil
         end
     end
 
@@ -957,22 +757,16 @@ end
 
 math.randomseed(os.time())
 
-local function getRandomNumber(length)
-    if length <= 0 then
-        return ""
+local function randomFrom(charset, length)
+    local parts = {}
+    for i = 1, math.max(0, length) do
+        parts[i] = charset[math.random(#charset)]
     end
-    return getRandomNumber(length - 1) .. NumberCharset[math.random(#NumberCharset)]
-end
-
-local function getRandomLetter(length)
-    if length <= 0 then
-        return ""
-    end
-    return getRandomLetter(length - 1) .. Charset[math.random(#Charset)]
+    return table.concat(parts)
 end
 
 function Helpers.isPlateTaken(plate)
-    return MySQL.scalar.await("SELECT 1 FROM owned_vehicles WHERE plate = ? LIMIT 1", { plate }) ~= nil
+    return Helpers.safeScalar("SELECT 1 FROM owned_vehicles WHERE plate = ? LIMIT 1", { plate }) ~= nil
 end
 
 function Helpers.generatePlate()
@@ -980,9 +774,10 @@ function Helpers.generatePlate()
     local letters = tonumber(plateConfig.Letters) or 3
     local numbers = tonumber(plateConfig.Numbers) or 3
     local separator = plateConfig.UseSpace == false and "" or " "
+    local attempts = tonumber(ADMIN_LIMITS.PlateGenAttempts) or 50
 
-    for _ = 1, 50 do
-        local generatedPlate = string.upper(getRandomLetter(letters) .. separator .. getRandomNumber(numbers))
+    for _ = 1, attempts do
+        local generatedPlate = string.upper(randomFrom(Charset, letters) .. separator .. randomFrom(NumberCharset, numbers))
 
         if #generatedPlate > 8 then
             generatedPlate = generatedPlate:sub(1, 8)
@@ -993,18 +788,26 @@ function Helpers.generatePlate()
         end
     end
 
-    return string.upper(getRandomLetter(letters) .. separator .. getRandomNumber(numbers)):sub(1, 8)
+    return string.upper(randomFrom(Charset, letters) .. separator .. randomFrom(NumberCharset, numbers)):sub(1, 8)
 end
 
+-- Only memoize a successful, non-empty result so a start-order race with
+-- esx_garage self-heals instead of caching an empty list forever.
 function Helpers.getImpounds()
-    if not impounds then
-        local ok, result = pcall(function()
-            return exports["esx_garage"]:getImpounds()
-        end)
-
-        impounds = ok and result or {}
+    if impounds and next(impounds) then
+        return impounds
     end
-    return impounds
+
+    local ok, result = pcall(function()
+        return exports["esx_garage"]:getImpounds()
+    end)
+
+    if ok and type(result) == "table" and next(result) then
+        impounds = result
+        return impounds
+    end
+
+    return {}
 end
 
 return Helpers
