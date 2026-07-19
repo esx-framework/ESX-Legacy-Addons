@@ -477,9 +477,18 @@ function Helpers.getTranslations()
     if not translations then
         translations = {}
 
-        local localeTable = Locales and (Locales[Config.Locale] or Locales["en"]) or {}
-        for key in pairs(localeTable) do
-            translations[key] = Translate(key)
+        -- Resolve against the full English key set so a partial community
+        -- translation can never drop keys. es_extended's Translate has no
+        -- per-key English fallback: a key missing from the active locale
+        -- returns a "Translation [xx][key] does not exist" placeholder, so we
+        -- fall back to the English string here.
+        local english = Locales and Locales["en"] or {}
+        for key in pairs(english) do
+            local value = Translate(key)
+            if type(value) ~= "string" or value:sub(1, 13) == "Translation [" then
+                value = english[key]
+            end
+            translations[key] = value
         end
     end
 
