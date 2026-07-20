@@ -161,13 +161,29 @@ function Helpers.getServerUptimeSeconds()
     return os.time() - serverStartedAt
 end
 
+--- Human-readable server uptime.
+--- The previous "%02d:%02d:%02d" of days:hours:minutes read as a HH:MM:SS clock,
+--- so 8 minutes of uptime displayed as "00:00:08" and looked like 8 seconds.
+--- Units are now explicit, which removes the ambiguity entirely.
 function Helpers.formatServerUptime(seconds)
-    local total = math.max(0, tonumber(seconds) or 0)
+    local total = math.max(0, math.floor(tonumber(seconds) or 0))
     local days = math.floor(total / 86400)
     local hours = math.floor((total % 86400) / 3600)
     local minutes = math.floor((total % 3600) / 60)
 
-    return ("%02d:%02d:%02d"):format(days, hours, minutes)
+    if days > 0 then
+        return ("%dd %02dh"):format(days, hours)
+    end
+
+    if hours > 0 then
+        return ("%dh %02dm"):format(hours, minutes)
+    end
+
+    if minutes > 0 then
+        return ("%dm"):format(minutes)
+    end
+
+    return ("%ds"):format(total % 60)
 end
 
 function Helpers.setServerEnvironment(data)
