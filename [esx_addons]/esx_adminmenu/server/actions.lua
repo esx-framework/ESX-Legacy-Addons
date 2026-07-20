@@ -1213,7 +1213,32 @@ function Actions.PlayerAction(src, data)
 		return { success = false, err = "Player Not Online", playerOnline = false }
 	end
 
-	return spec.handler({ src = src, targetId = targetId, target = target, payload = data.payload or {} })
+	-- Resolved before the handler runs: deleteCharacter and friends drop the
+	-- player, after which the target can no longer be identified.
+	local targetIdentifier = targetId and Helpers.getPlayerLicenseIdentifier(targetId) or nil
+	local targetName = targetId and GetPlayerName(targetId) or nil
+
+	local result = spec.handler({ src = src, targetId = targetId, target = target, payload = data.payload or {} })
+
+	-- Acting on someone makes them "recent" straight away, so admins can find
+	-- them again without waiting for a disconnect. Snapshotted after the handler
+	-- so the entry reflects the post-action state (money, health, job...).
+	if target and targetId and type(result) == "table" and result.success then
+		Helpers.addRecentPlayer(targetId, "online")
+	end
+
+	Logs.record({
+		namespace = "playerActions",
+		action = action,
+		actor = src,
+		target = targetIdentifier,
+		targetName = targetName,
+		success = type(result) ~= "table" or result.success ~= false,
+		err = type(result) == "table" and result.err or nil,
+		payload = data.payload,
+	})
+
+	return result
 end
 
 Helpers.registerCallback("esx-adminmenu:server:playerAction", function(source, data)

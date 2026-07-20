@@ -464,7 +464,12 @@ local function upsertRecentPlayer(player)
     end
 end
 
-function Helpers.addRecentPlayer(source)
+--- Snapshots a player into the Recent Players list.
+--- @param source number
+--- @param status? string "online" when the player is still connected (an admin
+--- just acted on them), anything else records them as gone. Defaults to
+--- "offline" so the playerDropped path keeps its original behaviour.
+function Helpers.addRecentPlayer(source, status)
     local xPlayer = ESX.GetPlayerFromId(source)
     if not xPlayer then
         return
@@ -474,10 +479,13 @@ function Helpers.addRecentPlayer(source)
     local job = xPlayer.getJob and xPlayer.getJob() or nil
     local bank = xPlayer.getAccount and xPlayer.getAccount("bank") or nil
     local black = xPlayer.getAccount and xPlayer.getAccount("black_money") or nil
+    local isOnline = status == "online"
 
     upsertRecentPlayer({
-        status = "offline",
-        id = nil,
+        -- A still-connected player keeps their server id so the UI can act on
+        -- them live; playerDropped later upserts the same identifier as offline.
+        status = isOnline and "online" or "offline",
+        id = isOnline and source or nil,
         name = xPlayer.getName and xPlayer.getName() or GetPlayerName(source) or "Unknown",
         cash = xPlayer.getMoney and xPlayer.getMoney() or 0,
         bank = bank and bank.money or 0,
