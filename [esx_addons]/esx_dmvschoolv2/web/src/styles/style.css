@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--color-white: #F2F2F2;
+	}
+}
+
+body {
+	overflow: hidden;
+	background: transparent;
+}
+
+::-webkit-scrollbar {
+	display: none;
+}
+
+/*body, button, input, select, textarea {
+	cursor: none;
+}*/
