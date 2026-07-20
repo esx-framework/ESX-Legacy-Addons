@@ -492,6 +492,9 @@ Helpers.registerCallback("esx-adminmenu:server:ban:offline", function(source, da
 	local adminName = GetPlayerName(source)
 	local reason = limitString(data.reason, getLimits().MaxReasonLength, "Banned by admin")
 
+	-- Offline bans are single-identifier by design: the player is not connected,
+	-- so their other identifiers (discord, steam, ...) cannot be read, and ESX
+	-- does not persist them. Only online bans carry the full identifier set.
 	local ok, banId = pcall(insertBan, normalizedIdentifier, reason, adminName, seconds, bannedAt)
 	if not ok or not banId then
 		print(("[esx-adminmenu] Failed to persist offline ban for %s: %s"):format(tostring(normalizedIdentifier), tostring(banId)))
