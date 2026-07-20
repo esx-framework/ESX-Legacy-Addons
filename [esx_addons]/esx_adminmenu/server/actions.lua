@@ -385,16 +385,17 @@ function Actions.Kick(src, data)
 		return { success = false, err = "You cannot kick yourself.", playerOnline = true, isAdmin = true }
 	end
 
-	local identifier = Helpers.getPlayerLicenseIdentifier(targetId)
 	local reason = limitString(data.reason, getLimits().MaxReasonLength, "Kicked by admin")
 
-	-- Log the kick best-effort; a DB failure must never prevent the actual drop.
-	pcall(function()
-		MySQL.insert.await(
-			"INSERT INTO kicks (identifier, reason, kicked_by) VALUES (?, ?, ?)",
-			{ identifier, reason, GetPlayerName(src) }
-		)
-	end)
+	-- Queued, not written inline: the drop must not wait on the database.
+	-- Recorded before DropPlayer so the target is still resolvable.
+	Logs.record({
+		namespace = "moderation",
+		action = "kick",
+		actor = src,
+		target = targetId,
+		payload = { reason = reason },
+	})
 
 	DropPlayer(targetId, reason)
 
@@ -454,6 +455,15 @@ function Actions.Ban(src, data)
 		expires_at = seconds,
 	})
 
+	Logs.record({
+		namespace = "moderation",
+		action = "ban",
+		actor = src,
+		target = identifier,
+		targetName = GetPlayerName(targetId),
+		payload = { reason = reason, duration_minutes = duration, identifiers = #banIdentifiers },
+	})
+
 	DropPlayer(targetId, reason)
 	return { success = true, playerOnline = true, isAdmin = true }
 end
@@ -495,6 +505,14 @@ Helpers.registerCallback("esx-adminmenu:server:ban:offline", function(source, da
 		banned_by = adminName,
 		banned_at = bannedAt,
 		expires_at = seconds,
+	})
+
+	Logs.record({
+		namespace = "moderation",
+		action = "banOffline",
+		actor = source,
+		target = normalizedIdentifier,
+		payload = { reason = reason, duration_minutes = duration },
 	})
 
 	return { success = true, isAdmin = true }
@@ -543,6 +561,14 @@ Helpers.registerCallback("esx-adminmenu:server:ban:changeExpiry", function(sourc
 		return { success = false, err = "Failed to update ban expiry.", isAdmin = true }
 	end
 
+	Logs.record({
+		namespace = "moderation",
+		action = "banChangeExpiry",
+		actor = source,
+		target = normalizedIdentifier,
+		payload = { expires_at = seconds },
+	})
+
 	return { success = true, isAdmin = true }
 end)
 
@@ -568,6 +594,13 @@ Helpers.registerCallback("esx-adminmenu:server:ban:revoke", function(source, dat
 	if not ok then
 		return { success = false, err = "Failed to revoke ban.", isAdmin = true }
 	end
+
+	Logs.record({
+		namespace = "moderation",
+		action = "unban",
+		actor = source,
+		target = normalizedIdentifier,
+	})
 
 	return { success = true, isAdmin = true }
 end)
@@ -839,21 +872,39 @@ end)
 function Actions.ServerManagement(src, data)
 	data = data or {}
 
+	local action = type(data.action) == "string" and data.action or "unknown"
+
+	-- Any client can invoke a server callback, so a denial here is a genuine
+	-- abuse signal and is worth recording.
 	if not Helpers.hasFeaturePermission(src, "serverManagement") then
+		Logs.record({ namespace = "serverManagement", action = action, actor = src,
+			success = false, err = "Insufficient Permissions" })
 		return { success = false, err = "Insufficient Permissions" }
 	end
 
-	local action = data.action
 	local handler = ServerHandlers[action]
 	if not handler then
 		return { success = false, err = "Unknown server action." }
 	end
 
 	if not Helpers.hasFeaturePermission(src, getServerActionPermission(action)) then
+		Logs.record({ namespace = "serverManagement", action = action, actor = src,
+			success = false, err = "Insufficient Permissions" })
 		return { success = false, err = "Insufficient Permissions" }
 	end
 
-	return handler(src, data.payload or {})
+	local result = handler(src, data.payload or {})
+
+	Logs.record({
+		namespace = "serverManagement",
+		action = action,
+		actor = src,
+		success = type(result) ~= "table" or result.success ~= false,
+		err = type(result) == "table" and result.err or nil,
+		payload = data.payload,
+	})
+
+	return result
 end
 
 Helpers.registerCallback("esx-adminmenu:server:serverAction", function(source, data)
@@ -1135,7 +1186,11 @@ end })
 function Actions.PlayerAction(src, data)
 	data = data or {}
 
+	local action = type(data.action) == "string" and data.action or "unknown"
+
 	if not Helpers.hasPermission(src) then
+		Logs.record({ namespace = "playerActions", action = action, actor = src,
+			success = false, err = "Insufficient Permissions" })
 		return { success = false, err = "Insufficient Permissions" }
 	end
 
@@ -1149,6 +1204,8 @@ function Actions.PlayerAction(src, data)
 
 	local permission = Helpers.getActionPermission("playerActions", data.action)
 	if permission and not Helpers.hasFeaturePermission(src, permission) then
+		Logs.record({ namespace = "playerActions", action = action, actor = src, target = targetId,
+			success = false, err = "Insufficient Permissions" })
 		return { success = false, err = "Insufficient Permissions", playerOnline = target ~= nil }
 	end
 

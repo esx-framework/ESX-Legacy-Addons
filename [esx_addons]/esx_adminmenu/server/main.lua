@@ -135,6 +135,19 @@ Helpers.registerCallback("esx-adminmenu:server:getRadioChannelPlayers", function
 	return { success = true, players = players }
 end)
 
+-- Reading the log is gated on its own feature: it exposes who moderated whom,
+-- which is more sensitive than most actions it records.
+Helpers.registerCallback("esx-adminmenu:server:getAdminLogs", function(source, data)
+	if not Helpers.hasFeaturePermission(source, "logViewer") then
+		return { success = false, err = "Insufficient Permissions", logs = {} }
+	end
+
+	local result = Logs.query(data)
+	result.success = true
+
+	return result
+end)
+
 local MAX_RESULTS = tonumber(Config.AdminLimits and Config.AdminLimits.OfflineSearchResults) or 25
 local MIN_QUERY_LENGTH = 2
 

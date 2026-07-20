@@ -16,16 +16,28 @@ local function initDB()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
 
-	--  KICKS TABLE
+	--  ADMIN ACTION LOG
+	-- Replaces the former `kicks` table, which was written to but never read
+	-- back by anything. Any existing `kicks` table is deliberately left in
+	-- place: a resource dropping tables on start is a footgun.
 	Helpers.safeQuery([[
-        CREATE TABLE IF NOT EXISTS kicks (
+        CREATE TABLE IF NOT EXISTS admin_logs (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            identifier VARCHAR(64) NOT NULL,
-            reason TEXT,
-            kicked_by VARCHAR(64),
-            kicked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            actor_identifier VARCHAR(64) NOT NULL,
+            actor_name VARCHAR(64) NULL,
+            namespace VARCHAR(32) NOT NULL,
+            action VARCHAR(64) NOT NULL,
+            target_identifier VARCHAR(64) NULL,
+            target_name VARCHAR(64) NULL,
+            success TINYINT(1) NOT NULL DEFAULT 1,
+            error VARCHAR(191) NULL,
+            payload TEXT NULL,
 
-            INDEX idx_kicks_identifier (identifier)
+            INDEX idx_admin_logs_actor (actor_identifier),
+            INDEX idx_admin_logs_target (target_identifier),
+            INDEX idx_admin_logs_action (namespace, action),
+            INDEX idx_admin_logs_created (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
 

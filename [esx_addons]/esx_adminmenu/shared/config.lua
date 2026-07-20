@@ -108,6 +108,11 @@ Config.FeaturePermissions = {
 	vehicleOwnership = {
 		admin = true,
 	},
+	-- Reading the admin action log is itself sensitive: it exposes who moderated
+	-- whom. Gate it separately so it can be granted without full admin rights.
+	logViewer = {
+		admin = true,
+	},
 }
 
 Config.Locale = "en"
@@ -374,4 +379,66 @@ Config.TrollActions = {
 	sky = true,
 	randomTeleport = true,
 	nausea = true,
+}
+
+-- Admin action log. Only actions are recorded, never reads: the menu polls
+-- vehicle and player lists constantly and would otherwise drown the log.
+Config.Logs = {
+	Enabled = true,
+
+	-- Rows older than this are deleted by the hourly maintenance pass.
+	-- Set to 0 to keep everything (the table then grows without bound).
+	RetentionDays = 30,
+
+	-- Entries are queued in memory and written in batches, so an admin action
+	-- never waits on the database.
+	FlushInterval = 5000,
+	-- Hard cap on the in-memory queue. If the database is unreachable the
+	-- oldest entries are dropped rather than growing until the server dies.
+	MaxQueue = 500,
+	-- Rows per INSERT. Keeps the statement (and its lock) short.
+	BatchSize = 100,
+
+	-- Payloads above this are replaced by a truncation marker. Vehicle props
+	-- alone can be several kilobytes.
+	MaxPayloadBytes = 2048,
+
+	-- Any client can invoke a server callback, so a non-admin can spam denied
+	-- attempts. Beyond this many entries per minute a source is muted for the
+	-- rest of the window, which keeps a flood from evicting real entries.
+	MaxPerMinutePerActor = 120,
+
+	-- Spammy toggles: recorded actions that carry no moderation value.
+	Ignore = {
+		noclip = true,
+		godmode = true,
+		invisible = true,
+		names = true,
+		blips = true,
+		copyCoords = true,
+	},
+
+	Webhook = {
+		-- Discord webhook URL. Leave empty to disable.
+		-- WARNING: do not commit a real URL, anyone who reads it can post to
+		-- your channel. Fill this in on your own server only.
+		Url = "",
+
+		-- Only these actions are forwarded. Sending everything gets the
+		-- webhook rate-limited by Discord almost immediately.
+		Actions = {
+			ban = true,
+			unban = true,
+			kick = true,
+			deleteCharacter = true,
+			cleanInventory = true,
+			giveMoney = true,
+			takeMoney = true,
+			giveMoneyAll = true,
+			kickAll = true,
+			killAll = true,
+			aceAdd = true,
+			aceRemove = true,
+		},
+	},
 }

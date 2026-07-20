@@ -24,6 +24,8 @@ server_scripts({
 	"@oxmysql/lib/MySQL.lua",
 	"server/helpers.lua",
 	"server/ban_cache.lua",
+	-- Before actions.lua: the action dispatchers record through Logs.
+	"server/logs.lua",
 	"server/database.lua",
 	"server/actions.lua",
 	"server/commands.lua",

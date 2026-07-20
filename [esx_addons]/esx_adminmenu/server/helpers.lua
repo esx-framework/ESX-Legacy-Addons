@@ -1,4 +1,17 @@
 Helpers = {}
+
+-- No-op logging stub, replaced by server/logs.lua when it loads.
+-- helpers.lua is the first server script, so this guarantees the dispatchers in
+-- actions.lua always have something to call. Recording an admin action must
+-- never be able to break the action itself: without this, a logs.lua that fails
+-- to load takes every moderation command down with it.
+Logs = Logs or {
+    record = function() end,
+    flush = function() end,
+    purge = function() return 0 end,
+    query = function() return { logs = {}, hasMore = false, nextOffset = 0, limit = 0 } end,
+}
+
 local translations = nil
 local allowedGroups = {}
 local Spectators = {}
