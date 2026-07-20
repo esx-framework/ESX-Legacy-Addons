@@ -136,133 +136,172 @@ Helpers.registerCallback("esx-adminmenu:server:getRadioChannelPlayers", function
 end)
 
 local MAX_RESULTS = tonumber(Config.AdminLimits and Config.AdminLimits.OfflineSearchResults) or 25
+local MIN_QUERY_LENGTH = 2
+
+local SEARCH_COLUMNS = [[SELECT identifier, firstname, lastname, sex, job, job_grade, accounts, metadata,
+	last_seen, created_at, phone_number, `group`, disabled
+	FROM users]]
+
+--- Escapes LIKE metacharacters. Without this a query of "%" or "_" would match
+--- every row in the table and leak the whole user base in one request.
+local function escapeLike(value)
+	return (value:gsub("([%%_\\])", "\\%1"))
+end
+
+local function decodeJson(raw)
+	if not raw then
+		return {}
+	end
+
+	local ok, decoded = pcall(json.decode, raw)
+	return (ok and type(decoded) == "table") and decoded or {}
+end
+
+--- The bare id shared by a player's char/license identifiers.
+local function getBase(identifier)
+	if type(identifier) ~= "string" then
+		return nil
+	end
+
+	local base = identifier:match("^[^:]+:(.+)$")
+	if not base or base == "" or #base < 5 or #base > 80 then
+		return nil
+	end
+
+	return base
+end
+
+local function buildOfflineEntry(row, canSeeSensitive)
+	local accounts = decodeJson(row.accounts)
+	local metadata = decodeJson(row.metadata)
+	local base = getBase(row.identifier)
+
+	return {
+		status = "offline",
+		id = nil,
+		name = ((row.firstname or "") .. " " .. (row.lastname or "")):match("^%s*(.-)%s*$"),
+
+		cash = tonumber(accounts.money) or 0,
+		bank = tonumber(accounts.bank) or 0,
+		alt_money = tonumber(accounts.black_money) or 0,
+
+		health = metadata.health and metadata.health - 100 or 0,
+		armor = metadata.armor or 0,
+
+		char_identifier = canSeeSensitive and row.identifier or nil,
+		identifier = canSeeSensitive and (base and ("license:" .. base) or row.identifier) or nil,
+		phone_number = canSeeSensitive and row.phone_number or nil,
+
+		play_time = Helpers.getFormattedPlayTime(metadata.lastPlaytime or 0),
+		gender = row.sex == "f" and "f" or "m",
+		job = row.job,
+		job_grade = row.job_grade,
+		group = row.group,
+		disabled = row.disabled == 1 or row.disabled == true,
+		last_join = row.last_seen,
+		first_join = row.created_at,
+	}
+end
+
+--- Online players matching the query, taken from the same source as the Online
+--- Players tab so both views stay consistent in shape and sensitive-data gating.
+local function findOnlineMatches(src, query)
+	local matches = {}
+	local list = Helpers.getPlayerList(src) or {}
+
+	for i = 1, #list do
+		local player = list[i]
+		local haystack = {
+			tostring(player.name or ""),
+			tostring(player.id or ""),
+			tostring(player.char_identifier or ""),
+			tostring(player.identifier or ""),
+		}
+
+		for j = 1, #haystack do
+			if haystack[j]:lower():find(query, 1, true) then
+				matches[#matches + 1] = player
+				break
+			end
+		end
+	end
+
+	return matches
+end
 
 Helpers.registerCallback("esx-adminmenu:server:searchOfflinePlayer", function(source, data)
 	local src = source
 
 	if not Helpers.hasPermission(src) then
-		return { err = "Insufficient Permissions" }
+		return { success = false, err = "Insufficient Permissions", players = {} }
 	end
 
 	local canSeeSensitive = Helpers.hasFeaturePermission(src, "sensitiveInfo")
 
-	if not data or type(data.identifier) ~= "string" then
-		return { players = {} }
+	local raw = type(data) == "table" and data.identifier or data
+	if type(raw) ~= "string" then
+		return { success = true, players = {} }
 	end
 
-	local inputIdentifier = data.identifier:match("^%s*(.-)%s*$")
-	if inputIdentifier == "" then
-		return { players = {} }
+	local query = raw:match("^%s*(.-)%s*$")
+	if #query < MIN_QUERY_LENGTH or #query > 100 then
+		return { success = true, players = {} }
 	end
 
-	if #inputIdentifier > 100 then
-		return { players = {} }
-	end
+	local lowered = query:lower()
+	local players = findOnlineMatches(src, lowered)
 
-	local function getBase(identifier)
-		local base = identifier:match("^[^:]+:(.+)$")
-		if not base or base == "" then
-			return nil
+	-- Track who is already listed as online so a player is never shown twice.
+	local seen = {}
+	for i = 1, #players do
+		local key = players[i].char_identifier or players[i].identifier
+		if key then
+			seen[key] = true
 		end
-		if #base < 5 or #base > 80 then
-			return nil
-		end
-		return base
 	end
 
 	local rows
+	local fullIdentifier = query:match("^license:[%w%-_]+$") or query:match("^char%d+:[%w%-_]+$")
 
-	-- LICENSE SEARCH (In cases of license identifier being inputted)
-	if inputIdentifier:match("^license:[%w%-_]+$") then
-		local base = getBase(inputIdentifier)
-		if not base then
-			return { players = {} }
-		end
+	if fullIdentifier then
+		-- Fast path: a complete identifier is matched against the PRIMARY key,
+		-- so this stays sargable instead of degrading into a full scan.
+		local base = getBase(query)
+		local candidates = base and { query, "license:" .. base, "license2:" .. base } or { query }
 
-		-- Sargable: match the two license prefixes directly so the identifier
-		-- index is used instead of SUBSTRING_INDEX forcing a full table scan.
 		rows = Helpers.safeQuery(
-			[[SELECT identifier, firstname, lastname, sex, job, job_grade, accounts, metadata, last_seen
-			FROM users
-			WHERE identifier IN (?, ?)
-			LIMIT ?]],
-			{ "license:" .. base, "license2:" .. base, MAX_RESULTS + 1 }
-		)
-
-	-- CHAR SEARCH (In cases of char identifier being inputted)
-	elseif inputIdentifier:match("^char%d+:[%w%-_]+$") then
-		rows = Helpers.safeQuery(
-			[[SELECT identifier, firstname, lastname, sex, job, job_grade, accounts, metadata, last_seen
-			FROM users
-			WHERE identifier = ?
-			LIMIT ?]],
-			{ inputIdentifier, MAX_RESULTS + 1 }
+			SEARCH_COLUMNS .. " WHERE identifier IN (?, ?, ?) LIMIT ?",
+			{ candidates[1], candidates[2] or candidates[1], candidates[3] or candidates[1], MAX_RESULTS + 1 }
 		)
 	else
-		return { players = {} }
+		-- Fuzzy path: name and partial identifier. firstname/lastname carry no
+		-- index, so this scans; MIN_QUERY_LENGTH and LIMIT keep it bounded.
+		local infix = "%" .. escapeLike(query) .. "%"
+
+		rows = Helpers.safeQuery(
+			SEARCH_COLUMNS .. [[ WHERE identifier LIKE ?
+				OR firstname LIKE ?
+				OR lastname LIKE ?
+				OR CONCAT(firstname, ' ', lastname) LIKE ?
+				OR phone_number LIKE ?
+			LIMIT ?]],
+			{ infix, infix, infix, infix, infix, MAX_RESULTS + 1 }
+		)
 	end
 
-	if not rows or #rows == 0 then
-		return { players = {} }
-	end
+	if rows then
+		for i = 1, #rows do
+			if #players >= MAX_RESULTS then
+				break
+			end
 
-	local players = {}
-
-	for i = 1, #rows do
-		if #players >= MAX_RESULTS then
-			break
-		end
-
-		local r = rows[i]
-
-		local base = getBase(r.identifier)
-		if not base then
-			goto continue
-		end
-
-		local accounts = {}
-		if r.accounts then
-			local ok, decoded = pcall(json.decode, r.accounts)
-			if ok and type(decoded) == "table" then
-				accounts = decoded
+			local row = rows[i]
+			if not seen[row.identifier] then
+				seen[row.identifier] = true
+				players[#players + 1] = buildOfflineEntry(row, canSeeSensitive)
 			end
 		end
-
-		local metadata = {}
-		if r.metadata then
-			local ok, decoded = pcall(json.decode, r.metadata)
-			if ok and type(decoded) == "table" then
-				metadata = decoded
-			end
-		end
-
-		local health = metadata.health and metadata.health - 100 or 0
-		local armor = metadata and metadata.armor or 0
-		local playTime = Helpers.getFormattedPlayTime(metadata and metadata.lastPlaytime or 0)
-
-		players[#players + 1] = {
-			status = "offline",
-			id = nil,
-			name = (r.firstname or "") .. " " .. (r.lastname or ""),
-
-			cash = tonumber(accounts.money) or 0,
-			bank = tonumber(accounts.bank) or 0,
-			alt_money = tonumber(accounts.black_money) or 0,
-
-			health = health,
-			armor = armor,
-
-			char_identifier = canSeeSensitive and r.identifier or nil,
-			identifier = canSeeSensitive and ("license:" .. base) or nil,
-
-			play_time = playTime,
-			gender = r.sex == "m" and "m" or "f",
-			job = r.job,
-			job_grade = r.job_grade,
-			last_join = r.last_seen,
-		}
-		::continue::
 	end
 
-	return { players = players }
+	return { success = true, players = players }
 end)
