@@ -71,6 +71,29 @@ end
 
 -- Wraps a server callback so a raised error still answers the client exactly once.
 -- The handler receives (source, ...) and RETURNS its response table.
+--- True when `value` can be called.
+--- ESX arrives through exports["es_extended"]:getSharedObject(), so every
+--- xPlayer method crosses a resource boundary and reaches us as a *function
+--- reference*: a table carrying a __call metamethod, not a real function.
+--- `type(x) == "function"` is therefore always false for xPlayer methods and
+--- must never be used to probe them.
+--- es_extended exposes ESX.IsFunctionReference for this, but it is reimplemented
+--- here so the resource keeps working on builds that predate it.
+--- @param value any
+--- @return boolean
+function Helpers.isCallable(value)
+    if type(value) == "function" then
+        return true
+    end
+
+    if type(value) ~= "table" then
+        return false
+    end
+
+    local meta = getmetatable(value)
+    return type(meta) == "table" and type(meta.__call) == "function"
+end
+
 function Helpers.registerCallback(name, handler)
     ESX.RegisterServerCallback(name, function(source, cb, ...)
         local ok, result = pcall(handler, source, ...)

@@ -887,7 +887,9 @@ local function moneyHandler(ctx, isGive)
 		method = account == "money" and "removeMoney" or "removeAccountMoney"
 	end
 
-	if type(ctx.target[method]) ~= "function" then
+	-- Callable, not type()=="function": xPlayer methods reach us as function
+	-- references across the es_extended resource boundary.
+	if not Helpers.isCallable(ctx.target[method]) then
 		return { success = false, err = "This ESX version does not expose " .. method .. ".", playerOnline = true }
 	end
 
@@ -947,7 +949,7 @@ regPlayer("setArmor", { handler = function(ctx)
 end })
 
 regPlayer("cleanInventory", { handler = function(ctx)
-	if type(ctx.target.getInventory) ~= "function" then
+	if not Helpers.isCallable(ctx.target.getInventory) then
 		return { success = false, err = "This ESX version does not expose getInventory.", playerOnline = true }
 	end
 
