@@ -1,6 +1,7 @@
 import PlayersIcon from "../components/icons/PlayersIcon.svelte";
 import ServerIcon from "../components/icons/ServerIcon.svelte";
 import CarIcon from "../components/icons/CarIcon.svelte";
+import LogsIcon from "../components/icons/LogsIcon.svelte";
 import type { SidebarOption } from "../types/sidebar";
 
 export const sidebarOptions: SidebarOption[] = [
@@ -24,6 +25,11 @@ export const sidebarOptions: SidebarOption[] = [
     label: "Server Management",
     value: "srv_management",
     icon: ServerIcon,
+  },
+  {
+    label: "Admin Logs",
+    value: "admin_logs",
+    icon: LogsIcon,
   },
 ];
 

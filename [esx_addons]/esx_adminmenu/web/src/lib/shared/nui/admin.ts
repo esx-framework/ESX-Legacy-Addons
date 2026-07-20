@@ -3,6 +3,7 @@ import { uiState } from "../stores/user.svelte";
 import type { Vehicle } from "../../tabs/players/types/vehicle";
 import type { Ban } from "../../tabs/players/types/ban";
 import type { ServerState } from "../types/server";
+import type { AdminLog, AdminLogFilters } from "../../tabs/admin-logs/types/log";
 
 // Callback response type
 export type NuiSuccess = {
@@ -208,6 +209,25 @@ export const getRadioChannelPlayers = async (channel: number) => {
 	const res = await fetchNui<RadioPlayersResponse>("server:radioPlayers", { channel });
 
 	return res?.success ? (res.players ?? []) : [];
+};
+
+type AdminLogPageResponse = NuiSuccess & {
+	logs?: AdminLog[];
+	hasMore?: boolean;
+	nextOffset?: number;
+};
+
+// The log page owns its own state instead of a shared store: it is read-only
+// and only ever rendered by a single tab.
+export const fetchAdminLogs = async (filters: AdminLogFilters = {}) => {
+	const res = await fetchNui<AdminLogPageResponse>("getAdminLogs", filters);
+
+	return {
+		logs: res?.success ? (res.logs ?? []) : [],
+		hasMore: res?.hasMore === true,
+		nextOffset: res?.nextOffset ?? 0,
+		ok: res?.success === true,
+	};
 };
 
 // For requesting players (Don't think it is needed but will keep it here)

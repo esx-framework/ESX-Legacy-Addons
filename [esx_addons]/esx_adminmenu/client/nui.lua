@@ -547,6 +547,15 @@ local serverBridges = {
         collection = "players",
         softError = "Failed to search offline players.",
     },
+    {
+        name = "getAdminLogs",
+        event = "esx-adminmenu:server:getAdminLogs",
+        label = "[esx-adminmenu:getAdminLogs]",
+        soft = true,
+        collection = "logs",
+        softError = "Failed to fetch admin logs.",
+        paging = true,
+    },
 }
 
 for _, spec in ipairs(serverBridges) do

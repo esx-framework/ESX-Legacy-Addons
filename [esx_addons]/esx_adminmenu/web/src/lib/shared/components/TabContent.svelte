@@ -8,6 +8,7 @@
 	import RecentPlayers from "../../tabs/players/RecentPlayers.svelte";
 	import DashboardHome from "../../tabs/dashboard/DashboardHome.svelte";
 	import ServerManagement from "../../tabs/server/ServerManagement.svelte";
+	import AdminLogs from "../../tabs/admin-logs/AdminLogs.svelte";
 </script>
 
 <svelte:window
@@ -34,6 +35,8 @@
 			<RecentPlayers />
 		{:else if currentPage.value === "srv_management"}
 			<ServerManagement />
+		{:else if currentPage.value === "admin_logs"}
+			<AdminLogs />
 		{:else}
 			<p>Page not found</p>
 		{/if}
