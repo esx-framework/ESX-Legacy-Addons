@@ -3,12 +3,10 @@ Helpers.registerCallback("esx-adminmenu:server:getInitData", function(source)
 		return { err = "Insufficient Permissions." }
 	end
 
-	local translations = Helpers.getTranslations()
 	local impounds = Helpers.getImpounds()
 	local vehicleConfig = Config.VehicleSpawner or {}
 
 	return {
-		translations = translations, -- can be empty safely
 		serverData = Helpers.getServerData(),
 		impounds = impounds,
 		vehicleConfig = {

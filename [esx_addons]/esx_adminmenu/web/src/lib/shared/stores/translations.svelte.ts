@@ -201,7 +201,8 @@ export class TranslationState {
 	values = $state<Translations>(defaultTranslations);
 
 	set(translations: Translations) {
-		this.values = translations;
+		// Merge over the English defaults so a partial locale keeps every key.
+		this.values = { ...defaultTranslations, ...translations };
 	}
 }
 
