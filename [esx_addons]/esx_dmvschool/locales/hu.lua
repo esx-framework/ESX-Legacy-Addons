@@ -27,4 +27,8 @@ Locales['hu'] = {
   ['errors'] = 'Hibapontok: ~r~%s/%s',
   ['you_damaged_veh'] = 'Összetörted az autót, ez drága lesz.',
   ['not_enough_money'] = 'Nincs elég pénzed!',
+  ['yourVersion'] = "A verziód: ",
+  ['latestVersion'] = "A legújabb verziót használod!",
+  ['needUpdateResource'] = "Le kell töltened a legújabb verziót! Jelenleg egy régi verziót használsz!",
+  ['errorGetCurrentVersion'] = "Hiba történt az aktuális verzió lekérése közben!"
 }

@@ -27,4 +27,8 @@ Locales['en'] = {
   ['errors'] = 'mistakes: ~r~%s/%s',
   ['you_damaged_veh'] = 'you damaged the vehicle',
   ['not_enough_money'] = 'You don\'t have enough money',
+  ['yourVersion'] = "Your version: ",
+  ['latestVersion'] = "You are using the latest version!",
+  ['needUpdateResource'] = "You need download latest version! You are using an old version at the moment!",
+  ['errorGetCurrentVersion'] = "An error occurred while trying to get the current version!"
 }

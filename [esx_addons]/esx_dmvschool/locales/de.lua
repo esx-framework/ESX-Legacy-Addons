@@ -27,4 +27,7 @@ Locales['de'] = {
   ['errors'] = 'Fehler: ~r~%s/%s',
   ['you_damaged_veh'] = 'Du hast das Fahrzeug beschädigt!',
   ['not_enough_money'] = 'Du hast nicht genug Geld!',
+  ['latestVersion'] = "Du verwendest die neueste Version!",
+  ['needUpdateResource'] = "Du musst die neueste Version herunterladen! Du verwendest derzeit eine veraltete Version!",
+  ['errorGetCurrentVersion'] = "Beim Versuch, die aktuelle Version abzurufen, ist ein Fehler aufgetreten!",
 }

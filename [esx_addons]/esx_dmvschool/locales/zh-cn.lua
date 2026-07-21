@@ -27,4 +27,8 @@ Locales['zh-cn'] = {
   ['errors'] = '失误: ~r~%s~s~/~g~%s~s~',
   ['you_damaged_veh'] = '载具出现受损！',
   ['not_enough_money'] = '您暂无足够现金',
+  ['yourVersion'] = "你的版本：",
+  ['latestVersion'] = "你正在使用最新版本！",
+  ['needUpdateResource'] = "你需要下载最新版本！你当前使用的是旧版本！",
+  ['errorGetCurrentVersion'] = "尝试获取当前版本时发生错误！"
 }

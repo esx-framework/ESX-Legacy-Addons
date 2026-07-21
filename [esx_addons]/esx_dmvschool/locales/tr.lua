@@ -27,5 +27,9 @@ Locales['tr'] = {
     ['errors'] = 'Hatalar: ~r~%s/%s',
     ['you_damaged_veh'] = 'Araç hasar gördü',
     ['not_enough_money'] = 'Yeterli paranız yok',
+    ['yourVersion'] = "Sürümünüz: ",
+    ['latestVersion'] = "En son sürümü kullanıyorsunuz!",
+    ['needUpdateResource'] = "En son sürümü indirmeniz gerekiyor! Şu anda eski bir sürüm kullanıyorsunuz!",
+    ['errorGetCurrentVersion'] = "Mevcut sürüm alınmaya çalışılırken bir hata oluştu!"
   }
   

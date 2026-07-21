@@ -10,20 +10,8 @@ ESX.RegisterServerCallback('esx_dmvschool:canYouPay', function(source, cb, type)
 	end
 end)
 
-AddEventHandler('esx:playerLoaded', function(source)
-	TriggerEvent('esx_license:getLicenses', source, function(licenses)
-		TriggerClientEvent('esx_dmvschool:loadLicenses', source, licenses)
-	end)
-end)
-
 RegisterNetEvent('esx_dmvschool:addLicense')
 AddEventHandler('esx_dmvschool:addLicense', function(type)
 	local source = source
-
-	TriggerEvent('esx_license:addLicense', source, type, function()
-		TriggerEvent('esx_license:getLicenses', source, function(licenses)
-			TriggerClientEvent('esx_dmvschool:loadLicenses', source, licenses)
-		end)
-	end)
+	TriggerEvent('esx_license:addLicense', source, type)
 end)
-
