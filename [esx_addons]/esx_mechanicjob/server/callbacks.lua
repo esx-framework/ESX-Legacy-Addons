@@ -1,0 +1,11 @@
+ESX.RegisterServerCallback('esx_mechanicjob:getStockItems', function(source, cb)
+	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_mechanic', function(inventory)
+		cb(inventory.items)
+	end)
+end)
+
+ESX.RegisterServerCallback('esx_mechanicjob:getPlayerInventory', function(source, cb)
+	local xPlayer    = ESX.Player(source)
+	local items      = xPlayer.getInventory(false)
+	cb({items = items})
+end)
