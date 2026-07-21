@@ -1,18 +1,16 @@
+---@diagnostic disable: undefined-global
 Locales['hu'] = {
   ['shop'] = 'Bolt',
-  ['shops'] = 'Bolt',
-  ['press_menu'] = 'Nyomd meg a [%s] gombot hogy megnézd a kinálatot',
-  ['shop_item'] = '$%s',
-  ['bought'] = 'Vettél %sx %s ennyiért: ~r~$%s',
-  ['not_enough'] = 'Nincsen elég pénzed',
-  ['player_cannot_hold'] = 'Nincsen elég szabad helyed!',
-  ['shop_confirm'] = 'Veszel %sx %s ennyiért $%s?',
-  ['no'] = 'Nem',
-  ['yes'] = 'Igen',
-  ['amount'] = 'Mennyiség',
-  ['amount_placeholder'] = 'Amennyit szeretnél',
-  ['confirm'] = 'Megerősítés',
-  ['purchase'] = 'Vásárlás',
-  ['bread'] = 'Kenyér',
-  ['water'] = 'Palackos víz',
+
+  ['open_shop_help'] = 'Nyomd meg a ~INPUT_CONTEXT~ gombot a bolt megnyitásához',
+  ['player_not_found'] = 'Játékos nem található',
+  ['cart_empty'] = 'A kosár üres',
+  ['invalid_cart_entry'] = 'Érvénytelen kosár bejegyzés',
+  ['invalid_item_data'] = 'Érvénytelen tárgy adatok',
+  ['unknown_item'] = 'Ismeretlen tárgy: %s',
+  ['invalid_quantity'] = 'Érvénytelen mennyiség',
+  ['not_enough_cash'] = 'Nincs elég készpénz',
+  ['not_enough_bank'] = 'Elégtelen bankszámla egyenleg',
+  ['purchase_success'] = 'Sikeres vásárlás'
+
 }
