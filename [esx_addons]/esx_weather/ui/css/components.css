@@ -1,0 +1,212 @@
+/**
+ * Component Styles
+ * Current Zone Info, Zone Cards, Badges, Icons
+ */
+
+/* ==================== Current Zone Info ==================== */
+.current-zone-info {
+    background: var(--darkest-color);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    position: relative;
+    overflow: hidden;
+    border: 0.0625rem solid rgba(255, 255, 255, 0.1);
+    min-height: 6rem;
+}
+
+.current-zone-info::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+    z-index: 0;
+}
+
+.current-zone-info > * {
+    position: relative;
+    z-index: 1;
+}
+
+.current-zone-icon {
+    width: 4rem;
+    height: 4rem;
+    color: var(--lightest-color);
+    filter: drop-shadow(0 0.25rem 0.75rem rgba(0, 0, 0, 0.5));
+    flex-shrink: 0;
+}
+
+.current-zone-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.current-zone-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.0625rem;
+    font-weight: 600;
+}
+
+.current-zone-name {
+    color: var(--lightest-color);
+    font-size: var(--font-size-h2);
+    font-weight: 700;
+    text-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.7);
+    line-height: 1;
+}
+
+.current-zone-weather {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: var(--font-size-h6);
+    text-transform: uppercase;
+    letter-spacing: 0.125rem;
+    font-weight: 500;
+}
+
+/* ==================== Zone Cards ==================== */
+.zone-card {
+    background: var(--darkest-color);
+    border: 0.0625rem solid rgba(var(--mid-color), 0.5);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-height: 11rem;
+    z-index: 1;
+}
+
+.zone-card:has(.custom-select.active),
+.zone-card.dropdown-active {
+    z-index: 100;
+}
+
+.zone-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    z-index: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.zone-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.zone-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-0.25rem) scale(1.02);
+}
+
+.zone-card:hover::before {
+    opacity: 1;
+}
+
+.zone-card.current {
+    border-color: var(--brand-color);
+    background: rgba(var(--brand-color-rgb), 0.03);
+}
+
+.weather-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    margin-bottom: var(--spacing-xs);
+    color: var(--lightest-color);
+    filter: drop-shadow(0 0.25rem 0.5rem rgba(0, 0, 0, 0.3));
+}
+
+.zone-card-header {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+}
+
+.zone-card-title {
+    font-size: var(--font-size-h5);
+    color: var(--lightest-color);
+    font-weight: 600;
+    text-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5);
+}
+
+.zone-card-body {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-top: auto;
+}
+
+/* ==================== Badges ==================== */
+.current-badge {
+    background: var(--brand-color);
+    color: var(--darkest-color);
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.0625rem;
+    box-shadow: 0 0.125rem 0.5rem rgba(var(--brand-color-rgb), 0.5);
+}
+
+/* ==================== Weather Gradients ==================== */
+.weather-clear,
+.weather-extrasunny {
+    background: linear-gradient(135deg, #FFA726 0%, #FF6F00 100%);
+}
+
+.weather-rain {
+    background: linear-gradient(135deg, #42A5F5 0%, #1565C0 100%);
+}
+
+.weather-thunder {
+    background: linear-gradient(135deg, #5C6BC0 0%, #283593 100%);
+}
+
+.weather-clouds,
+.weather-overcast {
+    background: linear-gradient(135deg, #78909C 0%, #455A64 100%);
+}
+
+.weather-foggy,
+.weather-smog {
+    background: linear-gradient(135deg, #90A4AE 0%, #607D8B 100%);
+}
+
+.weather-snow,
+.weather-snowlight,
+.weather-blizzard {
+    background: linear-gradient(135deg, #E3F2FD 0%, #90CAF9 100%);
+}
+
+.weather-xmas {
+    background: linear-gradient(135deg, #EF5350 0%, #C62828 100%);
+}
+
+.weather-neutral {
+    background: linear-gradient(135deg, var(--mid-color) 0%, var(--darkest-color) 100%);
+}
+
+.weather-info {
+    display: none;
+}

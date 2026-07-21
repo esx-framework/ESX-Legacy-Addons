@@ -1,0 +1,44 @@
+/**
+ * Responsive Styles
+ * Media Queries & Breakpoints
+ */
+
+@media screen and (max-width: 1279px) {
+    html {
+        font-size: 14px;
+    }
+}
+
+@media screen and (min-width: 1280px) and (max-width: 1919px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+@media screen and (min-width: 1920px) and (max-width: 2559px) {
+    html {
+        font-size: 18px;
+    }
+}
+
+@media screen and (min-width: 2560px) {
+    html {
+        font-size: 20px;
+    }
+}
+
+@media screen and (max-width: 1280px) {
+    .zones-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .modal {
+        width: 95%;
+    }
+
+    .zones-grid {
+        grid-template-columns: 1fr;
+    }
+}

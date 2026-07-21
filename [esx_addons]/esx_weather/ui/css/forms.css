@@ -1,0 +1,305 @@
+/**
+ * Form Styles
+ * Form Elements, Select, Buttons
+ */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.form-label {
+    color: var(--light-color);
+    font-size: var(--font-size-h6);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03125rem;
+}
+
+.form-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-sm);
+    color: var(--lightest-color);
+    font-family: var(--font-family);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23F2F2F2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    padding-right: 2rem;
+}
+
+.form-select:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--brand-color);
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.form-select option {
+    background: var(--dark-color);
+    color: var(--lightest-color);
+    padding: 0.5rem;
+}
+
+/* ==================== Custom Dropdown ==================== */
+.custom-select {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select-trigger {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-sm);
+    color: var(--lightest-color);
+    font-family: var(--font-family);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    user-select: none;
+}
+
+.custom-select-trigger::after {
+    content: '';
+    position: absolute;
+    right: 0.5rem;
+    width: 0.75rem;
+    height: 0.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23F2F2F2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: transform var(--transition-fast);
+}
+
+.custom-select.active .custom-select-trigger::after {
+    transform: rotate(180deg);
+}
+
+.custom-select-trigger:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.custom-select.active .custom-select-trigger {
+    border-color: var(--brand-color);
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.custom-select-trigger svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+.custom-select-dropdown {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    right: 0;
+    background: var(--dark-color);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-sm);
+    max-height: 20rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    z-index: 1002;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-0.5rem);
+    transition: all var(--transition-normal);
+}
+
+.custom-select.active .custom-select-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.custom-select-dropdown::-webkit-scrollbar {
+    width: 0.5rem;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-track {
+    background: var(--darkest-color);
+    border-radius: 0.25rem;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-thumb {
+    background: var(--mid-color);
+    border-radius: 0.25rem;
+    transition: background var(--transition-fast);
+}
+
+.custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+    background: var(--brand-color);
+}
+
+.custom-option {
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--lightest-color);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    user-select: none;
+    min-height: 2.25rem;
+    border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.05);
+}
+
+.custom-option:last-child {
+    border-bottom: none;
+}
+
+.custom-option span {
+    pointer-events: none;
+}
+
+/* ==================== Slide Animations ==================== */
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(1rem);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-1rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.custom-select-trigger span {
+    display: inline-block;
+    transition: none;
+}
+
+.custom-select-trigger span.slide-out {
+    animation: slideOutRight 200ms ease-out forwards;
+}
+
+.custom-select-trigger span.slide-in {
+    animation: slideInLeft 200ms ease-out forwards;
+}
+
+.custom-select-trigger i,
+.custom-select-trigger svg,
+.custom-select-trigger .custom-select-icon {
+    transition: opacity 350ms ease-in-out, transform 350ms ease-in-out;
+}
+
+.custom-select-trigger i.icon-fade,
+.custom-select-trigger svg.icon-fade,
+.custom-select-trigger .custom-select-icon.icon-fade {
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.custom-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--brand-color);
+}
+
+.custom-option.selected {
+    background: rgba(var(--brand-color-rgb), 0.2);
+    color: var(--brand-color);
+}
+
+.custom-option.selected::after {
+    content: '';
+    width: 0.875rem;
+    height: 0.875rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FB9B04' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+/* ==================== Buttons ==================== */
+.btn {
+    padding: 0.5rem 1rem;
+    font-family: var(--font-family);
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 0.0625rem solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.0625rem;
+    width: 100%;
+}
+
+.btn-primary {
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--lightest-color);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--brand-color);
+    color: var(--darkest-color);
+    border-color: var(--brand-color);
+    transform: translateY(-0.0625rem);
+    box-shadow: 0 0.25rem 0.75rem rgba(var(--brand-color-rgb), 0.4);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background: var(--mid-color);
+    color: var(--lightest-color);
+    border-color: var(--mid-color);
+}
+
+.btn-secondary:hover {
+    background: transparent;
+    border-color: var(--mid-color);
+}
+
+.btn:disabled {
+    background: var(--light-color);
+    color: var(--lightest-color);
+    border-color: var(--light-color);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn:disabled:hover {
+    background: var(--light-color);
+    border-color: var(--light-color);
+    transform: none;
+}
