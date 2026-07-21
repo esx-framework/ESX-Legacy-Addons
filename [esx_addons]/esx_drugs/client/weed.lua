@@ -1,231 +1,125 @@
-local spawnedWeeds = 0
-local weedPlants = {}
-local isPickingUp, isProcessing = false, false
-local textShow = false
-local pickupTextShow = false
+do
+    local isPickingUp, isProcessing = false, false
+    local processPoint = ESX.Point:new({
+        coords = Config.CircleZones.WeedProcessing.coords,
+        distance = 2,
+        enter = function()
+            if not isProcessing then
+                ESX.TextUI(TranslateCap('weed_processprompt'))
+            end
+        end,
+        leave = function()
+            ESX.HideUI()
+        end,
+        inside = function(self)
+            if IsControlJustReleased(0, 38) and not isProcessing then
+                ESX.TriggerServerCallback('esx_drugs:cannabis_count', function(xCannabis)
+                    if Config.LicenseEnable then
+                        ESX.TriggerServerCallback('esx_license:checkLicense', function(hasProcessingLicense)
+                            if hasProcessingLicense then
+                                ProcessWeed(xCannabis)
+                            else
+                                OpenBuyLicenseMenu('weed_processing')
+                            end
+                        end, GetPlayerServerId(PlayerId()), 'weed_processing')
+                    else
+                        ProcessWeed(xCannabis)
+                    end
+                end)
+            end
+        end
+    })
 
-CreateThread(function()
-	while true do
-		Wait(700)
-		local coords = GetEntityCoords(PlayerPedId())
+    local pickupTextShown = false
 
-		if #(coords - Config.CircleZones.WeedField.coords) < 50 then
-			SpawnWeedPlants()
-		end
-	end
-end)
+    local pickupPoint = ESX.Point:new({
+        coords = Config.CircleZones.WeedField.coords,
+        distance = 100.0,
+        inside = function(self)
+            local playerPed = PlayerPedId()
+            local coords = GetEntityCoords(playerPed)
+            local modelHash = GetHashKey('prop_weed_02')
+            local nearbyObject = GetClosestObjectOfType(coords.x, coords.y, coords.z, 10.0, modelHash, false, false, false)
 
-CreateThread(function()
-	while true do
-		local wait = 1000
-		local playerPed = PlayerPedId()
-		local coords = GetEntityCoords(playerPed)
+            if not DoesEntityExist(nearbyObject) then
+                ESX.HideUI()
+                pickupTextShown = false
+                return
+            end
 
-		if #(coords - Config.CircleZones.WeedProcessing.coords) < 1 then
-			wait = 2
-			if not isProcessing then
-				if not textShow then
-					ESX.TextUI(TranslateCap('weed_processprompt'))
-					textShow = true
-				end
-			else
-				if textShow then
-					ESX.HideUI()
-					textShow = false
-				end
-			end
+            PlaceObjectOnGroundProperly(nearbyObject)
 
-			if IsControlJustReleased(0, 38) and not isProcessing then
-				ESX.TriggerServerCallback('esx_drugs:cannabis_count', function(xCannabis)
-					if Config.LicenseEnable then
-						ESX.TriggerServerCallback('esx_license:checkLicense', function(hasProcessingLicense)
-							if hasProcessingLicense then
-								ProcessWeed(xCannabis)
-							else
-								OpenBuyLicenseMenu('weed_processing')
-							end
-						end, GetPlayerServerId(PlayerId()), 'weed_processing')
-					else
-						ProcessWeed(xCannabis)
-					end
-				end)
-			end
-		else
-			if textShow then
-				ESX.HideUI()
-				textShow = false
-			end
-		end
-		Wait(wait)
-	end
-end)
+            local entity = Entity(nearbyObject)
+            local plantId, active = entity.state.plantId, entity.state.active
 
-function ProcessWeed(xCannabis)
-	isProcessing = true
-	ESX.ShowNotification(TranslateCap('weed_processingstarted'))
-  TriggerServerEvent('esx_drugs:processCannabis')
-	if(xCannabis <= 3) then
-		xCannabis = 0
-	end
-  local timeLeft = (Config.Delays.WeedProcessing * xCannabis) / 1000
-	local playerPed = PlayerPedId()
+            if not plantId or not active then
+                ESX.HideUI()
+                pickupTextShown = false
+                return
+            end
 
-	while timeLeft > 0 do
-		Wait(1000)
-		timeLeft = timeLeft - 1
+            local dist = #(coords - GetEntityCoords(nearbyObject))
 
-		if #(GetEntityCoords(playerPed) - Config.CircleZones.WeedProcessing.coords) > 4 then
-			ESX.ShowNotification(TranslateCap('weed_processingtoofar'))
-			TriggerServerEvent('esx_drugs:cancelProcessing')
-			TriggerServerEvent('esx_drugs:outofbound')
-			break
-		end
-	end
+            if dist >= 1.5 then
+                ESX.HideUI()
+                pickupTextShown = false
+                return
+            end
 
-	isProcessing = false
-end
+            if not isPickingUp and not pickupTextShown then
+                ESX.TextUI(TranslateCap('weed_pickupprompt'))
+                pickupTextShown = true
+            end
 
-CreateThread(function()
-	while true do
-		local Sleep = 1500
+            if not IsControlJustReleased(0, 38) or isPickingUp then
+                return
+            end
 
-		local playerPed = PlayerPedId()
-		local coords = GetEntityCoords(playerPed)
-		local nearbyObject, nearbyID
+            isPickingUp = true
+            ESX.TriggerServerCallback('esx_drugs:canPickUp', function(canPickUp, qty)
+                if not canPickUp then
+                    ESX.ShowNotification(TranslateCap('weed_inventoryfull'))
+                    isPickingUp = false
+                    return
+                end
 
-		for i=1, #weedPlants, 1 do
-			if #(coords - GetEntityCoords(weedPlants[i])) < 1.5 then
-				nearbyObject, nearbyID = weedPlants[i], i
-			end
-		end
+                TaskStartScenarioInPlace(playerPed, 'world_human_gardener_plant', 0, false)
+                Wait(2000)
+                ClearPedTasks(playerPed)
+                Wait(1500)
 
-		if nearbyObject and IsPedOnFoot(playerPed) then
-			Sleep = 0
-			if not isPickingUp then
-				if not pickupTextShow then
-					ESX.TextUI(TranslateCap('weed_pickupprompt'))
-					pickupTextShow = true
-				end
-			else
-				if pickupTextShow then
-					ESX.HideUI()
-					pickupTextShow = false
-				end
-			end
+                TriggerServerEvent('esx_drugs:pickupWeedPlant', plantId, qty)
+                ESX.HideUI()
+                pickupTextShown = false
+                isPickingUp = false
+            end, 'cannabis')
+        end,
 
-			if IsControlJustReleased(0, 38) and not isPickingUp then
-				isPickingUp = true
-
-				ESX.TriggerServerCallback('esx_drugs:canPickUp', function(canPickUp)
-					if canPickUp then
-						TaskStartScenarioInPlace(playerPed, 'world_human_gardener_plant', 0, false)
-
-						Wait(2000)
-						ClearPedTasks(playerPed)
-						Wait(1500)
-		
-						ESX.Game.DeleteObject(nearbyObject)
-		
-						table.remove(weedPlants, nearbyID)
-						spawnedWeeds = spawnedWeeds - 1
-		
-						TriggerServerEvent('esx_drugs:pickedUpCannabis')
-					else
-						ESX.ShowNotification(TranslateCap('weed_inventoryfull'))
-					end
-
-					isPickingUp = false
-				end, 'cannabis')
-			end
-		else
-			if pickupTextShow then
-				ESX.HideUI()
-				pickupTextShow = false
-			end
-		end
-		Wait(Sleep)
-	end
-end)
-
-AddEventHandler('onResourceStop', function(resource)
-	if resource == GetCurrentResourceName() then
-		for k, v in pairs(weedPlants) do
-			ESX.Game.DeleteObject(v)
-		end
-	end
-end)
-
-function SpawnWeedPlants()
-	while spawnedWeeds < 25 do
-		Wait(0)
-		local weedCoords = GenerateWeedCoords()
-
-		ESX.Game.SpawnLocalObject('prop_weed_02', weedCoords, function(obj)
-			PlaceObjectOnGroundProperly(obj)
-			FreezeEntityPosition(obj, true)
-
-			table.insert(weedPlants, obj)
-			spawnedWeeds = spawnedWeeds + 1
-		end)
-	end
-end
-
-function ValidateWeedCoord(plantCoord)
-	if spawnedWeeds > 0 then
-		local validate = true
-
-		for k, v in pairs(weedPlants) do
-			if #(plantCoord - GetEntityCoords(v)) < 5 then
-				validate = false
-			end
-		end
-
-		if #(plantCoord - Config.CircleZones.WeedField.coords) > 50 then
-			validate = false
-		end
-
-		return validate
-	else
-		return true
-	end
-end
-
-function GenerateWeedCoords()
-	while true do
-		Wait(0)
-
-		local weedCoordX, weedCoordY
-
-		math.randomseed(GetGameTimer())
-		local modX = math.random(-90, 90)
-
-		Wait(100)
-
-		math.randomseed(GetGameTimer())
-		local modY = math.random(-90, 90)
-
-		weedCoordX = Config.CircleZones.WeedField.coords.x + modX
-		weedCoordY = Config.CircleZones.WeedField.coords.y + modY
-
-		local coordZ = GetCoordZ(weedCoordX, weedCoordY)
-		local coord = vector3(weedCoordX, weedCoordY, coordZ)
-
-		if ValidateWeedCoord(coord) then
-			return coord
-		end
-	end
-end
-
-function GetCoordZ(x, y)
-	local groundCheckHeights = { 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0 }
-
-	for i, height in ipairs(groundCheckHeights) do
-		local foundGround, z = GetGroundZFor_3dCoord(x, y, height)
-
-		if foundGround then
-			return z
-		end
-	end
-
-	return 43.0
+        leave = function()
+            ESX.HideUI()
+            pickupTextShown = false
+        end
+    })
+    
+    function ProcessWeed(xCannabis)
+        isProcessing = true
+        ESX.ShowNotification(TranslateCap('weed_processingstarted'))
+        TriggerServerEvent('esx_drugs:processCannabis')
+        if xCannabis <= 3 then
+            xCannabis = 0
+        end
+        local timeLeft = (Config.Delays.WeedProcessing * xCannabis) / 1000
+        local playerPed = PlayerPedId()
+        while timeLeft > 0 do
+            Wait(1000)
+            timeLeft = timeLeft - 1
+            if #(GetEntityCoords(playerPed) - Config.CircleZones.WeedProcessing.coords) > 4 then
+                ESX.ShowNotification(TranslateCap('weed_processingtoofar'))
+                TriggerServerEvent('esx_drugs:cancelProcessing')
+                TriggerServerEvent('esx_drugs:outofbound')
+                break
+            end
+        end
+        isProcessing = false
+    end
 end
