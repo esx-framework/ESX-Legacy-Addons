@@ -119,7 +119,7 @@ function OpenLSMenu(elems, menuName, menuTitle, parent)
         if not found then
             GetAction(data.current)
         end
-    end, function(data, menu) -- on cancel
+    end, function(data, menu)
         menu.close()
         TriggerEvent('esx_lscustom:cancelInstallMod')
 
@@ -134,7 +134,7 @@ function OpenLSMenu(elems, menuName, menuTitle, parent)
             TriggerServerEvent('esx_lscustom:stopModing', myCar.plate)
             myCar = {}
         end
-    end, function(data, menu) -- on change
+    end, function(data, menu)
         UpdateMods(data.current)
     end)
 end
@@ -148,7 +148,7 @@ function UpdateMods(data)
         if data.wheelType then
             props['wheels'] = data.wheelType
 
-            if GetVehicleClass(vehicle) == 8 then -- Fix bug wheels for bikes.
+            if GetVehicleClass(vehicle) == 8 then
                 props['modBackWheels'] = data.modNum
             end
 
@@ -228,7 +228,7 @@ function GetAction(data)
                         modType = k,
                         modNum = false
                    }
-                elseif v.modType == 'neonColor' or v.modType == 'tyreSmokeColor' then -- disable neon
+                elseif v.modType == 'neonColor' or v.modType == 'tyreSmokeColor' then
                     elements[#elements + 1] = {
                         label = " " .. TranslateCap('by_default'),
                         modType = k,
@@ -272,7 +272,7 @@ function GetAction(data)
                    }
                 end
 
-                if v.modType == 14 then -- HORNS
+                if v.modType == 14 then
                     for j = 0, 51, 1 do
                         local _label = ''
                         if j == currentMods.modHorns then
@@ -288,7 +288,7 @@ function GetAction(data)
                             modNum = j
                        }
                     end
-                elseif v.modType == 'plateIndex' then -- PLATES
+                elseif v.modType == 'plateIndex' then
                     local maxJ = 5
                     if gameBuild >= 3095 then
                         maxJ = 12
@@ -309,7 +309,7 @@ function GetAction(data)
                             modNum = j
                         }
 		    end
-                elseif v.modType == 22 then -- NEON
+                elseif v.modType == 22 then
                     local _label = ''
                     if currentMods.modXenon then
                         _label = TranslateCap('neon') .. ' - <span style="color:cornflowerblue;">' .. TranslateCap('installed') .. '</span>'
@@ -322,7 +322,7 @@ function GetAction(data)
                         modType = k,
                         modNum = true
                    }
-                elseif v.modType == 'xenonColor' then -- XENON COLOR
+                elseif v.modType == 'xenonColor' then
                     local xenonColors = GetXenonColors()
                     price = math.floor(vehiclePrice * v.price / 100)
                     for i = 1, #xenonColors, 1 do
@@ -332,7 +332,7 @@ function GetAction(data)
                             modNum = xenonColors[i].index
                        }
                     end
-                elseif v.modType == 'neonColor' or v.modType == 'tyreSmokeColor' then -- NEON & SMOKE COLOR
+                elseif v.modType == 'neonColor' or v.modType == 'tyreSmokeColor' then
                     local neons = GetNeons()
                     price = math.floor(vehiclePrice * v.price / 100)
                     for i = 1, #neons, 1 do
@@ -344,7 +344,7 @@ function GetAction(data)
                        }
                     end
                 elseif v.modType == 'color1' or v.modType == 'color2' or v.modType == 'pearlescentColor' or v.modType ==
-                    'wheelColor' then -- RESPRAYS
+                    'wheelColor' then
                     local colors = GetColors(data.color)
                     for j = 1, #colors, 1 do
                         local _label = ''
@@ -356,7 +356,7 @@ function GetAction(data)
                             modNum = colors[j].index
                        }
                     end
-                elseif v.modType == 'windowTint' then -- WINDOWS TINT
+                elseif v.modType == 'windowTint' then
                     for j = 1, 5, 1 do
                         local _label = ''
                         if j == currentMods.windowTint then
@@ -372,7 +372,7 @@ function GetAction(data)
                             modNum = j
                        }
                     end
-                elseif v.modType == 23 then -- WHEELS RIM & TYPE
+                elseif v.modType == 23 then
                     local props = {}
 
                     props['wheels'] = v.wheelType
@@ -400,7 +400,7 @@ function GetAction(data)
                            }
                         end
                     end
-		elseif v.modType == 24 then -- MOTORCYCLES BACK WHEELS
+		elseif v.modType == 24 then
                     local props = {}
 
                     props['wheels'] = v.wheelType
@@ -430,7 +430,7 @@ function GetAction(data)
                     end
                 elseif v.modType == 11 or v.modType == 12 or v.modType == 13 or v.modType == 15 or v.modType == 16 then
                     SetVehicleModKit(vehicle, 0)
-                    local modCount = GetNumVehicleMods(vehicle, v.modType) -- UPGRADES
+                    local modCount = GetNumVehicleMods(vehicle, v.modType)
                     for j = 0, modCount, 1 do
                         local _label = ''
                         if j == currentMods[k] then
@@ -450,7 +450,7 @@ function GetAction(data)
                             break
                         end
                     end
-                elseif v.modType == 17 then -- TURBO
+                elseif v.modType == 17 then
                     local _label = ''
                     if currentMods[k] then
                         _label = 'Turbo - <span style="color:cornflowerblue;">' .. TranslateCap('installed') .. '</span>'
@@ -465,7 +465,7 @@ function GetAction(data)
                         modNum = true
                    }
                 else
-                    local modCount = GetNumVehicleMods(vehicle, v.modType) -- BODYPARTS
+                    local modCount = GetNumVehicleMods(vehicle, v.modType)
                     for j = 0, modCount, 1 do
                         local modName = GetModTextLabel(vehicle, v.modType, j)
                         if modName then
@@ -538,7 +538,6 @@ function GetAction(data)
     OpenLSMenu(elements, menuName, menuTitle, parent)
 end
 
--- Blips
 CreateThread(function()
     for k, v in pairs(Config.Zones) do
         local blip = AddBlipForCoord(v.Pos.x, v.Pos.y, v.Pos.z)
@@ -553,7 +552,6 @@ CreateThread(function()
     end
 end)
 
--- Activate menu when player is inside marker
 CreateThread(function()
     while true do
         local Sleep = 1500
@@ -589,7 +587,6 @@ CreateThread(function()
                                     value = 'main'
                                 })
 
-                                -- Prevent Free Tunning Bug
                                 CreateThread(function()
                                     while true do
                                         local Sleep = 1000
@@ -601,8 +598,8 @@ CreateThread(function()
                                             DisableControlAction(2, 167, true)
                                             DisableControlAction(2, 168, true)
                                             DisableControlAction(2, 23, true)
-                                            DisableControlAction(0, 75, true) -- Disable exit vehicle
-                                            DisableControlAction(27, 75, true) -- Disable exit vehicle
+                                            DisableControlAction(0, 75, true)
+                                            DisableControlAction(27, 75, true)
                                         end
                                         Wait(Sleep)
                                     end
@@ -615,6 +612,11 @@ CreateThread(function()
                     HintDisplayed = false
                     ESX.HideUI()
                 end
+            end
+        else
+            if HintDisplayed then
+                HintDisplayed = false
+                ESX.HideUI()
             end
         end
         Wait(Sleep)
