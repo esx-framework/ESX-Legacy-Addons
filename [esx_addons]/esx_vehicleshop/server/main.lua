@@ -149,17 +149,18 @@ AddEventHandler('esx_vehicleshop:putStockItems', function(itemName, count)
 	end)
 end)
 
-ESX.RegisterServerCallback('esx_vehicleshop:buyVehicle', function(source, cb, model, plate)
+ESX.RegisterServerCallback('esx_vehicleshop:buyVehicle', function(source, cb, model, props)
 	local xPlayer = ESX.Player(source)
 	local modelPrice = getVehicleFromModel(model).price
 
 	if modelPrice and xPlayer.getMoney() >= modelPrice then
+		props.model = model
 		xPlayer.removeMoney(modelPrice, "Vehicle Purchase")
 
-		MySQL.insert('INSERT INTO owned_vehicles (owner, plate, vehicle) VALUES (?, ?, ?)', {xPlayer.getIdentifier(), plate, json.encode({model = joaat(model), plate = plate})
+		MySQL.insert('INSERT INTO owned_vehicles (owner, plate, vehicle) VALUES (?, ?, ?)', {xPlayer.getIdentifier(), props.plate, json.encode(props)
 		}, function(rowsChanged)
-			xPlayer.showNotification(TranslateCap('vehicle_belongs', plate))
-			ESX.OneSync.SpawnVehicle(joaat(model), Config.Zones.ShopOutside.Pos, Config.Zones.ShopOutside.Heading,{plate = plate}, function(vehicle)
+			xPlayer.showNotification(TranslateCap('vehicle_belongs', props.plate))
+			ESX.OneSync.SpawnVehicle(joaat(model), Config.Zones.ShopOutside.Pos, Config.Zones.ShopOutside.Heading, props, function(vehicle)
 				Wait(100)
 				local vehicle = NetworkGetEntityFromNetworkId(vehicle)
 				Wait(300)
