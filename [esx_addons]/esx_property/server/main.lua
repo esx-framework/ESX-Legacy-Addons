@@ -235,7 +235,7 @@ ESX.RegisterServerCallback("esx_property:attemptSellToPlayer", function(source, 
       exports.ox_inventory:RegisterStash("property-" .. PropertyId, Properties[PropertyId].Name, 15, 100000, xTarget.identifier)
     end
     if PM.Enabled then
-      local PlayerPrice = Price * PM.SalePercentage
+      local PlayerPrice = ESX.Math.Round(Price * PM.SalePercentage)
       local SocietyPrice = Price - PlayerPrice
       TriggerEvent('esx_addonaccount:getSharedAccount', PM.society, function(account)
         account.addMoney(SocietyPrice)
