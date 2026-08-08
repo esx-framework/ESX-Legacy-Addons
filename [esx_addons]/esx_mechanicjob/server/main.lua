@@ -287,14 +287,13 @@ AddEventHandler('esx_mechanicjob:putStockItems', function(itemName, count)
 		local item = inventory.getItem(itemName)
 		local playerItemCount = xPlayer.getInventoryItem(itemName).count
 
-		if item.count >= 0 and count <= playerItemCount then
+		if count > 0 and count <= playerItemCount then
 			xPlayer.removeInventoryItem(itemName, count)
 			inventory.addItem(itemName, count)
+			xPlayer.showNotification(TranslateCap('have_deposited', count, item.label))
 		else
 			xPlayer.showNotification(TranslateCap('invalid_quantity'))
 		end
-
-		xPlayer.showNotification(TranslateCap('have_deposited', count, item.label))
 	end)
 end)
 
