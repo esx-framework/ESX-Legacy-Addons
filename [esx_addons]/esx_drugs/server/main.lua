@@ -1,5 +1,5 @@
 local playersProcessingCannabis = {}
-local outofbound = true
+local outofbound = {}
 local alive = true
 
 local function ValidatePickupCannabis(src)
@@ -101,7 +101,7 @@ end)
 
 RegisterServerEvent('esx_drugs:outofbound')
 AddEventHandler('esx_drugs:outofbound', function()
-	outofbound = true
+	outofbound[source] = true
 end)
 
 ESX.RegisterServerCallback('esx_drugs:cannabis_count', function(source, cb)
@@ -118,9 +118,9 @@ AddEventHandler('esx_drugs:processCannabis', function()
 			local xPlayer = ESX.Player(source)
 			local xCannabis = xPlayer.getInventoryItem('cannabis')
 			local can = true
-			outofbound = false
+			outofbound[source] = false
 			if xCannabis.count >= 3 then
-				while outofbound == false and can do
+				while outofbound[source] == false and can do
 					if playersProcessingCannabis[source] == nil then
 						playersProcessingCannabis[source] = ESX.SetTimeout(Config.Delays.WeedProcessing , function()
 							if xCannabis.count >= 3 then
@@ -157,6 +157,8 @@ AddEventHandler('esx_drugs:processCannabis', function()
 end)
 
 function CancelProcessing(playerId)
+	outofbound[playerId] = nil
+
 	if playersProcessingCannabis[playerId] then
 		ESX.ClearTimeout(playersProcessingCannabis[playerId])
 		playersProcessingCannabis[playerId] = nil
