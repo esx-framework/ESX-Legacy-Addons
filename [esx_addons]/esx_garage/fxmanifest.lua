@@ -5,7 +5,7 @@ author 'ESX-Framework'
 description 'Allows Players to Store & Retrieve their vehicles'
 
 version '1.0'
-legacyversion '1.13.5'
+legacyversion '1.14.1'
 
 lua54 'yes'
 

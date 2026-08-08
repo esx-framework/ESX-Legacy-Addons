@@ -5,7 +5,7 @@ game 'gta5'
 description 'Adds the ability to get drunk'
 lua54 'yes'
 version '1.0'
-legacyversion '1.13.5'
+legacyversion '1.14.1'
 
 shared_script '@es_extended/imports.lua'
 
