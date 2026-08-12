@@ -32,7 +32,7 @@ function CreateShopBlips()
 	DebugPrint(('[^2INFO^7] Created ^5%s^7 shop blips'):format(#shopBlips))
 end
 
----Removes all shop blips 
+---Removes all shop blips
 function RemoveShopBlips()
 	for i = 1, #shopBlips do
 		RemoveBlip(shopBlips[i])
@@ -40,7 +40,7 @@ function RemoveShopBlips()
 	shopBlips = {}
 end
 
--- Initialize blips after resource start 
+-- Initialize blips after resource start (ensures Config is fully loaded)
 AddEventHandler('onClientResourceStart', function(resourceName)
 	if resourceName == GetCurrentResourceName() then
 		CreateShopBlips()

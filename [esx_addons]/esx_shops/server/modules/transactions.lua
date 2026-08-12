@@ -25,6 +25,12 @@ function ProcessPurchase(source, purchaseData, zone, cb)
 		return
 	end
 
+	-- CRITICAL: Validate player is actually near the shop
+	if not ValidatePlayerDistance(source, zone) then
+		cb(false, _U('invalid_shop'))
+		return
+	end
+
 	-- Localize purchase data
 	local items = purchaseData.items
 	local clientTotal = purchaseData.total
@@ -57,8 +63,11 @@ function ProcessPurchase(source, purchaseData, zone, cb)
 		return
 	end
 
-	-- Check player has enough money
-	local hasEnough, missingAmount = CheckPlayerMoney(xPlayer, paymentMethod, serverTotal)
+	-- Calculate tax BEFORE checking money (so we check against actual amount)
+	local actualTotal, actualTax = CalculateTax(xPlayer, serverTotal)
+
+	-- Check player has enough money for the ACTUAL total (after tax)
+	local hasEnough, missingAmount = CheckPlayerMoney(xPlayer, paymentMethod, actualTotal)
 	if not hasEnough then
 		local message = _U('not_enough_money', ESX.Math.GroupDigits(missingAmount))
 		xPlayer.showNotification(message)
@@ -66,16 +75,28 @@ function ProcessPurchase(source, purchaseData, zone, cb)
 		return
 	end
 
-	-- Calculate tax
-	local actualTotal, actualTax = CalculateTax(xPlayer, serverTotal)
+	-- FINAL inventory check right before money deduction
+	-- Prevents race conditions where inventory changed between checks
+	if not ValidateInventorySpaceFinal(source, validatedItems) then
+		local message = _U('inventory_full')
+		xPlayer.showNotification(message)
+		cb(false, message)
+		return
+	end
 
-	-- Deduct money BEFORE adding items (security)
+	-- Process purchase: money deducted BEFORE adding items for security
 	DeductMoney(xPlayer, paymentMethod, actualTotal)
 
 	-- Add items to inventory
 	local itemsAdded = AddItemsToInventory(source, validatedItems)
 	if not itemsAdded then
+		-- CRITICAL: Items failed to add after money was deducted
+		-- Attempt refund to prevent player losing money
 		DebugPrint(_U('critical_transaction', source))
+		RefundMoney(xPlayer, paymentMethod, actualTotal)
+		DebugPrint(('[^2INFO^7] Refunded ^5$%s^7 to player ^5%s^7 due to item add failure'):format(
+			ESX.Math.GroupDigits(actualTotal), source
+		))
 		cb(false, _U('transaction_error'))
 		return
 	end

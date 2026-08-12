@@ -1,14 +1,14 @@
----Backward compatibility layer for esx_shops
-
--- GetShopItems (deprecated, use Config.Zones directly)
+-- Legacy export: GetShopItems (deprecated, use Config.Zones directly)
 exports('GetShopItems', function(zone)
+	if not Verify(zone, 'string') then return {} end
 	local zoneData = Config.Zones[zone]
 	if not zoneData then return {} end
 	return zoneData.Items
 end)
 
--- GetShopCategories (deprecated)
+-- Legacy export: GetShopCategories (deprecated)
 exports('GetShopCategories', function(zone)
+	if not Verify(zone, 'string') then return {} end
 	local zoneData = Config.Zones[zone]
 	if not zoneData then return {} end
 	return zoneData.Categories or {}
@@ -16,8 +16,8 @@ end)
 
 -- Legacy event: esx_shops:openShop (for external triggers)
 RegisterNetEvent('esx_shops:openShop', function(zone)
-	if not zone then
-		DebugPrint('[^3WARNING^7] esx_shops:openShop called without zone parameter')
+	if not Verify(zone, 'string') or zone == '' then
+		DebugPrint('[^3WARNING^7] esx_shops:openShop called without valid zone parameter')
 		return
 	end
 	-- This event is handled on client via the interaction system

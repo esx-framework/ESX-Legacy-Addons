@@ -3,15 +3,18 @@ local lastPlayerPos = nil
 local hasAlreadyEnteredMarker = false
 local lastZone = nil
 
+-- Distance thresholds
 local ENTER_DISTANCE = 2.0
 local EXIT_DISTANCE = 2.5
 
+-- Exports for other modules
 ShopMarkers = {
 	nearbyShops = nearbyShops,
 	hasAlreadyEnteredMarker = hasAlreadyEnteredMarker,
 	lastZone = lastZone
 }
 
+---Updates the nearby shops cache based on player position
 function UpdateNearbyShops()
 	local playerCoords = GetEntityCoords(ESX.PlayerData.ped)
 	local shouldUpdate = false
@@ -54,6 +57,19 @@ function UpdateNearbyShops()
 	ShopMarkers.nearbyShops = nearbyShops
 end
 
+---Recalculates live distance for a position (used when precision matters)
+---@param pos vector3
+---@return number liveDistance
+function GetLiveDistance(pos)
+	local playerCoords = GetEntityCoords(ESX.PlayerData.ped)
+	return #(playerCoords - pos)
+end
+
+---Draws markers and handles proximity detection with hysteresis
+---Uses cached distances for markers, but recalculates live distance for interaction checks
+---@return number sleepTime
+---@return boolean isInMarker
+---@return string|nil currentZone
 function DrawMarkersAndCheckProximity()
 	local sleep = Config.SleepFar
 	local playerCoords = GetEntityCoords(ESX.PlayerData.ped)
@@ -66,13 +82,13 @@ function DrawMarkersAndCheckProximity()
 		if zoneData then
 			for _, shopData in ipairs(locations) do
 				local pos = shopData.pos
-				local distance = shopData.distance
+				local cachedDistance = shopData.distance
 
-				if distance < closestDistance then
-					closestDistance = distance
+				if cachedDistance < closestDistance then
+					closestDistance = cachedDistance
 				end
 
-				if zoneData.ShowMarker and distance < 50.0 then
+				if zoneData.ShowMarker and cachedDistance < 50.0 then
 					DrawMarker(
 						Config.MarkerType,
 						pos.x, pos.y, pos.z,
@@ -84,14 +100,17 @@ function DrawMarkersAndCheckProximity()
 					)
 				end
 
+				-- For interaction checks, use LIVE distance to prevent stale cache issues
+				local liveDistance = GetLiveDistance(pos)
+
 				if hasAlreadyEnteredMarker then
-					if distance < EXIT_DISTANCE then
+					if liveDistance < EXIT_DISTANCE then
 						isInMarker = true
 						currentZone = zoneName
 						lastZone = zoneName
 					end
 				else
-					if distance < ENTER_DISTANCE then
+					if liveDistance < ENTER_DISTANCE then
 						isInMarker = true
 						currentZone = zoneName
 						lastZone = zoneName
@@ -110,15 +129,21 @@ function DrawMarkersAndCheckProximity()
 	return sleep, isInMarker, currentZone
 end
 
+---Gets the last zone the player was in
+---@return string|nil
 function GetLastZone()
 	return lastZone
 end
 
+---Sets the entered marker state
+---@param state boolean
 function SetEnteredMarker(state)
 	hasAlreadyEnteredMarker = state
 	ShopMarkers.hasAlreadyEnteredMarker = state
 end
 
+---Gets the entered marker state
+---@return boolean
 function GetMarkerState()
 	return hasAlreadyEnteredMarker
 end

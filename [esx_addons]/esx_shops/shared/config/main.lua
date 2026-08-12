@@ -32,7 +32,7 @@ Config.TaxRate = 0.19
 -- Enable/Disable tax collection to society account
 -- false = Tax is only displayed, not collected
 -- true = Tax is collected and deposited to society account
-Config.EnableTaxCollection = false
+Config.EnableTaxCollection = true
 
 -- Society account for tax collection (requires esx_addonaccount)
 -- Only used if Config.EnableTaxCollection = true
@@ -42,7 +42,7 @@ Config.TaxSocietyAccount = 'society_banker'
 -- Enable/Disable job-based tax exemptions
 -- false = Everyone pays full tax
 -- true = Jobs in TaxExemptJobs list pay 0% tax
-Config.EnableTaxExemptions = false
+Config.EnableTaxExemptions = true
 
 -- Jobs that are exempt from paying tax
 -- Only used if Config.EnableTaxExemptions = true

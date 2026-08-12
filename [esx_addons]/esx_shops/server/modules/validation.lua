@@ -1,4 +1,3 @@
--- Rate limiting state
 local playerPurchaseCooldowns = {}
 
 ---Checks if player is rate limited and auto-expires old entries
@@ -6,6 +5,10 @@ local playerPurchaseCooldowns = {}
 ---@return boolean isLimited
 ---@return number remainingMs Remaining cooldown in ms
 function IsPlayerRateLimited(source)
+	if not Verify(source, {'number', 'string'}) then
+		return false, 0
+	end
+
 	local currentTime = GetGameTimer()
 	local lastPurchase = playerPurchaseCooldowns[source]
 
@@ -31,6 +34,7 @@ end
 ---Updates player's last purchase time
 ---@param source number Player source
 function UpdatePurchaseTimestamp(source)
+	if not Verify(source, {'number', 'string'}) then return end
 	playerPurchaseCooldowns[source] = GetGameTimer()
 end
 
@@ -41,6 +45,10 @@ end
 ---@return number|nil price Gross price if item exists
 ---@return string|nil label Item label if exists
 function GetItemFromShop(itemName, zone)
+	if not Verify(itemName, 'string') or not Verify(zone, 'string') then
+		return false
+	end
+
 	local zoneData = Config.Zones[zone]
 	if not zoneData then return false end
 
@@ -65,15 +73,32 @@ end
 ---@return number serverTotal
 ---@return table[] validatedItems
 function ValidateAndCalculateItems(items, zone, source)
+	if not Verify(items, 'table') or not Verify(zone, 'string') then
+		return false, 0, {}
+	end
+
 	local itemCount = #items
 	local serverTotal = 0
 	local validatedItems = {}
 
 	for i = 1, itemCount do
 		local item = items[i]
+
+		-- Validate item structure
+		if not Verify(item, 'table') then
+			DebugPrint(('[^3WARNING^7] Player ^5%s^7 sent invalid item data'):format(source))
+			return false, 0, {}
+		end
+
 		local quantity = item.quantity
 		local clientPrice = item.price
 		local itemName = item.name
+
+		-- Validate field types
+		if not Verify(quantity, 'number') or not Verify(clientPrice, 'number') or not Verify(itemName, 'string') then
+			DebugPrint(('[^3WARNING^7] Player ^5%s^7 sent invalid item field types'):format(source))
+			return false, 0, {}
+		end
 
 		-- Validate quantity
 		if quantity <= 0 then
@@ -126,6 +151,11 @@ end
 ---@param source number Player source for logging
 ---@return boolean valid
 function ValidateTotal(serverTotal, clientTotal, source)
+	if not Verify(serverTotal, 'number') or not Verify(clientTotal, 'number') then
+		DebugPrint(('[^3WARNING^7] Player ^5%s^7 sent invalid total types'):format(source))
+		return false
+	end
+
 	if math.abs(serverTotal - clientTotal) > Config.PriceTolerance then
 		DebugPrint(_U('total_manipulation', source, serverTotal, clientTotal))
 		return false

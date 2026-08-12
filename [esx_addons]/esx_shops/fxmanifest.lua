@@ -1,11 +1,11 @@
 fx_version 'cerulean'
 game 'gta5'
 
-description 'ESX Shops - Modern shop system with NUI for ESX Legacy'
+description 'ESX Shops - Modern modular shop system with NUI for ESX Legacy'
 lua54 'yes'
 use_fxv2_oal 'yes'
 version '2.0.0'
-legacyversion '1.14.0'
+legacyversion '1.14.1'
 
 shared_scripts {
 	'@es_extended/imports.lua',
@@ -13,6 +13,7 @@ shared_scripts {
 	'shared/config/main.lua',
 	'shared/config/shops.lua',
 	'shared/functions.lua',
+	'shared/modules/*.lua',
 	'shared/compat.lua'
 }
 
