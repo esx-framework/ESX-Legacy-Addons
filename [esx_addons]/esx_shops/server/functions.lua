@@ -59,7 +59,7 @@ function ValidatePlayerDistance(source, zone)
 
 	local playerCoords = GetEntityCoords(ped)
 	local posCount = #zoneData.Pos
-	local maxDist = 5.0 -- Allow slight lag/network desync tolerance
+	local maxDist = 5.0
 
 	for i = 1, posCount do
 		local pos = zoneData.Pos[i]
@@ -107,7 +107,7 @@ function DeductMoney(xPlayer, paymentMethod, amount)
 	end
 end
 
----Refunds money to player (emergency use only)
+---Refunds money to player
 ---@param xPlayer table ESX player object
 ---@param paymentMethod string Payment method ('cash' or 'bank')
 ---@param amount number Amount to refund

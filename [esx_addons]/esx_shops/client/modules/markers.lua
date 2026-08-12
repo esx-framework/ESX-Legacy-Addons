@@ -3,18 +3,15 @@ local lastPlayerPos = nil
 local hasAlreadyEnteredMarker = false
 local lastZone = nil
 
--- Distance thresholds
 local ENTER_DISTANCE = 2.0
 local EXIT_DISTANCE = 2.5
 
--- Exports for other modules
 ShopMarkers = {
 	nearbyShops = nearbyShops,
 	hasAlreadyEnteredMarker = hasAlreadyEnteredMarker,
 	lastZone = lastZone
 }
 
----Updates the nearby shops cache based on player position
 function UpdateNearbyShops()
 	local playerCoords = GetEntityCoords(ESX.PlayerData.ped)
 	local shouldUpdate = false

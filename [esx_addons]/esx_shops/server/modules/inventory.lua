@@ -1,5 +1,3 @@
----Validates inventory space for all items with cumulative checking
----Prevents passing individual checks but failing total weight
 ---@param source number Player source
 ---@param items table[] Validated items to add
 ---@return boolean canCarry
@@ -33,7 +31,6 @@ function ValidateInventorySpace(source, items)
 	end
 end
 
----Re-validates inventory space immediately before adding items
 ---@param source number Player source
 ---@param items table[] Items to add
 ---@return boolean canCarry
@@ -41,7 +38,6 @@ function ValidateInventorySpaceFinal(source, items)
 	return ValidateInventorySpace(source, items)
 end
 
----Adds items to player inventory (supports ESX & ox_inventory)
 ---@param source number Player source
 ---@param items table[] Items to add
 ---@return boolean success Whether all items were added successfully

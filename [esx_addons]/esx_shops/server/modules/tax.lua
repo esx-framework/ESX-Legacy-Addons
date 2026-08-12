@@ -1,4 +1,3 @@
----Checks if player's job is tax exempt
 ---@param xPlayer table ESX player object
 ---@return boolean isExempt
 function IsJobTaxExempt(xPlayer)
@@ -51,7 +50,6 @@ function DepositTaxToSociety(taxAmount)
 	end)
 end
 
----Server callback: Get player's tax rate
 ESX.RegisterServerCallback('esx_shops:getTaxRate', function(source, cb)
 	local xPlayer = ESX.Player(source)
 	if not xPlayer then

@@ -18,7 +18,6 @@ function IsPlayerRateLimited(source)
 
 	local timeSinceLastPurchase = currentTime - lastPurchase
 
-	-- Auto-expire old entries on access (lazy cleanup)
 	if timeSinceLastPurchase > Config.CooldownExpiryMs then
 		playerPurchaseCooldowns[source] = nil
 		return false, 0
@@ -84,7 +83,6 @@ function ValidateAndCalculateItems(items, zone, source)
 	for i = 1, itemCount do
 		local item = items[i]
 
-		-- Validate item structure
 		if not Verify(item, 'table') then
 			DebugPrint(('[^3WARNING^7] Player ^5%s^7 sent invalid item data'):format(source))
 			return false, 0, {}
@@ -94,13 +92,11 @@ function ValidateAndCalculateItems(items, zone, source)
 		local clientPrice = item.price
 		local itemName = item.name
 
-		-- Validate field types
 		if not Verify(quantity, 'number') or not Verify(clientPrice, 'number') or not Verify(itemName, 'string') then
 			DebugPrint(('[^3WARNING^7] Player ^5%s^7 sent invalid item field types'):format(source))
 			return false, 0, {}
 		end
 
-		-- Validate quantity
 		if quantity <= 0 then
 			DebugPrint(_U('negative_quantity', source))
 			return false, 0, {}
@@ -113,20 +109,17 @@ function ValidateAndCalculateItems(items, zone, source)
 
 		quantity = ESX.Math.Round(quantity)
 
-		-- Validate item exists
 		local exists, serverPrice, label = GetItemFromShop(itemName, zone)
 		if not exists then
 			DebugPrint(_U('invalid_zone', source, itemName))
 			return false, 0, {}
 		end
 
-		-- Validate price is positive
 		if serverPrice <= 0 then
 			DebugPrint(_U('invalid_price', serverPrice, itemName, zone))
 			return false, 0, {}
 		end
 
-		-- Validate price matches (prevent client manipulation)
 		if serverPrice ~= clientPrice then
 			DebugPrint(_U('price_manipulation', source, itemName, serverPrice, clientPrice))
 			return false, 0, {}
