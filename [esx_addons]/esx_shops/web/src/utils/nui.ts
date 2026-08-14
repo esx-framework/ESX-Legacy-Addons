@@ -106,8 +106,11 @@ export async function fetchNui<T = unknown>(
     }
 
     // Parse JSON response
-    const json = await response.json() as T;
-    return { ok: true, data: json };
+    const json = await response.json() as NuiResponse<T>;
+    if (json && typeof json.ok === 'boolean') {
+      return json;
+    }
+    return { ok: true, data: json as T };
 
   } catch (error) {
     clearTimeout(timeoutId);

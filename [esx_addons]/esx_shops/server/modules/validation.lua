@@ -89,10 +89,9 @@ function ValidateAndCalculateItems(items, zone, source)
 		end
 
 		local quantity = item.quantity
-		local clientPrice = item.price
 		local itemName = item.name
 
-		if not Verify(quantity, 'number') or not Verify(clientPrice, 'number') or not Verify(itemName, 'string') then
+		if not Verify(quantity, 'number') or not Verify(itemName, 'string') then
 			DebugPrint(('[^3WARNING^7] Player ^5%s^7 sent invalid item field types'):format(source))
 			return false, 0, {}
 		end
@@ -117,11 +116,6 @@ function ValidateAndCalculateItems(items, zone, source)
 
 		if serverPrice <= 0 then
 			DebugPrint(_U('invalid_price', serverPrice, itemName, zone))
-			return false, 0, {}
-		end
-
-		if serverPrice ~= clientPrice then
-			DebugPrint(_U('price_manipulation', source, itemName, serverPrice, clientPrice))
 			return false, 0, {}
 		end
 
