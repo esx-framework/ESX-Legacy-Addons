@@ -5,7 +5,7 @@ game 'gta5'
 description "A DMV School for players to get their drivers license"
 
 version '1.0'
-legacyversion '1.13.4'
+legacyversion '1.14.1'
 
 lua54 'yes'
 

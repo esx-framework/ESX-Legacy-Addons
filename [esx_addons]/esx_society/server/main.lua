@@ -70,6 +70,10 @@ AddEventHandler('esx_society:withdrawMoney', function(societyName, amount)
 	end
 
 	TriggerEvent('esx_addonaccount:getSharedAccount', society.account, function(account)
+		if not account then
+			return print(('[^3WARNING^7] Society ^5%s^7 has no shared account!'):format(society.name))
+		end
+
 		if amount > 0 and account.money >= amount then
 			account.removeMoney(amount)
 			xPlayer.addMoney(amount, TranslateCap('money_add_reason'))
@@ -96,6 +100,10 @@ AddEventHandler('esx_society:depositMoney', function(societyName, amount)
 	end
 	if amount > 0 and xPlayer.getMoney() >= amount then
 		TriggerEvent('esx_addonaccount:getSharedAccount', society.account, function(account)
+			if not account then
+				return print(('[^3WARNING^7] Society ^5%s^7 has no shared account!'):format(society.name))
+			end
+
 			xPlayer.removeMoney(amount, TranslateCap('money_remove_reason'))
 			xPlayer.showNotification(TranslateCap('have_deposited', ESX.Math.GroupDigits(amount)))
 			account.addMoney(amount)
@@ -410,20 +418,28 @@ function WashMoneyCRON(d, h, m)
 	MySQL.query('SELECT * FROM society_moneywash', function(result)
 		for i=1, #result, 1 do
 			local society = GetSociety(result[i].society)
-			local xPlayer = ESX.Player(result[i].identifier)
 
-			-- add society money
-			TriggerEvent('esx_addonaccount:getSharedAccount', society.account, function(account)
-				account.addMoney(result[i].amount)
-			end)
+			if not society then
+				print(('[^3WARNING^7] Money wash pending for non-existing society - ^5%s^7!'):format(result[i].society))
+			else
+				local xPlayer = ESX.Player(result[i].identifier)
 
-			-- send notification if player is online
-			if xPlayer then
-				xPlayer.showNotification(TranslateCap('you_have_laundered', ESX.Math.GroupDigits(result[i].amount)))
+				-- add society money
+				TriggerEvent('esx_addonaccount:getSharedAccount', society.account, function(account)
+					if not account then
+						return print(('[^3WARNING^7] Society ^5%s^7 has no shared account!'):format(society.name))
+					end
+
+					account.addMoney(result[i].amount)
+					MySQL.update('DELETE FROM society_moneywash WHERE id = ?', {result[i].id})
+
+					-- send notification if player is online
+					if xPlayer then
+						xPlayer.showNotification(TranslateCap('you_have_laundered', ESX.Math.GroupDigits(result[i].amount)))
+					end
+				end)
 			end
-
 		end
-		MySQL.update('DELETE FROM society_moneywash')
 	end)
 end
 

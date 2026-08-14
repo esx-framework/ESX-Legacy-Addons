@@ -5,7 +5,7 @@ game 'gta5'
 description 'Provides basic Jobs For Players to RP as.'
 lua54 'yes'
 version '1.0'
-legacyversion '1.13.4'
+legacyversion '1.14.1'
 
 shared_scripts {
 	'@es_extended/imports.lua',

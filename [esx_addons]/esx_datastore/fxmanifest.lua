@@ -5,7 +5,7 @@ game 'gta5'
 description 'Used for storing Data, such as society inventories'
 
 version '1.0'
-legacyversion '1.13.4'
+legacyversion '1.14.1'
 
 
 lua54 'yes'

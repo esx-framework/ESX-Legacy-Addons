@@ -4,7 +4,7 @@ lua54 'yes'
 
 description 'Allows Players to recieve and Send Bills'
 version '1.0'
-legacyversion '1.13.4'
+legacyversion '1.14.1'
 
 shared_scripts {
 	'@es_extended/imports.lua',
