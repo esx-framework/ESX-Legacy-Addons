@@ -1,27 +1,42 @@
-fx_version 'adamant'
-
+fx_version 'cerulean'
 game 'gta5'
 
-description 'A shop system for ESX Legacy, to allow players to buy items'
+description 'ESX Shops - Modern modular shop system with NUI for ESX Legacy'
 lua54 'yes'
-version '1.2'
+use_fxv2_oal 'yes'
+version '2.0.0'
 legacyversion '1.14.1'
 
-shared_script '@es_extended/imports.lua'
+shared_scripts {
+	'@es_extended/imports.lua',
+	'shared/locale.lua',
+	'shared/config/main.lua',
+	'shared/config/shops.lua',
+	'shared/functions.lua',
+	'shared/modules/*.lua',
+	'shared/compat.lua'
+}
 
 client_scripts {
-	'@es_extended/locale.lua',
-	'locales/*.lua',
-	'config.lua',
+	'client/functions.lua',
+	'client/modules/*.lua',
+	'client/compat.lua',
 	'client/main.lua'
 }
 
 server_scripts {
-	'@es_extended/locale.lua',
 	'@oxmysql/lib/MySQL.lua',
-	'locales/*.lua',
-	'config.lua',
+	'server/functions.lua',
+	'server/modules/*.lua',
+	'server/compat.lua',
 	'server/main.lua'
+}
+
+ui_page 'web/dist/index.html'
+
+files {
+	'web/dist/**/*',
+	'web/images/**/'
 }
 
 dependency 'es_extended'
