@@ -1203,5 +1203,5 @@ end)
 
 exports("ForceSaveProperties", function()
   local ExecutingResource = GetInvokingResource()
-  PropertySave(TranslateCap("forced_save", ExecutingResource))
+  PropertySave(TranslateCap("force_save", ExecutingResource))
 end)
