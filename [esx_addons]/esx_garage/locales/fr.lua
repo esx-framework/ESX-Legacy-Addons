@@ -21,5 +21,9 @@ Locales["fr"] = {
     ['pay_Impound'] = 'Payer la fourrière',
     ['veh_block'] = 'Impossible de sortir le véhicule, le point d\'apparition est encombré.',
     ['pay_Impound_bill'] = 'Vous avez bien payé $%s à la fourrière.',
-    ['missing_money'] = 'Vous n\'avez pas assez d\'argent.'
+    ['missing_money'] = 'Vous n\'avez pas assez d\'argent.',
+    ['not_in_vehicle'] = 'vous n\'êtes pas dans un véhicule.',
+    ['cannot_store'] = 'impossible de ranger ce véhicule.',
+    ['cannot_access_garage'] = 'vous n\'avez pas accès à ce garage.',
+    ['received_vehicle'] = 'vous avez reçu un véhicule (plaque : %s).'
 }
