@@ -1,0 +1,94 @@
+.sidebar {
+    width: 24vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 600;
+    user-select: none;
+}
+
+.sidebar button,
+.sidebar input,
+.sidebar select,
+.sidebar textarea {
+  font-family: inherit;
+  font-weight: inherit;
+}
+
+.accordion {
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    width: 100%;
+    height: 3.4vh;
+    padding: 1vh 1.5vh;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 1vh;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 0.4vh;
+    font-size: 1.3vh;
+    color: rgba(242, 242, 242, 0.5);
+    transition: background-color 50ms ease-in-out, color 50ms ease-in-out;
+}
+
+.header.active {
+    color: #161616;
+    background: #FB9B04;
+}
+
+.details {
+    display: flex;
+    flex-direction: column;
+    padding-left: 1vh;
+    height: auto;
+    border-left: solid #FB9B04 0.1vw;
+    margin-top: 1.2vh;
+}
+
+.sub-button {
+    width: 100%;
+    height: 3.2vh;
+    display: flex;
+    align-items: center;
+    gap: 1vh;
+    padding: 1vh;
+    background: transparent;
+    border: none;
+    color: rgba(242, 242, 242, 0.5);
+    cursor: pointer;
+    text-align: left;
+    border-radius: 0.4vh;
+    font-size: 1.1vh;
+    transition: background-color 50ms ease-in-out, color 50ms ease-in-out;
+}
+
+.sub-button.active {
+    background: rgba(255, 255, 255, 0.08);
+    color: #FB9B04;
+    background: rgba(252, 154, 3, 0.1);
+}
+
+.sidebar-divider {
+    width: 100%;
+    height: 0.1vh;
+    background: rgba(242, 242, 242, 0.1);
+    margin-top: 0.9vh;
+    margin-bottom: 1vh;
+}
+
+.sub-icon {
+    height: 1vh;
+    transition: fill 0.1s ease-in-out, stroke 0.1s ease-in-out;
+}
+
+.sub-button.active .sub-icon {
+    fill: #FB9B04;
+}

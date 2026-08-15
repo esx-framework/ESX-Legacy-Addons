@@ -1,0 +1,1 @@
+export { GarageHeader } from './GarageHeader';

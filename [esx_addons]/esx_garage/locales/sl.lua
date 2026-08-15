@@ -21,5 +21,9 @@ Locales["sl"] = {
     ['pay_impound'] = 'Placaj zaseg',
     ['veh_block'] = 'Nemoremo pridobiti vozila! Odmaknite vse kar je napoti.',
     ['pay_Impound_bill'] = 'Uspesno placano~g~$%s~s~ na zasezbo.',
-    ['missing_money'] = 'Vi nimate dovolj denarja.'
+    ['missing_money'] = 'Vi nimate dovolj denarja.',
+    ['not_in_vehicle'] = 'niste v vozilu.',
+    ['cannot_store'] = 'tega vozila ni mogoče shraniti.',
+    ['cannot_access_garage'] = 'nimate dostopa do te garaže.',
+    ['received_vehicle'] = 'prejeli ste vozilo (registrska: %s).'
 }
