@@ -66,7 +66,7 @@ By default this project is set up around the ESX `admin` group. If your server u
 
 `Config.FeaturePermissions` maps each feature key to the ESX groups allowed to use it. Every key holds a `{ group = true }` table, so you can build a granular "moderator" group by only enabling the features you want it to reach and leaving the sensitive ones to `admin`.
 
-The action-to-feature maps (`Config.AdminMenu.ActionPermissions`, `Config.PlayerActions.ActionPermissions`, `Config.ServerManagement.ActionPermissions`) decide which feature key each concrete action is checked against. If an action's feature key has no entry in `Config.FeaturePermissions`, the code falls back to the base `Config.AllowedGroups` check.
+The action-to-feature maps (`Config.AdminMenu.ActionPermissions`, `Config.PlayerActions.ActionPermissions`, `Config.ServerManagement.ActionPermissions`) decide which feature key each concrete action is checked against. Actions and feature keys without explicit config entries are denied, so new actions do not silently inherit broad access from `Config.AllowedGroups`.
 
 Self and utility:
 

@@ -8,6 +8,12 @@ Config.AllowedGroups = {
 	admin = true,
 }
 
+-- ACE groups the menu is allowed to add/remove. Keys are normalized without
+-- the "group." prefix.
+Config.AllowedAceGroups = {
+	admin = true,
+}
+
 Config.FeaturePermissions = {
 	sensitiveInfo = {
 		admin = true,
@@ -309,6 +315,8 @@ Config.AdminLimits = {
 	MaxRadioChannel = 10000,
 	MaxVehiclePropsBytes = 16384,
 	OfflineSearchResults = 25,
+	OfflineSearchCooldownMs = 500,
+	MinOfflineSearchLength = 3,
 	VehiclePageSize = 100,
 	BanPageSize = 100,
 	RecentPlayersCap = 100,

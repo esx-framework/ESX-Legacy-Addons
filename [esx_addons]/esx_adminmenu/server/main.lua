@@ -147,7 +147,9 @@ Helpers.registerCallback("esx-adminmenu:server:getAdminLogs", function(source, d
 end)
 
 local MAX_RESULTS = tonumber(Config.AdminLimits and Config.AdminLimits.OfflineSearchResults) or 25
-local MIN_QUERY_LENGTH = 2
+local MIN_QUERY_LENGTH = math.max(3, math.floor(tonumber(Config.AdminLimits and Config.AdminLimits.MinOfflineSearchLength) or 3))
+local OFFLINE_SEARCH_COOLDOWN_MS = math.max(0, math.floor(tonumber(Config.AdminLimits and Config.AdminLimits.OfflineSearchCooldownMs) or 500))
+local offlineSearchCooldowns = {}
 
 local SEARCH_COLUMNS = [[SELECT identifier, firstname, lastname, sex, job, job_grade, accounts, metadata,
 	last_seen, created_at, phone_number, `group`, disabled
@@ -182,6 +184,33 @@ local function getBase(identifier)
 	return base
 end
 
+local function getNowMs()
+	if type(GetGameTimer) == "function" then
+		return GetGameTimer()
+	end
+
+	return math.floor(os.clock() * 1000)
+end
+
+local function isOfflineSearchRateLimited(src)
+	if OFFLINE_SEARCH_COOLDOWN_MS <= 0 then
+		return false
+	end
+
+	local now = getNowMs()
+	local last = offlineSearchCooldowns[src] or 0
+	if last > 0 and now >= last and now - last < OFFLINE_SEARCH_COOLDOWN_MS then
+		return true
+	end
+
+	offlineSearchCooldowns[src] = now
+	return false
+end
+
+AddEventHandler("playerDropped", function()
+	offlineSearchCooldowns[source] = nil
+end)
+
 local function buildOfflineEntry(row, canSeeSensitive)
 	local accounts = decodeJson(row.accounts)
 	local metadata = decodeJson(row.metadata)
@@ -207,7 +236,7 @@ local function buildOfflineEntry(row, canSeeSensitive)
 		gender = row.sex == "f" and "f" or "m",
 		job = row.job,
 		job_grade = row.job_grade,
-		group = row.group,
+		group = canSeeSensitive and row.group or nil,
 		disabled = row.disabled == 1 or row.disabled == true,
 		last_join = row.last_seen,
 		first_join = row.created_at,
@@ -257,6 +286,10 @@ Helpers.registerCallback("esx-adminmenu:server:searchOfflinePlayer", function(so
 	local query = raw:match("^%s*(.-)%s*$")
 	if #query < MIN_QUERY_LENGTH or #query > 100 then
 		return { success = true, players = {} }
+	end
+
+	if isOfflineSearchRateLimited(src) then
+		return { success = false, err = "Search rate limited.", players = {} }
 	end
 
 	local lowered = query:lower()

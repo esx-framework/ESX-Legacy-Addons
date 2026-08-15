@@ -256,6 +256,10 @@ function Helpers.hasPermission(source)
 end
 
 function Helpers.hasFeaturePermission(source, feature)
+    if type(feature) ~= "string" or feature == "" then
+        return false
+    end
+
     local xPlayer = ESX.GetPlayerFromId(source)
     if not xPlayer then
         return false
@@ -263,7 +267,7 @@ function Helpers.hasFeaturePermission(source, feature)
 
     local featurePermissions = Config.FeaturePermissions and Config.FeaturePermissions[feature]
     if not featurePermissions then
-        return Helpers.hasPermission(source)
+        return false
     end
 
     return featurePermissions[xPlayer.getGroup()] == true

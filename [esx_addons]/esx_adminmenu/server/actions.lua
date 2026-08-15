@@ -212,6 +212,11 @@ local function normalizeAceGroup(value)
 	return group
 end
 
+local function isAllowedAceGroup(group)
+	local allowedGroups = Config.AllowedAceGroups or {}
+	return allowedGroups[group] == true or allowedGroups["group." .. group] == true
+end
+
 local function setStatusMeta(target, targetId, key, value)
 	local statusValue = math.floor(clampNumber(value, 0, 100, 100))
 
@@ -260,7 +265,7 @@ local function revivePlayer(targetId)
 end
 
 local function getServerActionPermission(action)
-	return Helpers.getActionPermission("serverManagement", action) or "serverManagement"
+	return Helpers.getActionPermission("serverManagement", action)
 end
 
 local function withServerData(data)
@@ -890,7 +895,14 @@ function Actions.ServerManagement(src, data)
 		return { success = false, err = "Unknown server action." }
 	end
 
-	if not Helpers.hasFeaturePermission(src, getServerActionPermission(action)) then
+	local permission = getServerActionPermission(action)
+	if not permission then
+		Logs.record({ namespace = "serverManagement", action = action, actor = src,
+			success = false, err = "Action permission not configured" })
+		return { success = false, err = "Action permission not configured." }
+	end
+
+	if not Helpers.hasFeaturePermission(src, permission) then
 		Logs.record({ namespace = "serverManagement", action = action, actor = src,
 			success = false, err = "Insufficient Permissions" })
 		return { success = false, err = "Insufficient Permissions" }
@@ -1158,6 +1170,10 @@ local function aceHandler(ctx, isAdd)
 		return { success = false, err = "Invalid ACE group.", playerOnline = true }
 	end
 
+	if not isAllowedAceGroup(group) then
+		return { success = false, err = "ACE group not allowed.", playerOnline = true }
+	end
+
 	local identifier = Helpers.getPlayerLicenseIdentifier(ctx.targetId)
 	if not isValidIdentifier(identifier) then
 		return { success = false, err = "Missing player identifier.", playerOnline = true }
@@ -1197,7 +1213,7 @@ function Actions.PlayerAction(src, data)
 		return { success = false, err = "Insufficient Permissions" }
 	end
 
-	local spec = PlayerHandlers[data.action]
+	local spec = PlayerHandlers[action]
 	if not spec then
 		return { success = false, err = "Unknown player action.", playerOnline = true }
 	end
@@ -1205,8 +1221,14 @@ function Actions.PlayerAction(src, data)
 	local targetId = getTargetId(data)
 	local target = targetId and ESX.GetPlayerFromId(targetId) or nil
 
-	local permission = Helpers.getActionPermission("playerActions", data.action)
-	if permission and not Helpers.hasFeaturePermission(src, permission) then
+	local permission = Helpers.getActionPermission("playerActions", action)
+	if not permission then
+		Logs.record({ namespace = "playerActions", action = action, actor = src, target = targetId,
+			success = false, err = "Action permission not configured" })
+		return { success = false, err = "Action permission not configured.", playerOnline = target ~= nil }
+	end
+
+	if not Helpers.hasFeaturePermission(src, permission) then
 		Logs.record({ namespace = "playerActions", action = action, actor = src, target = targetId,
 			success = false, err = "Insufficient Permissions" })
 		return { success = false, err = "Insufficient Permissions", playerOnline = target ~= nil }
