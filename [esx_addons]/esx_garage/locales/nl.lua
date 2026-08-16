@@ -21,5 +21,9 @@ Locales["nl"] = {
     ['pay_impound'] = 'Betaal boete',
     ['veh_block'] = 'Kan het voertuig niet ophalen, iets blokkeert de uitgang.',
     ['pay_Impound_bill'] = 'Succesvol ~g~€%s~s~ betaald aan de politie.',
-    ['missing_money'] = 'Je hebt niet genoeg geld.'
+    ['missing_money'] = 'Je hebt niet genoeg geld.',
+    ['not_in_vehicle'] = 'je zit niet in een voertuig.',
+    ['cannot_store'] = 'dit voertuig kan niet worden gestald.',
+    ['cannot_access_garage'] = 'je hebt geen toegang tot deze garage.',
+    ['received_vehicle'] = 'je hebt een voertuig ontvangen (kenteken: %s).'
 }

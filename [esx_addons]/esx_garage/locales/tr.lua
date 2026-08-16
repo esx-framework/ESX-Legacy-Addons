@@ -21,5 +21,9 @@ Locales["tr"] = {
     ['pay_impound'] = 'Depo ücretini öde',
     ['veh_block'] = 'Araç alınamıyor, Spawn konumu engellenmiş.',
     ['pay_Impound_bill'] = 'Depo ücreti başarıyla ödendi ~g~$%s~s~.',
-    ['missing_money'] = 'Yeterli paranız yok.'
+    ['missing_money'] = 'Yeterli paranız yok.',
+    ['not_in_vehicle'] = 'bir araçta değilsiniz.',
+    ['cannot_store'] = 'bu araç park edilemiyor.',
+    ['cannot_access_garage'] = 'bu garaja erişiminiz yok.',
+    ['received_vehicle'] = 'bir araç aldınız (plaka: %s).'
 }

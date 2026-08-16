@@ -412,6 +412,7 @@ function PayRent()
 							if sum > accounts.bank then
 								sum = sum - rental.rent_price
 								limit = true
+								unrentals[#unrentals + 1] = {rental.owner, rental.plate}
 							end
 						else
 							unrentals[#unrentals + 1] = {rental.owner, rental.plate}

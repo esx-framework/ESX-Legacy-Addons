@@ -1,0 +1,27 @@
+{
+  "name": "esx-shops-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:game": "vite build --watch",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit --strict",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check:strict": "npm run typecheck && npm run check"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@tsconfig/svelte": "^5.0.5",
+    "@types/node": "^24.6.0",
+    "svelte": "^5.39.6",
+    "svelte-check": "^4.3.2",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "terser": "^5.44.0"
+  }
+}

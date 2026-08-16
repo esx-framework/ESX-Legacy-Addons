@@ -21,5 +21,9 @@ Locales["en"] = {
     ['pay_impound'] = 'Pay Impound',
     ['veh_block'] = 'Unable to retrieve vehicle, Spawn Position is blocked.',
     ['pay_Impound_bill'] = 'Successfully Paid ~g~$%s~s~ to the Impound.',
-    ['missing_money'] = 'You don`t have enough money.'
+    ['missing_money'] = 'You don`t have enough money.',
+    ['not_in_vehicle'] = 'you are not in a vehicle.',
+    ['cannot_store'] = 'unable to store this vehicle.',
+    ['cannot_access_garage'] = 'you cannot access this garage.',
+    ['received_vehicle'] = 'you received a vehicle (plate: %s).'
 }

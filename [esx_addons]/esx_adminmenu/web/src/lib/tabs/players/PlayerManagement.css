@@ -1,0 +1,128 @@
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.2vh;
+    flex-wrap: wrap;
+    font-size: 2vh;
+    height: auto;
+    margin-bottom: 1.6vh;
+}
+
+.players-title {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 2.2vh;
+}
+
+.player-search-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 1.5vh;
+    box-sizing: border-box;
+    padding: 0 1.6vh;
+    background: rgba(37, 37, 37, 0.3);
+    border: 0.1vh solid #2E2E2C;
+    border-radius: 0.5vh;
+    width: min(37vh, 100%);
+    min-width: 22vh;
+    height: 3.8vh;
+    color: #F2F2F2;
+    overflow: hidden;
+    user-select: none;
+}
+
+.player-search-icon {
+    aspect-ratio: 1/1;
+    height: 1.3vh;
+}
+
+.player-search-icon path {
+    stroke-opacity: 0.5;
+    transition: stroke-opacity 0.1s ease-in-out;
+}
+
+.player-search-bar {
+    width: 100%;
+    max-height: 50%;
+    font-size: 1.3vh;
+    color: #F2F2F2;
+    font-family: 'Poppins';
+    background: none;
+    border: none;
+    outline: none;
+    user-select: none;
+}
+
+.player-search-bar::placeholder {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 1.3vh;
+    color: rgba(242, 242, 242, 0.5);
+    transition: color 0.1s ease-in-out;
+    user-select: none;
+}
+
+.player-search-bar-container:hover .player-search-bar::placeholder {
+    color: rgba(242, 242, 242, 0.7);
+}
+
+.player-search-bar-container:focus .player-search-bar::placeholder {
+    color: rgba(242, 242, 242, 0.7);
+}
+
+.player-search-bar-container:hover svg path {
+    stroke-opacity: 0.7; 
+}
+
+.ply-table-header {
+    display: grid;
+    grid-template-columns: 7vh 1.4fr repeat(6, 1fr);
+    padding: 0.8vh 1.3vh 0.9vh;
+    font-family: 'Poppins';
+    font-size: 1.3vh;
+    font-weight: 500;
+    color: rgba(242, 242, 242, 0.72);
+}
+
+.ply-table-header span {
+    user-select: none;
+    min-width: 0;
+    max-width: 90%;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.ply-table-header button {
+    all: unset;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    background: none;
+    border: none;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    font-family: 'Poppins';
+    font-size: 1.3vh;
+    font-weight: 500;
+    color: #F2F2F2;
+    cursor: pointer;
+    user-select: none;
+    min-width: 0;
+    max-width: 90%;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.ply-table-header button:hover {
+    color: #FB9B04;
+}
+
+.list-wrapper {
+    height: calc(100% - 9.4vh);
+    min-height: 0;
+    overflow: hidden;
+}
