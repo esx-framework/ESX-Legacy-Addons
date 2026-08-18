@@ -106,6 +106,15 @@ local function clearWorld()
     end
 end
 
+---@param action GarageAction
+---@param ped number
+---@return boolean
+local function isInteractionVisible(action, ped)
+    return action ~= "store"
+        or not Config.Settings.storeMarkerOnlyInVehicle
+        or IsPedInAnyVehicle(xLib.cache.ped, false)
+end
+
 ---@param location table
 ---@param raw vector3 | table
 ---@param action GarageAction
@@ -117,6 +126,7 @@ local function addInteractionPoint(location, raw, action)
     markers[#markers + 1] = {
         coords = coords,
         style = style,
+        action = action
     }
 
     points[#points + 1] = ESX.Point:new({
@@ -130,7 +140,9 @@ local function addInteractionPoint(location, raw, action)
                 action = action,
             }
 
-            ESX.TextUI(TranslateCap(style.locale))
+            if isInteractionVisible(action, xLib.cache.ped) then
+                ESX.TextUI(TranslateCap(style.locale))
+            end
         end,
         leave = function()
             currentLocation = nil
@@ -472,22 +484,27 @@ CreateThread(function()
         local sleep = 1000
 
         if #markers > 0 then
-            local pcoords = GetEntityCoords(PlayerPedId())
+            local pcoords = xLib.cache.coords
+            local inVehicle = xLib.cache.vehicle ~= false
 
             for i = 1, #markers do
                 local marker = markers[i]
                 local coords = marker.coords
 
                 if #(pcoords - coords) < 20.0 then
-                    sleep = 0
-                    local color = marker.style.color
+                    local visible = isInteractionVisible(marker.action, xLib.cache.ped)
 
-                    ---@diagnostic disable-next-line: missing-parameter
-                    DrawMarker(1, coords.x, coords.y, coords.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.5, 1.5, 1.0, color[1], color[2], color[3], color[4], false, false, 2, false)
+                    if visible then
+                        sleep = 0
+                        local color = marker.style.color
+
+                        ---@diagnostic disable-next-line: missing-parameter
+                        DrawMarker(1, coords.x, coords.y, coords.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.5, 1.5, 1.0, color[1], color[2], color[3], color[4], false, false, 2, false)
+                    end
                 end
             end
         end
-        
+
         Wait(sleep)
     end
 end)

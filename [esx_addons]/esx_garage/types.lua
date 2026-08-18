@@ -43,6 +43,7 @@
 ---@field restrictToGarage boolean
 ---@field defaultImpoundFee integer
 ---@field vehicleKeys boolean
+---@field storeMarkerOnlyInVehicle boolean
 
 ---@class OwnedVehicleRow
 ---@field plate string

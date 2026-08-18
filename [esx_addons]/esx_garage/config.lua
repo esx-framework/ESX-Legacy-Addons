@@ -8,6 +8,7 @@ Config.Settings = {
 	restrictToGarage = false,
 	defaultImpoundFee = 400,
 	vehicleKeys = false,
+	storeMarkerOnlyInVehicle = true,
 }
 
 ---@type Garage[]
