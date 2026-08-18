@@ -221,7 +221,9 @@ ESX.RegisterServerCallback("esx_property:attemptSellToPlayer", function(source, 
   local xPlayer = ESX.GetPlayerFromId(source)
   local xTarget = ESX.GetPlayerFromId(PlayerId)
   local Price = Properties[PropertyId].Price
-  if xTarget and (xTarget.getAccount("bank").money >= Price) and (xPlayer.job.name == PM.job) then
+  local canSell = xTarget ~= nil and (xTarget.getAccount("bank").money >= Price) and (xPlayer.job.name == PM.job)
+
+  if canSell then
     xTarget.removeAccountMoney("bank", Price, "Sold Property")
     Properties[PropertyId].Owner = xTarget.identifier
     Properties[PropertyId].OwnerName = xTarget.getName()
@@ -243,7 +245,7 @@ ESX.RegisterServerCallback("esx_property:attemptSellToPlayer", function(source, 
       xPlayer.addAccountMoney("bank", PlayerPrice, "Sold Property")
     end
   end
-  cb(xPlayer.getAccount("bank").money >= Price)
+  cb(canSell)
 end)
 
 -- Buy Property
