@@ -17,6 +17,7 @@ Config.Garages = {
 		label = "Vespucci Boulevard",
 		type = "public",
 		entryPoint = vec3(-285.2, -886.5, 31.0),
+		storePoint = vec3(-298.8, -889.7, 31.0),
 		spawns = {
 			vec4(-309.3, -897.0, 31.0, 351.8),
 		},
@@ -29,6 +30,7 @@ Config.Garages = {
 		label = "San Andreas Avenue",
 		type = "public",
 		entryPoint = vec3(213.9, -809.8, 31.0),
+		storePoint = vec3(220.1, -805.2, 30.8),
 		spawns = {
 			vec4(225.7, -801.9, 30.5, 250.0),
 		},

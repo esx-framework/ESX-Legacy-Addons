@@ -22,7 +22,7 @@ function CanAccessGarage(source, garage)
     if not access then
         return true
     end
-
+    
     local xPlayer = ESX.GetPlayerFromId(source)
     if not xPlayer then
         return false
@@ -98,6 +98,7 @@ local function garagePayload(garage)
         label = garage.label,
         type = garage.type,
         entryPoint = vec3t(garage.entryPoint),
+        storePoint = garage.storePoint and vec3t(garage.storePoint) or nil,
         spawns = spawnsT(garage.spawns),
         blip = garage.blip,
         ped = pedT(garage.ped),
@@ -151,6 +152,11 @@ end)
 local function registerGarage(def)
     assert(type(def) == "table" and type(def.id) == "string", "registerGarage: a garage table with a string id is required")
     assert(hasXYZ(def.entryPoint), ("registerGarage: garage %s needs a valid entryPoint (x, y, z)"):format(def.id))
+
+    if def.storePoint ~= nil then
+        assert(hasXYZ(def.storePoint), ("registerGarage: garage %s has an invalid storePoint (x, y, z)"):format(def.id))
+    end
+
     assert(type(def.spawns) == "table" and #def.spawns > 0, ("registerGarage: garage %s needs at least one spawn"):format(def.id))
 
     for i = 1, #def.spawns do

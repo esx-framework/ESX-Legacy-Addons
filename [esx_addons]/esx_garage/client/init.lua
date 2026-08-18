@@ -6,10 +6,27 @@ local markers = {}
 ---@type table<string, Impound>
 local impoundsById = {}
 
----@type { id: string, spawns: vector4[], garage: table, impound: boolean }?
+---@alias GarageAction 'garage' | 'withdraw' | 'store' | 'impound'
+
+---@type { id: string, spawns: vector4[], garage: table, action: GarageAction }?
 local currentLocation = nil
 
 local PED_DECOR <const> = "esx_garage_ped"
+
+local DEFAULT_MARKER_COLOR <const> = { 65, 130, 255, 120 }
+
+local WITHDRAW_INTERACTION <const> = {
+    locale = "access_parking",
+    color = DEFAULT_MARKER_COLOR,
+}
+
+---@type table<GarageAction, { locale: string, color: integer[] }>
+local INTERACTION_STYLES <const> = {
+    garage = WITHDRAW_INTERACTION,
+    withdraw = WITHDRAW_INTERACTION,
+    store = { locale = "park_veh", color = { 70, 200, 100, 120 } },
+    impound = { locale = "access_Impound", color = DEFAULT_MARKER_COLOR },
+}
 
 if not DecorIsRegisteredAsType(PED_DECOR, 2) then
     DecorRegister(PED_DECOR, 2)
@@ -90,6 +107,39 @@ local function clearWorld()
 end
 
 ---@param location table
+---@param raw vector3 | table
+---@param action GarageAction
+local function addInteractionPoint(location, raw, action)
+    local coords = vector3(raw.x, raw.y, raw.z)
+
+    local style = INTERACTION_STYLES[action]
+
+    markers[#markers + 1] = {
+        coords = coords,
+        style = style,
+    }
+
+    points[#points + 1] = ESX.Point:new({
+        coords = coords,
+        distance = Config.Settings.interactionDistance,
+        enter = function()
+            currentLocation = {
+                id = location.id,
+                spawns = location.spawns,
+                garage = location,
+                action = action,
+            }
+
+            ESX.TextUI(TranslateCap(style.locale))
+        end,
+        leave = function()
+            currentLocation = nil
+            ESX.HideUI()
+        end
+    })
+end
+
+---@param location table
 ---@param isImpound boolean
 local function addLocation(location, isImpound)
     local raw = isImpound and location.getOutPoint or location.entryPoint
@@ -98,8 +148,6 @@ local function addLocation(location, isImpound)
     if location.blip then
         blips[#blips + 1] = Utils.CreateBlip(coords, location.blip.sprite, location.blip.scale, location.blip.color, location.label)
     end
-
-    markers[#markers + 1] = coords
 
     if location.ped then
         local pc = location.ped.coords
@@ -110,18 +158,18 @@ local function addLocation(location, isImpound)
         end
     end
 
-    points[#points + 1] = ESX.Point:new({
-        coords = coords,
-        distance = Config.Settings.interactionDistance,
-        enter = function()
-            currentLocation = { id = location.id, spawns = location.spawns, garage = location, impound = isImpound }
-            ESX.TextUI(isImpound and TranslateCap("access_Impound") or TranslateCap("access_parking"))
-        end,
-        leave = function()
-            currentLocation = nil
-            ESX.HideUI()
-        end
-    })
+    if isImpound then
+        addInteractionPoint(location, location.getOutPoint, "impound")
+        return
+    end
+
+    if location.storePoint then
+        addInteractionPoint(location, location.entryPoint, "withdraw")
+        addInteractionPoint(location, location.storePoint, "store")
+        return
+    end
+
+    addInteractionPoint(location, location.entryPoint, "garage")
 end
 
 local refreshing = false
@@ -140,7 +188,6 @@ local function refresh()
             clearWorld()
 
             impoundsById = {}
-
             for i = 1, #data.impounds do
                 impoundsById[data.impounds[i].id] = data.impounds[i]
             end
@@ -214,11 +261,13 @@ end
 
 local function openMenu()
     local loc = currentLocation
+    
     if not loc then
         return
     end
 
     local rows = serverCall("esx_garage:getVehicles", loc.id)
+    
     if not rows then
         return ESX.ShowNotification(TranslateCap("cannot_access_garage"), "error")
     end
@@ -226,6 +275,7 @@ local function openMenu()
     local currentLot = impoundsById[loc.id]
 
     local vehicles = {}
+    
     for i = 1, #rows do
         vehicles[#vehicles + 1] = wrap(rows[i], currentLot)
     end
@@ -240,7 +290,7 @@ local function openMenu()
             garage = {
                 id = garage.id,
                 name = garage.label,
-                type = garage.type or (loc.impound and "impound" or "public"),
+                type = garage.type or (loc.action == "impound" and "impound" or "public"),
                 label = garage.label,
                 logo = garage.logo,
                 color = garage.color,
@@ -290,11 +340,19 @@ local function onInteract()
         return
     end
 
-    if not currentLocation.impound and IsPedInAnyVehicle(PlayerPedId(), false) then
+    local action = currentLocation.action
+
+    if action == "store" then
         storeCurrentVehicle()
-    else
-        openMenu()
+        return
     end
+
+    if action == "garage" and IsPedInAnyVehicle(PlayerPedId(), false) then
+        storeCurrentVehicle()
+        return
+    end
+
+    openMenu()
 end
 
 ESX.RegisterInput("esx_garage_interact", TranslateCap("open_garage"), "keyboard", "E", onInteract)
@@ -327,6 +385,7 @@ RegisterNUICallback("garage:retrieveVehicle", function(data, cb)
     end
 
     local spawn = pickClearSpawn(currentLocation.spawns)
+
     if not spawn then
         return cb({ success = false, error = "blocked" })
     end
@@ -340,6 +399,7 @@ RegisterNUICallback("garage:retrieveVehicle", function(data, cb)
     if result and result.success and result.data and result.data.netId then
         local vehicle = NetworkGetEntityFromNetworkId(result.data.netId)
         local tries = 0
+
         while not DoesEntityExist(vehicle) and tries < 50 do
             Wait(10)
             vehicle = NetworkGetEntityFromNetworkId(result.data.netId)
@@ -415,15 +475,19 @@ CreateThread(function()
             local pcoords = GetEntityCoords(PlayerPedId())
 
             for i = 1, #markers do
-                local m = markers[i]
-                if #(pcoords - m) < 20.0 then
+                local marker = markers[i]
+                local coords = marker.coords
+
+                if #(pcoords - coords) < 20.0 then
                     sleep = 0
+                    local color = marker.style.color
+
                     ---@diagnostic disable-next-line: missing-parameter
-                    DrawMarker(1, m.x, m.y, m.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.5, 1.5, 1.0, 65, 130, 255, 120, false, false, 2, false)
+                    DrawMarker(1, coords.x, coords.y, coords.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.5, 1.5, 1.0, color[1], color[2], color[3], color[4], false, false, 2, false)
                 end
             end
         end
-
+        
         Wait(sleep)
     end
 end)

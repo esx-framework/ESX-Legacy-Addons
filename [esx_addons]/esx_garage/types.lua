@@ -19,6 +19,7 @@
 ---@field label string
 ---@field type GarageType
 ---@field entryPoint vector3
+---@field storePoint? vector3
 ---@field spawns vector4[]
 ---@field blip? GarageBlip
 ---@field ped? GaragePed
