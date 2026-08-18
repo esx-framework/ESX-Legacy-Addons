@@ -6,7 +6,7 @@ description 'Modern Garage System with React UI'
 use_experimental_fxv2_oal 'true'
 
 version '2.0.0'
-legacyversion '1.14.1'
+legacyversion '1.14.2'
 
 lua54 'yes'
 
@@ -21,7 +21,6 @@ files {
 shared_scripts {
     '@es_extended/imports.lua',
     '@es_extended/locale.lua',
-    'locales/*.lua',
     'config.lua',
 }
 
@@ -31,7 +30,6 @@ server_scripts {
 }
 
 client_scripts {
-    '@es_extended/locale.lua',
     'client/modules/**/*',
     'client/init.lua'
 }

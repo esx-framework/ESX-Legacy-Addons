@@ -297,7 +297,7 @@ local function onInteract()
     end
 end
 
-ESX.RegisterInput("esx_garage_interact", "Open Garage", "keyboard", "E", onInteract)
+ESX.RegisterInput("esx_garage_interact", TranslateCap("open_garage"), "keyboard", "E", onInteract)
 
 ---@param spawns vector4[]
 ---@return vector4?

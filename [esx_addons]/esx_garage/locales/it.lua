@@ -1,4 +1,4 @@
-Locales["it"] = {
+return {
     ["parking_blip_name"] = 'Garage',
     ["Impound_blip_name"] = 'Sequestro',
     ["access_parking"] = 'premi [E] per accedere al parcheggio.',

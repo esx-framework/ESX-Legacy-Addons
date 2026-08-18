@@ -1,4 +1,4 @@
-Locales["sl"] = {
+return {
     ["parking_blip_name"] = 'Garaza',
     ["Impound_blip_name"] = 'Zasezba',
     ["access_parking"] = 'Pritisni [E] Da odprete Garazo.',

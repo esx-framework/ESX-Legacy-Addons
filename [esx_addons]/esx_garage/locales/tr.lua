@@ -1,4 +1,4 @@
-Locales["tr"] = {
+return {
     ["parking_blip_name"] = 'Garaj',
     ["Impound_blip_name"] = 'Depo',
     ["access_parking"] = 'Araç parkına erişmek için [E] tuşuna basın.',
