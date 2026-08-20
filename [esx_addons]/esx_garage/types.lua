@@ -8,7 +8,8 @@
 
 ---@class GaragePed
 ---@field model string | integer
----@field coords vector4
+---@field z? number
+---@field heading? number
 
 ---@class GarageAccess
 ---@field jobs? table<string, integer> Job name mapped to the minimum grade allowed.
@@ -44,6 +45,7 @@
 ---@field defaultImpoundFee integer
 ---@field vehicleKeys boolean
 ---@field storeMarkerOnlyInVehicle boolean
+---@field showMarker boolean
 
 ---@class OwnedVehicleRow
 ---@field plate string

@@ -123,11 +123,13 @@ local function addInteractionPoint(location, raw, action)
 
     local style = INTERACTION_STYLES[action]
 
-    markers[#markers + 1] = {
-        coords = coords,
-        style = style,
-        action = action
-    }
+    if Config.Settings.showMarker then
+        markers[#markers + 1] = {
+            coords = coords,
+            style = style,
+            action = action
+        }
+    end
 
     points[#points + 1] = ESX.Point:new({
         coords = coords,
@@ -162,8 +164,8 @@ local function addLocation(location, isImpound)
     end
 
     if location.ped then
-        local pc = location.ped.coords
-        local ped = Utils.SpawnFrozenPed(location.ped.model, vector4(pc.x, pc.y, pc.z, pc.w))
+        local z = location.ped.z or coords.z
+        local ped = Utils.SpawnFrozenPed(location.ped.model, vector4(coords.x, coords.y, z, location.ped.heading or 0.0))
         if ped then
             DecorSetBool(ped, PED_DECOR, true)
             peds[#peds + 1] = ped
