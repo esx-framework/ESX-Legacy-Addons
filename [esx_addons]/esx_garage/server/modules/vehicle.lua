@@ -596,6 +596,13 @@ ESX.RegisterServerCallback("esx_garage:transferVehicle", function(source, cb, da
         return cb({ success = false, error = "self" })
     end
 
+    local xPlayerPed = GetPlayerPed(source)
+    local targetPed = GetPlayerPed(targetId)
+
+    if xPlayerPed <= 0 or targetPed <= 0 or not DoesEntityExist(xPlayerPed) or not DoesEntityExist(targetPed) then
+        return cb({ success = false, error = "player_ped" })
+    end
+
     local dist = #(GetEntityCoords(xPlayerPed) - GetEntityCoords(targetPed))
     if dist > 10.0 then
         return cb({ success = false, error = "too_far" })
