@@ -8,6 +8,8 @@ Config.Settings = {
 	restrictToGarage = false,
 	defaultImpoundFee = 400,
 	vehicleKeys = false,
+	storeMarkerOnlyInVehicle = true,
+	showMarker = true,
 }
 
 ---@type Garage[]
@@ -17,23 +19,25 @@ Config.Garages = {
 		label = "Vespucci Boulevard",
 		type = "public",
 		entryPoint = vec3(-285.2, -886.5, 31.0),
+		storePoint = vec3(-298.8, -889.7, 31.0),
 		spawns = {
 			vec4(-309.3, -897.0, 31.0, 351.8),
 		},
 		blip = { sprite = 357, scale = 0.8, color = 3 },
-		ped = { model = `s_m_m_gentransport`, coords = vec4(-282.8655, -888.8463, 31.0806, 72.7597) },
+		ped = { model = `s_m_m_gentransport`, z = 30.73, heading = 72.7597 },
 		pound = "los_santos",
 	},
 	{
 		id = "san_andreas_avenue",
 		label = "San Andreas Avenue",
 		type = "public",
-		entryPoint = vec3(213.9, -809.8, 31.0),
+		entryPoint = vec3(216.29, -808.96, 30.73),
+		storePoint = vec3(220.1, -805.2, 30.8),
 		spawns = {
 			vec4(225.7, -801.9, 30.5, 250.0),
 		},
 		blip = { sprite = 357, scale = 0.8, color = 3 },
-		ped = { model = `s_m_m_gentransport`, coords = vec4(216.5, -808.0, 30.8, 250.0) },
+		ped = { model = `s_m_m_gentransport`, z = 30.73, heading = 250.0 },
 		pound = "los_santos",
 	},
 }

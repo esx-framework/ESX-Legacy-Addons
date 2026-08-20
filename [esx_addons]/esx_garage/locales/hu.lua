@@ -1,4 +1,4 @@
-Locales["hu"] = {
+return {
   ["parking_blip_name"] = 'Garázs',
   ["Impound_blip_name"] = 'Lefoglaltak',
   ["access_parking"] = 'Nyomd meg az [E] gombot a parkoló megtekintéséhez.',
