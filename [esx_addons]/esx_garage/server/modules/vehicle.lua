@@ -61,6 +61,36 @@ local function encodeProps(props)
     return encoded
 end
 
+---@param row OwnedVehicleRow
+---@param entity integer
+---@return boolean, number?
+local function validateStoredModel(row, entity)
+    if not row or type(row.vehicle) ~= "string" then
+        return false, nil
+    end
+
+    local ok, storedProps = pcall(json.decode, row.vehicle)
+    if not ok or type(storedProps) ~= "table" then
+        return false, nil
+    end
+
+    local storedModel = tonumber(storedProps.model)
+    if not storedModel then
+        return false, nil
+    end
+
+    local entityModel = GetEntityModel(entity)
+    if not entityModel then
+        return false, nil
+    end
+
+    if entityModel ~= storedModel then
+        return false, nil
+    end
+
+    return true, storedModel
+end
+
 ---@param xPlayer table
 ---@param amount integer
 ---@return boolean
@@ -247,6 +277,8 @@ ESX.RegisterServerCallback("esx_garage:retrieveVehicle", function(source, cb, da
         end
 
         local garage = Garages[data.garageId]
+        local impound = Impounds[data.garageId]
+
         if garage and not CanAccessGarage(source, garage) then
             return { success = false, error = "not_allowed" }
         end
@@ -259,29 +291,58 @@ ESX.RegisterServerCallback("esx_garage:retrieveVehicle", function(source, cb, da
             return { success = false, error = "too_far" }
         end
 
-        local outOfSync = row.stored ~= 1
+        local existing = ESX.GetExtendedVehicleFromPlate(row.plate)
+        local managedEntity = nil
+
+        if existing then
+            local entity = existing:getEntity()
+            if entity and entity > 0 and DoesEntityExist(entity) then
+                managedEntity = entity
+            end
+        end
+
+        local hasWorldVehicle = managedEntity ~= nil or hasUnmanagedWorldVehicle(key, managedEntity)
+
         local fee = 0
 
-        if row.pound or outOfSync then
-            if not Impounds[data.garageId] then
+        if row.pound then
+            if not impound then
+                return { success = false, error = "use_impound" }
+            end
+            if row.pound ~= data.garageId then
+                return { success = false, error = "wrong_impound" }
+            end
+            if hasWorldVehicle then
+                return { success = false, error = "not_stored" }
+            end
+
+            local lot = Impounds[row.pound]
+            fee = (lot and lot.cost) or Config.Settings.defaultImpoundFee
+        elseif row.stored ~= 1 then
+            if hasWorldVehicle then
+                return { success = false, error = "not_stored" }
+            end
+            if not impound then
                 return { success = false, error = "use_impound" }
             end
 
-            local lot = Impounds[row.pound] or Impounds[data.garageId]
+            local lot = Impounds[data.garageId]
             fee = (lot and lot.cost) or Config.Settings.defaultImpoundFee
-            if not canAfford(xPlayer, fee) then
-                return { success = false, error = "no_money" }
+        else
+            if impound then
+                return { success = false, error = "not_impounded" }
             end
-        elseif Config.Settings.restrictToGarage and row.parking and Garages[row.parking]
-            and row.parking ~= data.garageId then
-            return { success = false, error = "wrong_garage" }
+            if hasWorldVehicle then
+                return { success = false, error = "not_stored" }
+            end
+            if Config.Settings.restrictToGarage and row.parking and Garages[row.parking]
+                and row.parking ~= data.garageId then
+                return { success = false, error = "wrong_garage" }
+            end
         end
 
-        local existing = ESX.GetExtendedVehicleFromPlate(row.plate)
-        local existingEntity = existing and existing:getEntity() or nil
-
-        if hasUnmanagedWorldVehicle(key, existingEntity) then
-            return { success = false, error = "not_stored" }
+        if fee > 0 and not canAfford(xPlayer, fee) then
+            return { success = false, error = "no_money" }
         end
 
         if existing then
@@ -389,7 +450,12 @@ ESX.RegisterServerCallback("esx_garage:storeVehicle", function(source, cb, data)
                 return { success = false, error = "no_vehicle" }
             end
 
-            props.model = GetEntityModel(entity)
+            local modelOk, storedModel = validateStoredModel(row, entity)
+            if not modelOk then
+                return { success = false, error = "model_mismatch" }
+            end
+
+            props.model = storedModel
 
             local encoded = encodeProps(props)
             if not encoded then
@@ -418,7 +484,12 @@ ESX.RegisterServerCallback("esx_garage:storeVehicle", function(source, cb, data)
                 return { success = false, error = "plate_mismatch" }
             end
 
-            props.model = GetEntityModel(entity)
+            local modelOk, storedModel = validateStoredModel(row, entity)
+            if not modelOk then
+                return { success = false, error = "model_mismatch" }
+            end
+
+            props.model = storedModel
 
             local encoded = encodeProps(props)
             if not encoded then
