@@ -525,6 +525,11 @@ ESX.RegisterServerCallback("esx_garage:transferVehicle", function(source, cb, da
         return cb({ success = false, error = "self" })
     end
 
+    local dist = #(GetEntityCoords(xPlayerPed) - GetEntityCoords(targetPed))
+    if dist > 10.0 then
+        return cb({ success = false, error = "too_far" })
+    end
+
     local key = normPlate(plate)
     if retrieving[key] then
         return cb({ success = false, error = "busy" })
