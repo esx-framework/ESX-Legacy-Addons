@@ -13,7 +13,7 @@ RegisterNetEvent('esx_lscustom:installMod')
 AddEventHandler('esx_lscustom:installMod', function()
     local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
     local NetId = NetworkGetNetworkIdFromEntity(vehicle)
-    myCar = ESX.Game.GetVehicleProperties(vehicle)
+    myCar = xLib.game.getVehicleProperties(vehicle)
     TriggerServerEvent('esx_lscustom:refreshOwnedVehicle', myCar, NetId)
 end)
 
@@ -21,7 +21,7 @@ RegisterNetEvent('esx_lscustom:restoreMods', function(netId, props)
     local xVehicle = NetworkGetEntityFromNetworkId(netId)
     if props ~= nil then
         if DoesEntityExist(xVehicle) then
-            ESX.Game.SetVehicleProperties(xVehicle, props)
+            xLib.game.setVehicleProperties(xVehicle, props)
         end
     end
 end)
@@ -32,7 +32,7 @@ AddEventHandler('esx_lscustom:cancelInstallMod', function()
     if (GetPedInVehicleSeat(vehicle, -1) ~= PlayerPedId()) then
         vehicle = GetPlayersLastVehicle(PlayerPedId())
     end
-    ESX.Game.SetVehicleProperties(vehicle, myCar)
+    xLib.game.setVehicleProperties(vehicle, myCar)
     if not (myCar.modTurbo) then
         ToggleVehicleMod(vehicle, 18, false)
     end
@@ -82,7 +82,7 @@ function OpenLSMenu(elems, menuName, menuTitle, parent)
 
                 if data.current.label == TranslateCap('by_default') or string.match(data.current.label, TranslateCap('installed')) then
                     ESX.ShowNotification(TranslateCap('already_own', data.current.label))
-                    myCar = ESX.Game.GetVehicleProperties(vehicle)
+                    myCar = xLib.game.getVehicleProperties(vehicle)
                     TriggerServerEvent('esx_lscustom:refreshOwnedVehicle', myCar, NetworkGetNetworkIdFromEntity(vehicle))
                 else
                     local vehiclePrice = 50000
@@ -152,7 +152,7 @@ function UpdateMods(data)
                 props['modBackWheels'] = data.modNum
             end
 
-            ESX.Game.SetVehicleProperties(vehicle, props)
+            xLib.game.setVehicleProperties(vehicle, props)
             props = {}
         elseif data.modType == 'neonColor' then
             if data.modNum[1] == 0 and data.modNum[2] == 0 and data.modNum[3] == 0 then
@@ -160,11 +160,11 @@ function UpdateMods(data)
             else
                 props['neonEnabled'] = {true, true, true, true}
             end
-            ESX.Game.SetVehicleProperties(vehicle, props)
+            xLib.game.setVehicleProperties(vehicle, props)
             props = {}
         elseif data.modType == 'tyreSmokeColor' then
             props['modSmokeEnabled'] = true
-            ESX.Game.SetVehicleProperties(vehicle, props)
+            xLib.game.setVehicleProperties(vehicle, props)
             props = {}
         elseif data.modType == 'xenonColor' then
             if data.modNum then
@@ -172,12 +172,12 @@ function UpdateMods(data)
             else
                 props['modXenon'] = false
             end
-            ESX.Game.SetVehicleProperties(vehicle, props)
+            xLib.game.setVehicleProperties(vehicle, props)
             props = {}
         end
 
         props[data.modType] = data.modNum
-        ESX.Game.SetVehicleProperties(vehicle, props)
+        xLib.game.setVehicleProperties(vehicle, props)
     end
 end
 
@@ -189,7 +189,7 @@ function GetAction(data)
 
     local playerPed = PlayerPedId()
     local vehicle = GetVehiclePedIsIn(playerPed, false)
-    local currentMods = ESX.Game.GetVehicleProperties(vehicle)
+    local currentMods = xLib.game.getVehicleProperties(vehicle)
     if data.value == 'modSpeakers' or data.value == 'modTrunk' or data.value == 'modHydrolic' or data.value ==
         'modEngineBlock' or data.value == 'modAirFilter' or data.value == 'modStruts' or data.value == 'modTank' then
         SetVehicleDoorOpen(vehicle, 4, false)
@@ -376,7 +376,7 @@ function GetAction(data)
                     local props = {}
 
                     props['wheels'] = v.wheelType
-                    ESX.Game.SetVehicleProperties(vehicle, props)
+                    xLib.game.setVehicleProperties(vehicle, props)
 
                     local modCount = GetNumVehicleMods(vehicle, v.modType)
                     for j = 0, modCount, 1 do
@@ -404,7 +404,7 @@ function GetAction(data)
                     local props = {}
 
                     props['wheels'] = v.wheelType
-                    ESX.Game.SetVehicleProperties(vehicle, props)
+                    xLib.game.setVehicleProperties(vehicle, props)
 
                     local modCount = GetNumVehicleMods(vehicle, v.modType)
                     for j = 0, modCount, 1 do
@@ -579,7 +579,7 @@ CreateThread(function()
 
                                 local vehicle = GetVehiclePedIsIn(playerPed, false)
                                 FreezeEntityPosition(vehicle, true)
-                                myCar = ESX.Game.GetVehicleProperties(vehicle)
+                                myCar = xLib.game.getVehicleProperties(vehicle)
                                 
                                 local netId = NetworkGetNetworkIdFromEntity(vehicle)
                                 TriggerServerEvent('esx_lscustom:startModing', myCar, netId)

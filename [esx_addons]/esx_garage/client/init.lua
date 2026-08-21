@@ -328,7 +328,7 @@ local function storeCurrentVehicle()
         return ESX.ShowNotification(TranslateCap("not_in_vehicle"), "error")
     end
 
-    local props = ESX.Game.GetVehicleProperties(vehicle)
+    local props = xLib.game.getVehicleProperties(vehicle)
     if not props or not props.plate then
         return
     end

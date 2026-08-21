@@ -358,7 +358,7 @@ function OpenResellerMenu()
 
 				if closestPlayer ~= -1 and closestDistance < 3 then
 					local newPlate = GeneratePlate()
-					local vehicleProps = ESX.Game.GetVehicleProperties(currentDisplayVehicle)
+					local vehicleProps = xLib.game.getVehicleProperties(currentDisplayVehicle)
 					vehicleProps.plate = newPlate
 					SetVehicleNumberPlateText(currentDisplayVehicle, newPlate)
 					TriggerServerEvent('esx_vehicleshop:setVehicleOwnedPlayerId', GetPlayerServerId(closestPlayer), vehicleProps, CurrentVehicleData.model, CurrentVehicleData.name)

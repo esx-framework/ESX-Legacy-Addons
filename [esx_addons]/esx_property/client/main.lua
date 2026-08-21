@@ -704,7 +704,7 @@ end
 function StoreVehicle(PropertyId)
   local Vehicle = GetVehiclePedIsIn(ESX.PlayerData.ped, false)
   if Vehicle then
-    local VehProperties = ESX.Game.GetVehicleProperties(Vehicle)
+    local VehProperties = xLib.game.getVehicleProperties(vehicle)
     VehProperties.DisplayName = GetLabelText(GetDisplayNameFromVehicleModel(VehProperties.model))
     ESX.TriggerServerCallback("esx_property:StoreVehicle", function(result)
       if result then
@@ -736,7 +736,7 @@ function AccessGarage(PropertyId)
             ESX.Game.SpawnVehicle(element.Properties.model, Properties[PropertyId].garage.pos, Properties[PropertyId].garage.Heading,
               function(vehicle)
                 SetEntityAsMissionEntity(vehicle, true, true)
-                ESX.Game.SetVehicleProperties(vehicle, element.Properties)
+                xLib.game.setVehicleProperties(vehicle, element.Properties)
                 TaskWarpPedIntoVehicle(ESX.PlayerData.ped, vehicle, -1)
                 SetModelAsNoLongerNeeded(element.Properties.model)
                 TriggerServerEvent("esx_property:SetVehicleOut", PropertyId, element.index)

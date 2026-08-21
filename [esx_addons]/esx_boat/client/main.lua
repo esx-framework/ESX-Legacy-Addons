@@ -36,7 +36,7 @@ function OpenBoatShop(shop)
 					FreezeEntityPosition(vehicle, true)
 
 					if element.props then
-						ESX.Game.SetVehicleProperties(vehicle, element.props)
+						xLib.game.setVehicleProperties(vehicle, element.props)
 					end
 
 					local elements3 = {
@@ -49,7 +49,7 @@ function OpenBoatShop(shop)
 						if element3.value == "buy" then
 							local plate = exports['esx_vehicleshop']:GeneratePlate()
 							local vehicle = GetVehiclePedIsIn(playerPed, false)
-							local props = ESX.Game.GetVehicleProperties(vehicle)
+							local props = xLib.game.getVehicleProperties(vehicle)
 							props.plate = plate
 
 							ESX.TriggerServerCallback('esx_boat:buyBoat', function(bought)
@@ -119,7 +119,7 @@ function OpenBoatGarage(garage)
 
 					ESX.Game.SpawnVehicle(vehicleProps.model, garage.SpawnPoint, garage.SpawnPoint.w, function(vehicle)
 						TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
-						ESX.Game.SetVehicleProperties(vehicle, vehicleProps)
+						xLib.game.setVehicleProperties(vehicle, vehicleProps)
 					end)
 
 					ESX.CloseContext()
@@ -175,7 +175,7 @@ function OpenLicenceMenu(shop)
 end
 
 function StoreBoatInGarage(vehicle, teleportCoords)
-	local vehicleProps = ESX.Game.GetVehicleProperties(vehicle)
+	local vehicleProps = xLib.game.getVehicleProperties(vehicle)
 
 	ESX.TriggerServerCallback('esx_boat:storeVehicle', function (rowsChanged)
 		if rowsChanged > 0 then

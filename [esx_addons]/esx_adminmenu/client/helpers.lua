@@ -91,7 +91,7 @@ ESX.RegisterClientCallback("esx-adminmenu:client:adminCarVehicleProps", function
 		SetVehicleNumberPlateText(vehicle, plate)
 	end
 
-	local props = ESX.Game.GetVehicleProperties(vehicle)
+	local props = xLib.game.getVehicleProperties(vehicle)
 	props.model = GetEntityModel(vehicle)
 	props.plate = ESX.Math.Trim(GetVehicleNumberPlateText(vehicle))
 
