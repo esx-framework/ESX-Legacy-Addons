@@ -13,7 +13,7 @@ RegisterNetEvent('esx_lscustom:installMod')
 AddEventHandler('esx_lscustom:installMod', function()
     local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
     local NetId = NetworkGetNetworkIdFromEntity(vehicle)
-    myCar = ESX.Game.GetVehicleProperties(vehicle)
+    myCar = xLib.game.getVehicleProperties(vehicle)
     TriggerServerEvent('esx_lscustom:refreshOwnedVehicle', myCar, NetId)
 end)
 
@@ -82,7 +82,7 @@ function OpenLSMenu(elems, menuName, menuTitle, parent)
 
                 if data.current.label == TranslateCap('by_default') or string.match(data.current.label, TranslateCap('installed')) then
                     ESX.ShowNotification(TranslateCap('already_own', data.current.label))
-                    myCar = ESX.Game.GetVehicleProperties(vehicle)
+                    myCar = xLib.game.getVehicleProperties(vehicle)
                     TriggerServerEvent('esx_lscustom:refreshOwnedVehicle', myCar, NetworkGetNetworkIdFromEntity(vehicle))
                 else
                     local vehiclePrice = 50000
@@ -189,7 +189,7 @@ function GetAction(data)
 
     local playerPed = PlayerPedId()
     local vehicle = GetVehiclePedIsIn(playerPed, false)
-    local currentMods = ESX.Game.GetVehicleProperties(vehicle)
+    local currentMods = xLib.game.getVehicleProperties(vehicle)
     if data.value == 'modSpeakers' or data.value == 'modTrunk' or data.value == 'modHydrolic' or data.value ==
         'modEngineBlock' or data.value == 'modAirFilter' or data.value == 'modStruts' or data.value == 'modTank' then
         SetVehicleDoorOpen(vehicle, 4, false)
@@ -579,7 +579,7 @@ CreateThread(function()
 
                                 local vehicle = GetVehiclePedIsIn(playerPed, false)
                                 FreezeEntityPosition(vehicle, true)
-                                myCar = ESX.Game.GetVehicleProperties(vehicle)
+                                myCar = xLib.game.getVehicleProperties(vehicle)
                                 
                                 local netId = NetworkGetNetworkIdFromEntity(vehicle)
                                 TriggerServerEvent('esx_lscustom:startModing', myCar, netId)

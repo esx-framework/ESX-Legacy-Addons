@@ -243,7 +243,7 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 					elseif element3.value == "buy" then
 						local newPlate = exports['esx_vehicleshop']:GeneratePlate()
 						local vehicle  = GetVehiclePedIsIn(playerPed, false)
-						local props    = ESX.Game.GetVehicleProperties(vehicle)
+						local props    = xLib.game.getVehicleProperties(vehicle)
 						props.plate    = newPlate
 
 						ESX.TriggerServerCallback('esx_policejob:buyJobVehicle', function (bought)

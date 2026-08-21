@@ -704,7 +704,7 @@ end
 function StoreVehicle(PropertyId)
   local Vehicle = GetVehiclePedIsIn(ESX.PlayerData.ped, false)
   if Vehicle then
-    local VehProperties = ESX.Game.GetVehicleProperties(Vehicle)
+    local VehProperties = xLib.game.getVehicleProperties(vehicle)
     VehProperties.DisplayName = GetLabelText(GetDisplayNameFromVehicleModel(VehProperties.model))
     ESX.TriggerServerCallback("esx_property:StoreVehicle", function(result)
       if result then

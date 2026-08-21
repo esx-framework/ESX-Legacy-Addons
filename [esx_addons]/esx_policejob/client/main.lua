@@ -324,7 +324,7 @@ function OpenPoliceActionsMenu()
 					LookupVehicle(element3)
 				elseif DoesEntityExist(vehicle) then
 					if action == 'vehicle_infos' then
-						local vehicleData = ESX.Game.GetVehicleProperties(vehicle)
+						local vehicleData = xLib.game.getVehicleProperties(vehicle)
 						OpenVehicleInfosMenu(vehicleData)
 					elseif action == 'hijack_vehicle' then
 						if IsAnyVehicleNearPoint(coords.x, coords.y, coords.z, 3.0) then

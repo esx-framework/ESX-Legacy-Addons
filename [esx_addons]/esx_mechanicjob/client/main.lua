@@ -908,7 +908,7 @@ CreateThread(function()
 					OpenMechanicCraftMenu()
 				elseif CurrentAction == 'delete_vehicle' then
 					if Config.EnableSocietyOwnedVehicles then
-						local vehicleProps = ESX.Game.GetVehicleProperties(CurrentActionData.vehicle)
+						local vehicleProps = xLib.game.getVehicleProperties(CurrentActionData.vehicle)
 						TriggerServerEvent('esx_society:putVehicleInGarage', 'mechanic', vehicleProps)
 					else
 						local entityModel = GetEntityModel(CurrentActionData.vehicle)

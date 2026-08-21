@@ -194,7 +194,7 @@ function DeleteJobVehicle()
     local playerPed = PlayerPedId()
 
     if Config.EnableSocietyOwnedVehicles then
-        local vehicleProps = ESX.Game.GetVehicleProperties(CurrentActionData.vehicle)
+        local vehicleProps = xLib.game.getVehicleProperties(CurrentActionData.vehicle)
         TriggerServerEvent('esx_society:putVehicleInGarage', 'taxi', vehicleProps)
         ESX.Game.DeleteVehicle(CurrentActionData.vehicle)
     else
