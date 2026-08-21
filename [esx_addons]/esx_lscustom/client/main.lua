@@ -21,7 +21,7 @@ RegisterNetEvent('esx_lscustom:restoreMods', function(netId, props)
     local xVehicle = NetworkGetEntityFromNetworkId(netId)
     if props ~= nil then
         if DoesEntityExist(xVehicle) then
-            ESX.Game.SetVehicleProperties(xVehicle, props)
+            xLib.game.setVehicleProperties(xVehicle, props)
         end
     end
 end)
@@ -32,7 +32,7 @@ AddEventHandler('esx_lscustom:cancelInstallMod', function()
     if (GetPedInVehicleSeat(vehicle, -1) ~= PlayerPedId()) then
         vehicle = GetPlayersLastVehicle(PlayerPedId())
     end
-    ESX.Game.SetVehicleProperties(vehicle, myCar)
+    xLib.game.setVehicleProperties(vehicle, myCar)
     if not (myCar.modTurbo) then
         ToggleVehicleMod(vehicle, 18, false)
     end
@@ -152,7 +152,7 @@ function UpdateMods(data)
                 props['modBackWheels'] = data.modNum
             end
 
-            ESX.Game.SetVehicleProperties(vehicle, props)
+            xLib.game.setVehicleProperties(vehicle, props)
             props = {}
         elseif data.modType == 'neonColor' then
             if data.modNum[1] == 0 and data.modNum[2] == 0 and data.modNum[3] == 0 then
@@ -160,11 +160,11 @@ function UpdateMods(data)
             else
                 props['neonEnabled'] = {true, true, true, true}
             end
-            ESX.Game.SetVehicleProperties(vehicle, props)
+            xLib.game.setVehicleProperties(vehicle, props)
             props = {}
         elseif data.modType == 'tyreSmokeColor' then
             props['modSmokeEnabled'] = true
-            ESX.Game.SetVehicleProperties(vehicle, props)
+            xLib.game.setVehicleProperties(vehicle, props)
             props = {}
         elseif data.modType == 'xenonColor' then
             if data.modNum then
@@ -172,12 +172,12 @@ function UpdateMods(data)
             else
                 props['modXenon'] = false
             end
-            ESX.Game.SetVehicleProperties(vehicle, props)
+            xLib.game.setVehicleProperties(vehicle, props)
             props = {}
         end
 
         props[data.modType] = data.modNum
-        ESX.Game.SetVehicleProperties(vehicle, props)
+        xLib.game.setVehicleProperties(vehicle, props)
     end
 end
 
@@ -376,7 +376,7 @@ function GetAction(data)
                     local props = {}
 
                     props['wheels'] = v.wheelType
-                    ESX.Game.SetVehicleProperties(vehicle, props)
+                    xLib.game.setVehicleProperties(vehicle, props)
 
                     local modCount = GetNumVehicleMods(vehicle, v.modType)
                     for j = 0, modCount, 1 do
@@ -404,7 +404,7 @@ function GetAction(data)
                     local props = {}
 
                     props['wheels'] = v.wheelType
-                    ESX.Game.SetVehicleProperties(vehicle, props)
+                    xLib.game.setVehicleProperties(vehicle, props)
 
                     local modCount = GetNumVehicleMods(vehicle, v.modType)
                     for j = 0, modCount, 1 do

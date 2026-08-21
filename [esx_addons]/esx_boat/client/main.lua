@@ -36,7 +36,7 @@ function OpenBoatShop(shop)
 					FreezeEntityPosition(vehicle, true)
 
 					if element.props then
-						ESX.Game.SetVehicleProperties(vehicle, element.props)
+						xLib.game.setVehicleProperties(vehicle, element.props)
 					end
 
 					local elements3 = {
@@ -119,7 +119,7 @@ function OpenBoatGarage(garage)
 
 					ESX.Game.SpawnVehicle(vehicleProps.model, garage.SpawnPoint, garage.SpawnPoint.w, function(vehicle)
 						TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
-						ESX.Game.SetVehicleProperties(vehicle, vehicleProps)
+						xLib.game.setVehicleProperties(vehicle, vehicleProps)
 					end)
 
 					ESX.CloseContext()

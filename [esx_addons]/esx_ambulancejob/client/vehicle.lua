@@ -84,7 +84,7 @@ function OpenVehicleSpawnerMenu(type, hospital, part, partNum)
 
 									ESX.Game.SpawnVehicle(elementG.model, spawnPoint.coords, spawnPoint.heading, function(vehicle)
 										local vehicleProps = allVehicleProps[elementG.plate]
-										ESX.Game.SetVehicleProperties(vehicle, vehicleProps)
+										xLib.game.setVehicleProperties(vehicle, vehicleProps)
 
 										TriggerServerEvent('esx_vehicleshop:setJobVehicleState', elementG.plate, false)
 										ESX.ShowNotification(TranslateCap('garage_released'))
@@ -215,7 +215,7 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 					SetModelAsNoLongerNeeded(element.model)
 
 					if element.props then
-						ESX.Game.SetVehicleProperties(vehicle, element.props)
+						xLib.game.setVehicleProperties(vehicle, element.props)
 					end
 				end)
 

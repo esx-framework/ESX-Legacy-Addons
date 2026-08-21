@@ -93,7 +93,7 @@ function OpenMechanicActionsMenu()
 
 						ESX.Game.SpawnVehicle(vehicleProps.model, Config.Zones.VehicleSpawnPoint.Pos, 270.0,
 							function(vehicle)
-								ESX.Game.SetVehicleProperties(vehicle, vehicleProps)
+								xLib.game.setVehicleProperties(vehicle, vehicleProps)
 								local playerPed = PlayerPedId()
 								TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
 							end)

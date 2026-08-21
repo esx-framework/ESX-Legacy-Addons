@@ -736,7 +736,7 @@ function AccessGarage(PropertyId)
             ESX.Game.SpawnVehicle(element.Properties.model, Properties[PropertyId].garage.pos, Properties[PropertyId].garage.Heading,
               function(vehicle)
                 SetEntityAsMissionEntity(vehicle, true, true)
-                ESX.Game.SetVehicleProperties(vehicle, element.Properties)
+                xLib.game.setVehicleProperties(vehicle, element.Properties)
                 TaskWarpPedIntoVehicle(ESX.PlayerData.ped, vehicle, -1)
                 SetModelAsNoLongerNeeded(element.Properties.model)
                 TriggerServerEvent("esx_property:SetVehicleOut", PropertyId, element.index)
