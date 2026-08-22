@@ -136,6 +136,8 @@ ESX.RegisterServerCallback('esx_license:getLicense', function(source, cb, licens
 	local xPlayer = ESX.Player(source)
 	if xPlayer then
 		GetLicense(licenseType, cb)
+	else
+		cb(nil)
 	end
 end)
 
@@ -143,6 +145,8 @@ ESX.RegisterServerCallback('esx_license:getLicenses', function(source, cb, targe
 	local xPlayer = ESX.Player(target)
 	if xPlayer then
 		GetLicenses(xPlayer.getIdentifier(), cb)
+	else
+		cb({})
 	end
 end)
 
@@ -150,6 +154,8 @@ ESX.RegisterServerCallback('esx_license:checkLicense', function(source, cb, targ
 	local xPlayer = ESX.Player(target)
 	if xPlayer then
 		CheckLicense(xPlayer.getIdentifier(), licenseType, cb)
+	else
+		cb(false)
 	end
 end)
 
