@@ -8,8 +8,11 @@ local impoundsById = {}
 
 ---@alias GarageAction 'garage' | 'withdraw' | 'store' | 'impound'
 
----@type { id: string, spawns: vector4[], garage: table, action: GarageAction }?
+---@type { id: string, spawns: vector4[], garage: table, action: GarageAction, coords: vector3 }?
 local currentLocation = nil
+
+---@type table<number, { id: string, spawns: vector4[], garage: table, action: GarageAction, coords: vector3 }>
+local activeLocations = {}
 
 local PED_DECOR <const> = "esx_garage_ped"
 local HUD_RESOURCE_NAME <const> = "esx_hud"
@@ -137,6 +140,7 @@ local function clearWorld()
     end
 
     blips, pedSpawns, points, markers = {}, {}, {}, {}
+    activeLocations = {}
     currentLocation = nil
 
     if ESX.HideUI then
@@ -151,6 +155,34 @@ local function isInteractionVisible(action, ped)
     return action ~= "store"
         or not Config.Settings.storeMarkerOnlyInVehicle
         or IsPedInAnyVehicle(xLib.cache.ped, false)
+end
+
+---@return nil
+local function updateCurrentLocation()
+    local coords = GetEntityCoords(xLib.cache.ped)
+    local best, bestDistance
+
+    for _, entry in pairs(activeLocations) do
+        if isInteractionVisible(entry.action, xLib.cache.ped) then
+            local distance = #(coords - entry.coords)
+
+            if not bestDistance or distance < bestDistance then
+                best, bestDistance = entry, distance
+            end
+        end
+    end
+
+    if currentLocation == best then
+        return
+    end
+
+    currentLocation = best
+
+    if not best then
+        return ESX.HideUI()
+    end
+
+    ESX.TextUI(TranslateCap(INTERACTION_STYLES[best.action].locale))
 end
 
 ---@param location table
@@ -169,24 +201,25 @@ local function addInteractionPoint(location, raw, action)
         }
     end
 
-    points[#points + 1] = xLib.point:new({
+    local index = #points + 1
+    local entry = {
+        id = location.id,
+        spawns = location.spawns,
+        garage = location,
+        action = action,
+        coords = coords,
+    }
+
+    points[index] = xLib.point:new({
         coords = coords,
         distance = Config.Settings.interactionDistance,
         enter = function()
-            currentLocation = {
-                id = location.id,
-                spawns = location.spawns,
-                garage = location,
-                action = action,
-            }
-
-            if isInteractionVisible(action, xLib.cache.ped) then
-                ESX.TextUI(TranslateCap(style.locale))
-            end
+            activeLocations[index] = entry
+            updateCurrentLocation()
         end,
         leave = function()
-            currentLocation = nil
-            ESX.HideUI()
+            activeLocations[index] = nil
+            updateCurrentLocation()
         end
     })
 end
@@ -601,6 +634,8 @@ RegisterNUICallback("SetNuiFocus", function(data, cb)
     SetNuiFocus(data.hasFocus, data.hasCursor)
     cb({ success = true })
 end)
+
+AddEventHandler("xLib:cache:vehicle", updateCurrentLocation)
 
 RegisterNetEvent("esx_garage:refresh", refresh)
 RegisterNetEvent("esx:playerLoaded", refresh)
