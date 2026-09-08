@@ -108,20 +108,12 @@ local function hasSocietyBossAccess(xPlayer, society)
 end
 
 local function normalizePlate(plate)
-	if type(plate) ~= 'string' then return nil end
-
-	plate = ESX.Math.Trim(plate):upper()
-	if plate == '' or #plate > 12 then return nil end
-
-	return plate
+	return xLib.vehiclePlate.normalize(plate, {
+		maxLength = 12
+	})
 end
 
-local function getPlayerCoords(source)
-	local ped = GetPlayerPed(source)
-	if ped <= 0 then return nil end
-
-	return GetEntityCoords(ped)
-end
+local getPlayerCoords = xLib.player.getCoords
 
 local function toVector3(coords)
 	if not coords then return nil end

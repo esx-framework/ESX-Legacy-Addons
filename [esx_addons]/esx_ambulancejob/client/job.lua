@@ -560,16 +560,14 @@ AddEventHandler('esx_ambulancejob:setDeadPlayers', function(_deadPlayers)
 				end
 				local player = GetPlayerFromServerId(playerId)
 				local playerPed = GetPlayerPed(player)
-				local blip = AddBlipForEntity(playerPed)
-
-				SetBlipSprite(blip, 303)
-				SetBlipColour(blip, 1)
-				SetBlipFlashes(blip, true)
-				SetBlipCategory(blip, 7)
-
-				BeginTextCommandSetBlipName('STRING')
-				AddTextComponentSubstringPlayerName(TranslateCap('blip_dead'))
-				EndTextCommandSetBlipName(blip)
+				local blip = xLib.blips.create({
+					entity = playerPed,
+					sprite = 303,
+					color = 1,
+					flashes = true,
+					category = 7,
+					label = TranslateCap('blip_dead')
+				})
 
 				deadPlayerBlips[playerId] = blip
 			end
@@ -589,15 +587,14 @@ AddEventHandler('esx_ambulancejob:PlayerDistressed', function(playerId, playerCo
 		ESX.ShowNotification(TranslateCap('unconscious_found'), "error", 10000)
 		deadPlayerBlips[playerId] = nil
 
-		local blip = AddBlipForCoord(playerCoords.x, playerCoords.y, playerCoords.z)
-		SetBlipSprite(blip, Config.DistressBlip.Sprite)
-		SetBlipColour(blip, Config.DistressBlip.Color)
-		SetBlipScale(blip, Config.DistressBlip.Scale)
-		SetBlipFlashes(blip, true)
-
-		BeginTextCommandSetBlipName('STRING')
-		AddTextComponentSubstringPlayerName(TranslateCap('blip_dead'))
-		EndTextCommandSetBlipName(blip)
+		local blip = xLib.blips.create({
+			coords = playerCoords,
+			sprite = Config.DistressBlip.Sprite,
+			color = Config.DistressBlip.Color,
+			scale = Config.DistressBlip.Scale,
+			flashes = true,
+			label = TranslateCap('blip_dead')
+		})
 
 		deadPlayerBlips[playerId] = blip
 	end

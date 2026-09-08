@@ -66,17 +66,15 @@ end)
 if Config.Blip.Enabled then
   CreateThread(function()
     for i = 1, #Config.Zones, 1 do
-      local blip = AddBlipForCoord(Config.Zones[i])
-
-      SetBlipSprite(blip, Config.Blip.Sprite)
-      SetBlipDisplay(blip, Config.Blip.Display)
-      SetBlipScale(blip, Config.Blip.Scale)
-      SetBlipColour(blip, Config.Blip.Colour)
-      SetBlipAsShortRange(blip, Config.Blip.ShortRange)
-
-      BeginTextCommandSetBlipName("STRING")
-      AddTextComponentSubstringPlayerName(TranslateCap('blip_text'))
-      EndTextCommandSetBlipName(blip)
+      xLib.blips.create({
+        coords = Config.Zones[i],
+        sprite = Config.Blip.Sprite,
+        display = Config.Blip.Display,
+        scale = Config.Blip.Scale,
+        color = Config.Blip.Colour,
+        shortRange = Config.Blip.ShortRange,
+        label = TranslateCap('blip_text')
+      })
     end
   end)
 end

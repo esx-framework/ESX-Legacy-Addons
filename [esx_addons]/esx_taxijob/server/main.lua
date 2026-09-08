@@ -19,12 +19,8 @@ local function toVector3(coords)
 end
 
 local function isNear(source, coords, distance)
-    local ped = GetPlayerPed(source)
-    if not ped or ped == 0 then
-        return false
-    end
-
-    return #(GetEntityCoords(ped) - coords) <= distance
+    local nearby = xLib.player.isNearCoords(source, coords, distance)
+    return nearby
 end
 
 local function getDrivenVehicle(source)
@@ -72,19 +68,7 @@ local function isConfiguredDropoff(coords)
     return false
 end
 
-local function getValidCount(count)
-    count = tonumber(count)
-    if not count then
-        return nil
-    end
-
-    count = ESX.Math.Round(count)
-    if count <= 0 then
-        return nil
-    end
-
-    return count
-end
+local getValidCount = xLib.validation.count
 
 local function isNearTaxiActions(source)
     return isNear(source, vector3(Config.Zones.TaxiActions.Pos.x, Config.Zones.TaxiActions.Pos.y, Config.Zones.TaxiActions.Pos.z), 8.0)

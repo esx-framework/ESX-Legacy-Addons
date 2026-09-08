@@ -103,51 +103,42 @@ end)
 -- Create Blips
 CreateThread(function()
 	for i = 1, #Config.Shops do
-      		local blip = AddBlipForCoord(Config.Shops[i])
-
-		SetBlipSprite (blip, 71)
-		SetBlipColour (blip, 51)
-		SetBlipAsShortRange(blip, true)
-
-		BeginTextCommandSetBlipName('STRING')
-		AddTextComponentSubstringPlayerName(TranslateCap('barber_blip'))
-		EndTextCommandSetBlipName(blip)
+		xLib.blips.create({
+			coords = Config.Shops[i],
+			sprite = 71,
+			color = 51,
+			shortRange = true,
+			label = TranslateCap('barber_blip')
+		})
     	end
 end)
 
 -- Enter / Exit marker events and draw marker
 CreateThread(function()
-	while true do
-		Wait(0)
-		local playerCoords, isInMarker, currentZone, letSleep = GetEntityCoords(PlayerPedId()), nil, nil, true
-
-		for y = 1, #Config.Shops do
-			local currentShopCoords = Config.Shops[y]
-			local distance = #(playerCoords - currentShopCoords)
-
-			if distance < Config.DrawDistance then
-				letSleep = false
-				DrawMarker(Config.MarkerType, currentShopCoords, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Config.MarkerSize, Config.MarkerColor.r, Config.MarkerColor.g, Config.MarkerColor.b, 100, false, true, 2, false, nil, nil, false)
-
-				if distance < 1.5 then
-					isInMarker, currentZone = true, k
-				end
+	for i = 1, #Config.Shops do
+		xLib.markerZone.create({
+			coords = Config.Shops[i],
+			drawDistance = Config.DrawDistance,
+			interactDistance = 1.5,
+			marker = {
+				type = Config.MarkerType,
+				size = Config.MarkerSize,
+				color = {
+					r = Config.MarkerColor.r,
+					g = Config.MarkerColor.g,
+					b = Config.MarkerColor.b,
+					a = 100
+				}
+			},
+			onEnter = function()
+				hasAlreadyEnteredMarker, lastZone = true, i
+				TriggerEvent('esx_barbershop:hasEnteredMarker', i)
+			end,
+			onExit = function()
+				hasAlreadyEnteredMarker = false
+				TriggerEvent('esx_barbershop:hasExitedMarker', i)
 			end
-		end
-
-		if (isInMarker and not hasAlreadyEnteredMarker) or (isInMarker and lastZone ~= currentZone) then
-			hasAlreadyEnteredMarker, lastZone = true, currentZone
-			TriggerEvent('esx_barbershop:hasEnteredMarker', currentZone)
-		end
-
-		if not isInMarker and hasAlreadyEnteredMarker then
-			hasAlreadyEnteredMarker = false
-			TriggerEvent('esx_barbershop:hasExitedMarker', lastZone)
-		end
-
-		if letSleep then
-			Wait(500)
-		end
+		})
 	end
 end)
 

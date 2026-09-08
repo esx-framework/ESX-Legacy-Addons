@@ -1,5 +1,6 @@
 local nearbyZone = nil
 local textShown = false
+local markerZones = {}
 
 ---Gets the nearby interactable weaponshop zone
 ---@return string|nil
@@ -7,24 +8,11 @@ function GetNearbyZone()
 	return nearbyZone
 end
 
----Draws markers and handles proximity detection
----@return number sleepTime
-function DrawMarkersAndCheckProximity()
-	local sleep = 1500
-	local hasVisibleMarker = false
-	local zoneInRange = nil
-	local uiOpen = IsUIOpen()
-	local ped = ESX.PlayerData and ESX.PlayerData.ped
-
-	if not ped or ped == 0 then
-		ped = PlayerPedId()
+function RegisterWeaponShopMarkers()
+	if Config.Type == -1 or not Config.Zones then
+		return
 	end
 
-	if not ped or ped == 0 then
-		return sleep
-	end
-
-	local coords = GetEntityCoords(ped)
 	local drawDistance = tonumber(Config.DrawDistance) or 10.0
 	local interactionDistance = tonumber(Config.InteractionDistance) or 2.0
 
@@ -33,52 +21,55 @@ function DrawMarkersAndCheckProximity()
 		local posCount = type(locations) == 'table' and #locations or 0
 
 		for i = 1, posCount do
-			local location = locations[i]
-			local distance = #(coords - location)
+			markerZones[#markerZones + 1] = xLib.markerZone.create({
+				coords = locations[i],
+				drawDistance = drawDistance,
+				interactDistance = interactionDistance,
+				marker = {
+					type = Config.Type,
+					size = Config.Size,
+					color = {
+						r = Config.Color.r,
+						g = Config.Color.g,
+						b = Config.Color.b,
+						a = 100
+					}
+				},
+				onEnter = function()
+					nearbyZone = zoneName
 
-			if Config.Type ~= -1 and distance < drawDistance then
-				hasVisibleMarker = true
-				sleep = 0
+					if not IsUIOpen() and not textShown then
+						ESX.TextUI(TranslateCap('shop_menu_prompt', Config.InteractionKeyLabel or 'E'))
+						textShown = true
+					end
+				end,
+				onExit = function()
+					if nearbyZone == zoneName then
+						nearbyZone = nil
+					end
 
-				if distance < interactionDistance then
-					zoneInRange = zoneName
+					if textShown then
+						textShown = false
+						ESX.HideUI()
+					end
+
+					if IsUIOpen() then
+						CloseShop()
+					end
 				end
+			})
+		end
+	end
+end
 
-				DrawMarker(
-					Config.Type,
-					location.x, location.y, location.z,
-					0.0, 0.0, 0.0,
-					0.0, 0.0, 0.0,
-					Config.Size.x, Config.Size.y, Config.Size.z,
-					Config.Color.r, Config.Color.g, Config.Color.b, 100,
-					false, true, 2, false, nil, nil, false
-				)
-			end
+function RemoveWeaponShopMarkers()
+	for i = 1, #markerZones do
+		if markerZones[i] and markerZones[i].remove then
+			markerZones[i].remove()
 		end
 	end
 
-	if uiOpen then
-		nearbyZone = nil
-	elseif zoneInRange then
-		if not textShown or nearbyZone ~= zoneInRange then
-			ESX.TextUI(TranslateCap('shop_menu_prompt', Config.InteractionKeyLabel or 'E'))
-			textShown = true
-		end
-
-		nearbyZone = zoneInRange
-	else
-		nearbyZone = nil
-	end
-
-	if (not zoneInRange or uiOpen) and textShown then
-		textShown = false
-		ESX.HideUI()
-	end
-
-	if not hasVisibleMarker and uiOpen then
-		CloseShop()
-		nearbyZone = nil
-	end
-
-	return sleep
+	markerZones = {}
+	nearbyZone = nil
+	textShown = false
 end

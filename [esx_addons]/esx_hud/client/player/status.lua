@@ -44,7 +44,7 @@ if not Config.Disable.Status then
 
                 values.oxygenBar = oxygen or 0
                 values.staminaBar = stamina
-                SendNUIMessage({ type = "STATUS_HUD", value = values })
+                xLib.nui.send({ type = "STATUS_HUD", value = values })
                 Wait(250)
             end
         end)

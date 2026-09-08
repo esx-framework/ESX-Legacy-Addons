@@ -113,7 +113,7 @@ function HUD:FastThick()
                 job = HUD:GetJobLabel(),
             }
 
-            SendNUIMessage({ type = "HUD_DATA", value = values })
+            xLib.nui.send({ type = "HUD_DATA", value = values })
             Wait(500)
         end
     end)

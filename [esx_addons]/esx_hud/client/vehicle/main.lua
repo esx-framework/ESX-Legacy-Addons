@@ -49,7 +49,7 @@ if not Config.Disable.Vehicle then
                     if HUD.Data.Driver then
                         isPassenger = false
                     else
-                        SendNUIMessage({ type = "VEH_HUD", value = { show = false } })
+                        xLib.nui.send({ type = "VEH_HUD", value = { show = false } })
                         isPassenger = true
                     end
                 end
@@ -126,7 +126,7 @@ if not Config.Disable.Vehicle then
                 values.defaultIndicators.engine = engineRunning
 
                 if not isPassenger then
-                    SendNUIMessage({ type = "VEH_HUD", value = values })
+                    xLib.nui.send({ type = "VEH_HUD", value = values })
                 end
             end
             Wait(50)
@@ -172,7 +172,7 @@ if not Config.Disable.Vehicle then
             defaultIndicators = {},
         }
 
-        SendNUIMessage({ type = "VEH_HUD", value = { show = false } })
+        xLib.nui.send({ type = "VEH_HUD", value = { show = false } })
 
         if Config.Disable.MinimapOnFoot then
             DisplayRadar(false)

@@ -22,12 +22,12 @@ end
 function StartTheoryTest()
 	CurrentTest = 'theory'
 
-	SendNUIMessage({
+	xLib.nui.send({
 		openQuestion = true
 	})
 
 	xLib.timeout.setTimeout(200, function()
-		SetNuiFocus(true, true)
+		xLib.nui.focus(true, true)
 	end)
 
 
@@ -36,11 +36,11 @@ end
 function StopTheoryTest(success)
 	CurrentTest = nil
 
-	SendNUIMessage({
+	xLib.nui.send({
 		openQuestion = false
 	})
 
-	SetNuiFocus(false)
+	xLib.nui.focus(false)
 
 	if success then
 		TriggerServerEvent('esx_dmvschool:addLicense', 'dmv')
@@ -162,22 +162,22 @@ function OpenDMVSchoolMenu()
 	end)
 end
 
-RegisterNUICallback('question', function(data, cb)
-	SendNUIMessage({
+xLib.nui.register('question', function()
+	xLib.nui.send({
 		openSection = 'question'
 	})
 
-	cb()
+	return {}
 end)
 
-RegisterNUICallback('close', function(data, cb)
+xLib.nui.register('close', function()
 	StopTheoryTest(true)
-	cb()
+	return {}
 end)
 
-RegisterNUICallback('kick', function(data, cb)
+xLib.nui.register('kick', function()
 	StopTheoryTest(false)
-	cb()
+	return {}
 end)
 
 AddEventHandler('esx_dmvschool:hasEnteredMarker', function(zone)
@@ -200,17 +200,15 @@ end)
 
 -- Create Blips
 CreateThread(function()
-	local blip = AddBlipForCoord(Config.Zones.DMVSchool.Pos.x, Config.Zones.DMVSchool.Pos.y, Config.Zones.DMVSchool.Pos.z)
-
-	SetBlipSprite (blip, 408)
-	SetBlipColour (blip, 0)
-	SetBlipDisplay(blip, 4)
-	SetBlipScale  (blip, 1.2)
-	SetBlipAsShortRange(blip, true)
-
-	BeginTextCommandSetBlipName("STRING")
-	AddTextComponentSubstringPlayerName(TranslateCap('driving_school_blip'))
-	EndTextCommandSetBlipName(blip)
+	xLib.blips.create({
+		coords = Config.Zones.DMVSchool.Pos,
+		sprite = 408,
+		color = 0,
+		display = 4,
+		scale = 1.2,
+		shortRange = true,
+		label = TranslateCap('driving_school_blip')
+	})
 end)
 
 -- Display markers
@@ -255,8 +253,10 @@ CreateThread(function()
 						RemoveBlip(CurrentBlip)
 					end
 
-					CurrentBlip = AddBlipForCoord(Config.CheckPoints[nextCheckPoint].Pos.x, Config.CheckPoints[nextCheckPoint].Pos.y, Config.CheckPoints[nextCheckPoint].Pos.z)
-					SetBlipRoute(CurrentBlip, 1)
+					CurrentBlip = xLib.blips.create({
+						coords = Config.CheckPoints[nextCheckPoint].Pos,
+						route = true
+					})
 
 					LastCheckPoint = CurrentCheckPoint
 				end

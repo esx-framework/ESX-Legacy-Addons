@@ -458,18 +458,15 @@ end)
 
 -- Create Blips
 CreateThread(function()
-    local blip = AddBlipForCoord(Config.Zones.TaxiActions.Pos.x, Config.Zones.TaxiActions.Pos.y,
-        Config.Zones.TaxiActions.Pos.z)
-
-    SetBlipSprite(blip, 198)
-    SetBlipDisplay(blip, 4)
-    SetBlipScale(blip, 1.0)
-    SetBlipColour(blip, 5)
-    SetBlipAsShortRange(blip, true)
-
-    BeginTextCommandSetBlipName('STRING')
-    AddTextComponentSubstringPlayerName(TranslateCap('blip_taxi'))
-    EndTextCommandSetBlipName(blip)
+    xLib.blips.create({
+        coords = Config.Zones.TaxiActions.Pos,
+        sprite = 198,
+        display = 4,
+        scale = 1.0,
+        color = 5,
+        shortRange = true,
+        label = TranslateCap('blip_taxi')
+    })
 end)
 
 -- Enter / Exit marker events, and draw markers
@@ -526,12 +523,13 @@ CreateThread(function()
                         CurrentCustomer = GetRandomWalkingNPC()
 
                         if CurrentCustomer ~= nil then
-                            CurrentCustomerBlip = AddBlipForEntity(CurrentCustomer)
-
-                            SetBlipAsFriendly(CurrentCustomerBlip, true)
-                            SetBlipColour(CurrentCustomerBlip, 2)
-                            SetBlipCategory(CurrentCustomerBlip, 3)
-                            SetBlipRoute(CurrentCustomerBlip, true)
+                            CurrentCustomerBlip = xLib.blips.create({
+                                entity = CurrentCustomer,
+                                friendly = true,
+                                color = 2,
+                                category = 3,
+                                route = true
+                            })
 
                             SetEntityAsMissionEntity(CurrentCustomer, true, false)
                             ClearPedTasksImmediately(CurrentCustomer)
@@ -623,12 +621,11 @@ CreateThread(function()
 
                             ESX.ShowNotification(msg)
 
-                            DestinationBlip = AddBlipForCoord(targetCoords.x, targetCoords.y, targetCoords.z)
-
-                            BeginTextCommandSetBlipName('STRING')
-                            AddTextComponentSubstringPlayerName('Destination')
-                            EndTextCommandSetBlipName(DestinationBlip)
-                            SetBlipRoute(DestinationBlip, true)
+                            DestinationBlip = xLib.blips.create({
+                                coords = targetCoords,
+                                label = 'Destination',
+                                route = true
+                            })
 
                             TriggerServerEvent('esx_taxijob:startMission', customerCoords, targetCoords)
                             CustomerEnteredVehicle = true

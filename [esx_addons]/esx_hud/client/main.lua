@@ -1,9 +1,9 @@
 function HUD:Toggle(state)
-    SendNUIMessage({ type = "SHOW", value = state })
+    xLib.nui.send({ type = "SHOW", value = state })
 end
 
 function HUD:SetHudColor()
-    SendNUIMessage({ type = "SET_CONFIG_DATA", value = Config })
+    xLib.nui.send({ type = "SET_CONFIG_DATA", value = Config })
 end
 
 function HUD:Start(xPlayer)

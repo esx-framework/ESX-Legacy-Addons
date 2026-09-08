@@ -1,8 +1,5 @@
 CreateThread(function()
-	while true do
-		local sleep = DrawMarkersAndCheckProximity()
-		Wait(sleep)
-	end
+	RegisterWeaponShopMarkers()
 end)
 
 AddEventHandler('onResourceStop', function(resource)

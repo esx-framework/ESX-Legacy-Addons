@@ -39,12 +39,10 @@ function Mechanic.activateNPCDeliveryRoute()
 
 	removeBlip('NPCTargetTowableZone')
 
-	State.blips.NPCDelivery = AddBlipForCoord(
-		Config.Zones.VehicleDelivery.Pos.x,
-		Config.Zones.VehicleDelivery.Pos.y,
-		Config.Zones.VehicleDelivery.Pos.z
-	)
-	SetBlipRoute(State.blips.NPCDelivery, true)
+	State.blips.NPCDelivery = xLib.blips.create({
+		coords = Config.Zones.VehicleDelivery.Pos,
+		route = true
+	})
 end
 
 RegisterNetEvent('esx_mechanicjob:npcJobStarted')
@@ -57,8 +55,10 @@ AddEventHandler('esx_mechanicjob:npcJobStarted', function(targetZone)
 	State.npcTargetTowableZone = targetZone
 
 	local zone = Config.Zones[targetZone]
-	State.blips.NPCTargetTowableZone = AddBlipForCoord(zone.Pos.x, zone.Pos.y, zone.Pos.z)
-	SetBlipRoute(State.blips.NPCTargetTowableZone, true)
+	State.blips.NPCTargetTowableZone = xLib.blips.create({
+		coords = zone.Pos,
+		route = true
+	})
 
 	ESX.ShowNotification(TranslateCap('drive_to_indicated'))
 end)

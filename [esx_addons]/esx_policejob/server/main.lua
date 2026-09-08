@@ -8,24 +8,7 @@ TriggerEvent('esx_phone:registerNumber', 'police', TranslateCap('alert_police'),
 TriggerEvent('esx_society:registerSociety', 'police', TranslateCap('society_police'), 'society_police', 'society_police', 'society_police', {type = 'public'})
 
 local cuffedPlayers = {}
-local JobVehicleNumberCharset, JobVehicleCharset = {}, {}
-
-for i = 48, 57 do JobVehicleNumberCharset[#JobVehicleNumberCharset + 1] = string.char(i) end
-for i = 65, 90 do JobVehicleCharset[#JobVehicleCharset + 1] = string.char(i) end
-
-local function getValidCount(count)
-	count = tonumber(count)
-	if not count then
-		return nil
-	end
-
-	count = ESX.Math.Round(count)
-	if count <= 0 then
-		return nil
-	end
-
-	return count
-end
+local getValidCount = xLib.validation.count
 
 local function isPolice(xPlayer)
 	return xPlayer and xPlayer.getJob().name == 'police'
@@ -36,39 +19,19 @@ local function isPoliceOnDuty(xPlayer)
 	return job and job.name == 'police' and job.onDuty ~= false
 end
 
-local function getRandomPlateChunk(charset, length)
-	local value = ''
-
-	for i = 1, length do
-		value = value .. charset[math.random(1, #charset)]
-	end
-
-	return value
-end
-
 local function generateJobVehiclePlate()
-	for i = 1, 30 do
-		local plate = ('POL%s%s'):format(getRandomPlateChunk(JobVehicleCharset, 2), getRandomPlateChunk(JobVehicleNumberCharset, 3))
-		local exists = MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE plate = ?', {plate})
-		if not exists then return plate end
-	end
-
-	return nil
+	return xLib.vehiclePlate.generateUnique({
+		prefix = 'POL',
+		letters = 2,
+		numbers = 3
+	}, function(plate)
+		return MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE plate = ?', {plate}) ~= nil
+	end)
 end
 
 local function isNearPlayer(source, target, distance)
-	target = tonumber(target)
-	if not target or source == target then
-		return false
-	end
-
-	local sourcePed = GetPlayerPed(source)
-	local targetPed = GetPlayerPed(target)
-	if not sourcePed or sourcePed == 0 or not targetPed or targetPed == 0 then
-		return false
-	end
-
-	return #(GetEntityCoords(sourcePed) - GetEntityCoords(targetPed)) <= distance
+	local nearby = xLib.player.isNearPlayer(source, target, distance)
+	return nearby
 end
 
 local function isNearPoliceArmory(source)

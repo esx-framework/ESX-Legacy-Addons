@@ -3,9 +3,9 @@ local uiOpen = false
 local nuiReady = false
 
 -- NUI Ready Callback
-RegisterNUICallback('ready', function(data, cb)
-	cb({ theme = GetESXThemeColors() })
+xLib.nui.register('ready', function()
 	nuiReady = true
+	return { theme = GetESXThemeColors() }
 end)
 
 ---Opens shop NUI
@@ -42,8 +42,8 @@ function OpenShop(zone)
 				taxMessage = nil
 			}
 
-			SetNuiFocus(true, true)
-			SendNUIMessage({
+			xLib.nui.focus(true, true)
+			xLib.nui.send({
 				type = 'openShop',
 				shopData = shopData
 			})
@@ -66,8 +66,8 @@ function OpenShop(zone)
 			taxMessage = taxMessage
 		}
 
-		SetNuiFocus(true, true)
-		SendNUIMessage({
+		xLib.nui.focus(true, true)
+		xLib.nui.send({
 			type = 'openShop',
 			shopData = shopData
 		})
@@ -78,8 +78,7 @@ function OpenShop(zone)
 end
 
 function CloseShop()
-	SetNuiFocus(false, false)
-	SendNUIMessage({ type = 'closeShop' })
+	xLib.nui.close({ type = 'closeShop' })
 	currentShop = nil
 	uiOpen = false
 end
@@ -103,9 +102,9 @@ function IsNUIReady()
 end
 
 -- Purchase callback
-RegisterNUICallback('purchaseItems', function(data, cb)
+xLib.nui.register('purchaseItems', function(data, reply)
 	if not currentShop then
-		cb({
+		reply({
 			ok = false,
 			error = { code = 'CLIENT', message = _U('no_shop_selected') }
 		})
@@ -114,15 +113,17 @@ RegisterNUICallback('purchaseItems', function(data, cb)
 
 	xLib.callback('esx_shops:purchaseItems', false, function(success, message)
 		if success then
-			cb({ ok = true, data = { message = message } })
+			reply({ ok = true, data = { message = message } })
 		else
-			cb({ ok = false, error = { code = 'SERVER', message = message } })
+			reply({ ok = false, error = { code = 'SERVER', message = message } })
 		end
 	end, data, currentShop)
+
+	return xLib.nui.defer
 end)
 
 -- Close UI callback
-RegisterNUICallback('closeUI', function(data, cb)
+xLib.nui.register('closeUI', function()
 	CloseShop()
-	cb('ok')
+	return 'ok'
 end)

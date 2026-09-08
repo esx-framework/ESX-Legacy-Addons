@@ -41,15 +41,8 @@ local function getSocietyJob(sharedAccountName)
 end
 
 local function isNearPlayer(source, target, distance)
-	local sourcePed = GetPlayerPed(source)
-	local targetPed = GetPlayerPed(target)
-
-	if sourcePed <= 0 or targetPed <= 0 then return false end
-
-	local sourceCoords = GetEntityCoords(sourcePed)
-	local targetCoords = GetEntityCoords(targetPed)
-
-	return #(sourceCoords - targetCoords) <= (distance or Config.BillingDistance or 10.0)
+	local nearby = xLib.player.isNearPlayer(source, target, distance or Config.BillingDistance or 10.0)
+	return nearby
 end
 
 local function canIssueSocietyBill(xPlayer, sharedAccountName)

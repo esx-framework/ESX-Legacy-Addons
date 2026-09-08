@@ -212,8 +212,8 @@ local function OpenNui(zone, mode, selectedName, stateOverrides)
 	uiOpen = true
 
 	ESX.HideUI()
-	SetNuiFocus(true, true)
-	SendNUIMessage({
+	xLib.nui.focus(true, true)
+	xLib.nui.send({
 		type = 'openShop',
 		shopData = {
 			shopName = TranslateCap('shop_menu_title'),
@@ -242,8 +242,7 @@ function OpenBuyLicenseMenu(zone)
 end
 
 function CloseShop()
-	SetNuiFocus(false, false)
-	SendNUIMessage({ type = 'closeShop' })
+	xLib.nui.close({ type = 'closeShop' })
 	currentShop = nil
 	uiOpen = false
 end
@@ -261,14 +260,14 @@ function IsUIOpen()
 end
 
 -- NUI Ready Callback
-RegisterNUICallback('ready', function(data, cb)
-	cb({ theme = GetESXThemeColors() })
+xLib.nui.register('ready', function()
+	return { theme = GetESXThemeColors() }
 end)
 
 -- Purchase callback
-RegisterNUICallback('buyWeapon', function(data, cb)
+xLib.nui.register('buyWeapon', function(data, reply)
 	if type(data) ~= 'table' or type(data.weaponName) ~= 'string' or not currentShop then
-		cb({ ok = false })
+		reply({ ok = false })
 		return
 	end
 
@@ -289,14 +288,16 @@ RegisterNUICallback('buyWeapon', function(data, cb)
 			PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
 		end
 
-		cb({ ok = bought and true or false })
+		reply({ ok = bought and true or false })
 	end, data.weaponName, shop)
+
+	return xLib.nui.defer
 end)
 
 -- Upgrade purchase callback
-RegisterNUICallback('buyUpgrade', function(data, cb)
+xLib.nui.register('buyUpgrade', function(data, reply)
 	if type(data) ~= 'table' or type(data.weaponName) ~= 'string' or type(data.action) ~= 'string' or not currentShop then
-		cb({ ok = false })
+		reply({ ok = false })
 		return
 	end
 
@@ -318,23 +319,27 @@ RegisterNUICallback('buyUpgrade', function(data, cb)
 			PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
 		end
 
-		cb({ ok = bought and true or false })
+		reply({ ok = bought and true or false })
 	end, data, shop)
+
+	return xLib.nui.defer
 end)
 
 -- License callback
-RegisterNUICallback('buyLicense', function(_, cb)
+xLib.nui.register('buyLicense', function(_, reply)
 	xLib.callback('esx_weaponshop:buyLicense', false, function(bought)
-		cb({ ok = bought and true or false })
+		reply({ ok = bought and true or false })
 
 		if bought and currentShop then
 			OpenShop(currentShop)
 		end
 	end)
+
+	return xLib.nui.defer
 end)
 
 -- Close UI callback
-RegisterNUICallback('closeUI', function(data, cb)
+xLib.nui.register('closeUI', function()
 	CloseShop()
-	cb('ok')
+	return 'ok'
 end)

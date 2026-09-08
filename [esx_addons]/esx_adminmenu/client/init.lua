@@ -36,7 +36,7 @@ local function requestInitData()
         end
 
         data.translations = activeTranslations()
-        SendNUIMessage({
+        xLib.nui.send({
             action = 'initResource',
             data = data
         })

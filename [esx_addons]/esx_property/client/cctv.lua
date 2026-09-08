@@ -231,7 +231,7 @@ function CCTV(PropertyID)
                   exports['screenshot-basic']:requestScreenshotUpload(hook, "files[]", function(data)
                     local image = json.decode(data)
                     ESX.ShowNotification(TranslateCap("picture_taken"), "success")
-                    SendNUIMessage({link = image.attachments[1].proxy_url})
+                    xLib.nui.send({link = image.attachments[1].proxy_url})
                     ESX.ShowNotification(TranslateCap("clipboard"), "success")
                     ShowButtons = true
                     CamTakePic = false

@@ -541,15 +541,13 @@ end
 -- Blips
 CreateThread(function()
     for k, v in pairs(Config.Zones) do
-        local blip = AddBlipForCoord(v.Pos.x, v.Pos.y, v.Pos.z)
-
-        SetBlipSprite(blip, 72)
-        SetBlipScale(blip, 0.8)
-        SetBlipAsShortRange(blip, true)
-
-        BeginTextCommandSetBlipName('STRING')
-        AddTextComponentSubstringPlayerName(v.Name)
-        EndTextCommandSetBlipName(blip)
+        xLib.blips.create({
+            coords = v.Pos,
+            sprite = 72,
+            scale = 0.8,
+            shortRange = true,
+            label = v.Name
+        })
     end
 end)
 

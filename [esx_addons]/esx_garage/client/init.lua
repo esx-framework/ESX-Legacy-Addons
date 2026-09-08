@@ -438,9 +438,9 @@ local function openMenu()
 
     local garage = loc.garage
 
-    SendNUIMessage({ type = "setLocale", payload = Config.Locale })
+    xLib.nui.send({ type = "setLocale", payload = Config.Locale })
 
-    SendNUIMessage({
+    xLib.nui.send({
         type = "openGarage",
         payload = {
             garage = {
@@ -458,7 +458,7 @@ local function openMenu()
         }
     })
 
-    SetNuiFocus(true, true)
+    xLib.nui.focus(true, true)
 end
 
 local function syncHudMileage(plate)
@@ -555,28 +555,27 @@ local function pickClearSpawn(spawns)
 end
 
 local function closeMenu()
-    SetNuiFocus(false, false)
-    SendNUIMessage({ type = "closeGarage", payload = {} })
+    xLib.nui.close({ type = "closeGarage", payload = {} })
 end
 
-RegisterNUICallback("garage:getVehicles", function(data, cb)
+xLib.nui.register("garage:getVehicles", function(data)
     local page, err = fetchVehiclePage(data)
     if not page then
-        return cb({ success = false, error = err or "no_location" })
+        return { success = false, error = err or "no_location" }
     end
 
-    cb({ success = true, data = page })
+    return { success = true, data = page }
 end)
 
-RegisterNUICallback("garage:retrieveVehicle", function(data, cb)
+xLib.nui.register("garage:retrieveVehicle", function(data)
     if not currentLocation then
-        return cb({ success = false, error = "no_location" })
+        return { success = false, error = "no_location" }
     end
 
     local spawn = pickClearSpawn(currentLocation.spawns)
 
     if not spawn then
-        return cb({ success = false, error = "blocked" })
+        return { success = false, error = "blocked" }
     end
 
     local result = serverCall("esx_garage:retrieveVehicle", {
@@ -602,37 +601,37 @@ RegisterNUICallback("garage:retrieveVehicle", function(data, cb)
         closeMenu()
     end
 
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:toggleFavorite", function(data, cb)
+xLib.nui.register("garage:toggleFavorite", function(data)
     local result = serverCall("esx_garage:toggleFavorite", { plate = data.vehicleId, isFavorite = data.isFavorite })
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:renameVehicle", function(data, cb)
+xLib.nui.register("garage:renameVehicle", function(data)
     local result = serverCall("esx_garage:renameVehicle", { plate = data.vehicleId, name = data.newName or data.name })
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:transferVehicle", function(data, cb)
+xLib.nui.register("garage:transferVehicle", function(data)
     local result = serverCall("esx_garage:transferVehicle", { plate = data.vehicleId, targetId = data.targetId })
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:giveKeys", function(data, cb)
+xLib.nui.register("garage:giveKeys", function(data)
     local result = serverCall("esx_garage:giveKeys", { plate = data.vehicleId })
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:closeUI", function(_, cb)
+xLib.nui.register("garage:closeUI", function()
     closeMenu()
-    cb({ success = true })
+    return { success = true }
 end)
 
-RegisterNUICallback("SetNuiFocus", function(data, cb)
-    SetNuiFocus(data.hasFocus, data.hasCursor)
-    cb({ success = true })
+xLib.nui.register("SetNuiFocus", function(data)
+    xLib.nui.focus(data.hasFocus, data.hasCursor)
+    return { success = true }
 end)
 
 AddEventHandler("xLib:cache:vehicle", updateCurrentLocation)

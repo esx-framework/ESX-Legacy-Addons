@@ -2,16 +2,10 @@ local Vehicles
 local Customs = {}
 
 local function normalizePlate(plate)
-	if type(plate) ~= 'string' then
-		return nil
-	end
-
-	plate = plate:gsub("^%s+", ""):gsub("%s+$", "")
-	if plate == "" then
-		return nil
-	end
-
-	return plate
+	return xLib.vehiclePlate.normalize(plate, {
+		maxLength = 0,
+		uppercase = false
+	})
 end
 
 local function isNearCustoms(source)

@@ -747,14 +747,14 @@ function ClientActions.ToggleBlips()
 
 				if ped ~= 0 and DoesEntityExist(ped) then
 					if not playerBlips[serverId] or not DoesBlipExist(playerBlips[serverId]) then
-						local blip = AddBlipForEntity(ped)
-						SetBlipSprite(blip, blipConfig.sprite or 1)
-						SetBlipScale(blip, blipConfig.scale or 0.85)
-						SetBlipColour(blip, blipConfig.colour or 5)
-						ShowHeadingIndicatorOnBlip(blip, true)
-						BeginTextCommandSetBlipName("STRING")
-						AddTextComponentString(("[%s] %s"):format(serverId, GetPlayerName(player)))
-						EndTextCommandSetBlipName(blip)
+						local blip = xLib.blips.create({
+							entity = ped,
+							sprite = blipConfig.sprite or 1,
+							scale = blipConfig.scale or 0.85,
+							color = blipConfig.colour or 5,
+							headingIndicator = true,
+							label = ("[%s] %s"):format(serverId, GetPlayerName(player))
+						})
 						playerBlips[serverId] = blip
 					end
 				end
@@ -1060,7 +1060,7 @@ function ClientActions.CopyCoords()
 	local heading = GetEntityHeading(ped)
 	local text = string.format("vec4(%.2f, %.2f, %.2f, %.2f)", coords.x, coords.y, coords.z, heading)
 
-	SendNUIMessage({
+	xLib.nui.send({
 		action = "copyToClipboard",
 		data = text,
 	})
@@ -1260,7 +1260,7 @@ local function StopSpectate()
 
 	spectating = false
 
-	SendNUIMessage({
+	xLib.nui.send({
 		action = "stopSpectate",
 		data = true,
 	})
@@ -1354,6 +1354,5 @@ AddEventHandler("onResourceStop", function(resource)
 	restoreNoClip(ped)
 	restoreInfiniteAmmo(ped)
 	clearPlayerBlips()
-	SetNuiFocus(false, false)
-	SetNuiFocusKeepInput(false)
+	xLib.nui.focus(false, false, false)
 end)

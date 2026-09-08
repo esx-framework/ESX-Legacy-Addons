@@ -2,7 +2,7 @@ function TriggerMedalDeathClip()
     local cfg = Config.Medal
     if not cfg or not cfg.enabled or cfg.publicKey == '' then return end
 
-    SendNUIMessage({
+    xLib.nui.send({
         action = 'medalClip',
         publicKey = cfg.publicKey,
         payload = {

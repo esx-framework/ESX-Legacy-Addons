@@ -76,29 +76,15 @@ local function normalizePropertyId(propertyId)
 end
 
 local function normalizePlate(plate)
-  if type(plate) ~= "string" then
-    return nil
-  end
-
-  plate = plate:gsub("^%s+", ""):gsub("%s+$", "")
-  if plate == "" or #plate > 12 then
-    return nil
-  end
-
-  return plate
+  return xLib.vehiclePlate.normalize(plate, {
+    maxLength = 12,
+    uppercase = false
+  })
 end
 
 local function isNearCoords(source, coords, maxDistance)
-  if not coords or not coords.x or not coords.y or not coords.z then
-    return false
-  end
-
-  local ped = GetPlayerPed(source)
-  if not ped or ped == 0 then
-    return false
-  end
-
-  return #(GetEntityCoords(ped) - vector3(coords.x, coords.y, coords.z)) <= maxDistance
+  local nearby = xLib.player.isNearCoords(source, coords, maxDistance)
+  return nearby
 end
 
 local function hasPropertyAccess(xPlayer, Property)

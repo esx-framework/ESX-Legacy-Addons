@@ -91,12 +91,8 @@ local function isAdmin(xPlayer)
 end
 
 local function isNearPlayer(source, target, distance)
-	local sourcePed = GetPlayerPed(source)
-	local targetPed = GetPlayerPed(target)
-
-	if sourcePed <= 0 or targetPed <= 0 then return false end
-
-	return #(GetEntityCoords(sourcePed) - GetEntityCoords(targetPed)) <= (distance or Config.LicenseCheckDistance or 5.0)
+	local nearby = xLib.player.isNearPlayer(source, target, distance or Config.LicenseCheckDistance or 5.0)
+	return nearby
 end
 
 local function canReadTargetLicenses(source, target)

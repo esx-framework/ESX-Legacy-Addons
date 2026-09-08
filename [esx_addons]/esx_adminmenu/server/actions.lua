@@ -74,13 +74,10 @@ local function isValidCharacterIdentifier(identifier)
 end
 
 local function normalizePlate(plate)
-	plate = trimString(plate):upper()
-
-	if plate == "" or #plate > 12 or not plate:match("^[%w%s%-]+$") then
-		return nil
-	end
-
-	return plate
+	return xLib.vehiclePlate.normalize(plate, {
+		maxLength = 12,
+		pattern = "^[%w%s%-]+$"
+	})
 end
 
 local function addUniquePlateValue(values, value)

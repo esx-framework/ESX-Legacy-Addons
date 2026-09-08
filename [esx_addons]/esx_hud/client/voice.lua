@@ -2,7 +2,7 @@ if not Config.Disable.Voice then
     HUD.Data.TalkingOnRadio = false
     if GetResourceState("pma-voice") == "started" then
         AddEventHandler("pma-voice:setTalkingMode", function(mode)
-            SendNUIMessage({ type = "VOICE_RANGE", value = mode })
+            xLib.nui.send({ type = "VOICE_RANGE", value = mode })
             HUD.Data.VoiceRange = mode
         end)
 
@@ -15,12 +15,12 @@ if not Config.Disable.Voice then
                 return
             end
             Wait(1000)
-            SendNUIMessage({ type = "VOICE_RANGE", value = LocalPlayer.state.proximity.index })
+            xLib.nui.send({ type = "VOICE_RANGE", value = LocalPlayer.state.proximity.index })
         end)
     elseif GetResourceState("saltychat") == "started" then
         -- #TODO: Test salty chat, add restart handlers
         AddEventHandler("SaltyChat_VoiceRangeChanged", function(range, index, availableVoiceRanges)
-            SendNUIMessage({ type = "VOICE_RANGE", value = index })
+            xLib.nui.send({ type = "VOICE_RANGE", value = index })
             HUD.Data.VoiceRange = index
         end)
 

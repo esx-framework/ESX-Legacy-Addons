@@ -10,8 +10,7 @@ RegisterCommand("togglehud", function()
 end, false)
 
 RegisterCommand("hudsettings", function()
-    SendNUIMessage({ type = "OPEN_SETTINGS" })
-    SetNuiFocus(true, true)
+    xLib.nui.open({ type = "OPEN_SETTINGS" })
 end, false)
 
 if not Config.Disable.VehicleHandlers and not Config.Disable.Vehicle then

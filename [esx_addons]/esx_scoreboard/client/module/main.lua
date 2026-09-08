@@ -19,8 +19,7 @@ function ScoreboardModule.OpenScoreboard()
   currentScoreboard = ScoreboardClass:new()
   currentScoreboard:Open()
 
-  SendNUIMessage({ type = "show" })
-  SetNuiFocus(true, true)
+  xLib.nui.open({ type = "show" })
   TriggerServerEvent("esx_scoreboard:server:open")
 end
 
@@ -29,8 +28,7 @@ function ScoreboardModule.CloseScoreboard()
   if not ScoreboardModule.IsOpen() then return end
 
   TriggerServerEvent("esx_scoreboard:server:close")
-  SendNUIMessage({ type = "hide" })
-  SetNuiFocus(false, false)
+  xLib.nui.close({ type = "hide" })
 
   currentScoreboard:Close()
   currentScoreboard = nil
@@ -59,28 +57,28 @@ function ScoreboardModule.RefreshData()
 end
 
 RegisterNetEvent("esx_scoreboard:client:receiveSummary", function(summary)
-  SendNUIMessage({
+  xLib.nui.send({
     type = "updateSummary",
     summary = summary
   })
 end)
 
 RegisterNetEvent("esx_scoreboard:client:receivePage", function(page)
-  SendNUIMessage({
+  xLib.nui.send({
     type = "updatePage",
     page = page
   })
 end)
 
 RegisterNetEvent("esx_scoreboard:client:receiveActivities", function(activities)
-  SendNUIMessage({
+  xLib.nui.send({
     type = "updateActivities",
     activities = activities
   })
 end)
 
 RegisterNetEvent("esx_scoreboard:client:receiveData", function(players, jobs, activities, info)
-  SendNUIMessage({
+  xLib.nui.send({
     type = "updateAll",
     players = players,
     jobs = jobs,

@@ -70,12 +70,8 @@ function MechanicJob.normalizeItemCount(count)
 end
 
 function MechanicJob.isPlayerNearCoords(source, coords, distance)
-	local ped = GetPlayerPed(source)
-	if not ped or ped == 0 then
-		return false
-	end
-
-	return #(GetEntityCoords(ped) - coords) <= distance
+	local nearby = xLib.player.isNearCoords(source, coords, distance)
+	return nearby
 end
 
 function MechanicJob.isPlayerNearZone(source, zoneName, distance)

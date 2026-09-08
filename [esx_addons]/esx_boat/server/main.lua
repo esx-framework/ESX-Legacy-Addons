@@ -12,51 +12,22 @@ MySQL.ready(function()
 	ParkBoats()
 end)
 
-local NumberCharset, Charset = {}, {}
-for i = 48, 57 do NumberCharset[#NumberCharset + 1] = string.char(i) end
-for i = 65, 90 do Charset[#Charset + 1] = string.char(i) end
-
-local function getRandomChunk(charset, length)
-	local value = ''
-
-	for i = 1, length do
-		value = value .. charset[math.random(1, #charset)]
-	end
-
-	return value
-end
-
-local function normalizePlate(plate)
-	if type(plate) ~= 'string' then return nil end
-
-	plate = ESX.Math.Trim(plate):upper()
-	if plate == '' or #plate > 8 then return nil end
-
-	return plate
-end
+local normalizePlate = xLib.vehiclePlate.normalize
 
 local function generateBoatPlate()
-	for i = 1, 30 do
-		local plate = ('BO%s%s'):format(getRandomChunk(Charset, 2), getRandomChunk(NumberCharset, 4))
-		local exists = MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE plate = ?', {plate})
-		if not exists then return plate end
-	end
-
-	return nil
+	return xLib.vehiclePlate.generateUnique({
+		prefix = 'BO',
+		letters = 2,
+		numbers = 4
+	}, function(plate)
+		return MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE plate = ?', {plate}) ~= nil
+	end)
 end
 
-local function getPlayerCoords(source)
-	local ped = GetPlayerPed(source)
-	if ped <= 0 then return nil end
-
-	return GetEntityCoords(ped)
-end
-
+local getPlayerCoords = xLib.player.getCoords
 local function isNearCoords(source, coords, distance)
-	local playerCoords = getPlayerCoords(source)
-	if not playerCoords or not coords then return false end
-
-	return #(playerCoords - vector3(coords.x, coords.y, coords.z)) <= distance
+	local nearby = xLib.player.isNearCoords(source, coords, distance)
+	return nearby
 end
 
 local function isNearBoatShop(source)

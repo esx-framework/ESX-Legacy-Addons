@@ -173,8 +173,10 @@ function nextStep(gps)
 		Blips['delivery'] = nil
 	end
 
-	Blips['delivery'] = AddBlipForCoord(gps.x, gps.y, gps.z)
-	SetBlipRoute(Blips['delivery'], true)
+	Blips['delivery'] = xLib.blips.create({
+		coords = gps,
+		route = true
+	})
 	ESX.ShowNotification(TranslateCap('next_point'))
 end
 
@@ -225,17 +227,16 @@ function refreshBlips()
 						_Pos = _center
 					end
 				end)
-				local blip = AddBlipForCoord(_Pos.x, _Pos.y, _Pos.z)
-				SetBlipSprite(blip, jobValues.BlipInfos.Sprite)
-				SetBlipDisplay(blip, 4)
-				SetBlipScale(blip, 0.8)
-				SetBlipCategory(blip, 3)
-				SetBlipColour(blip, jobValues.BlipInfos.Color)
-				SetBlipAsShortRange(blip, true)
-
-				BeginTextCommandSetBlipName("STRING")
-				AddTextComponentSubstringPlayerName(zoneValues.Name)
-				EndTextCommandSetBlipName(blip)
+				local blip = xLib.blips.create({
+					coords = _Pos,
+					sprite = jobValues.BlipInfos.Sprite,
+					display = 4,
+					scale = 0.8,
+					category = 3,
+					color = jobValues.BlipInfos.Color,
+					shortRange = true,
+					label = zoneValues.Name
+				})
 				table.insert(JobBlips, blip)
 
 				::continue::

@@ -21,7 +21,7 @@ local function respondFailure(cb, label, res, fallback)
 end
 
 local function sendQuickMenuState(action, active, value)
-    SendNUIMessage({
+    xLib.nui.send({
         action = "adminMenuState",
         data = {
             action = action,
@@ -32,16 +32,14 @@ local function sendQuickMenuState(action, active, value)
 end
 
 local function closeAdminUi()
-    SetNuiFocus(false, false)
-    SetNuiFocusKeepInput(false)
+    xLib.nui.focus(false, false, false)
     AdminOpen = false
     AdminMode = nil
-    SendNUIMessage({ action = "closeAdmin" })
+    xLib.nui.send({ action = "closeAdmin" })
 
     CreateThread(function()
         Wait(0)
-        SetNuiFocus(false, false)
-        SetNuiFocusKeepInput(false)
+        xLib.nui.focus(false, false, false)
     end)
 end
 
@@ -50,13 +48,11 @@ local function applyAdminFocus(mode)
     AdminMode = mode
 
     if mode == "dashboard" then
-        SetNuiFocus(true, true)
-        SetNuiFocusKeepInput(false)
+        xLib.nui.focus(true, true, false)
         return
     end
 
-    SetNuiFocus(true, false)
-    SetNuiFocusKeepInput(true)
+    xLib.nui.focus(true, false, true)
 end
 
 function ToggleNUIFocus(bool, mode)
@@ -94,7 +90,7 @@ local function openDashboard(cb)
 
         refreshInitData()
         ToggleNUIFocus(true, "dashboard")
-        SendNUIMessage({
+        xLib.nui.send({
             action = "openAdminDashboard",
             data = {
                 players = res.players or {},
@@ -123,7 +119,7 @@ local function openAdminMenu(cb)
 
         refreshInitData()
         ToggleNUIFocus(true, "menu")
-        SendNUIMessage({
+        xLib.nui.send({
             action = "openAdminMenu",
             data = {
                 serverData = res.serverData,
@@ -147,7 +143,7 @@ local function pushServerData()
             return
         end
 
-        SendNUIMessage({
+        xLib.nui.send({
             action = "updateServerData",
             data = res.serverData,
         })
@@ -222,12 +218,14 @@ end
 RegisterKeyMapping("adminmenu", "Open Admin Menu", "keyboard", Config.Keybinds.AdminMenu)
 RegisterKeyMapping("admindashboard", "Open Admin Dashboard", "keyboard", Config.Keybinds.AdminDashboard)
 
-RegisterNUICallback("openDashboard", function(data, cb)
+xLib.nui.register("openDashboard", function(data, cb)
     openDashboard(cb)
+    return xLib.nui.defer
 end)
 
-RegisterNUICallback("openAdminMenu", function(data, cb)
+xLib.nui.register("openAdminMenu", function(data, cb)
     openAdminMenu(cb)
+    return xLib.nui.defer
 end)
 
 -- D2: quick-action / toggle registry ----------------------------------------
@@ -244,7 +242,7 @@ local toggleActions = {
 }
 
 for _, entry in ipairs(toggleActions) do
-    RegisterNUICallback("adminMenu:" .. entry.action, function(data, cb)
+    xLib.nui.register("adminMenu:" .. entry.action, function(data, cb)
         runProtectedClientAction(cb, "[esx-adminmenu:" .. entry.action .. "]", function()
             local active = entry.toggle()
             sendQuickMenuState(entry.action, active)
@@ -253,6 +251,7 @@ for _, entry in ipairs(toggleActions) do
             end
             return true, nil, { active = active }
         end, entry.action)
+        return xLib.nui.defer
     end)
 
     if entry.command then
@@ -283,15 +282,16 @@ local directActions = {
 }
 
 for _, entry in ipairs(directActions) do
-    RegisterNUICallback("adminMenu:" .. entry.name, function(data, cb)
+    xLib.nui.register("adminMenu:" .. entry.name, function(data, cb)
         runProtectedClientAction(cb, "[esx-adminmenu:" .. entry.name .. "]", function()
             return entry.run(data)
         end, entry.permission)
+        return xLib.nui.defer
     end)
 end
 
 -- Bespoke closures: quick actions that emit extra menu state on success.
-RegisterNUICallback("adminMenu:revive", function(data, cb)
+xLib.nui.register("adminMenu:revive", function(data, cb)
     xLib.callback("esx-adminmenu:server:selfAction", false, function(res)
         if not res or not res.success then
             respondFailure(cb, "[esx-adminmenu:revive]", res)
@@ -300,9 +300,10 @@ RegisterNUICallback("adminMenu:revive", function(data, cb)
 
         cb({ success = true })
     end, { action = "revive" })
+    return xLib.nui.defer
 end)
 
-RegisterNUICallback("adminMenu:setVehiclePerformance", function(data, cb)
+xLib.nui.register("adminMenu:setVehiclePerformance", function(data, cb)
     runProtectedClientAction(cb, "[esx-adminmenu:setVehiclePerformance]", function()
         local success, err, extra = ClientActions.SetVehiclePerformance(data or {})
         if success then
@@ -314,9 +315,10 @@ RegisterNUICallback("adminMenu:setVehiclePerformance", function(data, cb)
 
         return success, err, extra
     end, "customizeVehicle")
+    return xLib.nui.defer
 end)
 
-RegisterNUICallback("adminMenu:cycleVehicleEngine", function(data, cb)
+xLib.nui.register("adminMenu:cycleVehicleEngine", function(data, cb)
     runProtectedClientAction(cb, "[esx-adminmenu:cycleVehicleEngine]", function()
         local success, err, extra = ClientActions.CycleVehicleEngine()
         if success then
@@ -324,9 +326,10 @@ RegisterNUICallback("adminMenu:cycleVehicleEngine", function(data, cb)
         end
         return success, err, extra
     end, "engineLevel")
+    return xLib.nui.defer
 end)
 
-RegisterNUICallback("adminMenu:cycleVehicleBrakes", function(data, cb)
+xLib.nui.register("adminMenu:cycleVehicleBrakes", function(data, cb)
     runProtectedClientAction(cb, "[esx-adminmenu:cycleVehicleBrakes]", function()
         local success, err, extra = ClientActions.CycleVehicleBrakes()
         if success then
@@ -334,9 +337,10 @@ RegisterNUICallback("adminMenu:cycleVehicleBrakes", function(data, cb)
         end
         return success, err, extra
     end, "brakeLevel")
+    return xLib.nui.defer
 end)
 
-RegisterNUICallback("adminMenu:cycleVehicleColor", function(data, cb)
+xLib.nui.register("adminMenu:cycleVehicleColor", function(data, cb)
     runProtectedClientAction(cb, "[esx-adminmenu:cycleVehicleColor]", function()
         local success, err, extra = ClientActions.CycleVehicleColor()
         if success then
@@ -344,9 +348,10 @@ RegisterNUICallback("adminMenu:cycleVehicleColor", function(data, cb)
         end
         return success, err, extra
     end, "colorCycle")
+    return xLib.nui.defer
 end)
 
-RegisterNUICallback("adminMenu:maxVehiclePerformance", function(data, cb)
+xLib.nui.register("adminMenu:maxVehiclePerformance", function(data, cb)
     runProtectedClientAction(cb, "[esx-adminmenu:maxVehiclePerformance]", function()
         local success, err, extra = ClientActions.MaxVehiclePerformance()
         if success then
@@ -354,6 +359,7 @@ RegisterNUICallback("adminMenu:maxVehiclePerformance", function(data, cb)
         end
         return success, err, extra
     end, "maxPerformance")
+    return xLib.nui.defer
 end)
 
 -- D1: server-callback bridge factory ----------------------------------------
@@ -362,7 +368,7 @@ end)
 -- Soft entries return an empty collection (with optional paging) instead of a
 -- hard failure, and special cases hook in via onSuccess / mapItem.
 local function registerServerBridge(spec)
-    RegisterNUICallback(spec.name, function(data, cb)
+    xLib.nui.register(spec.name, function(data, cb)
         local function handler(res)
             if not res or res.err then
                 if spec.soft then
@@ -423,6 +429,8 @@ local function registerServerBridge(spec)
         else
             xLib.callback(spec.event, false, handler, data)
         end
+
+        return xLib.nui.defer
     end)
 end
 
@@ -573,29 +581,27 @@ for _, spec in ipairs(serverBridges) do
     registerServerBridge(spec)
 end
 
-RegisterNUICallback("releaseFocus", function(data, cb)
+xLib.nui.register("releaseFocus", function(data, cb)
     ToggleNUIFocus(false)
-    cb({ success = true })
+    return { success = true }
 end)
 
-RegisterNUICallback("adminMenu:setInputFocus", function(data, cb)
+xLib.nui.register("adminMenu:setInputFocus", function(data, cb)
     local enabled = data and data.enabled == true
 
     if AdminOpen and AdminMode == "menu" then
         if enabled then
-            SetNuiFocus(true, true)
-            SetNuiFocusKeepInput(false)
+            xLib.nui.focus(true, true, false)
         else
-            SetNuiFocus(true, false)
-            SetNuiFocusKeepInput(true)
+            xLib.nui.focus(true, false, true)
         end
     end
 
-    cb({ success = true })
+    return { success = true }
 end)
 
 RegisterNetEvent("esx-adminmenu:client:copyToClipboard", function(text)
-    SendNUIMessage({
+    xLib.nui.send({
         action = "copyToClipboard",
         data = text,
     })
@@ -604,7 +610,7 @@ end)
 RegisterNetEvent("esx-adminmenu:client:open", function(data)
     refreshInitData()
     ToggleNUIFocus(true, "dashboard")
-    SendNUIMessage({
+    xLib.nui.send({
         action = "openAdminDashboard",
         data = {
             players = data or {},
@@ -620,7 +626,7 @@ RegisterNetEvent("esx-adminmenu:client:openInformation", function(data)
     data = data or {}
     refreshInitData()
     ToggleNUIFocus(true, "dashboard")
-    SendNUIMessage({
+    xLib.nui.send({
         action = "openAdminDashboard",
         data = {
             players = data.players or {},

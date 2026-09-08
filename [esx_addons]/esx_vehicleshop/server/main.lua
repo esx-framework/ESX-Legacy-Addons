@@ -1,74 +1,24 @@
 local categories, vehicles = {}, {}
 local vehiclesByModel = {}
-local NumberCharset, Charset = {}, {}
-
-for i = 48, 57 do NumberCharset[#NumberCharset + 1] = string.char(i) end
-for i = 65, 90 do Charset[#Charset + 1] = string.char(i) end
-
-local function getRandomNumber(length)
-	local value = ''
-	for i = 1, length do
-		value = value .. NumberCharset[math.random(1, #NumberCharset)]
-	end
-	return value
-end
-
-local function getRandomLetter(length)
-	local value = ''
-	for i = 1, length do
-		value = value .. Charset[math.random(1, #Charset)]
-	end
-	return value
-end
-
-local function normalizePlate(plate)
-	if type(plate) ~= 'string' then
-		return nil
-	end
-
-	plate = plate:gsub("^%s+", ""):gsub("%s+$", ""):upper()
-	if plate == "" or #plate > 8 then
-		return nil
-	end
-
-	return plate
-end
+local normalizePlate = xLib.vehiclePlate.normalize
 
 local function generateServerPlate()
-	for i = 1, 30 do
-		local plate = string.upper(getRandomLetter(Config.PlateLetters) .. (Config.PlateUseSpace and ' ' or '') .. getRandomNumber(Config.PlateNumbers))
+	return xLib.vehiclePlate.generateUnique({
+		letters = Config.PlateLetters,
+		numbers = Config.PlateNumbers,
+		useSpace = Config.PlateUseSpace
+	}, function(plate)
 		local owned = MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE plate = ?', {plate})
 		local rented = MySQL.scalar.await('SELECT plate FROM rented_vehicles WHERE plate = ?', {plate})
-		if not owned and not rented then
-			return plate
-		end
-	end
-
-	return nil
+		return owned ~= nil or rented ~= nil
+	end)
 end
 
 local function isNear(source, coords, distance)
-	local ped = GetPlayerPed(source)
-	if not ped or ped == 0 then
-		return false
-	end
-
-	return #(GetEntityCoords(ped) - coords) <= distance
+	local nearby = xLib.player.isNearCoords(source, coords, distance)
+	return nearby
 end
-
-local function getValidCount(count)
-	count = tonumber(count)
-	if not count then
-		return nil
-	end
-
-	count = ESX.Math.Round(count)
-	if count <= 0 then
-		return nil
-	end
-
-	return count
-end
+local getValidCount = xLib.validation.count
 
 local function canUseCardealerStock(xPlayer, source)
 	return xPlayer and xPlayer.getJob().name == 'cardealer' and isNear(source, Config.Zones.BossActions.Pos, 8.0)

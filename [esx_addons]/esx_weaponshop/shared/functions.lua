@@ -1,13 +1,11 @@
 ---Gets ESX theme colors from convars (client-only)
 ---@return table Theme colors
 function GetESXThemeColors()
-	return {
-		primaryColor = GetConvar('esx:ui:primaryColor', '#FB9B04'),
-		secondaryColor = GetConvar('esx:ui:secondaryColor', '#1a1a1a'),
-		backgroundColor = GetConvar('esx:ui:backgroundColor', '#0a0a0a'),
-		accentColor = GetConvar('esx:ui:accentColor', '#ffffff'),
-		logoUrl = GetConvar('esx:ui:logoUrl', '')
-	}
+	return xLib.colors.getESXTheme({
+		secondaryColor = '#1a1a1a',
+		backgroundColor = '#0a0a0a',
+		accentColor = '#ffffff'
+	})
 end
 
 ---Safely gets an ESX weapon config without letting ESX.GetWeapon assertions bubble.
