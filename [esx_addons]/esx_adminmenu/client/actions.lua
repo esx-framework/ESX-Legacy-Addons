@@ -1212,6 +1212,10 @@ local TROLL = {
 		local duration = (Config.AdminMenu and Config.AdminMenu.Troll and Config.AdminMenu.Troll.nauseaDuration) or 5000
 		ShakeGameplayCam("DRUNK_SHAKE", 1.0)
 		AnimpostfxPlay("DrugsMichaelAliensFight", duration, false)
+		CreateThread(function()
+			Wait(duration)
+			StopGameplayCamShaking(true)
+		end)
 	end,
 }
 
