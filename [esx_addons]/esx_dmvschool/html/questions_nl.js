@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 var tableauQuestion = [
 	{
 		question: "Je rijd 80 km/u maar je nadert een woonwijk, wat doe je ?:",

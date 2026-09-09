@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 if not Config.Disable.Voice then
     HUD.Data.TalkingOnRadio = false
     if GetResourceState("pma-voice") == "started" then

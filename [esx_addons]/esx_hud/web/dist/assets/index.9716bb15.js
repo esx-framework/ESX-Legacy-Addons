@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 (function () {
   const n = document.createElement("link").relList;
   if (n && n.supports && n.supports("modulepreload")) return;

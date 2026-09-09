@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 -- esx_garage schema additions for `owned_vehicles`.
 -- Existing servers: the resource auto-migrates on start (server/modules/migration.lua); this file is optional.
 -- Fresh installs / manual setup: run it once, or as many times as you like.

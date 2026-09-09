@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales ['pl'] = {
   ["license_shop_title"] = "License Shop",
   ["weapon_shop_menu_title"] = "Weapon Shop",

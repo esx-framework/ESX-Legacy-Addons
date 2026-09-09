@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 --[[
       ESX Property - Properties Made Right!
     Copyright (C) 2025 ESX-Framework

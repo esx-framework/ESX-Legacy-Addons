@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['sr'] = {
   ['you_paid'] = 'Platili ste $%s AutoŠkoli',
   ['go_next_point'] = 'Idite do sledeće tačke!',

@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 // Reference resolution for scaling calculations
 export const REFERENCE_WIDTH = 1920;
 export const REFERENCE_HEIGHT = 1080;

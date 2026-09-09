@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 -- Recommended indexes for the security hardening pass.
 
 -- Billing: player invoices and safe payment lookups.

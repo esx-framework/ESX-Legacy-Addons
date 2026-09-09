@@ -1,3 +1,8 @@
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
 <script lang="ts">
 	export type DropdownOption<T extends string | number = string> = {
 		value: T;

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---Handles license purchase requests from clients
 xLib.callback.registerCompat('esx_weaponshop:buyLicense', function(source, cb)
 	ProcessLicensePurchase(source, cb)

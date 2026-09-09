@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 HUD.Data.hudHidden = false
 RegisterCommand("hud", function()
     HUD:Toggle(HUD.Data.hudHidden)

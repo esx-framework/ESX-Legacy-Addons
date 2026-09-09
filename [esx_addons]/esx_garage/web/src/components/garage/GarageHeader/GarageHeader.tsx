@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { MdGarage, MdClose, MdSearch } from 'react-icons/md';

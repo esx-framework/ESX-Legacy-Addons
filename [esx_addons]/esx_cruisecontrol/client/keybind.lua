@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 if Config.Cruise.Enable then
     xLib.addKeybind({
     name = 'esx_cruisecontrol:Enable',

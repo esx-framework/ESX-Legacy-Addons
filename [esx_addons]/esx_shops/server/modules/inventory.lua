@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---@param source number Player source
 ---@param items table[] Validated items to add
 ---@return boolean canCarry

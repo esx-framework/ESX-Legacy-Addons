@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 CREATE TABLE IF NOT EXISTS `banking` (
   `identifier` varchar(46) DEFAULT NULL,
   `type` varchar(50) DEFAULT NULL,

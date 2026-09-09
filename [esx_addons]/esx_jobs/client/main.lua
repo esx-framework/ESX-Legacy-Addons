@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local Blips, JobBlips, isInMarker, hintToDisplay, onDuty, spawner, myPlate, vehicleObjInCaseofDrop, vehicleInCaseofDrop, vehicleMaxHealth =
 	{}, {}, false, "no hint to display", false, 0, {}, nil, nil, nil
 

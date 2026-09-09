@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['hu'] = {
   ['mechanic']                  = 'LS Custom Tuningoló telep',
   ['drive_to_indicated']        = '[Információ]: Menj a kijelölt pontra.',

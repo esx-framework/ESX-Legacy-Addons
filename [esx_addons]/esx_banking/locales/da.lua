@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['da'] = {
   ['invalid_amount'] = 'Det er et ugyldigt beløb',
   ['deposit_money']  = 'du har indbetalt $%s',

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['sl'] = {
   ['new_job'] = 'imaš novo službo!',
   ['access_job_center'] = 'pritisnite ~INPUT_PICKUP~ za dostop do job center.',

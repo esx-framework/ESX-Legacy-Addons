@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local purchaseLimiter = xLib.rateLimiter({
 	capacity = Config.PurchaseRateLimitCapacity or 3,
 	refill = Config.PurchaseRateLimitRefill or 1,

@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import React, { createContext, useContext, useState, useCallback, useEffect, type PropsWithChildren } from 'react';
 import type { LocaleCode, LocaleTranslations } from '@/types/locale.types';
 import { getLocale, getBrowserLocale } from '@/locales';

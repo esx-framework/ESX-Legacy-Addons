@@ -1,3 +1,8 @@
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
 <script>
   import { scoreboardStore, filteredPlayers, setSortBy } from "../stores/scoreboard.js"
   import Header from "./Header.svelte"

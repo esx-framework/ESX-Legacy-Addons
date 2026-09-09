@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 var tableauQuestion = [
 	{
 		question: "If you're going 80 km/h, and you're approaching a residential area you must:",

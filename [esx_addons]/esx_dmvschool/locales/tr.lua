@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['tr'] = {
     ['you_paid'] = 'DMV okuluna $%s ödediniz',
     ['go_next_point'] = 'Bir sonraki noktaya git!',

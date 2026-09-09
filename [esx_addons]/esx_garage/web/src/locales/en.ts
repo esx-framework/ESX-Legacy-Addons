@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import type { LocaleTranslations } from '@/types/locale.types';
 
 export const en: LocaleTranslations = {

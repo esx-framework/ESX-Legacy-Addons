@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['zh-cn'] = {
   ['activated']   = '车辆限速巡航已开启!',
   ['deactivated'] = '车辆限速巡航已关闭',

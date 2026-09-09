@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales["fr"] = {
 	["by_default"] = "par défaut",
 	["installed"] = "installé",

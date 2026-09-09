@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales["he"] = {
     ["by_default"] = "ברירת המחדל",
     ["installed"] = "מותקן",

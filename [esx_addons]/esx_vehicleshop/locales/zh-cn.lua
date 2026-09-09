@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['zh-cn'] = {
   -- global menus
   ['not_enough_in_society']   = '很抱歉！暂无足够的~r~物品~s~项目!',

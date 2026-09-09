@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local MAX_PROPS_BYTES <const> = 16384
 local MAX_PROPS_DEPTH <const> = 4
 local MAX_PAGE <const> = 100

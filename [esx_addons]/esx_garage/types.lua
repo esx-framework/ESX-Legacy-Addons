@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---@alias GarageType 'public' | 'job' | 'gang' | 'impound'
 ---@alias vehicle_type 'car' | 'motorcycle' | 'boat' | 'aircraft' | 'bicycle' | 'truck' | 'emergency'
 

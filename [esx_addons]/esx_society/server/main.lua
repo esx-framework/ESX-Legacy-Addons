@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 
 local Jobs = setmetatable({}, {__index = function(_, key)
 	return ESX.GetJobs()[key]

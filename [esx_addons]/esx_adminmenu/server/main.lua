@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Helpers.registerCallback("esx-adminmenu:server:getInitData", function(source)
 	if not Helpers.hasPermission(source) then
 		return { err = "Insufficient Permissions." }

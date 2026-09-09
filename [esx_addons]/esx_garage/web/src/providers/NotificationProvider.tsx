@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import React, { createContext, useContext, useState, useCallback, type PropsWithChildren } from 'react';
 import type { Notification, NotificationOptions } from '@/types/notification.types';
 import { useNuiEvent } from '@/hooks/useNuiEvent';

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 CREATE TABLE `addon_account` (
 	`name` VARCHAR(60) NOT NULL,
 	`label` VARCHAR(100) NOT NULL,

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local function startAttitude(lib, anim)
 	xLib.streaming.requestAnimSet(lib, function()
 		SetPedMovementClipset(ESX.PlayerData.ped, anim, 1)

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['en'] = {
   ['invalid_amount'] = 'That\'s an invalid amount of money',
   ['deposit_money']  = 'you have deposited $%s',

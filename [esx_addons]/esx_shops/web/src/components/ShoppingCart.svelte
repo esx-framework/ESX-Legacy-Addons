@@ -1,4 +1,9 @@
 <!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
+<!--
   @component ShoppingCart
   Main shopping cart container displaying all cart items and checkout functionality.
   Shows an empty state when no items are present, otherwise displays the list of cart items

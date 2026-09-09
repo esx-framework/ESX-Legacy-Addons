@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales ['it'] = {
   -- weed
   ['weed_pickupprompt'] = 'premi [E] per raccogliere la pianta di Cannabis.',
