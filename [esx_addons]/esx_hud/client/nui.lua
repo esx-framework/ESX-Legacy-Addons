@@ -18,19 +18,29 @@ end)
 
 xLib.nui.register("minimapSettingChanged", function(state)
     Config.Disable.MinimapOnFoot = state.changed
-    if IsPedOnFoot(ESX.PlayerData.ped) ~= 1 then
-        return "ok"
-    end
-    DisplayRadar(not state.changed)
+    HUD:UpdateRadar()
     return "ok"
 end)
 
 xLib.nui.register("notify", function(data)
     local state = data.state
-    if state.reset then
+    if state == "reset" or (type(state) == "table" and state.reset) then
         ESX.ShowNotification(Translate("settingsResetSuccess", 5000, "info"))
         return "ok"
     end
     ESX.ShowNotification(Translate("settingsSaveSuccess", 5000, "info"))
+    return "ok"
+end)
+
+-- Resend initial state only after the browser has installed its message listener.
+xLib.nui.register("ready", function()
+    HUD:SetHudColor()
+    HUD:Toggle(ESX.PlayerLoaded and not HUD.Data.hudHidden and not IsPauseMenuActive())
+    return "ok"
+end)
+
+xLib.nui.register("cinematicChanged", function(state)
+    HUD.Data.cinematic = state.enabled == true
+    HUD:UpdateRadar()
     return "ok"
 end)

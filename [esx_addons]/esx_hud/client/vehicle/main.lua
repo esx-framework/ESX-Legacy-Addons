@@ -126,6 +126,7 @@ if not Config.Disable.Vehicle then
 
                 values.speed = math.floor(currentSpeed * (Config.Default.Kmh and 3.6 or 2.236936))
                 values.rpm = rpm
+                values.gear = GetVehicleCurrentGear(currentVehicle)
                 values.defaultIndicators.engine = engineRunning
 
                 if not isPassenger then
@@ -148,18 +149,20 @@ if not Config.Disable.Vehicle then
 
         if vehicleClass == 15 or vehicleClass == 16 then
             vehicleType = "AIR"
+        elseif vehicleClass == 14 then
+            vehicleType = "BOAT"
         elseif vehicleClass == 8 then
             vehicleType = "MOTO"
         end
 
-        if Config.Disable.MinimapOnFoot then
-            DisplayRadar(true)
-        end
+        HUD:UpdateRadar()
 
         if HUD.Data.Driver then
             currentMileageLoaded = false
             TriggerServerEvent("esx_hud:EnteredVehicle", currentPlate, Config.Default.Kmh)
         end
+        HUD.Data.VehicleType = vehicleType
+        isPassenger = not HUD.Data.Driver and not Config.Default.PassengerSpeedo
         values.show = true
         p:resolve(currentVehicle)
     end)
@@ -169,6 +172,7 @@ if not Config.Disable.Vehicle then
         HUD.Data.Driver = false
         HUD.Data.Vehicle = nil
         vehicleType = nil
+        HUD.Data.VehicleType = nil
 
         values = {
             show = false,
@@ -177,9 +181,7 @@ if not Config.Disable.Vehicle then
 
         xLib.nui.send({ type = "VEH_HUD", value = { show = false } })
 
-        if Config.Disable.MinimapOnFoot then
-            DisplayRadar(false)
-        end
+        HUD:UpdateRadar()
 
         if currentSeat == -1 then
             TriggerServerEvent("esx_hud:ExitedVehicle", currentPlate, currentMileage, Config.Default.Kmh)

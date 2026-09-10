@@ -14,11 +14,13 @@ if not Config.Disable.Voice then
         end)
 
         AddEventHandler("onResourceStart", function(resourceName)
-            if not resourceName == "pma-voice" then
+            if resourceName ~= "pma-voice" then
                 return
             end
             Wait(1000)
-            xLib.nui.send({ type = "VOICE_RANGE", value = LocalPlayer.state.proximity.index })
+            local proximity = LocalPlayer.state.proximity
+            HUD.Data.VoiceRange = proximity and proximity.index or 2
+            xLib.nui.send({ type = "VOICE_RANGE", value = HUD.Data.VoiceRange })
         end)
     elseif GetResourceState("saltychat") == "started" then
         -- #TODO: Test salty chat, add restart handlers

@@ -2,7 +2,7 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Config = {
-    Locale = ESX.GetConfig().Locale or "en", -- If you want to change UI language texts you can do it here: web/src/assets/translate.json !!IMPORTANT that this can only be modified with the unbuilt version.
+    Locale = "en", -- HUD language is independent of the ESX server locale.
     Colors = {
         Info = {
             ["money-text-color"] = "#0aad20",
@@ -10,10 +10,12 @@ Config = {
             ["job-text-color"] = "#fb9b04",
         },
         Status = {
-            healthBar = "red",
-            armorBar = "blue",
-            drinkBar = "lightblue",
+            healthBar = "#f2f2f2",
+            armorBar = "#9dafff",
+            drinkBar = "#70c9e9",
             foodBar = "#fb9b04",
+            staminaBar = "#d5e6a5",
+            oxygenBar = "#70c9e9",
         },
         Speedo = {
             ["segment-color"] = "#eee",
@@ -55,13 +57,16 @@ Config = {
         IndicatorSeatbeltSound = false, --seatbelt sound
         VehicleHandlers = false, -- Engine toggle, Indicator lights
         MinimapOnFoot = false,
-        Needle = false,
+        Needle = false, -- Legacy option; the redesigned speedometer is digital.
         StatusPercent = false,
-        CenterStatuses = false, -- true for above minimap, false for left side of the screen
+        CenterStatuses = true, -- true: above native minimap; false: vertical on the left
     },
     Default = {
-        ServerLogo = "https://esx.s3.fr-par.scw.cloud/blanc-800x800.png",
-        Kmh = false,
+        ServerLogo = "", -- Optional custom logo URL; empty uses the bundled ESX logo from esx_loadingscreen.
+        ServerName = "ESX",
+        ServerTagline = "LEGACY ROLEPLAY",
+        AccentColor = "#fb9b04",
+        Kmh = true,
         PassengerSpeedo = false, -- if this true , you can see speedometer if you don't driver
     },
 }

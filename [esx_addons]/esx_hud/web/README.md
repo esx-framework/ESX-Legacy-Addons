@@ -1,34 +1,11 @@
-## Usage
+# ESX Legacy HUD web
 
-Those templates dependencies are maintained via [pnpm](https://pnpm.io) via `pnpm up -Lri`.
+Interfaz SolidJS y Vite. Consulta el README del recurso para configuración, instalación y referencias.
 
-This is the reason you see a `pnpm-lock.yaml`. That being said, any package manager will work. This file can be safely be removed once you clone a template.
+- `npm ci`: instalar dependencias.
+- `npm run dev -- --host 127.0.0.1`: iniciar vista previa en `http://127.0.0.1:3000/?preview`.
+- `npm test`: validación del modelo de preferencias y valores del HUD.
+- `npm run build`: compilar `dist` para FiveM.
+- `npm run test:ui`: pruebas de navegador con servidor local y Chromium disponibles.
 
-```bash
-$ npm install # or pnpm install or yarn install
-```
-
-### Learn more on the [Solid Website](https://solidjs.com) and come chat with us on our [Discord](https://discord.com/invite/solidjs)
-
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm dev` or `npm start`
-
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.<br>
-
-### `npm run build`
-
-Builds the app for production to the `dist` folder.<br>
-It correctly bundles Solid in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
-
-## Deployment
-
-You can deploy the `dist` folder to any static host provider (netlify, surge, now, etc.)
+Código activo: `src/App.jsx`, `src/hud/`, `src/Utils/Nui.js` y `src/index.css`. Los componentes del diseño anterior se conservan como referencia y no forman parte del bundle.

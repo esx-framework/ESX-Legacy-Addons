@@ -5,6 +5,7 @@ Locales["en"] = {
     toggleHud = "Turn HUD on / off",
     indicatorLeft = "Left indicator",
     indicatorRight = "Right indicator",
+    indicatorHazard = "Hazard lights",
     toggleEngine = "Engine on / off",
     speedChanged = "Speed changed, new speed: ",
     resource_not_built = "Resource are not built, please download the release version",

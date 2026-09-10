@@ -4,6 +4,10 @@
 WorkshopValidation = {}
 
 local function propsEqual(left, right)
+    if tonumber(left) and tonumber(right) and tonumber(left) == tonumber(right) then
+        return true
+    end
+
     if type(left) ~= type(right) then return false end
 
     if type(left) ~= 'table' then
@@ -11,11 +15,11 @@ local function propsEqual(left, right)
     end
 
     for key, value in pairs(left) do
-        if not propsEqual(value, right[key]) then return false end
+        if key ~= 'n' and not propsEqual(value, right[key]) then return false end
     end
 
     for key in pairs(right) do
-        if left[key] == nil then return false end
+        if key ~= 'n' and left[key] == nil then return false end
     end
 
     return true

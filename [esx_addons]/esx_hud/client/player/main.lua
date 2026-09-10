@@ -42,6 +42,8 @@ function HUD:GetWeapons()
 end
 
 function HUD:SlowThick()
+    if self.slowThreadRunning then return end
+    self.slowThreadRunning = true
     CreateThread(function()
         while not ESX.PlayerLoaded do
             Wait(200)
@@ -58,6 +60,8 @@ function HUD:SlowThick()
                 if self.Data.Weapon.CurrentWeapon == 0 then
                     self.Data.Weapon.Active = false
                 end
+                self.Data.Weapon.Name = nil
+                self.Data.Weapon.Image = nil
                 if self.Data.Weapon.Active and WeaponList[self.Data.Weapon.CurrentWeapon] then
                     self.Data.Weapon.MaxAmmo = (GetAmmoInPedWeapon(ESX.PlayerData.ped, self.Data.Weapon.CurrentWeapon) - ammoInClip)
                     self.Data.Weapon.Name = WeaponList[self.Data.Weapon.CurrentWeapon].label and WeaponList[self.Data.Weapon.CurrentWeapon].label or false
@@ -74,10 +78,13 @@ function HUD:SlowThick()
 
             Wait(1000)
         end
+        self.slowThreadRunning = false
     end)
 end
 
 function HUD:FastThick()
+    if self.fastThreadRunning then return end
+    self.fastThreadRunning = true
     CreateThread(function()
         while not ESX.PlayerLoaded do
             Wait(200)
@@ -108,6 +115,9 @@ function HUD:FastThick()
                     maxAmmo = self.Data.Weapon.MaxAmmo or 0,
                 },
                 streetName = self.Data.Location or "Unknown street",
+                zoneName = GetLabelText(GetNameOfZone(self.Data.Position.x, self.Data.Position.y, self.Data.Position.z)),
+                heading = GetEntityHeading(ESX.PlayerData.ped),
+                gameTime = string.format("%02d:%02d", GetClockHours(), GetClockMinutes()),
                 voice = {
                     mic = self.Data.isTalking or false,
                     radio = self.Data.isTalkingOnRadio,
@@ -119,6 +129,7 @@ function HUD:FastThick()
             xLib.nui.send({ type = "HUD_DATA", value = values })
             Wait(500)
         end
+        self.fastThreadRunning = false
     end)
 end
 

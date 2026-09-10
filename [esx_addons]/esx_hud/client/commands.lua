@@ -3,13 +3,13 @@
 
 HUD.Data.hudHidden = false
 RegisterCommand("hud", function()
-    HUD:Toggle(HUD.Data.hudHidden)
     HUD.Data.hudHidden = not HUD.Data.hudHidden
+    HUD:Toggle(not HUD.Data.hudHidden)
 end, false)
 
 RegisterCommand("togglehud", function()
-    HUD:Toggle(HUD.Data.hudHidden)
     HUD.Data.hudHidden = not HUD.Data.hudHidden
+    HUD:Toggle(not HUD.Data.hudHidden)
 end, false)
 
 RegisterCommand("hudsettings", function()

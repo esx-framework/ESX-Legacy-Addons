@@ -2,54 +2,37 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 if not Config.Disable.Status then
-    local GetPlayerUnderwaterTimeRemaining = GetPlayerUnderwaterTimeRemaining
-    local GetPlayerSprintStaminaRemaining = GetPlayerSprintStaminaRemaining
-    local IsPedSwimmingUnderWater = IsPedSwimmingUnderWater
-    local GetEntityHealth = GetEntityHealth
-    local GetEntityMaxHealth = GetEntityMaxHealth
-    local GetPedArmour = GetPedArmour
-    local values = {}
+    local values = { foodBar = 100, drinkBar = 100 }
+    local function percent(value)
+        return math.max(0, math.min(100, math.floor(value)))
+    end
 
     AddEventHandler("esx_status:onTick", function(data)
-        local hunger, thirst
         for i = 1, #data do
             if data[i].name == "thirst" then
-                thirst = math.floor(data[i].percent)
-            end
-            if data[i].name == "hunger" then
-                hunger = math.floor(data[i].percent)
+                values.drinkBar = percent(data[i].percent)
+            elseif data[i].name == "hunger" then
+                values.foodBar = percent(data[i].percent)
             end
         end
-
-        values.healthBar = math.floor((GetEntityHealth(ESX.PlayerData.ped) - 100) / 100 * 100)
-        values.armorBar = GetPedArmour(ESX.PlayerData.ped)
-        values.drinkBar = thirst
-        values.foodBar = hunger
     end)
 
     function HUD:StatusThread()
-        values = {}
+        if self.statusThreadRunning then return end
+        self.statusThreadRunning = true
         CreateThread(function()
             while ESX.PlayerLoaded do
-                local oxygen, stamina = 0, 0
-
-                stamina = math.floor(100 - GetPlayerSprintStaminaRemaining(ESX.playerId))
-                if stamina == 0 then
-                    stamina = 1
-                end
-                if stamina == 100 then
-                    stamina = 0
-                end
-
-                if IsPedSwimmingUnderWater(ESX.PlayerData.ped) then
-                    oxygen = math.floor(GetPlayerUnderwaterTimeRemaining(ESX.playerId) * 10)
-                end
-
-                values.oxygenBar = oxygen or 0
-                values.staminaBar = stamina
+                local ped = ESX.PlayerData.ped
+                local maxHealth = math.max(1, GetEntityMaxHealth(ped) - 100)
+                values.healthBar = percent((GetEntityHealth(ped) - 100) / maxHealth * 100)
+                values.armorBar = percent(GetPedArmour(ped))
+                values.staminaBar = percent(GetPlayerSprintStaminaRemaining(ESX.playerId))
+                values.underwater = IsPedSwimmingUnderWater(ped)
+                values.oxygenBar = values.underwater and percent(GetPlayerUnderwaterTimeRemaining(ESX.playerId) * 10) or 100
                 xLib.nui.send({ type = "STATUS_HUD", value = values })
                 Wait(250)
             end
+            self.statusThreadRunning = false
         end)
     end
 end
