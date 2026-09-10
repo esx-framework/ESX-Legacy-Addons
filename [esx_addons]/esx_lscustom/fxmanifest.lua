@@ -32,6 +32,10 @@ client_scripts {
 	'client/modules/workshop_locale.lua',
 	'client/modules/workshop_stats.lua',
 	'client/modules/workshop_camera.lua',
+	'client/modules/workshop_vehicle.lua',
+	'client/modules/workshop_cart.lua',
+	'client/modules/workshop_nui_menu.lua',
+	'client/modules/workshop_legacy_menu.lua',
 	'client/main.lua'
 }
 

@@ -13,6 +13,15 @@ Config.Workshop = {
 	EnableCamera = true,
 	EnableStats = true,
 	PurchaseCooldown = 1500,
+	Ownership = {
+		-- If true, LS Customs only accepts vehicles owned by the paying player,
+		-- or customer vehicles handled by mechanics when AllowMechanicCustomerVehicles is true.
+		RequireOwned = false,
+		-- If true, paid changes are saved to owned_vehicles when the vehicle exists there.
+		SaveOwnedVehicles = true,
+		-- Lets mechanics tune and persist customer vehicles without owning them.
+		AllowMechanicCustomerVehicles = true
+	},
 	StatGains = {
 		modEngine = { accel = 12, speed = 8 },
 		modTransmission = { accel = 8 },

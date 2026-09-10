@@ -51,15 +51,19 @@ local function getPaidVehicleProps(cart)
 
     for i = 1, #cart do
         local item = cart[i]
-        paid[item.modType] = true
+        local normalized, invalidField = WorkshopPricing.NormalizeCartItem(item)
+        if not normalized then return nil, invalidField end
 
-        if item.modType == 'modFrontWheels' or item.modType == 'modBackWheels' then
+        local modType = normalized.modType
+        paid[modType] = true
+
+        if modType == 'modFrontWheels' or modType == 'modBackWheels' then
             paid.wheels = true
-        elseif item.modType == 'neonColor' then
+        elseif modType == 'neonColor' then
             paid.neonEnabled = true
-        elseif item.modType == 'tyreSmokeColor' then
+        elseif modType == 'tyreSmokeColor' then
             paid.modSmokeEnabled = true
-        elseif item.modType == 'xenonColor' then
+        elseif modType == 'xenonColor' then
             paid.modXenon = true
         end
     end
@@ -84,7 +88,8 @@ function WorkshopValidation.VehiclePropsMatchPaidCart(originalProps, paidProps, 
         return false
     end
 
-    local paidKeys = getPaidVehicleProps(cart)
+    local paidKeys, invalidField = getPaidVehicleProps(cart)
+    if not paidKeys then return false, invalidField end
 
     for key in pairs(WatchedVehicleProps) do
         if not paidKeys[key] and not propsEqual(originalProps[key], paidProps[key]) then
@@ -98,28 +103,32 @@ end
 function WorkshopValidation.CartValuesMatchVehicleProps(paidProps, cart)
     for i = 1, #cart do
         local item = cart[i]
+        local normalized, invalidField = WorkshopPricing.NormalizeCartItem(item)
+        if not normalized then return false, invalidField end
 
-        if item.modType == 'modFrontWheels' or item.modType == 'modBackWheels' then
-            if not propsEqual(paidProps[item.modType], item.modNum) or not propsEqual(paidProps.wheels, item.wheelType) then
-                return false, item.modType
+        local modType = normalized.modType
+
+        if modType == 'modFrontWheels' or modType == 'modBackWheels' then
+            if not propsEqual(paidProps[modType], item.modNum) or not propsEqual(paidProps.wheels, item.wheelType) then
+                return false, modType
             end
-        elseif item.modType == 'neonColor' then
+        elseif modType == 'neonColor' then
             if not propsEqual(paidProps.neonColor, item.modNum) then
-                return false, item.modType
+                return false, modType
             end
             if not propsEqual(paidProps.neonEnabled, {true, true, true, true}) then
                 return false, 'neonEnabled'
             end
-        elseif item.modType == 'tyreSmokeColor' then
+        elseif modType == 'tyreSmokeColor' then
             if not propsEqual(paidProps.tyreSmokeColor, item.modNum) or paidProps.modSmokeEnabled ~= true then
-                return false, item.modType
+                return false, modType
             end
-        elseif item.modType == 'xenonColor' then
+        elseif modType == 'xenonColor' then
             if not propsEqual(paidProps.xenonColor, item.modNum) or paidProps.modXenon ~= true then
-                return false, item.modType
+                return false, modType
             end
-        elseif not propsEqual(paidProps[item.modType], item.modNum) then
-            return false, item.modType
+        elseif not propsEqual(paidProps[modType], item.modNum) then
+            return false, modType
         end
     end
 

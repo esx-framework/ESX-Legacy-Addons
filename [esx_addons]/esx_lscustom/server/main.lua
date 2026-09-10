@@ -65,6 +65,68 @@ local function getVehicleBasePrice(model)
 	return 50000
 end
 
+local function getPaymentDeadline()
+	return os.time() + 45
+end
+
+local function decodeVehicleProps(vehicleJson)
+	if type(vehicleJson) ~= 'string' then return nil end
+
+	local ok, props = pcall(json.decode, vehicleJson)
+	if not ok or type(props) ~= 'table' then return nil end
+
+	return props
+end
+
+local function getOwnershipConfig()
+	return Config.Workshop and Config.Workshop.Ownership or {}
+end
+
+local function isMechanic(xPlayer)
+	local job = xPlayer and xPlayer.getJob()
+	return job and job.name == 'mechanic'
+end
+
+local function canSaveOwnedVehicle(xPlayer, owner)
+	if owner == xPlayer.getIdentifier() then
+		return true
+	end
+
+	local ownership = getOwnershipConfig()
+	return ownership.AllowMechanicCustomerVehicles == true and isMechanic(xPlayer)
+end
+
+local function getOwnedVehicleRecord(plate, model)
+	local result = MySQL.single.await('SELECT owner, vehicle FROM owned_vehicles WHERE plate = ?', {plate})
+	if not result then return nil, 'owner' end
+
+	local storedProps = decodeVehicleProps(result.vehicle)
+	if not storedProps or tonumber(storedProps.model) ~= model then
+		return nil, 'model'
+	end
+
+	result.props = storedProps
+	return result
+end
+
+local function validateRequiredOwnership(xPlayer, plate, model)
+	local ownership = getOwnershipConfig()
+	if ownership.RequireOwned ~= true then
+		return true
+	end
+
+	local record, reason = getOwnedVehicleRecord(plate, model)
+	if not record then
+		return false, reason
+	end
+
+	if not canSaveOwnedVehicle(xPlayer, record.owner) then
+		return false, 'owner'
+	end
+
+	return true
+end
+
 local function sendCartResult(source, success, message)
 	TriggerClientEvent('esx_lscustom:cartPurchaseResult', source, {
 		success = success,
@@ -146,6 +208,12 @@ RegisterNetEvent('esx_lscustom:buyCart', function(payload, netId)
 		return sendCartResult(source, false, TranslateCap('workshop_session_missing'))
 	end
 
+	local validOwnership, ownershipError = validateRequiredOwnership(xPlayer, vehicleProps.plate, model)
+	if not validOwnership then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to buy LS Customs changes for a blocked vehicle (^5%s^7)'):format(source, tostring(ownershipError)))
+		return sendCartResult(source, false, TranslateCap('workshop_session_invalid'))
+	end
+
 	local total = WorkshopPricing.CalculateCartTotal(payload.cart, getVehicleBasePrice(model))
 	if not total or total <= 0 then
 		return sendCartResult(source, false, TranslateCap('no_valid_changes'))
@@ -172,7 +240,7 @@ RegisterNetEvent('esx_lscustom:buyCart', function(payload, netId)
 
 		if societyAccount and total <= societyAccount.money then
 			societyAccount.removeMoney(total)
-			session.paidUntil = os.clock() + 45
+			session.paidUntil = getPaymentDeadline()
 			session.paidProps = vehicleProps
 			sendCartResult(source, true, TranslateCap('tuning_applied', Config.Currency or '$', ESX.Math.GroupDigits(total)))
 		else
@@ -180,7 +248,7 @@ RegisterNetEvent('esx_lscustom:buyCart', function(payload, netId)
 		end
 	elseif total <= xPlayer.getMoney() then
 		xPlayer.removeMoney(total, "LSC Purchase")
-		session.paidUntil = os.clock() + 45
+		session.paidUntil = getPaymentDeadline()
 		session.paidProps = vehicleProps
 		sendCartResult(source, true, TranslateCap('tuning_applied', Config.Currency or '$', ESX.Math.GroupDigits(total)))
 	else
@@ -206,54 +274,12 @@ AddEventHandler('esx:playerDropped', function(src)
     end
 end)
 
-RegisterNetEvent('esx_lscustom:buyMod', function(price)
+RegisterNetEvent('esx_lscustom:buyMod', function()
 	local source = source
 	local xPlayer = ESX.Player(source)
-	local vehicle = getCurrentVehicle(source)
-	local plate = vehicle and normalizePlate(GetVehicleNumberPlateText(vehicle) or '')
-	local session = plate and getSession(source, plate)
-
 	if not xPlayer then return print('^3[WARNING]^0 The player could\'nt be found.') end
-	if Config.Workshop and Config.Workshop.UseCart then return end
-	if Config.IsMechanicJobOnly and xPlayer.getJob().name ~= 'mechanic' then return end
-	if not vehicle or not session or not isNearCustoms(source) then return end
-
-	price = ESX.Math.Round(tonumber(price) or 0)
-	local vehiclePrice = getVehicleBasePrice(GetEntityModel(vehicle))
-	local minPrice = math.max(1, math.floor(vehiclePrice * 0.0025))
-	local maxPrice = math.max(100000, math.floor(vehiclePrice * 1.5))
-	if price < minPrice or price > maxPrice then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted invalid LS Customs price ^5%s^7!'):format(source, tostring(price)))
-		return
-	end
-
-	if Config.IsMechanicJobOnly then
-		local societyAccount
-
-		TriggerEvent('esx_addonaccount:getSharedAccount', 'society_mechanic', function(account)
-			societyAccount = account
-		end)
-
-		if societyAccount and price <= societyAccount.money then
-			TriggerClientEvent('esx_lscustom:installMod', source)
-			TriggerClientEvent('esx:showNotification', source, TranslateCap('purchased'))
-			societyAccount.removeMoney(price)
-			session.paidUntil = os.clock() + 45
-		else
-			TriggerClientEvent('esx_lscustom:cancelInstallMod', source)
-			TriggerClientEvent('esx:showNotification', source, TranslateCap('not_enough_money'))
-		end
-	else
-		if price <= xPlayer.getMoney() then
-			TriggerClientEvent('esx_lscustom:installMod', source)
-			TriggerClientEvent('esx:showNotification', source, TranslateCap('purchased'))
-			xPlayer.removeMoney(price, "LSC Purchase")
-			session.paidUntil = os.clock() + 45
-		else
-			TriggerClientEvent('esx_lscustom:cancelInstallMod', source)
-			TriggerClientEvent('esx:showNotification', source, TranslateCap('not_enough_money'))
-		end
-	end
+	print(('[^3WARNING^7] Player ^5%s^7 attempted to use deprecated LS Customs buyMod event'):format(source))
+	TriggerClientEvent('esx_lscustom:cancelInstallMod', source)
 end)
 
 RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netId)
@@ -272,7 +298,7 @@ RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netI
 	if not vehicleProps.plate or not model or not isNearCustoms(source) then return end
 
 	local session = getSession(source, vehicleProps.plate)
-	if not session or session.netId ~= netId or not session.paidUntil or session.paidUntil < os.clock() then
+	if not session or session.netId ~= netId or not session.paidUntil or session.paidUntil < os.time() then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to save LS Customs changes without a valid payment'):format(source))
 		return
 	end
@@ -290,34 +316,39 @@ RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netI
 		return
 	end
 
-	MySQL.single('SELECT owner, vehicle FROM owned_vehicles WHERE owner = ? AND plate = ?', {xPlayer.getIdentifier(), vehicleProps.plate},
-	function(result)
-		if result then
-			local vehicle = json.decode(result.vehicle)
-			if tonumber(vehicleProps.model) == tonumber(vehicle.model) then
-				MySQL.update('UPDATE owned_vehicles SET vehicle = ? WHERE owner = ? AND plate = ?', {json.encode(vehicleProps), xPlayer.getIdentifier(), vehicleProps.plate})
-				session.paidUntil = nil
-				session.paidProps = nil
-				if Customs[src] then
-					if Customs[src][tostring(vehicleProps.plate)]  then
-						Customs[src][tostring(vehicleProps.plate)].props = vehicleProps
-					else
-						Customs[src][tostring(vehicleProps.plate)] = {props = vehicleProps, netId = netId}
-					end
-				else
-					Customs[src] = {}
-					Customs[src][tostring(vehicleProps.plate)] = {props = vehicleProps, netId = netId}
-				end
-        local veh = NetworkGetEntityFromNetworkId(netId)
-				local Veh_State = Entity(veh).state.VehicleProperties
-				if Veh_State then
-					Entity(veh).state:set("VehicleProperties", vehicleProps, true)
-        end
-			else
-				print(('[^3WARNING^7] Player ^5%s^7 Attempted To upgrade with mismatching vehicle model'):format(xPlayer.src))
-			end
+	local ownership = getOwnershipConfig()
+	local record = getOwnedVehicleRecord(vehicleProps.plate, model)
+	local shouldSaveOwnedVehicle = ownership.SaveOwnedVehicles ~= false and record and canSaveOwnedVehicle(xPlayer, record.owner)
+
+	if ownership.RequireOwned == true and not shouldSaveOwnedVehicle then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to save LS Customs changes for a blocked vehicle'):format(source))
+		return
+	end
+
+	if shouldSaveOwnedVehicle then
+		MySQL.update('UPDATE owned_vehicles SET vehicle = ? WHERE owner = ? AND plate = ?', {json.encode(vehicleProps), record.owner, vehicleProps.plate})
+	end
+
+	session.paidUntil = nil
+	session.paidProps = nil
+	if Customs[src] then
+		if Customs[src][tostring(vehicleProps.plate)] then
+			Customs[src][tostring(vehicleProps.plate)].props = vehicleProps
+		else
+			Customs[src][tostring(vehicleProps.plate)] = {props = vehicleProps, netId = netId}
 		end
-	end)
+	else
+		Customs[src] = {}
+		Customs[src][tostring(vehicleProps.plate)] = {props = vehicleProps, netId = netId}
+	end
+
+	local veh = NetworkGetEntityFromNetworkId(netId)
+	if veh and veh ~= 0 and DoesEntityExist(veh) then
+		local vehState = Entity(veh).state
+		if vehState.VehicleProperties then
+			vehState:set("VehicleProperties", vehicleProps, true)
+		end
+	end
 end)
 
 xLib.callback.registerCompat('esx_lscustom:getVehiclesPrices', function(source, cb)

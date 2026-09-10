@@ -13,7 +13,12 @@ inspiration from the [Porsche configurator](https://configurator.porsche.com/en-
 - `html/js/cart.js`: expandable cart, badge, total and checkout controls.
 - `html/js/icons.js`: category-to-Lucide mapping and SVG creation.
 - `client/modules/workshop_locale.lua`: ESX locale payload for the interface.
+- `client/modules/workshop_stats.lua`: normalized handling stats for the UI.
 - `client/modules/workshop_camera.lua`: camera behavior and active-view messages.
+- `client/modules/workshop_vehicle.lua`: vehicle price, mod price and restore helpers.
+- `client/modules/workshop_cart.lua`: cart state, totals and server payloads.
+- `client/modules/workshop_nui_menu.lua`: NUI menu construction from `Config.Menus`.
+- `client/modules/workshop_legacy_menu.lua`: ESX default menu flow when NUI is disabled.
 
 All new text lives in `locales/*.lua`. English is the default. Browser code only
 displays prices received from Lua; the existing server-side checkout remains
