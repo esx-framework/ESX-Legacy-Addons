@@ -5,6 +5,22 @@ Config                   = {}
 Config.DrawDistance      = 10.0
 Config.Locale = GetConvar('esx:locale', 'en')
 Config.IsMechanicJobOnly = false
+Config.Currency = '$'
+
+Config.Workshop = {
+	UseCart = true,
+	UseNui = true,
+	EnableCamera = true,
+	EnableStats = true,
+	PurchaseCooldown = 1500,
+	StatGains = {
+		modEngine = { accel = 12, speed = 8 },
+		modTransmission = { accel = 8 },
+		modBrakes = { brake = 20 },
+		modSuspension = { handling = 10 },
+		modTurbo = { accel = 6, speed = 6 }
+	}
+}
 
 Config.Zones = {
 
@@ -472,6 +488,10 @@ Config.Menus = {
 	main = {
 		label		= 'LS CUSTOMS',
 		parent		= nil,
+		cartCheckout = TranslateCap('cart_checkout'),
+		cartClear = TranslateCap('cart_clear'),
+		vehicleStats = TranslateCap('vehicle_stats'),
+		cameraMenu = TranslateCap('camera'),
 		upgrades	= TranslateCap('upgrades'),
 		cosmetics	= TranslateCap('cosmetics')
 	},

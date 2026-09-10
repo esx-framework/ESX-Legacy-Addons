@@ -138,13 +138,16 @@ function OpenBuyLicenseMenu(licenseName)
 end
 
 function CreateBlipCircle(coords, text, radius, color, sprite)
-	xLib.blips.create({
-		coords = coords,
-		radius = radius,
-		highDetail = true,
-		color = 1,
-		alpha = 128
-	})
+	if radius then
+		xLib.blips.create({
+			coords = coords,
+			radius = radius,
+			highDetail = true,
+			color = 1,
+			alpha = 128,
+			shortRange = true
+		})
+	end
 
 	xLib.blips.create({
 		coords = coords,

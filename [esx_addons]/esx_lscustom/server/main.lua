@@ -3,6 +3,11 @@
 
 local Vehicles
 local Customs = {}
+local purchaseLimiter = xLib.rateLimiter({
+	capacity = 1,
+	refill = 1,
+	interval = Config.Workshop and Config.Workshop.PurchaseCooldown or 1500
+})
 
 local function normalizePlate(plate)
 	return xLib.vehiclePlate.normalize(plate, {
@@ -60,6 +65,13 @@ local function getVehicleBasePrice(model)
 	return 50000
 end
 
+local function sendCartResult(source, success, message)
+	TriggerClientEvent('esx_lscustom:cartPurchaseResult', source, {
+		success = success,
+		message = message
+	})
+end
+
 RegisterNetEvent('esx_lscustom:startModing', function(props, netId)
 	local src = tostring(source)
 	local xPlayer = ESX.Player(source)
@@ -93,9 +105,86 @@ end)
 
 RegisterNetEvent('esx_lscustom:stopModing', function(plate)
 	local src = tostring(source)
+	if not plate then return end
 	plate = normalizePlate(plate)
+	if not plate then return end
 	if Customs[src] then
 		Customs[src][plate] = nil
+	end
+end)
+
+RegisterNetEvent('esx_lscustom:buyCart', function(payload, netId)
+	local source = source
+	local xPlayer = ESX.Player(source)
+
+	if not xPlayer then return print('^3[WARNING]^0 The player could\'nt be found.') end
+	if Config.IsMechanicJobOnly and xPlayer.getJob().name ~= 'mechanic' then return end
+	if type(payload) ~= 'table' or type(payload.vehicleProps) ~= 'table' then
+		return sendCartResult(source, false, TranslateCap('purchase_invalid'))
+	end
+
+	local allowed = purchaseLimiter:consume(source)
+	if not allowed then
+		return sendCartResult(source, false, TranslateCap('purchase_wait'))
+	end
+
+	local vehicleProps = payload.vehicleProps
+	vehicleProps.plate = normalizePlate(vehicleProps.plate)
+	local model = tonumber(vehicleProps.model)
+	local vehicle = getCurrentVehicle(source)
+
+	if not vehicleProps.plate or not model or not netId or not vehicle or not isNearCustoms(source) then
+		return sendCartResult(source, false, TranslateCap('workshop_session_invalid'))
+	end
+
+	if GetEntityModel(vehicle) ~= model or normalizePlate(GetVehicleNumberPlateText(vehicle) or '') ~= vehicleProps.plate then
+		return sendCartResult(source, false, TranslateCap('vehicle_session_mismatch'))
+	end
+
+	local session = getSession(source, vehicleProps.plate)
+	if not session or session.netId ~= netId then
+		return sendCartResult(source, false, TranslateCap('workshop_session_missing'))
+	end
+
+	local total = WorkshopPricing.CalculateCartTotal(payload.cart, getVehicleBasePrice(model))
+	if not total or total <= 0 then
+		return sendCartResult(source, false, TranslateCap('no_valid_changes'))
+	end
+
+	local validProps, invalidProp = WorkshopValidation.VehiclePropsMatchPaidCart(session.props, vehicleProps, payload.cart)
+	if not validProps then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to save unpaid LS Customs property ^5%s^7'):format(source, tostring(invalidProp)))
+		return sendCartResult(source, false, TranslateCap('purchase_invalid_changes'))
+	end
+
+	local validValues, invalidValue = WorkshopValidation.CartValuesMatchVehicleProps(vehicleProps, payload.cart)
+	if not validValues then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted LS Customs cart mismatch on ^5%s^7'):format(source, tostring(invalidValue)))
+		return sendCartResult(source, false, TranslateCap('purchase_vehicle_mismatch'))
+	end
+
+	if Config.IsMechanicJobOnly then
+		local societyAccount
+
+		TriggerEvent('esx_addonaccount:getSharedAccount', 'society_mechanic', function(account)
+			societyAccount = account
+		end)
+
+		if societyAccount and total <= societyAccount.money then
+			societyAccount.removeMoney(total)
+			session.paidUntil = os.clock() + 45
+			session.paidProps = vehicleProps
+			sendCartResult(source, true, TranslateCap('tuning_applied', Config.Currency or '$', ESX.Math.GroupDigits(total)))
+		else
+			sendCartResult(source, false, TranslateCap('not_enough_money'))
+		end
+	elseif total <= xPlayer.getMoney() then
+		xPlayer.removeMoney(total, "LSC Purchase")
+		session.paidUntil = os.clock() + 45
+		session.paidProps = vehicleProps
+		sendCartResult(source, true, TranslateCap('tuning_applied', Config.Currency or '$', ESX.Math.GroupDigits(total)))
+	else
+		sendCartResult(source, false, TranslateCap('not_enough_money'))
 	end
 end)
 
@@ -125,6 +214,7 @@ RegisterNetEvent('esx_lscustom:buyMod', function(price)
 	local session = plate and getSession(source, plate)
 
 	if not xPlayer then return print('^3[WARNING]^0 The player could\'nt be found.') end
+	if Config.Workshop and Config.Workshop.UseCart then return end
 	if Config.IsMechanicJobOnly and xPlayer.getJob().name ~= 'mechanic' then return end
 	if not vehicle or not session or not isNearCustoms(source) then return end
 
@@ -187,6 +277,14 @@ RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netI
 		return
 	end
 
+	if Config.Workshop and Config.Workshop.UseCart then
+		local validPaidProps, invalidPaidProp = WorkshopValidation.WatchedVehiclePropsEqual(session.paidProps, vehicleProps)
+		if not validPaidProps then
+			print(('[^3WARNING^7] Player ^5%s^7 attempted to save unpaid LS Customs property ^5%s^7'):format(source, tostring(invalidPaidProp)))
+			return
+		end
+	end
+
 	local currentVehicle = getCurrentVehicle(source)
 	if not currentVehicle or GetEntityModel(currentVehicle) ~= model or normalizePlate(GetVehicleNumberPlateText(currentVehicle) or '') ~= vehicleProps.plate then
 		return
@@ -199,6 +297,7 @@ RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netI
 			if tonumber(vehicleProps.model) == tonumber(vehicle.model) then
 				MySQL.update('UPDATE owned_vehicles SET vehicle = ? WHERE owner = ? AND plate = ?', {json.encode(vehicleProps), xPlayer.getIdentifier(), vehicleProps.plate})
 				session.paidUntil = nil
+				session.paidProps = nil
 				if Customs[src] then
 					if Customs[src][tostring(vehicleProps.plate)]  then
 						Customs[src][tostring(vehicleProps.plate)].props = vehicleProps

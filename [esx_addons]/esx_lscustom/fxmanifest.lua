@@ -20,6 +20,8 @@ server_scripts {
 	'@es_extended/locale.lua',
 	'locales/*.lua',
 	'config.lua',
+	'server/modules/workshop_pricing.lua',
+	'server/modules/workshop_validation.lua',
 	'server/main.lua'
 }
 
@@ -27,5 +29,19 @@ client_scripts {
 	'@es_extended/locale.lua',
 	'locales/*.lua',
 	'config.lua',
+	'client/modules/workshop_locale.lua',
+	'client/modules/workshop_stats.lua',
+	'client/modules/workshop_camera.lua',
 	'client/main.lua'
+}
+
+ui_page 'html/index.html'
+
+files {
+	'html/index.html',
+	'html/css/style.css',
+	'html/js/*.js',
+	'html/vendor/lucide.min.js',
+	'html/vendor/LICENSE',
+	'html/assets/*'
 }
