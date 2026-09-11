@@ -1,0 +1,45 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+window.DeathLocales = {
+  en: {
+    numberLocale: 'en-US',
+    pageTitle: 'ESX · Emergency services',
+    eyebrow: 'YOU ARE UNCONSCIOUS',
+    titleFirst: 'There is', titleSecond: 'still ', titleAccent: 'time.',
+    descriptionFirst: 'Call emergency services or wait',
+    descriptionSecond: 'for hospital transfer. Your story continues.',
+    automaticTransfer: 'AUTOMATIC TRANSFER', timeRemaining: 'TIME REMAINING',
+    countdown: '{minutes} minutes and {seconds} seconds until automatic transfer',
+    locationPending: 'Location pending',
+    distressSending: 'Sending alert…', distressRequested: 'Help requested',
+    distressRepeat: 'Send another distress alert', distressRequest: 'Request help',
+    distressCooldown: 'Location shared · Send again in {time}',
+    distressDescription: 'Share your location with emergency services',
+    respawnPreparing: 'Preparing transfer…', respawnTitle: 'Hospital transfer',
+    respawnAvailable: 'Available in {time}', respawnWait: 'Please wait a moment',
+    respawnHold: 'Hold E for {duration} s', respawnFree: 'Free of charge',
+    connectionError: 'Could not connect. Please try again.',
+    distressSent: 'Alert sent. Your location has been shared with emergency services.',
+    previewRespawn: 'Preview: transfer confirmed.', killedByPlayer: 'Killed by a player'
+  },
+  es: {
+    numberLocale: 'es-ES',
+    pageTitle: 'ESX · Emergencias',
+    eyebrow: 'ESTÁS INCONSCIENTE',
+    titleFirst: 'Todavía', titleSecond: 'hay ', titleAccent: 'tiempo.',
+    descriptionFirst: 'Pide ayuda a emergencias o espera',
+    descriptionSecond: 'al traslado al hospital. Tu historia continúa.',
+    automaticTransfer: 'TRASLADO AUTOMÁTICO', timeRemaining: 'TIEMPO RESTANTE',
+    countdown: '{minutes} minutos y {seconds} segundos hasta el traslado automático',
+    locationPending: 'Ubicación pendiente',
+    distressSending: 'Enviando aviso…', distressRequested: 'Auxilio solicitado',
+    distressRepeat: 'Repetir aviso de auxilio', distressRequest: 'Solicitar auxilio',
+    distressCooldown: 'Ubicación compartida · Nuevo aviso en {time}',
+    distressDescription: 'Comparte tu ubicación con emergencias',
+    respawnPreparing: 'Preparando traslado…', respawnTitle: 'Traslado al hospital',
+    respawnAvailable: 'Disponible en {time}', respawnWait: 'Espera un momento',
+    respawnHold: 'Mantén E durante {duration} s', respawnFree: 'Sin coste',
+    connectionError: 'No se pudo conectar. Vuelve a intentarlo.',
+    distressSent: 'Aviso enviado. Tu ubicación se ha compartido con emergencias.',
+    previewRespawn: 'Vista previa: traslado confirmado.', killedByPlayer: 'Matado por un jugador'
+  }
+};

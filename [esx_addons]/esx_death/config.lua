@@ -3,6 +3,9 @@
 
 Config = {}
 
+-- Shared ESX language: setr esx:locale "es" (Spanish) or "en" (English).
+Config.Locale = GetConvar('esx:locale', 'en')
+
 Config.DeathAnim = {
     enabled = true,
     dict = "misslamar1dead_body",

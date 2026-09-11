@@ -9,15 +9,14 @@ local uiReady, restorePending, cursor = false, false, false
 local requestId, distressId = 0, 0
 local syncState, requestRespawn
 
-local errors = {
-    too_early = 'El traslado todavía no está disponible.',
-    insufficient_funds = 'No tienes saldo suficiente en el banco. Puedes esperar al traslado automático.',
-    cooldown = 'Tu aviso ya está registrado. Espera antes de repetirlo.',
-    unavailable = 'Reconectando con el servicio de emergencias…',
-    busy = 'Procesando tu solicitud…',
-    server_error = 'No se pudo completar la solicitud. Vuelve a intentarlo.',
-    not_dead = 'Tu estado ha cambiado. Sincronizando…'
-}
+local function errorMessage(result)
+    local key = result and result.error
+    if key ~= 'too_early' and key ~= 'insufficient_funds' and key ~= 'cooldown'
+        and key ~= 'unavailable' and key ~= 'busy' and key ~= 'not_dead' then
+        key = 'server_error'
+    end
+    return Translate(key)
+end
 
 local function send(action, data)
     SendNUIMessage({ action = action, data = data })
@@ -40,9 +39,9 @@ local function deathReason()
     if Config.ShowKillerName and deathInfo.killerServerId then
         local player = GetPlayerFromServerId(deathInfo.killerServerId)
         local name = player ~= -1 and GetPlayerName(player) or nil
-        if name and name ~= '' then return ('Matado por %s'):format(name) end
+        if name and name ~= '' then return Translate('killed_by', name) end
     end
-    return 'Matado por un jugador'
+    return Translate('killed_by_player')
 end
 
 local function refreshUI()
@@ -52,7 +51,7 @@ local function refreshUI()
     local streetHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)
     local zone = GetLabelText(GetNameOfZone(coords.x, coords.y, coords.z))
     send('state', {
-        earlyRemaining = math.ceil(early), remaining = math.ceil(total), total = state.total,
+        locale = Config.Locale, earlyRemaining = math.ceil(early), remaining = math.ceil(total), total = state.total,
         distressRemaining = math.ceil(distress), distressSent = state.distressSent,
         fine = state.fine, pending = pending, distressPending = distressPending,
         location = GetStreetNameFromHashKey(streetHash), zone = zone,
@@ -198,7 +197,7 @@ requestRespawn = function()
             requestId = requestId + 1
             pending = false
             retryAt = GetGameTimer() + 5000
-            send('feedback', errors.unavailable)
+            send('feedback', Translate('unavailable'))
             syncState()
         end
     end)
@@ -207,7 +206,7 @@ requestRespawn = function()
         pending = false
         if result and result.ok then recover(result) else
             retryAt = GetGameTimer() + 5000
-            send('feedback', errors[result and result.error] or errors.server_error)
+            send('feedback', errorMessage(result))
             refreshUI()
             if result and result.error == 'not_dead' then syncState() end
         end
@@ -226,7 +225,7 @@ AddEventHandler('esx_death:requestDistress', function()
         if dead and cycle == generation and request == distressId and distressPending then
             distressId = distressId + 1
             distressPending = false
-            send('feedback', errors.unavailable)
+            send('feedback', Translate('unavailable'))
             refreshUI()
         end
     end)
@@ -235,9 +234,9 @@ AddEventHandler('esx_death:requestDistress', function()
         distressPending = false
         if result and result.ok then
             applyState(result)
-            send('feedback', 'Aviso enviado. Tu ubicación se ha compartido con emergencias.')
+            send('feedback', Translate('distress_sent'))
         else
-            send('feedback', errors[result and result.error] or errors.server_error)
+            send('feedback', errorMessage(result))
         end
         refreshUI()
     end)

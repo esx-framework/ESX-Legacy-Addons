@@ -10,6 +10,14 @@ end
 function GetEntityCoords() return vector3(340,-1397,32) end
 function GetPlayerPed(src) return src end
 function GetPlayerName(src) return players[src] and 'Player' end
+function GetConvar(_, fallback) return fallback end
+function GetCurrentResourceName() return 'esx_death' end
+function LoadResourceFile(_, path)
+    local file = assert(io.open(path))
+    local contents = file:read('*a')
+    file:close()
+    return contents
+end
 function GetGameTimer() return now*1000 end
 function GetInvokingResource() return invoked end
 function Player(src)
@@ -64,6 +72,7 @@ end
 local passed=0
 local function test(name,fn) fn(); passed=passed+1; print('PASS '..name) end
 
+dofile('../../../esx_core/[core]/es_extended/locale.lua')
 dofile('config.lua')
 dofile('server/main.lua')
 local p=player(1,'char1:one')

@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const vm = require('node:vm');
 const app = readFileSync(require('node:path').join(__dirname, '../web/app.js'), 'utf8');
+const locales = readFileSync(require('node:path').join(__dirname, '../web/locales.js'), 'utf8');
 function setup() {
   let now = 0, sequence = 0;
   const frames = new Map(), requests = [], nodes = new Map();
@@ -23,11 +24,12 @@ function setup() {
     fetch:async(url,options)=>{requests.push({url,...options});return {json:async()=>({ok:true})};},
     requestAnimationFrame:fn=>{const id=++sequence;frames.set(id,fn);return id;}, cancelAnimationFrame:id=>frames.delete(id),
     performance:{now:()=>now}, setInterval:()=>{}, clearInterval:()=>{}};
+  vm.runInNewContext(locales,ctx);
   vm.runInNewContext(app,ctx);
   const tick = ms => {now+=ms;const callbacks=[...frames.values()];frames.clear();for(const fn of callbacks)fn(now);};
   const message = (action,data) => window.fire('message',{data:{action,data}});
   const render = data => message('state',{remaining:660,total:660,earlyRemaining:0,holdDuration:1500,...data});
-  return {get,window,requests,tick,message,render};
+  return {get,window,document,requests,tick,message,render};
 }
 test('NUI stays hidden until a state message; preview cannot activate inside FiveM',()=>{
   const {get,requests}=setup();assert.equal(get('death-screen').hidden,true);assert.equal(requests.length,1);assert.match(requests[0].url,/\/ready$/);
@@ -59,4 +61,33 @@ test('death reason renders below actions and clears on hide',()=>{
   assert.equal(s.get('death-reason').textContent,'Matado por John Doe');
   s.render({deathReason:undefined});assert.equal(s.get('death-reason').textContent,'');
   s.render({deathReason:'Matado por un jugador'});s.message('hide');assert.equal(s.get('death-reason').textContent,'');
+});
+
+test('English is the default and unsupported languages fall back to English',()=>{
+  const s=setup();s.render({remaining:61,fine:15000});
+  assert.equal(s.document.documentElement.lang,'en');
+  assert.equal(s.get('eyebrow').textContent,'YOU ARE UNCONSCIOUS');
+  assert.equal(s.get('distress-title').textContent,'Request help');
+  assert.equal(s.get('countdown')['aria-label'],'01 minutes and 01 seconds until automatic transfer');
+  assert.equal(s.get('respawn-description').textContent,'Hold E for 1.5 s · $15,000');
+  s.render({locale:'fr',earlyRemaining:5});
+  assert.equal(s.document.documentElement.lang,'en');
+  assert.equal(s.get('respawn-description').textContent,'Available in 00:05');
+});
+test('Spanish translates headings, accessibility, cooldowns, pending states and costs',()=>{
+  const s=setup();s.render({locale:'es',remaining:61,fine:15000,distressRemaining:60});
+  assert.equal(s.document.documentElement.lang,'es');
+  assert.equal(s.document.title,'ESX · Emergencias');
+  assert.equal(s.get('title-first').textContent,'Todavía');
+  assert.equal(s.get('countdown')['aria-label'],'01 minutos y 01 segundos hasta el traslado automático');
+  assert.equal(s.get('distress-description').textContent,'Ubicación compartida · Nuevo aviso en 01:00');
+  assert.equal(s.get('respawn-description').textContent,'Mantén E durante 1,5 s · $15.000');
+  s.message('state',{remaining:0,distressRemaining:0,distressPending:true});
+  assert.equal(s.get('distress-title').textContent,'Enviando aviso…');
+  assert.equal(s.get('respawn-description').textContent,'Mantén E durante 1,5 s · Sin coste');
+  s.message('state',{pending:true});
+  assert.equal(s.get('respawn-title').textContent,'Preparando traslado…');
+  assert.equal(s.get('respawn-description').textContent,'Espera un momento');
+  s.message('hide');s.render({locale:'en'});
+  assert.equal(s.get('title-first').textContent,'There is');
 });

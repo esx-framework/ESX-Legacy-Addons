@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ESX · Emergencias</title>
+  <title>ESX · Emergency services</title>
   <link rel="stylesheet" href="style.css">
+  <script src="locales.js" defer></script>
   <script src="app.js" defer></script>
   <script src="medal.js" defer></script>
 </head>
@@ -12,9 +13,9 @@
   <main id="death-screen" hidden>
     <div class="layout">
       <div class="hero">
-        <p class="eyebrow">ESTÁS INCONSCIENTE</p>
-        <h1 id="title">Todavía<br>hay <em>tiempo.</em></h1>
-        <p class="description">Pide ayuda a emergencias o espera<br>al traslado al hospital. Tu historia continúa.</p>
+        <p id="eyebrow" class="eyebrow">YOU ARE UNCONSCIOUS</p>
+        <h1 id="title"><span id="title-first">There is</span><br><span id="title-second">still </span><em id="title-accent">time.</em></h1>
+        <p class="description"><span id="description-first">Call emergency services or wait</span><br><span id="description-second">for hospital transfer. Your story continues.</span></p>
         <div class="location">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
           <div>
@@ -26,22 +27,22 @@
       <div class="timer-panel">
         <div class="timer-heading">
           <span class="status-dot"></span>
-          <span>TRASLADO AUTOMÁTICO</span>
+          <span id="automatic-transfer">AUTOMATIC TRANSFER</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         </div>
-        <div id="countdown" class="countdown" role="timer" aria-label="Tiempo hasta el traslado automático">11<span>:</span>00</div>
+        <div id="countdown" class="countdown" role="timer" aria-label="Time until automatic transfer">11<span>:</span>00</div>
         <div class="timeline" aria-hidden="true"><div id="time-progress"></div></div>
-        <div class="timer-bottom"><span>TIEMPO RESTANTE</span><span id="time-percent">100%</span></div>
+        <div class="timer-bottom"><span id="time-remaining">TIME REMAINING</span><span id="time-percent">100%</span></div>
       </div>
       <div class="actions">
         <button id="distress" class="action action-primary" type="button">
           <kbd>G</kbd>
-          <span class="action-copy"><strong id="distress-title">Solicitar auxilio</strong><small id="distress-description">Comparte tu ubicación con emergencias</small></span>
+          <span class="action-copy"><strong id="distress-title">Request help</strong><small id="distress-description">Share your location with emergency services</small></span>
         </button>
         <button id="respawn" class="action action-secondary" type="button" disabled>
           <span id="hold-progress" aria-hidden="true"></span>
           <kbd>E</kbd>
-          <span class="action-copy"><strong id="respawn-title">Traslado al hospital</strong><small id="respawn-description">Mantén E durante 1.5 s · Sin coste</small></span>
+          <span class="action-copy"><strong id="respawn-title">Hospital transfer</strong><small id="respawn-description">Hold E for 1.5 s · Free of charge</small></span>
           <svg id="lock-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
         </button>
       </div>

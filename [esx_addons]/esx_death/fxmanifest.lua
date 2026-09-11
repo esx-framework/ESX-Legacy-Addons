@@ -6,9 +6,9 @@ game 'gta5'
 description 'Global ESX death lifecycle, persistence, respawn and branded NUI'
 version '1.0.0'
 
-shared_scripts { '@es_extended/imports.lua', 'config.lua' }
+shared_scripts { '@es_extended/imports.lua', '@es_extended/locale.lua', 'config.lua', 'locales/*.lua' }
 client_scripts { 'client/deathcam.lua', 'client/medal.lua', 'client/main.lua' }
 server_scripts { '@oxmysql/lib/MySQL.lua', 'server/main.lua' }
 ui_page 'web/index.html'
-files { 'web/index.html', 'web/style.css', 'web/app.js', 'web/medal.js', 'web/brand-logo.png' }
+files { 'web/index.html', 'web/style.css', 'web/locales.js', 'web/app.js', 'web/medal.js', 'web/brand-logo.png' }
 dependencies { 'es_extended', 'oxmysql', '/onesync' }

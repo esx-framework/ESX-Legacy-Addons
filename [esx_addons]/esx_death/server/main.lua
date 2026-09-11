@@ -245,8 +245,8 @@ AddEventHandler('txAdmin:events:healedPlayer', function(data)
     elseif tonumber(data.id) then revive(tonumber(data.id), 'txadmin') end
 end)
 ESX.RegisterCommand('revive', 'admin', function(_, args) revive(args.playerId.source, 'admin') end, true, {
-    help = 'Reanimar a un jugador', validate = true,
-    arguments = { { name = 'playerId', help = 'ID del jugador', type = 'player' } }
+    help = Translate('revive_help'), validate = true,
+    arguments = { { name = 'playerId', help = Translate('player_id'), type = 'player' } }
 })
 ESX.RegisterCommand('reviveall', 'admin', function()
     for _, player in pairs(ESX.GetExtendedPlayers()) do revive(player.source, 'admin') end

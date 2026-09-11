@@ -5,6 +5,20 @@
   const inGame = typeof GetParentResourceName === 'function';
   const preview = !inGame && new URLSearchParams(location.search).has('preview');
   let state = {}, visible = false, holdStart = null, holdFrame = null, previewClock;
+  let locale = 'en';
+  const t = (key, values = {}) => (window.DeathLocales[locale][key] ?? window.DeathLocales.en[key])
+    .replace(/\{(\w+)\}/g, (match, name) => values[name] ?? match);
+  function setLocale(value) {
+    locale = value === 'es' ? 'es' : 'en';
+    document.documentElement.lang = locale;
+    document.title = t('pageTitle');
+    for (const [id, key] of Object.entries({
+      eyebrow: 'eyebrow', 'title-first': 'titleFirst', 'title-second': 'titleSecond',
+      'title-accent': 'titleAccent', 'description-first': 'descriptionFirst',
+      'description-second': 'descriptionSecond', 'automatic-transfer': 'automaticTransfer',
+      'time-remaining': 'timeRemaining'
+    })) $(id).textContent = t(key);
+  }
   const number = value => Math.max(0, Number(value) || 0);
   const formatTime = value => {
     const seconds = Math.ceil(number(value));
@@ -18,7 +32,7 @@
       });
       return await response.json();
     } catch {
-      $('feedback').textContent = 'No se pudo conectar. Vuelve a intentarlo.';
+      $('feedback').textContent = t('connectionError');
       return { ok: false };
     }
   };
@@ -31,6 +45,7 @@
   };
   function render(data) {
     state = { ...state, ...data };
+    if (state.locale !== locale) setLocale(state.locale);
     visible = true;
     $('death-screen').hidden = false;
     if (state.brand) {
@@ -40,35 +55,39 @@
     }
     const [minutes, seconds] = formatTime(state.remaining).split(':');
     $('countdown').replaceChildren(document.createTextNode(minutes), Object.assign(document.createElement('span'), { textContent: ':' }), document.createTextNode(seconds));
-    $('countdown').setAttribute('aria-label', `${minutes} minutos y ${seconds} segundos hasta el traslado automático`);
+    $('countdown').setAttribute('aria-label', t('countdown', { minutes, seconds }));
     const percent = Math.min(100, number(state.remaining) / Math.max(1, number(state.total)) * 100);
     $('time-progress').style.width = `${percent}%`;
     $('time-percent').textContent = `${Math.ceil(percent)}%`;
-    $('location').textContent = state.location || 'Ubicación pendiente';
+    $('location').textContent = state.location || t('locationPending');
     $('zone').textContent = state.zone && state.zone !== 'NULL' ? state.zone : 'San Andreas';
     const cooldown = number(state.distressRemaining), early = number(state.earlyRemaining);
     $('death-reason').textContent = state.deathReason || '';
     $('distress').disabled = cooldown > 0 || !!state.distressPending || !!state.pending;
-    $('distress-title').textContent = state.distressPending ? 'Enviando aviso…' : cooldown > 0 ? 'Auxilio solicitado' : state.distressSent ? 'Repetir aviso de auxilio' : 'Solicitar auxilio';
-    $('distress-description').textContent = cooldown > 0 ? `Ubicación compartida · Nuevo aviso en ${formatTime(cooldown)}` : 'Comparte tu ubicación con emergencias';
+    $('distress-title').textContent = t(state.distressPending ? 'distressSending' : cooldown > 0 ? 'distressRequested' : state.distressSent ? 'distressRepeat' : 'distressRequest');
+    $('distress-description').textContent = cooldown > 0 ? t('distressCooldown', { time: formatTime(cooldown) }) : t('distressDescription');
     $('respawn').disabled = early > 0 || !!state.pending;
     $('lock-icon').style.opacity = early > 0 ? '1' : '0';
-    $('respawn-title').textContent = state.pending ? 'Preparando traslado…' : 'Traslado al hospital';
-    $('respawn-description').textContent = early > 0 ? `Disponible en ${formatTime(early)}` : state.pending ? 'Espera un momento' : `Mantén E durante ${number(state.holdDuration || 1500) / 1000} s${number(state.fine) > 0 && number(state.remaining) > 0 ? ` · $${number(state.fine).toLocaleString('es-ES')}` : ' · Sin coste'}`;
+    $('respawn-title').textContent = t(state.pending ? 'respawnPreparing' : 'respawnTitle');
+    const cost = number(state.fine) > 0 && number(state.remaining) > 0
+      ? `$${number(state.fine).toLocaleString(t('numberLocale'))}` : t('respawnFree');
+    $('respawn-description').textContent = early > 0 ? t('respawnAvailable', { time: formatTime(early) })
+      : state.pending ? t('respawnWait')
+      : `${t('respawnHold', { duration: (number(state.holdDuration || 1500) / 1000).toLocaleString(t('numberLocale')) })} · ${cost}`;
     if ($('respawn').disabled) cancelHold();
   }
   async function distress() {
     if (!visible || $('distress').disabled) return;
     if (preview) {
       render({ distressSent: true, distressRemaining: 60 });
-      $('feedback').textContent = 'Aviso enviado. Tu ubicación se ha compartido con emergencias.';
+      $('feedback').textContent = t('distressSent');
     } else await post('distress');
   }
   async function respawn() {
     if (!visible || $('respawn').disabled) return;
     if (preview) {
       render({ pending: true });
-      $('feedback').textContent = 'Vista previa: traslado confirmado.';
+      $('feedback').textContent = t('previewRespawn');
       clearInterval(previewClock);
     } else await post('respawn');
   }
@@ -115,11 +134,12 @@
       case 'feedback': $('feedback').textContent = typeof data.data === 'string' ? data.data : ''; break;
     }
   });
+  setLocale(preview ? new URLSearchParams(location.search).get('locale') : 'en');
   if (preview) {
     document.body.classList.add('preview');
-    render({ remaining: 584, earlyRemaining: 24, total: 660, distressRemaining: 0, playerId: 28,
+    render({ locale, remaining: 584, earlyRemaining: 24, total: 660, distressRemaining: 0, playerId: 28,
       location: 'Vespucci Boulevard', zone: 'Pillbox Hill', holdDuration: 1500, fine: 0,
-      deathReason: 'Matado por un jugador' });
+      deathReason: t('killedByPlayer') });
     previewClock = setInterval(() => render({ remaining: Math.max(0, state.remaining - 1),
       earlyRemaining: Math.max(0, state.earlyRemaining - 1), distressRemaining: Math.max(0, state.distressRemaining - 1) }), 1000);
   } else if (inGame) void post('ready');
