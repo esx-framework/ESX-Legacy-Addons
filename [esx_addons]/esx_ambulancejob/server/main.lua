@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-local playersHealing, deadPlayers = {}, {}
+local playersHealing = {}
 local reviveCooldowns = {}
 local itemCooldowns, actionCooldowns = {}, {}
 
@@ -12,26 +12,6 @@ end
 if GetResourceState("esx_society") ~= 'missing' then
 	TriggerEvent('esx_society:registerSociety', 'ambulance', 'Ambulance', 'society_ambulance', 'society_ambulance',
 		'society_ambulance', { type = 'public' })
-end
-
-local function isDeadState(src, bool)
-	if not src or bool == nil then return end
-
-	Player(src).state:set('isDead', bool, true)
-end
-
-local function persistDeathStatus(src, bool)
-	local xPlayer = src and ESX.GetPlayerFromId(src)
-	if not xPlayer or type(bool) ~= 'boolean' then return end
-
-	MySQL.update('UPDATE users SET is_dead = ? WHERE identifier = ?', { bool, xPlayer.identifier })
-	isDeadState(src, bool)
-
-	if bool then
-		xPlayer.setMeta('deathTime', os.time())
-	elseif xPlayer.getMeta().deathTime ~= nil then
-		xPlayer.clearMeta('deathTime')
-	end
 end
 
 local function isNearPlayer(source, target, distance)
@@ -111,126 +91,53 @@ local function getValidItemAmount(amount)
 	return amount
 end
 
-RegisterNetEvent('esx_ambulancejob:revive')
-AddEventHandler('esx_ambulancejob:revive', function(playerId)
-	playerId = tonumber(playerId)
-	local xPlayer = source and ESX.GetPlayerFromId(source)
-	local now = os.clock()
-
-	if xPlayer and xPlayer.job.name == 'ambulance' and playerId and (not reviveCooldowns[source] or now - reviveCooldowns[source] > 8) then
-		local xTarget = ESX.GetPlayerFromId(playerId)
-		if xTarget then
-			if deadPlayers[playerId] and isNearPlayer(source, playerId, 8.0) then
-				reviveCooldowns[source] = now
-				if Config.ReviveReward > 0 then
-					xPlayer.showNotification(TranslateCap('revive_complete_award', xTarget.name, Config.ReviveReward))
-					xPlayer.addMoney(Config.ReviveReward, "Revive Reward")
-					xTarget.triggerEvent('esx_ambulancejob:revive')
-					persistDeathStatus(xTarget.source, false)
-				else
-					xPlayer.showNotification(TranslateCap('revive_complete', xTarget.name))
-					xTarget.triggerEvent('esx_ambulancejob:revive')
-					persistDeathStatus(xTarget.source, false)
-				end
-				local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-
-				for _, xPlayer in pairs(Ambulance) do
-					if xPlayer.job.name == 'ambulance' then
-						xPlayer.triggerEvent('esx_ambulancejob:PlayerNotDead', playerId)
-					end
-				end
-				deadPlayers[playerId] = nil
-			else
-				xPlayer.showNotification(TranslateCap('player_not_unconscious'))
-			end
-		else
-			xPlayer.showNotification(TranslateCap('revive_fail_offline'))
-		end
-	end
+-- EMS permissions and rewards stay here; the lifecycle belongs to esx_death.
+RegisterNetEvent('esx_ambulancejob:revive', function(playerId)
+    local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
+    local target = tonumber(playerId)
+    local xTarget = target and ESX.GetPlayerFromId(target)
+    local now = GetGameTimer()
+    if not isAmbulanceOnDuty(xPlayer) or not xTarget or exports.esx_death:IsDead(src) then return end
+    if reviveCooldowns[src] and now - reviveCooldowns[src] < 8000 then return end
+    if not isNearPlayer(src, target, 8.0) or not exports.esx_death:IsDead(target) then return end
+    reviveCooldowns[src] = now
+    if exports.esx_death:Revive(target, 'ems') then
+        if Config.ReviveReward > 0 then
+            xPlayer.addMoney(Config.ReviveReward, 'Revive Reward')
+            xPlayer.showNotification(TranslateCap('revive_complete_award', xTarget.name, Config.ReviveReward))
+        else
+            xPlayer.showNotification(TranslateCap('revive_complete', xTarget.name))
+        end
+    end
 end)
 
-AddEventHandler('txAdmin:events:healedPlayer', function(eventData)
-	if GetInvokingResource() ~= "monitor" or type(eventData) ~= "table" or type(eventData.id) ~= "number" then
-		return
-	end
-	if deadPlayers[eventData.id] then
-		persistDeathStatus(eventData.id, false)
-		TriggerClientEvent('esx_ambulancejob:revive', eventData.id)
-		local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
+local function notifyMedics(event, ...)
+    for _, xPlayer in pairs(ESX.GetExtendedPlayers('job', 'ambulance')) do
+        xPlayer.triggerEvent(event, ...)
+    end
+end
 
-		for _, xPlayer in pairs(Ambulance) do
-			if xPlayer.job.name == 'ambulance' then
-				xPlayer.triggerEvent('esx_ambulancejob:PlayerNotDead', eventData.id)
-			end
-		end
-		deadPlayers[eventData.id] = nil
-	end
+AddEventHandler('esx_death:stateChanged', function(playerId, dead)
+    notifyMedics(dead and 'esx_ambulancejob:PlayerDead' or 'esx_ambulancejob:PlayerNotDead', playerId)
 end)
 
-RegisterNetEvent('esx:onPlayerDeath')
-AddEventHandler('esx:onPlayerDeath', function(data)
-	local source = source
-	if deadPlayers[source] then return end
-
-	deadPlayers[source] = 'dead'
-	local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-	persistDeathStatus(source, true)
-
-	for _, xPlayer in pairs(Ambulance) do
-		xPlayer.triggerEvent('esx_ambulancejob:PlayerDead', source)
-	end
+AddEventHandler('esx_death:distress', function(playerId, coords)
+    notifyMedics('esx_ambulancejob:PlayerDistressed', playerId, coords)
 end)
 
-RegisterServerEvent('esx_ambulancejob:svsearch')
-AddEventHandler('esx_ambulancejob:svsearch', function()
-	TriggerClientEvent('esx_ambulancejob:clsearch', -1, source)
+RegisterNetEvent('esx_ambulancejob:svsearch', function()
+    local src = source
+    if not isAmbulanceOnDuty(ESX.GetPlayerFromId(src)) or exports.esx_death:IsDead(src) then return end
+    for target in pairs(exports.esx_death:GetDeadPlayers()) do
+        if isNearPlayer(src, target, 3.0) then
+            TriggerClientEvent('esx_ambulancejob:clsearch', target, src)
+        end
+    end
 end)
 
-RegisterNetEvent('esx_ambulancejob:onPlayerDistress')
-AddEventHandler('esx_ambulancejob:onPlayerDistress', function()
-	local source = source
-	local injuredPed = GetPlayerPed(source)
-	local injuredCoords = GetEntityCoords(injuredPed)
-
-	if deadPlayers[source] then
-		deadPlayers[source] = 'distress'
-		local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-
-		for _, xPlayer in pairs(Ambulance) do
-			xPlayer.triggerEvent('esx_ambulancejob:PlayerDistressed', source, injuredCoords)
-		end
-	end
-end)
-
-RegisterNetEvent('esx:onPlayerSpawn')
-AddEventHandler('esx:onPlayerSpawn', function()
-	local source = source
-	if deadPlayers[source] then
-		deadPlayers[source] = nil
-		isDeadState(source, false)
-		local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-
-		for _, xPlayer in pairs(Ambulance) do
-			xPlayer.triggerEvent('esx_ambulancejob:PlayerNotDead', source)
-		end
-	end
-end)
-
-AddEventHandler('esx:playerDropped', function(playerId, reason)
-	reviveCooldowns[playerId] = nil
-	itemCooldowns[playerId] = nil
-	actionCooldowns[playerId] = nil
-	if deadPlayers[playerId] then
-		deadPlayers[playerId] = nil
-		isDeadState(playerId, false)
-		local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-
-		for _, xPlayer in pairs(Ambulance) do
-			if xPlayer.job.name == 'ambulance' then
-				xPlayer.triggerEvent('esx_ambulancejob:PlayerNotDead', playerId)
-			end
-		end
-	end
+AddEventHandler('esx:playerDropped', function(playerId)
+    reviveCooldowns[playerId], itemCooldowns[playerId], actionCooldowns[playerId], playersHealing[playerId] = nil, nil, nil, nil
 end)
 
 RegisterNetEvent('esx_ambulancejob:heal')
@@ -261,81 +168,6 @@ AddEventHandler('esx_ambulancejob:putInVehicle', function(target)
 	actionCooldowns[src] = now
 	TriggerClientEvent('esx_ambulancejob:putInVehicle', xTarget.source)
 end)
-
-xLib.callback.registerCompat('esx_ambulancejob:removeItemsAfterRPDeath', function(source, cb)
-	local xPlayer = ESX.GetPlayerFromId(source)
-	if not xPlayer then return cb() end
-
-	if deadPlayers[source] then
-		persistDeathStatus(source, false)
-	end
-
-	if Config.OxInventory and Config.RemoveItemsAfterRPDeath then
-		exports.ox_inventory:ClearInventory(xPlayer.source)
-		return cb()
-	end
-
-	if Config.RemoveCashAfterRPDeath then
-		if xPlayer.getMoney() > 0 then
-			xPlayer.removeMoney(xPlayer.getMoney(), "Death")
-		end
-
-		if xPlayer.getAccount('black_money').money > 0 then
-			xPlayer.setAccountMoney('black_money', 0, "Death")
-		end
-	end
-
-	if Config.RemoveItemsAfterRPDeath then
-		for itemName, item in pairs(xPlayer.inventory) do
-			if item.count > 0 then
-				xPlayer.setInventoryItem(itemName, 0)
-			end
-		end
-	end
-
-	if Config.OxInventory then return cb() end
-
-	local playerLoadout = {}
-	if Config.RemoveWeaponsAfterRPDeath then
-		for i = 1, #xPlayer.loadout, 1 do
-			xPlayer.removeWeapon(xPlayer.loadout[i].name)
-		end
-	else -- save weapons & restore em' since spawnmanager removes them
-		for i = 1, #xPlayer.loadout, 1 do
-			table.insert(playerLoadout, xPlayer.loadout[i])
-		end
-
-		-- give back wepaons after a couple of seconds
-		CreateThread(function()
-			Wait(5000)
-			for i = 1, #playerLoadout, 1 do
-				if playerLoadout[i].label ~= nil then
-					xPlayer.addWeapon(playerLoadout[i].name, playerLoadout[i].ammo)
-				end
-			end
-		end)
-	end
-
-	cb()
-end)
-
-if Config.EarlyRespawnFine then
-	xLib.callback.registerCompat('esx_ambulancejob:checkBalance', function(source, cb)
-		local xPlayer = ESX.GetPlayerFromId(source)
-		local bankBalance = xPlayer.getAccount('bank').money
-
-		cb(bankBalance >= Config.EarlyRespawnFineAmount)
-	end)
-
-	RegisterNetEvent('esx_ambulancejob:payFine')
-	AddEventHandler('esx_ambulancejob:payFine', function()
-		local xPlayer = ESX.GetPlayerFromId(source)
-		local fineAmount = Config.EarlyRespawnFineAmount
-
-		xPlayer.showNotification(TranslateCap('respawn_bleedout_fine_msg', ESX.Math.GroupDigits(fineAmount)))
-		xPlayer.removeAccountMoney('bank', fineAmount, "Respawn Fine")
-	end)
-end
 
 xLib.callback.registerCompat('esx_ambulancejob:getItemAmount', function(source, cb, item)
 	local xPlayer = ESX.GetPlayerFromId(source)
@@ -453,22 +285,6 @@ AddEventHandler('esx_ambulancejob:giveItem', function(itemName, amount)
 	end
 end)
 
-ESX.RegisterCommand('revive', 'admin', function(xPlayer, args, showError)
-	persistDeathStatus(args.playerId.source, false)
-	deadPlayers[args.playerId.source] = nil
-	args.playerId.triggerEvent('esx_ambulancejob:revive')
-end, true, { help = TranslateCap('revive_help'), validate = true, arguments = {
-	{ name = 'playerId', help = 'The player id', type = 'player' }
-} })
-
-ESX.RegisterCommand('reviveall', "admin", function(xPlayer, args, showError)
-	for targetId in pairs(deadPlayers) do
-		persistDeathStatus(targetId, false)
-		deadPlayers[targetId] = nil
-	end
-	TriggerClientEvent('esx_ambulancejob:revive', -1)
-end, false)
-
 ESX.RegisterUsableItem('medikit', function(source)
 	if not playersHealing[source] then
 		local xPlayer = ESX.GetPlayerFromId(source)
@@ -496,34 +312,7 @@ ESX.RegisterUsableItem('bandage', function(source)
 end)
 
 xLib.callback.registerCompat('esx_ambulancejob:getDeadPlayers', function(source, cb)
-	local xPlayer = ESX.GetPlayerFromId(source)
-	if xPlayer.job.name == "ambulance" then
-		cb(deadPlayers)
-	end
-end)
-
-RegisterNetEvent('esx_ambulancejob:requestDeathRestore')
-AddEventHandler('esx_ambulancejob:requestDeathRestore', function()
-	local _source = source
-	local xPlayer = ESX.GetPlayerFromId(_source)
-	if not xPlayer then return end
-
-	MySQL.scalar('SELECT is_dead FROM users WHERE identifier = ?', { xPlayer.identifier }, function(isDead)
-		if isDead ~= true and isDead ~= 1 then return end
-		if deadPlayers[_source] then return end
-
-		deadPlayers[_source] = 'dead'
-		isDeadState(_source, true)
-
-		local deathTime = xPlayer.getMeta().deathTime
-		local elapsed = deathTime and (os.time() - deathTime) or 0
-		if elapsed < 0 then elapsed = 0 end
-
-		local Ambulance = ESX.GetExtendedPlayers("job", "ambulance")
-		for _, xAmbulance in pairs(Ambulance) do
-			xAmbulance.triggerEvent('esx_ambulancejob:PlayerDead', _source)
-		end
-
-		xPlayer.triggerEvent('esx_ambulancejob:restoreDeath', elapsed)
-	end)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not isAmbulanceOnDuty(xPlayer) then return cb({}) end
+    cb(exports.esx_death:GetDeadPlayers(), exports.esx_death:GetDeadPlayerLocations())
 end)

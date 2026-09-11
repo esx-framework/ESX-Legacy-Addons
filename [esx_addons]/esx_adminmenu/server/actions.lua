@@ -294,6 +294,16 @@ local function getOnlineCharacterIdentifier(target, targetId)
 end
 
 local function revivePlayer(targetId)
+    if GetResourceState('esx_death') == 'started' then
+        if targetId == -1 then
+            for _, player in pairs(ESX.GetExtendedPlayers()) do
+                exports.esx_death:Revive(player.source, 'admin')
+            end
+        else
+            exports.esx_death:Revive(targetId, 'admin')
+        end
+        return
+    end
 	local reviveConfig = Config.Revive or {}
 	local events = reviveConfig.Events or {}
 	local triggeredEvent = false

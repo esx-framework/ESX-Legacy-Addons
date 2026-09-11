@@ -4,7 +4,7 @@
 function GetShapeTestResultSync(shape)
     local handle, hit, coords, normal, entity
     repeat handle, hit, coords, normal, entity = GetShapeTestResult(shape)
-    until handle ~= 1 or Wait()
+    until handle ~= 1 or Wait(0)
     return hit, coords, normal, entity
 end
   
@@ -23,16 +23,20 @@ function StartDeathCam()
 end
   
 function EndDeathCam()
-    RenderScriptCams(0)
-    camera = DestroyCam(camera)
+    if not camera then return end
+    RenderScriptCams(false, false, 0, true, false)
+    DestroyCam(camera, false)
+    camera = nil
 end
   
 function ProcessCamControls()
+    if not camera then return end
+    playerPed = PlayerPedId()
     local playerCoords = GetEntityCoords(playerPed)
     if camera_radius < zoom.max and IsDisabledControlPressed(0, 14) then
-      camera_radius += zoom.step
+      camera_radius = math.min(zoom.max, camera_radius + zoom.step)
     elseif camera_radius > zoom.min and IsDisabledControlPressed(0, 15) then
-      camera_radius -= zoom.step 
+      camera_radius = math.max(zoom.min, camera_radius - zoom.step) 
     end
   
     local coords = ProcessNewPosition(playerCoords) 
@@ -41,8 +45,8 @@ function ProcessCamControls()
 end
   
 function ProcessNewPosition(playerCoords)
-    x -= GetDisabledControlNormal(0, 1)
-    y -= GetDisabledControlNormal(0, 2)
+    x = x - GetDisabledControlNormal(0, 1)
+    y = y - GetDisabledControlNormal(0, 2)
     if y < math.rad(15) then
         y = math.rad(15)
     elseif y > math.rad(90) then
