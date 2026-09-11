@@ -114,7 +114,7 @@ function HUD:FastThick()
                     currentAmmo = self.Data.Weapon.CurrentAmmo or 0,
                     maxAmmo = self.Data.Weapon.MaxAmmo or 0,
                 },
-                streetName = self.Data.Location or "Unknown street",
+                streetName = self.Data.Location or "",
                 zoneName = GetLabelText(GetNameOfZone(self.Data.Position.x, self.Data.Position.y, self.Data.Position.z)),
                 heading = GetEntityHeading(ESX.PlayerData.ped),
                 gameTime = string.format("%02d:%02d", GetClockHours(), GetClockMinutes()),

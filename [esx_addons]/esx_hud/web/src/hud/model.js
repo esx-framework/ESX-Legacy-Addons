@@ -44,7 +44,7 @@ export function loadPreferences(storage) {
 export function fuelPercent(fuel) {
     return fuel?.maxLevel > 0 ? clamp((fuel.level / fuel.maxLevel) * 100) : 0;
 }
-export const initialHud = { playerId: "—", onlinePlayers: 0, serverLogo: "", moneys: { bank: 0, money: 0 }, job: "", streetName: "", zoneName: "", heading: 0, gameTime: "", voice: { mic: false, radio: false, range: 2 }, weaponData: { use: false } };
+export const initialHud = { playerId: "", onlinePlayers: 0, serverLogo: "", moneys: { bank: 0, money: 0 }, job: "", streetName: "", zoneName: "", heading: 0, gameTime: "", voice: { mic: false, radio: false, range: 2 }, weaponData: { use: false } };
 export const initialVehicle = { show: false, speed: 0, rpm: 0, gear: 0, fuel: { level: 0, maxLevel: 100 }, damage: 100, mileage: 0, kmh: true, vehType: "LAND", defaultIndicators: {} };
 export const statusItems = [
     ["healthBar", "heart", "health"],

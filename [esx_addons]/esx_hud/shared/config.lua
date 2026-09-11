@@ -63,8 +63,8 @@ Config = {
     },
     Default = {
         ServerLogo = "", -- Optional custom logo URL; empty uses the bundled ESX logo from esx_loadingscreen.
-        ServerName = "ESX",
-        ServerTagline = "LEGACY ROLEPLAY",
+        ServerName = "",
+        ServerTagline = "",
         AccentColor = "#fb9b04",
         Kmh = true,
         PassengerSpeedo = false, -- if this true , you can see speedometer if you don't driver

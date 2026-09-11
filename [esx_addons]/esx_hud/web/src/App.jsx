@@ -1,7 +1,6 @@
 import { createSignal, createEffect, onMount, onCleanup, For, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import Icon from "./hud/Icon";
-import serverLogo from "./assets/esx-logo.png";
 import { defaults, STORAGE_KEY, loadPreferences, clamp, fuelPercent, initialHud, initialVehicle, statusItems, statusColors } from "./hud/model";
 import { translate } from "./hud/locale";
 import { Nui } from "./Utils/Nui";
@@ -15,19 +14,22 @@ const weaponImages = import.meta.glob("./assets/weapons/*.png", { eager: true, i
 const inGame = typeof window.GetParentResourceName === "function";
 const preview = !inGame && new URLSearchParams(location.search).has("preview");
 const moduleKeys = ["Status", "Vehicle", "Weapon", "Position", "Voice", "Money", "Info"];
+const emptyStatus = { healthBar: 0, armorBar: 0, foodBar: 0, drinkBar: 0, staminaBar: 0, oxygenBar: 0, underwater: false };
 
 export default function App() {
     const [visible, setVisible] = createSignal(preview);
     const [panel, setPanel] = createSignal(false);
     const [tab, setTab] = createSignal("appearance");
     const [locale, setLocale] = createSignal("en");
-    const [scenario, setScenario] = createSignal("drive");
     const [notice, setNotice] = createSignal("");
     const [busy, setBusy] = createSignal(false);
+    const [hudReady, setHudReady] = createSignal(false);
+    const [statusReady, setStatusReady] = createSignal(false);
+    const [vehicleReady, setVehicleReady] = createSignal(false);
     const [hud, setHud] = createStore(initialHud);
     const [vehicle, setVehicle] = createStore(initialVehicle);
-    const [status, setStatus] = createStore({ healthBar: 100, armorBar: 0, foodBar: 100, drinkBar: 100, staminaBar: 100, oxygenBar: 100, underwater: false });
-    const [config, setConfig] = createStore({ Default: { ServerName: "ESX", ServerTagline: "LEGACY ROLEPLAY", Kmh: true }, Disable: {}, Colors: { Status: statusColors, Info: {}, Speedo: {} } });
+    const [status, setStatus] = createStore(emptyStatus);
+    const [config, setConfig] = createStore({ Default: { ServerName: "", ServerTagline: "", Kmh: true }, Disable: {}, Colors: { Status: statusColors, Info: {}, Speedo: {} } });
     let saved = loadPreferences(localStorage);
     const [prefs, setPrefs] = createStore({ ...defaults, ...saved });
     const [viewportScale, setViewportScale] = createSignal(1);
@@ -93,40 +95,19 @@ export default function App() {
             setPrefs({ ...serverDefaults(), ...saved });
             synchronize().catch(() => setNotice(t("failed")));
         }
-        if (type === "HUD_DATA") setHud(value);
-        if (type === "VEH_HUD") setVehicle(value);
+        if (type === "HUD_DATA") {
+            setHud(value);
+            setHudReady(true);
+        }
+        if (type === "VEH_HUD") {
+            setVehicle(value);
+            setVehicleReady(true);
+        }
         if (type === "STATUS_HUD") {
             for (const [key] of statusItems) if (value[key] !== undefined) setStatus(key, clamp(value[key]));
             if (value.underwater !== undefined) setStatus("underwater", Boolean(value.underwater));
+            setStatusReady(true);
         }
-    }
-    function demo(mode) {
-        setScenario(mode);
-        setHud({
-            playerId: 128,
-            onlinePlayers: 246,
-            job: "Los Santos Police · Officer II",
-            streetName: "Vespucci Boulevard",
-            zoneName: "Pillbox Hill",
-            heading: 225,
-            gameTime: "20:46",
-            moneys: { money: 24850, bank: 185400 },
-            voice: { range: 2, mic: mode === "onFoot", radio: false },
-            weaponData: { use: mode === "onFoot", image: "pistol", name: "Pistol", currentAmmo: 12, maxAmmo: 84, isWeaponMelee: false },
-        });
-        setStatus({ healthBar: mode === "alert" ? 18 : 96, armorBar: 68, foodBar: 76, drinkBar: 82, staminaBar: mode === "onFoot" ? 64 : 100, oxygenBar: mode === "underwater" ? 32 : 100, underwater: mode === "underwater" });
-        setVehicle({
-            ...initialVehicle,
-            kmh: prefs.Kmh,
-            show: mode === "drive" || mode === "alert",
-            speed: mode === "alert" ? 142 : 86,
-            rpm: mode === "alert" ? 412 : 244,
-            gear: 4,
-            mileage: 1248.6,
-            damage: mode === "alert" ? 25 : 98,
-            fuel: { level: mode === "alert" ? 12 : 68, maxLevel: 100 },
-            defaultIndicators: { engine: true, seatbelt: mode !== "alert", light: true, door: true, tempomat: false },
-        });
     }
     createEffect(() => {
         if (panel()) queueMicrotask(() => dialog?.querySelector("button")?.focus());
@@ -165,7 +146,6 @@ export default function App() {
         window.addEventListener("resize", resize);
         window.addEventListener("keydown", keydown);
         resize();
-        if (preview) demo("drive");
         // Handshake resends config after CEF has mounted, including a resource restart.
         if (inGame) callback("ready").catch(() => {});
         const sounds = [indicatorSound, beltSound, beltOn, beltOff].map((src) => {
@@ -224,26 +204,12 @@ export default function App() {
                 <div class="preview-scene" aria-hidden="true">
                     <div class="scene-grid" />
                     <div class="scene-orbit" />
-                    <div class="scene-caption">
-                        <span>ESX / INTERFACE SYSTEM</span>
-                        <h1>Stay in the moment.</h1>
-                        <p>
-                            LEGACY ROLEPLAY <i /> HUD 2026
-                        </p>
-                    </div>
                 </div>
                 <div class="preview-toolbar">
                     <span class="preview-label">
                         <i />
                         {t("preview")}
                     </span>
-                    <For each={["onFoot", "drive", "alert", "underwater"]}>
-                        {(mode) => (
-                            <button classList={{ selected: scenario() === mode }} onClick={() => demo(mode)}>
-                                {t(mode)}
-                            </button>
-                        )}
-                    </For>
                     <button
                         class="customize"
                         onClick={() => {
@@ -257,19 +223,21 @@ export default function App() {
                 </div>
             </Show>
             <Show when={moduleVisible()}>
-                <aside class="identity anchor" aria-label="Server and player">
+                <Show when={hudReady()}>
+                    <aside class="identity anchor" aria-label="Server and player">
                     <Show when={!hidden("Info")}>
-                        <header class="brand-header">
-                            <img
-                                class="server-logo"
-                                src={hud.serverLogo || serverLogo}
-                                alt={config.Default.ServerName || "ESX"}
-                                onError={(event) => {
-                                    const fallback = new URL(serverLogo, window.location.href).href;
-                                    if (event.currentTarget.src !== fallback) event.currentTarget.src = fallback;
-                                }}
-                            />
-                        </header>
+                        <Show when={hud.serverLogo}>
+                            <header class="brand-header">
+                                <img
+                                    class="server-logo"
+                                    src={hud.serverLogo}
+                                    alt={config.Default.ServerName || ""}
+                                    onError={(event) => {
+                                        event.currentTarget.removeAttribute("src");
+                                    }}
+                                />
+                            </header>
+                        </Show>
                         <div class="session-line">
                             <span>
                                 <i class="live-dot" />
@@ -317,9 +285,10 @@ export default function App() {
                             </div>
                         </div>
                     </Show>
-                </aside>
+                    </aside>
+                </Show>
                 <div class="player-cluster anchor">
-                    <Show when={!hidden("Status")}>
+                    <Show when={statusReady() && !hidden("Status")}>
                         <section classList={{ "status-cluster": true, "above-map": prefs.CenterStatuses }} aria-label="Character status">
                             <For each={statusItems.filter(([key]) => showStatus(key))}>
                                 {([key, icon, label]) => (
@@ -343,31 +312,20 @@ export default function App() {
                             </For>
                         </section>
                     </Show>
-                    <Show when={!hidden("Position")}>
+                    <Show when={hudReady() && !hidden("Position")}>
                         <div class="location glass">
                             <span class="compass">{direction()}</span>
                             <div>
-                                <strong>{hud.streetName || t("unavailable")}</strong>
-                                <small>{hud.zoneName || t("location")}</small>
+                                <strong>{hud.streetName}</strong>
+                                <Show when={hud.zoneName}>
+                                    <small>{hud.zoneName}</small>
+                                </Show>
                             </div>
                             <Icon name="pin" />
                         </div>
                     </Show>
                 </div>
-                <Show when={(preview && !hidden("MinimapOnFoot")) || (preview && vehicle.show)}>
-                    <div class="map-preview anchor" style={{ "--hud-scale": viewportScale() }} aria-hidden="true">
-                        <svg viewBox="0 0 290 168">
-                            <path class="map-blocks" d="M-20 10h80v36h50V0m20 0v70h60V0m20 0v70h90M0 66h90v32H0m0 24h55v60m22 0v-62h66v62m22 0v-88h60v30h80M245 144h60" />
-                            <path class="map-road" d="M-20 55h140V-10M-10 110h165v80M198-10v91h110M66 110v90M154 81h44v50h110" />
-                            <path class="map-route" d="M145 118V81h53V40" />
-                            <circle cx="198" cy="40" r="4" fill="#fb9b04" />
-                            <path d="m145 106 7 18-7-4-7 4Z" fill="#f2f2f2" />
-                        </svg>
-                        <span>N</span>
-                        <small>PILLBOX HILL</small>
-                    </div>
-                </Show>
-                <Show when={!hidden("Voice")}>
+                <Show when={hudReady() && !hidden("Voice")}>
                     <div classList={{ "voice-chip": true, anchor: true, glass: true, speaking: hud.voice.mic || hud.voice.radio }}>
                         <Icon name={hud.voice.radio ? "radio" : "mic"} />
                         <span>{hud.voice.radio ? t("radio") : t(["whisper", "normal", "shout"][range() - 1])}</span>
@@ -379,7 +337,7 @@ export default function App() {
                         </Show>
                     </div>
                 </Show>
-                <Show when={!hidden("Vehicle") && vehicle.show}>
+                <Show when={vehicleReady() && !hidden("Vehicle") && vehicle.show}>
                     <section class="telemetry anchor" aria-label="Vehicle telemetry">
                         <Show when={alert()}>
                             <div class="vehicle-alert" role="status">

@@ -26,7 +26,7 @@ if not Config.Disable.Status then
                 local maxHealth = math.max(1, GetEntityMaxHealth(ped) - 100)
                 values.healthBar = percent((GetEntityHealth(ped) - 100) / maxHealth * 100)
                 values.armorBar = percent(GetPedArmour(ped))
-                values.staminaBar = percent(GetPlayerSprintStaminaRemaining(ESX.playerId))
+                values.staminaBar = 100 - percent(GetPlayerSprintStaminaRemaining(ESX.playerId))
                 values.underwater = IsPedSwimmingUnderWater(ped)
                 values.oxygenBar = values.underwater and percent(GetPlayerUnderwaterTimeRemaining(ESX.playerId) * 10) or 100
                 xLib.nui.send({ type = "STATUS_HUD", value = values })
