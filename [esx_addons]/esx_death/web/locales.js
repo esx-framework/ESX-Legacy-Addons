@@ -16,7 +16,7 @@ window.DeathLocales = {
     distressDescription: 'Share your location with emergency services',
     respawnPreparing: 'Preparing transfer…', respawnTitle: 'Hospital transfer',
     respawnAvailable: 'Available in {time}', respawnWait: 'Please wait a moment',
-    respawnHold: 'Hold E for {duration} s', respawnFree: 'Free of charge',
+    respawnHold: 'Press E', respawnFree: 'Free of charge',
     connectionError: 'Could not connect. Please try again.',
     distressSent: 'Alert sent. Your location has been shared with emergency services.',
     previewRespawn: 'Preview: transfer confirmed.', killedByPlayer: 'Killed by a player'
@@ -37,7 +37,7 @@ window.DeathLocales = {
     distressDescription: 'Comparte tu ubicación con emergencias',
     respawnPreparing: 'Preparando traslado…', respawnTitle: 'Traslado al hospital',
     respawnAvailable: 'Disponible en {time}', respawnWait: 'Espera un momento',
-    respawnHold: 'Mantén E durante {duration} s', respawnFree: 'Sin coste',
+    respawnHold: 'Presiona E', respawnFree: 'Sin coste',
     connectionError: 'No se pudo conectar. Vuelve a intentarlo.',
     distressSent: 'Aviso enviado. Tu ubicación se ha compartido con emergencias.',
     previewRespawn: 'Vista previa: traslado confirmado.', killedByPlayer: 'Matado por un jugador'

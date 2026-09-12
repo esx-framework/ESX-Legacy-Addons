@@ -72,5 +72,5 @@ Config.DistressCooldown = 60000
 -- This only applies to player inflicted deaths.
 Config.ShowDeathReason = true
 Config.ShowKillerName = false
-Config.CameraEnabled = true
+Config.CameraEnabled = false
 Config.AutoMigrate = true -- adds missing users.is_dead / users.death_time columns

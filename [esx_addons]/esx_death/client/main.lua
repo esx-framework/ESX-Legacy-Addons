@@ -118,7 +118,9 @@ local function enterDeath()
             if IsDisabledControlJustReleased(0, 289) then setCursor(not cursor) end -- F2
             if IsDisabledControlJustReleased(0, 47) then TriggerEvent('esx_death:requestDistress') end
             local early = remaining()
-            if IsDisabledControlPressed(0, 38) and early <= 0 and not pending then
+            if IsDisabledControlJustReleased(0, 38) and early <= 0 and not pending then
+                requestRespawn()
+            elseif IsDisabledControlPressed(0, 38) and early <= 0 and not pending then
                 holdStarted = holdStarted or GetGameTimer()
                 local progress = math.min(1, (GetGameTimer() - holdStarted) / Config.HoldDuration)
                 send('hold', progress)
@@ -201,15 +203,14 @@ requestRespawn = function()
             syncState()
         end
     end)
-    ESX.TriggerServerCallback('esx_death:respawn', function(result)
-        if not dead or cycle ~= generation or request ~= requestId then return end
+    xLib.callback('esx_death:respawn', false, function(result)
+        if not dead or request ~= requestId then return end
         pending = false
-        if result and result.ok then recover(result) else
-            retryAt = GetGameTimer() + 5000
-            send('feedback', errorMessage(result))
-            refreshUI()
-            if result and result.error == 'not_dead' then syncState() end
-        end
+        if result and result.ok then return recover(result) end
+        retryAt = GetGameTimer() + 5000
+        send('feedback', errorMessage(result))
+        refreshUI()
+        if result and result.error == 'not_dead' then syncState() end
     end)
 end
 
@@ -231,8 +232,8 @@ AddEventHandler('esx_death:requestDistress', function()
             refreshUI()
         end
     end)
-    ESX.TriggerServerCallback('esx_death:distress', function(result)
-        if not dead or cycle ~= generation or request ~= distressId then return end
+    xLib.callback('esx_death:distress', false, function(result)
+        if not dead or request ~= distressId then return end
         distressPending = false
         if result and result.ok then
             applyState(result)
@@ -251,7 +252,7 @@ syncState = function()
     restorePending = true
     local thisSession = session
     SetTimeout(10000, function() if thisSession == session then restorePending = false end end)
-    ESX.TriggerServerCallback('esx_death:getState', function(data)
+    xLib.callback('esx_death:getState', false, function(data)
         if thisSession ~= session then return end
         restorePending = false
         if not data or not data.ok then return end

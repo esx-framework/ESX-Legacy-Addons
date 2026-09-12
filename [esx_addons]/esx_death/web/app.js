@@ -93,19 +93,15 @@
       render({ pending: true });
       $('feedback').textContent = t('previewRespawn');
       clearInterval(previewClock);
-    } else await post('respawn');
+    } else {
+      render({ pending: true });
+      const response = await post('respawn');
+      if (!response.ok) render({ pending: false });
+    }
   }
   function beginHold() {
     if (!visible || $('respawn').disabled || holdStart !== null) return;
-    holdStart = performance.now();
-    function step(now) {
-      if (holdStart === null) return;
-      const progress = Math.min(1, (now - holdStart) / number(state.holdDuration || 1500));
-      hold(progress);
-      if (progress >= 1) { cancelHold(); void respawn(); }
-      else holdFrame = requestAnimationFrame(step);
-    }
-    holdFrame = requestAnimationFrame(step);
+    void respawn();
   }
   $('distress').addEventListener('click', distress);
   $('respawn').addEventListener('pointerdown', event => {

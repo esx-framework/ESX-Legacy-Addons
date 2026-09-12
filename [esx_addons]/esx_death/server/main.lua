@@ -125,8 +125,8 @@ RegisterNetEvent('esx:onPlayerDeath', function(data)
     end
 end)
 
-ESX.RegisterServerCallback('esx_death:getState', function(src, cb)
-    cb(withPlayer(src, function(_, _, state) return snapshot(state) end))
+xLib.callback.register('esx_death:getState', function(src)
+    return withPlayer(src, function(_, _, state) return snapshot(state) end)
 end)
 
 local function revive(src, reason)
@@ -195,8 +195,8 @@ local function removePossessions(player)
     end
 end
 
-ESX.RegisterServerCallback('esx_death:respawn', function(src, cb)
-    cb(withPlayer(src, function(id, player, state)
+local function respawn(src)
+    return withPlayer(src, function(id, player, state)
         if not state.dead then return { ok = false, error = 'not_dead' } end
         local elapsed = math.max(0, os.time() - state.time)
         if elapsed < earlySeconds then return { ok = false, error = 'too_early' } end
@@ -209,7 +209,11 @@ ESX.RegisterServerCallback('esx_death:respawn', function(src, cb)
         if not save(id, player, state, false, 'respawn') then return { ok = false, error = 'unavailable' } end
         state.recovery = { ok = true, point = point, loadout = not Config.OxInventory and player.getLoadout() or nil }
         return state.recovery
-    end))
+    end)
+end
+
+xLib.callback.register('esx_death:respawn', function(src)
+    return respawn(src)
 end)
 
 local function distress(src)
@@ -224,7 +228,9 @@ local function distress(src)
         return snapshot(state)
     end)
 end
-ESX.RegisterServerCallback('esx_death:distress', function(src, cb) cb(distress(src)) end)
+xLib.callback.register('esx_death:distress', function(src)
+    return distress(src)
+end)
 RegisterNetEvent('esx_ambulancejob:onPlayerDistress', function() distress(source) end)
 
 local function forget(src)
