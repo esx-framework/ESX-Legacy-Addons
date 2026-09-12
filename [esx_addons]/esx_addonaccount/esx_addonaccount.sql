@@ -17,5 +17,12 @@ CREATE TABLE `addon_account_data` (
 
 	PRIMARY KEY (`id`),
 	UNIQUE INDEX `index_addon_account_data_account_name_owner` (`account_name`, `owner`),
-	INDEX `index_addon_account_data_account_name` (`account_name`)
+	INDEX `index_addon_account_data_account_name` (`account_name`),
+	INDEX `index_addon_account_data_owner_account_name` (`owner`, `account_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Compatibility for existing databases created before these indexes existed.
+ALTER TABLE `addon_account_data`
+	ADD UNIQUE INDEX IF NOT EXISTS `index_addon_account_data_account_name_owner` (`account_name`, `owner`),
+	ADD INDEX IF NOT EXISTS `index_addon_account_data_account_name` (`account_name`),
+	ADD INDEX IF NOT EXISTS `index_addon_account_data_owner_account_name` (`owner`, `account_name`);

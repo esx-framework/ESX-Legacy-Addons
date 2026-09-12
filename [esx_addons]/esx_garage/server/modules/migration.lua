@@ -82,6 +82,16 @@ local function hasIndex(index)
 end
 
 ---@param column string
+---@return boolean
+local function hasLeadingIndex(column)
+    local count = MySQL.scalar.await(
+        "SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? AND SEQ_IN_INDEX = 1",
+        { TABLE, column })
+
+    return (count or 0) > 0
+end
+
+---@param column string
 ---@param definition string
 ---@return boolean
 local function ensureColumn(column, definition)
@@ -117,6 +127,20 @@ end
 ---@return boolean
 local function ensureIndex(index, definition)
     if hasIndex(index) then
+        return false
+    end
+
+    MySQL.query.await(("ALTER TABLE `%s` ADD INDEX `%s` %s"):format(TABLE, index, definition))
+
+    return true
+end
+
+---@param index string
+---@param column string
+---@param definition string
+---@return boolean
+local function ensureLeadingIndex(index, column, definition)
+    if hasLeadingIndex(column) then
         return false
     end
 
@@ -176,6 +200,10 @@ CreateThread(function()
                 end
             end
 
+            if ensureLeadingIndex("idx_owned_vehicles_plate", "plate", "(`plate`)") then
+                indexed = indexed + 1
+            end
+
             legacy = MySQL.scalar.await(("SELECT COUNT(*) FROM `%s` WHERE `stored` = 2"):format(TABLE)) or 0
 
             if legacy > 0 then
@@ -204,6 +232,10 @@ CreateThread(function()
                 if ensureIndex(INDEXES[i][1], INDEXES[i][2]) then
                     indexed = indexed + 1
                 end
+            end
+
+            if ensureLeadingIndex("idx_owned_vehicles_plate", "plate", "(`plate`)") then
+                indexed = indexed + 1
             end
 
             markMigrationApplied(INDEX_MIGRATION_NAME)

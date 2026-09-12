@@ -80,6 +80,12 @@ SET @add_owner_plate_index := (SELECT IF(
     'ALTER TABLE `owned_vehicles` ADD INDEX `idx_owned_vehicles_owner_plate` (`owner`, `plate`)'));
 PREPARE s FROM @add_owner_plate_index; EXECUTE s; DEALLOCATE PREPARE s;
 
+SET @add_plate_lookup_index := (SELECT IF(
+    EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'owned_vehicles' AND COLUMN_NAME = 'plate' AND SEQ_IN_INDEX = 1),
+    'SELECT 1',
+    'ALTER TABLE `owned_vehicles` ADD INDEX `idx_owned_vehicles_plate` (`plate`)'));
+PREPARE s FROM @add_plate_lookup_index; EXECUTE s; DEALLOCATE PREPARE s;
+
 SET @add_owner_custom_name_index := (SELECT IF(
     EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'owned_vehicles' AND INDEX_NAME = 'idx_owned_vehicles_owner_custom_name'),
     'SELECT 1',

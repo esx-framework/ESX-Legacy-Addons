@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS `banking` (
   `balance` int(11) DEFAULT 0,
   `label` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  KEY `idx_banking_identifier_time` (`identifier`, `time`)
+  KEY `idx_banking_identifier_time` (`identifier`, `time`),
+  KEY `idx_banking_time` (`time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
+ALTER TABLE `banking` ADD INDEX IF NOT EXISTS `idx_banking_time` (`time`);
 ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `pincode` INT NULL;
