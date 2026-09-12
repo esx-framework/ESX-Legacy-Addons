@@ -61,6 +61,26 @@ local function isAuthorizedTaxiVehicle(source, xPlayer)
     return false
 end
 
+local function getAuthorizedTaxiModel(model)
+    local modelHash
+
+    if type(model) == 'number' then
+        modelHash = model
+    elseif type(model) == 'string' and model ~= '' then
+        modelHash = joaat(model)
+    else
+        return nil
+    end
+
+    for i = 1, #Config.AuthorizedVehicles do
+        if modelHash == joaat(Config.AuthorizedVehicles[i].model) then
+            return modelHash
+        end
+    end
+
+    return nil
+end
+
 local function isConfiguredDropoff(coords)
     for i = 1, #Config.JobLocations do
         if #(coords - Config.JobLocations[i]) <= 5.0 then
@@ -159,20 +179,10 @@ xLib.callback.registerCompat("esx_taxijob:SpawnVehicle", function(source, cb, mo
         return cb(false)
     end
 
-    local modelHash = type(model) == 'number' and model or joaat(model)
-    local allowed = false
-    if Config.EnableSocietyOwnedVehicles then
-        allowed = props and props.plate and true or false
-    else
-        for i = 1, #Config.AuthorizedVehicles do
-            if modelHash == joaat(Config.AuthorizedVehicles[i].model) then
-                allowed = true
-                break
-            end
-        end
-    end
+    local modelHash = getAuthorizedTaxiModel(model)
+    local plate = props and props.plate
 
-    if not allowed then
+    if not modelHash or (Config.EnableSocietyOwnedVehicles and type(plate) ~= 'string') then
         print(('[^3WARNING^7] Player ^5%s^7 attempted to spawn invalid taxi model ^5%s^7!'):format(source, tostring(model)))
         return cb(false)
     end
@@ -180,7 +190,11 @@ xLib.callback.registerCompat("esx_taxijob:SpawnVehicle", function(source, cb, mo
     local SpawnPoint = vector3(Config.Zones.VehicleSpawnPoint.Pos.x, Config.Zones.VehicleSpawnPoint.Pos.y, Config.Zones.VehicleSpawnPoint.Pos.z)
     ESX.OneSync.SpawnVehicle(modelHash, SpawnPoint, Config.Zones.VehicleSpawnPoint.Heading, props, function(vehicle)
         local vehicle = NetworkGetEntityFromNetworkId(vehicle)
-        while props and props.plate and GetVehicleNumberPlateText(vehicle) ~= props.plate do
+        if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then
+            return
+        end
+        local deadline = GetGameTimer() + 3000
+        while props and props.plate and GetVehicleNumberPlateText(vehicle) ~= props.plate and GetGameTimer() < deadline do
             Wait(0)
         end
         TaskWarpPedIntoVehicle(GetPlayerPed(source), vehicle, -1)

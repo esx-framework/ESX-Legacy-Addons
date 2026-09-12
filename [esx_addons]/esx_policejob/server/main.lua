@@ -13,10 +13,6 @@ TriggerEvent('esx_society:registerSociety', 'police', TranslateCap('society_poli
 local cuffedPlayers = {}
 local getValidCount = xLib.validation.count
 
-local function isPolice(xPlayer)
-	return xPlayer and xPlayer.getJob().name == 'police'
-end
-
 local function isPoliceOnDuty(xPlayer)
 	local job = xPlayer and xPlayer.getJob()
 	return job and job.name == 'police' and job.onDuty ~= false
@@ -161,7 +157,7 @@ AddEventHandler('esx_policejob:confiscatePlayerItem', function(target, itemType,
 	local source = source
 	local sourceXPlayer = ESX.Player(source)
 	local targetXPlayer = ESX.Player(target)
-	if not isPolice(sourceXPlayer) or not targetXPlayer or not isNearPlayer(source, target, 5.0) or not cuffedPlayers[tonumber(target)] then
+	if not isPoliceOnDuty(sourceXPlayer) or not targetXPlayer or not isNearPlayer(source, target, 5.0) or not cuffedPlayers[tonumber(target)] then
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit The Confuscation System!'):format(source))
 		return
 	end
@@ -227,7 +223,7 @@ RegisterNetEvent('esx_policejob:handcuff')
 AddEventHandler('esx_policejob:handcuff', function(target)
 	local xPlayer = ESX.Player(source)
 
-	if isPolice(xPlayer) and isNearPlayer(source, target, 5.0) then
+	if isPoliceOnDuty(xPlayer) and isNearPlayer(source, target, 5.0) then
 		target = tonumber(target)
 		cuffedPlayers[target] = not cuffedPlayers[target]
 		Player(target).state:set('isHandcuffed', cuffedPlayers[target], true)
@@ -249,7 +245,7 @@ RegisterNetEvent('esx_policejob:drag')
 AddEventHandler('esx_policejob:drag', function(target)
 	local xPlayer = ESX.Player(source)
 
-	if isPolice(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
+	if isPoliceOnDuty(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
 		TriggerClientEvent('esx_policejob:drag', target, source)
 	else
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging!'):format(source))
@@ -260,7 +256,7 @@ RegisterNetEvent('esx_policejob:putInVehicle')
 AddEventHandler('esx_policejob:putInVehicle', function(target)
 	local xPlayer = ESX.Player(source)
 
-	if isPolice(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
+	if isPoliceOnDuty(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
 		TriggerClientEvent('esx_policejob:putInVehicle', target)
 	else
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Garage!'):format(source))
@@ -271,7 +267,7 @@ RegisterNetEvent('esx_policejob:OutVehicle')
 AddEventHandler('esx_policejob:OutVehicle', function(target)
 	local xPlayer = ESX.Player(source)
 
-	if isPolice(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 8.0) then
+	if isPoliceOnDuty(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 8.0) then
 		TriggerClientEvent('esx_policejob:OutVehicle', target)
 	else
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging Out Of Vehicle!'):format(source))
@@ -288,7 +284,7 @@ AddEventHandler('esx_policejob:getStockItem', function(itemName, count)
 	local xPlayer = ESX.Player(source)
 	count = getValidCount(count)
 
-	if not count or not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not count or not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock withdrawal!'):format(source))
 		return
 	end
@@ -320,7 +316,7 @@ AddEventHandler('esx_policejob:putStockItems', function(itemName, count)
 	local sourceItem = xPlayer.getInventoryItem(itemName)
 	count = getValidCount(count)
 
-	if not count or not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not count or not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock deposit!'):format(source))
 		return
 	end
@@ -342,7 +338,7 @@ end)
 xLib.callback.registerCompat('esx_policejob:getOtherPlayerData', function(source, cb, target, notify)
 	local sourceXPlayer = ESX.Player(source)
 	local xPlayer = ESX.Player(target)
-	if not isPolice(sourceXPlayer) or not xPlayer or not isNearPlayer(source, target, 5.0) or not cuffedPlayers[tonumber(target)] then
+	if not isPoliceOnDuty(sourceXPlayer) or not xPlayer or not isNearPlayer(source, target, 5.0) or not cuffedPlayers[tonumber(target)] then
 		return cb({})
 	end
 
@@ -433,7 +429,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:getArmoryWeapons', function(source, cb)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb({})
 	end
 
@@ -450,7 +446,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:addArmoryWeapon', function(source, cb, weaponName, removeWeapon)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) or not xPlayer.hasWeapon(weaponName) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) or not xPlayer.hasWeapon(weaponName) then
 		return cb(false)
 	end
 
@@ -484,7 +480,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:removeArmoryWeapon', function(source, cb, weaponName)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb(false)
 	end
 
@@ -513,7 +509,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:buyWeapon', function(source, cb, weaponName, type, componentNum)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb(false)
 	end
 
@@ -642,7 +638,7 @@ end
 
 xLib.callback.registerCompat('esx_policejob:getStockItems', function(source, cb)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb({})
 	end
 
@@ -653,7 +649,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:getPlayerInventory', function(source, cb)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb({items = {}})
 	end
 

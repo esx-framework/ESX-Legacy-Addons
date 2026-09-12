@@ -2,7 +2,7 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 local dead, recovering, pending, distressPending = false, false, false, false
-local generation, session, syncedAt, holdStarted, retryAt = 0, 0, 0, nil, 0
+local generation, session, syncedAt, holdStarted, retryAt, distressRetryAt = 0, 0, 0, nil, 0, 0
 local state = {}
 local deathInfo = nil
 local uiReady, restorePending, cursor = false, false, false
@@ -25,6 +25,7 @@ end
 local function setCursor(enabled)
     cursor = enabled and dead
     SetNuiFocus(cursor, cursor)
+    SetNuiFocusKeepInput(cursor)
     send('cursor', cursor)
 end
 
@@ -89,6 +90,7 @@ local function enterDeath()
     TriggerEvent('esx_death:entered')
     TriggerMedalDeathClip()
     refreshUI()
+    setCursor(true)
 
     CreateThread(function()
         if not dead or generation ~= cycle then return end
@@ -114,18 +116,16 @@ local function enterDeath()
             EnableControlAction(0, 249, true) -- push to talk
             if Config.CameraEnabled and not cursor then ProcessCamControls() end
             if IsDisabledControlJustReleased(0, 289) then setCursor(not cursor) end -- F2
-            if not cursor then
-                if IsDisabledControlJustReleased(0, 47) then TriggerEvent('esx_death:requestDistress') end
-                local early = remaining()
-                if IsDisabledControlPressed(0, 38) and early <= 0 and not pending then
-                    holdStarted = holdStarted or GetGameTimer()
-                    local progress = math.min(1, (GetGameTimer() - holdStarted) / Config.HoldDuration)
-                    send('hold', progress)
-                    if progress >= 1 then requestRespawn() end
-                elseif holdStarted then
-                    holdStarted = nil
-                    send('hold', 0)
-                end
+            if IsDisabledControlJustReleased(0, 47) then TriggerEvent('esx_death:requestDistress') end
+            local early = remaining()
+            if IsDisabledControlPressed(0, 38) and early <= 0 and not pending then
+                holdStarted = holdStarted or GetGameTimer()
+                local progress = math.min(1, (GetGameTimer() - holdStarted) / Config.HoldDuration)
+                send('hold', progress)
+                if progress >= 1 then requestRespawn() end
+            elseif holdStarted then
+                holdStarted = nil
+                send('hold', 0)
             end
             if Config.DeathAnim.enabled then
                 local anim = Config.DeathAnim
@@ -215,8 +215,9 @@ end
 
 AddEventHandler('esx_death:requestDistress', function()
     local _, _, cooldown = remaining()
-    if not dead or distressPending or cooldown > 0 then return end
+    if not dead or distressPending or cooldown > 0 or GetGameTimer() < distressRetryAt then return end
     distressPending = true
+    distressRetryAt = GetGameTimer() + 1500
     refreshUI()
     local cycle = generation
     distressId = distressId + 1
@@ -225,6 +226,7 @@ AddEventHandler('esx_death:requestDistress', function()
         if dead and cycle == generation and request == distressId and distressPending then
             distressId = distressId + 1
             distressPending = false
+            distressRetryAt = GetGameTimer() + 5000
             send('feedback', Translate('unavailable'))
             refreshUI()
         end
@@ -236,6 +238,7 @@ AddEventHandler('esx_death:requestDistress', function()
             applyState(result)
             send('feedback', Translate('distress_sent'))
         else
+            if result and result.error == 'cooldown' then syncState() end
             send('feedback', errorMessage(result))
         end
         refreshUI()
@@ -310,6 +313,9 @@ end)
 RegisterNUICallback('ready', function(_, cb)
     uiReady = true
     refreshUI()
+    if dead then
+        setCursor(true)
+    end
     cb({ ok = true })
 end)
 RegisterNUICallback('distress', function(_, cb)

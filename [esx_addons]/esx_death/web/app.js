@@ -81,7 +81,11 @@
     if (preview) {
       render({ distressSent: true, distressRemaining: 60 });
       $('feedback').textContent = t('distressSent');
-    } else await post('distress');
+    } else {
+      render({ distressPending: true });
+      const response = await post('distress');
+      if (!response.ok) render({ distressPending: false });
+    }
   }
   async function respawn() {
     if (!visible || $('respawn').disabled) return;

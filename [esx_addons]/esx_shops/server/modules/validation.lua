@@ -66,6 +66,13 @@ function ValidateAndCalculateItems(items, zone, source)
 	end
 
 	local itemCount = #items
+	local maxCartLines = Config.MaxCartLines or 25
+
+	if itemCount < 1 or itemCount > maxCartLines then
+		DebugPrint(('[^3WARNING^7] Player ^5%s^7 sent invalid cart size ^5%s^7'):format(source, itemCount))
+		return false, 0, {}
+	end
+
 	local serverTotal = 0
 	local validatedItems = {}
 

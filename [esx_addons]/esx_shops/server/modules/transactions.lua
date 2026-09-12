@@ -19,6 +19,11 @@ function ProcessPurchase(source, purchaseData, zone, cb)
 		return
 	end
 
+	if not Verify(purchaseData, 'table') then
+		cb(false, _U('invalid_items'))
+		return
+	end
+
 	if not ValidateZone(zone, source) then
 		cb(false, _U('invalid_shop'))
 		return

@@ -93,5 +93,8 @@ Config.PurchaseRateLimitIntervalMs = Config.PurchaseCooldownMs
 -- Maximum quantity per item per transaction
 Config.MaxQuantityPerItem = 999
 
+-- Maximum distinct cart lines per transaction
+Config.MaxCartLines = 25
+
 -- Price validation tolerance
 Config.PriceTolerance = 0.001
