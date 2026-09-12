@@ -8,6 +8,7 @@ import indicatorSound from "./assets/IndicatorSound.mp3";
 import beltSound from "./assets/SeatbeltAlertSound.mp3";
 import beltOn from "./assets/SeatbeltOnSound.mp3";
 import beltOff from "./assets/SeatbeltOffSound.mp3";
+import defaultLogo from "./assets/esx-logo.png";
 import "./hud/hud.css";
 
 const weaponImages = import.meta.glob("./assets/weapons/*.png", { eager: true, import: "default" });
@@ -43,6 +44,7 @@ export default function App() {
     const range = () => clamp(hud.voice.range || 2, 1, 3);
     const direction = () => ["N", "NW", "W", "SW", "S", "SE", "E", "NE"][Math.round(clamp(hud.heading, 0, 360) / 45) % 8];
     const moduleVisible = () => visible() && !prefs.cinematic;
+    const serverLogo = () => hud.serverLogo || defaultLogo;
     const showStatus = (key) => !prefs.smartStatus || (key === "oxygenBar" ? status.underwater : key === "staminaBar" ? status.staminaBar < 99 : key === "armorBar" ? status.armorBar > 0 : true);
     const critical = (key) => key !== "armorBar" && clamp(status[key]) <= 20;
     const alert = () => (fuel() <= 15 ? "lowFuel" : vehicle.damage <= 30 ? "engineWarning" : vehicle.vehType === "LAND" && !indicators().seatbelt && vehicle.speed > 10 ? "belt" : "");
@@ -226,11 +228,11 @@ export default function App() {
                 <Show when={hudReady()}>
                     <aside class="identity anchor" aria-label="Server and player">
                     <Show when={!hidden("Info")}>
-                        <Show when={hud.serverLogo}>
+                        <Show when={serverLogo()}>
                             <header class="brand-header">
                                 <img
                                     class="server-logo"
-                                    src={hud.serverLogo}
+                                    src={serverLogo()}
                                     alt={config.Default.ServerName || ""}
                                     onError={(event) => {
                                         event.currentTarget.removeAttribute("src");

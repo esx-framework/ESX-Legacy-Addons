@@ -62,7 +62,7 @@ Config = {
         CenterStatuses = true, -- true: above native minimap; false: vertical on the left
     },
     Default = {
-        ServerLogo = "", -- Optional custom logo URL; empty uses the bundled ESX logo from esx_loadingscreen.
+        ServerLogo = "", -- Optional custom logo URL; empty uses the bundled ESX HUD logo.
         ServerName = "",
         ServerTagline = "",
         AccentColor = "#fb9b04",
