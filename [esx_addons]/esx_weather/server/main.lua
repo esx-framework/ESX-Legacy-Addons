@@ -65,15 +65,7 @@ RegisterNetEvent("esx_weather:server:setZoneWeather", function(zone, weatherType
         return
     end
 
-    local isValidWeather = false
-    for _, validType in ipairs(Config.Weather.ValidTypes) do
-        if validType == weatherType then
-            isValidWeather = true
-            break
-        end
-    end
-
-    if not isValidWeather then
+    if not Modules.Weather.isValidType(weatherType) then
         Shared.Modules.Debug.print(("Invalid weather type rejected from player %s: %s"):format(tostring(src), tostring(weatherType)))
         return
     end

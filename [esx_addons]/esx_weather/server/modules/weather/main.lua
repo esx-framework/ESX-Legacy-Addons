@@ -4,6 +4,20 @@
 Modules = Modules or {}
 Modules.Weather = {}
 
+local KVP_VERSION <const> = 1
+
+local function isValidWeatherType(weatherType)
+    for _, validType in ipairs(Config.Weather.ValidTypes) do
+        if validType == weatherType then
+            return true
+        end
+    end
+
+    return false
+end
+
+Modules.Weather.isValidType = isValidWeatherType
+
 local function assertWeatherConfig()
     if type(Config) ~= "table" or type(Config.Zones) ~= "table" or next(Config.Zones) == nil then
         error("[esx_weather] Config.Zones must contain at least one zone")
@@ -29,14 +43,67 @@ local function assertWeatherConfig()
     end
 
     Config.Weather.cycleTimeSeconds = cycleTimeSeconds
+
+    Config.Weather.dynamic = Config.Weather.dynamic == true
+    Config.Weather.persist = Config.Weather.persist == true
+    Config.Weather.defaultType = Config.Weather.defaultType or Config.Weather.ValidTypes[1]
+
+    if not isValidWeatherType(Config.Weather.defaultType) then
+        error("[esx_weather] Config.Weather.defaultType must be listed in Config.Weather.ValidTypes")
+    end
+
+    if Config.Weather.persistKey ~= nil and type(Config.Weather.persistKey) ~= "string" then
+        error("[esx_weather] Config.Weather.persistKey must be a string")
+    end
 end
 
 assertWeatherConfig()
 
+local function getPersistKey()
+    return Config.Weather.persistKey or "esx_weather_zones"
+end
+
+local function persistZones()
+    if not Config.Weather.persist then
+        return
+    end
+
+    SetResourceKvp(getPersistKey(), json.encode({
+        version = KVP_VERSION,
+        zones = Modules.Weather.ByZone,
+    }))
+end
+
+local function restorePersistedZones()
+    if not Config.Weather.persist then
+        return
+    end
+
+    local stored = GetResourceKvpString(getPersistKey())
+
+    if not stored then
+        return
+    end
+
+    local ok, decoded = pcall(json.decode, stored)
+
+    if not ok or type(decoded) ~= "table" or decoded.version ~= KVP_VERSION or type(decoded.zones) ~= "table" then
+        DeleteResourceKvp(getPersistKey())
+        return
+    end
+
+    for zone, weatherType in pairs(decoded.zones) do
+        if Modules.Weather.ByZone[zone] and isValidWeatherType(weatherType) then
+            Modules.Weather.ByZone[zone] = weatherType
+        end
+    end
+end
+
 Modules.Weather.ByZone = table.clone(Config.Zones) --[[@as table<Zone, WeatherType>]]
 for zone, _ in pairs(Modules.Weather.ByZone) do
-    Modules.Weather.ByZone[zone] = Config.Weather.ValidTypes[math.random(1, #Config.Weather.ValidTypes)]
+    Modules.Weather.ByZone[zone] = Config.Weather.defaultType
 end
+restorePersistedZones()
 
 ---@param src integer?
 function Modules.Weather.broadcastZones(src)
@@ -54,17 +121,21 @@ end
 ---@param weatherType WeatherType
 function Modules.Weather.setZone(zone, weatherType)
     Modules.Weather.ByZone[zone] = weatherType
+    persistZones()
     Modules.Weather.broadcastZone(zone)
 end
 
-Citizen.CreateThread(function()
-    while (true) do
-        Citizen.Wait(Config.Weather.cycleTimeSeconds * 1000)
+if Config.Weather.dynamic then
+    Citizen.CreateThread(function()
+        while (true) do
+            Citizen.Wait(Config.Weather.cycleTimeSeconds * 1000)
 
-        for zone, _ in pairs(Modules.Weather.ByZone) do
-            Modules.Weather.ByZone[zone] = Config.Weather.ValidTypes[math.random(1, #Config.Weather.ValidTypes)]
+            for zone, _ in pairs(Modules.Weather.ByZone) do
+                Modules.Weather.ByZone[zone] = Config.Weather.ValidTypes[math.random(1, #Config.Weather.ValidTypes)]
+            end
+
+            persistZones()
+            Modules.Weather.broadcastZones()
         end
-
-        Modules.Weather.broadcastZones()
-    end
-end)
+    end)
+end

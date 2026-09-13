@@ -5,6 +5,10 @@
 ---@field ValidTypes WeatherType[]
 ---@field transitionTimeSeconds integer
 ---@field cycleTimeSeconds integer
+---@field dynamic boolean
+---@field defaultType WeatherType
+---@field persist boolean
+---@field persistKey string?
 
 ---@class TimeConfig
 ---@field secondsPerGameMinute integer
@@ -51,7 +55,11 @@ Config = {
             Shared.Enum.WeatherType.SNOW_HALLOWEEN,
         },
         transitionTimeSeconds = 30,
-        cycleTimeSeconds = 60 * 30 -- 30 minutes
+        cycleTimeSeconds = 60 * 30, -- 30 minutes
+        dynamic = false, -- Set true to rotate weather automatically.
+        defaultType = Shared.Enum.WeatherType.CLEAR,
+        persist = true, -- Saves panel changes and restores them after resource restart.
+        persistKey = "esx_weather_zones",
     },
     Time        = {
         secondsPerGameMinute = 15,
