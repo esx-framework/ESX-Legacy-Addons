@@ -5,6 +5,16 @@ local playersHealing = {}
 local reviveCooldowns = {}
 local itemCooldowns, actionCooldowns = {}, {}
 
+local function deathDbg(message, data)
+    if not Config.DebugDeath then return end
+    local suffix = ''
+    if data ~= nil then
+        local ok, encoded = pcall(function() return json.encode(data) end)
+        suffix = (' | %s'):format(ok and encoded or tostring(data))
+    end
+    print(('[esx_ambulancejob:death-debug] %s%s'):format(message, suffix))
+end
+
 if GetResourceState("esx_phone") ~= 'missing' then
 	TriggerEvent('esx_phone:registerNumber', 'ambulance', TranslateCap('alert_ambulance'), true, true)
 end
@@ -98,11 +108,34 @@ RegisterNetEvent('esx_ambulancejob:revive', function(playerId)
     local target = tonumber(playerId)
     local xTarget = target and ESX.GetPlayerFromId(target)
     local now = GetGameTimer()
-    if not isAmbulanceOnDuty(xPlayer) or not xTarget or exports.esx_death:IsDead(src) then return end
-    if reviveCooldowns[src] and now - reviveCooldowns[src] < 8000 then return end
-    if not isNearPlayer(src, target, 8.0) or not exports.esx_death:IsDead(target) then return end
+    deathDbg('revive:attempt', { src = src, target = target, hasMedic = xPlayer ~= nil, hasTarget = xTarget ~= nil })
+    if not isAmbulanceOnDuty(xPlayer) then
+        deathDbg('revive:blocked-medic-not-on-duty', { src = src, job = xPlayer and xPlayer.job })
+        return
+    end
+    if not xTarget then
+        deathDbg('revive:blocked-target-missing', { src = src, target = target })
+        return
+    end
+    local medicDead = exports.esx_death:IsDead(src)
+    if medicDead then
+        deathDbg('revive:blocked-medic-dead', { src = src })
+        return
+    end
+    if reviveCooldowns[src] and now - reviveCooldowns[src] < 8000 then
+        deathDbg('revive:blocked-cooldown', { src = src, elapsed = now - reviveCooldowns[src] })
+        return
+    end
+    local nearby = isNearPlayer(src, target, 8.0)
+    local targetDead = exports.esx_death:IsDead(target)
+    if not nearby or not targetDead then
+        deathDbg('revive:blocked-nearby-or-target-alive', { src = src, target = target, nearby = nearby, targetDead = targetDead })
+        return
+    end
     reviveCooldowns[src] = now
-    if exports.esx_death:Revive(target, 'ems') then
+    local ok = exports.esx_death:Revive(target, 'ems')
+    deathDbg('revive:export-result', { src = src, target = target, ok = ok })
+    if ok then
         if Config.ReviveReward > 0 then
             xPlayer.addMoney(Config.ReviveReward, 'Revive Reward')
             xPlayer.showNotification(TranslateCap('revive_complete_award', xTarget.name, Config.ReviveReward))

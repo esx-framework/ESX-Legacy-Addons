@@ -9,6 +9,16 @@ local uiReady, restorePending, cursor = false, false, false
 local requestId, distressId = 0, 0
 local syncState, requestRespawn
 
+local function dbg(message, data)
+    if not Config.Debug then return end
+    local suffix = ''
+    if data ~= nil then
+        local ok, encoded = pcall(function() return json.encode(data) end)
+        suffix = (' | %s'):format(ok and encoded or tostring(data))
+    end
+    print(('[esx_death:client] %s%s'):format(message, suffix))
+end
+
 local function errorMessage(result)
     local key = result and result.error
     if key ~= 'too_early' and key ~= 'insufficient_funds' and key ~= 'cooldown'
@@ -27,6 +37,7 @@ local function setCursor(enabled)
     SetNuiFocus(cursor, cursor)
     SetNuiFocusKeepInput(cursor)
     send('cursor', cursor)
+    dbg('setCursor', { enabled = enabled, cursor = cursor, dead = dead })
 end
 
 local function remaining()
@@ -35,14 +46,55 @@ local function remaining()
         math.max(0, (state.distressRemaining or 0) - elapsed)
 end
 
-local function deathReason()
-    if not Config.ShowDeathReason or not deathInfo or not deathInfo.killedByPlayer then return nil end
-    if Config.ShowKillerName and deathInfo.killerServerId then
-        local player = GetPlayerFromServerId(deathInfo.killerServerId)
-        local name = player ~= -1 and GetPlayerName(player) or nil
-        if name and name ~= '' then return Translate('killed_by', name) end
+local function deathCauseLabel(cause)
+    cause = tonumber(cause)
+    if not cause or cause == 0 then return Translate('death_cause_unknown') end
+    if cause < 0 then cause = cause + 4294967296 end
+    local function hash(name)
+        local value = GetHashKey(name)
+        return value < 0 and value + 4294967296 or value
     end
-    return Translate('killed_by_player')
+    local labels = {
+        [hash('WEAPON_UNARMED')] = Translate('death_cause_unarmed'),
+        [hash('WEAPON_RUN_OVER_BY_CAR')] = Translate('death_cause_vehicle'),
+        [hash('WEAPON_RAMMED_BY_CAR')] = Translate('death_cause_vehicle'),
+        [hash('WEAPON_FALL')] = Translate('death_cause_fall'),
+        [hash('WEAPON_DROWNING')] = Translate('death_cause_drowning'),
+        [hash('WEAPON_DROWNING_IN_VEHICLE')] = Translate('death_cause_drowning'),
+        [hash('WEAPON_EXPLOSION')] = Translate('death_cause_explosion'),
+        [hash('WEAPON_FIRE')] = Translate('death_cause_fire'),
+        [hash('WEAPON_BLEEDING')] = Translate('death_cause_bleeding'),
+        [hash('WEAPON_ELECTRIC_FENCE')] = Translate('death_cause_electric'),
+        [hash('WEAPON_EXHAUSTION')] = Translate('death_cause_exhaustion'),
+        [hash('WEAPON_ANIMAL')] = Translate('death_cause_animal'),
+        [hash('WEAPON_COUGAR')] = Translate('death_cause_animal'),
+    }
+    return labels[cause] or Translate('death_cause_weapon')
+end
+
+local function deathReason()
+    if not Config.ShowDeathReason then return nil end
+    local info = deathInfo or state
+    if not info then return nil end
+    if info.killedByPlayer then
+        if Config.ShowKillerName and info.killerServerId then
+            local player = GetPlayerFromServerId(info.killerServerId)
+            local name = player ~= -1 and GetPlayerName(player) or nil
+            if name and name ~= '' then return Translate('killed_by', name) end
+        end
+        return Translate('killed_by_player')
+    end
+    local cause = deathCauseLabel(info.deathCause)
+    if not cause then return nil end
+    return Translate('death_reason', cause)
+end
+
+local function updateDeathInfo(data)
+    if type(data) ~= 'table' then return end
+    deathInfo = deathInfo or {}
+    if data.killedByPlayer ~= nil then deathInfo.killedByPlayer = data.killedByPlayer end
+    if data.killerServerId ~= nil then deathInfo.killerServerId = data.killerServerId end
+    if data.deathCause ~= nil then deathInfo.deathCause = data.deathCause end
 end
 
 local function refreshUI()
@@ -62,6 +114,7 @@ local function refreshUI()
 end
 
 local function cleanup()
+    dbg('cleanup:start', { dead = dead, recovering = recovering, pending = pending, generation = generation })
     generation = generation + 1
     dead, pending, distressPending, holdStarted = false, false, false, nil
     deathInfo = nil
@@ -76,10 +129,15 @@ local function cleanup()
     if Config.CameraEnabled then EndDeathCam() end
     setCursor(false)
     send('hide')
+    dbg('cleanup:done', { generation = generation })
 end
 
 local function enterDeath()
-    if dead or recovering or not ESX.PlayerLoaded then return end
+    dbg('enterDeath:attempt', { dead = dead, recovering = recovering, playerLoaded = ESX.PlayerLoaded })
+    if dead or recovering or not ESX.PlayerLoaded then
+        dbg('enterDeath:blocked', { dead = dead, recovering = recovering, playerLoaded = ESX.PlayerLoaded })
+        return
+    end
     dead = true
     generation = generation + 1
     local cycle = generation
@@ -91,12 +149,18 @@ local function enterDeath()
     TriggerMedalDeathClip()
     refreshUI()
     setCursor(true)
+    dbg('enterDeath:entered', { generation = generation, ped = ped, deathInfo = deathInfo, state = state })
 
     CreateThread(function()
-        if not dead or generation ~= cycle then return end
+        dbg('deathThread:start', { cycle = cycle, generation = generation, dead = dead })
+        if not dead or generation ~= cycle then
+            dbg('deathThread:aborted-before-anim', { cycle = cycle, generation = generation, dead = dead })
+            return
+        end
         if Config.DeathAnim.enabled then
             local anim = Config.DeathAnim
             local coords = GetEntityCoords(ped)
+            dbg('deathThread:resurrect-for-death-anim', { x = coords.x, y = coords.y, z = coords.z, heading = GetEntityHeading(ped) })
             NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
             SetPlayerInvincible(PlayerId(), true)
             SetEntityInvincible(ped, true)
@@ -104,7 +168,9 @@ local function enterDeath()
             RequestAnimDict(anim.dict)
             local deadline = GetGameTimer() + 5000
             while not HasAnimDictLoaded(anim.dict) and dead and generation == cycle and GetGameTimer() < deadline do Wait(0) end
+            dbg('deathThread:anim-dict-result', { loaded = HasAnimDictLoaded(anim.dict), dict = anim.dict, dead = dead, generation = generation })
         elseif not IsEntityDead(ped) then
+            dbg('deathThread:set-health-zero')
             SetEntityHealth(ped, 0)
         end
         while dead and generation == cycle do
@@ -119,12 +185,16 @@ local function enterDeath()
             if IsDisabledControlJustReleased(0, 47) then TriggerEvent('esx_death:requestDistress') end
             local early = remaining()
             if IsDisabledControlJustReleased(0, 38) and early <= 0 and not pending then
+                dbg('input:E-released-respawn', { early = early, pending = pending, dead = dead })
                 requestRespawn()
             elseif IsDisabledControlPressed(0, 38) and early <= 0 and not pending then
                 holdStarted = holdStarted or GetGameTimer()
                 local progress = math.min(1, (GetGameTimer() - holdStarted) / Config.HoldDuration)
                 send('hold', progress)
-                if progress >= 1 then requestRespawn() end
+                if progress >= 1 then
+                    dbg('input:E-hold-complete-respawn', { early = early, progress = progress, pending = pending, dead = dead })
+                    requestRespawn()
+                end
             elseif holdStarted then
                 holdStarted = nil
                 send('hold', 0)
@@ -138,18 +208,28 @@ local function enterDeath()
             Wait(0)
         end
         if Config.DeathAnim.enabled then RemoveAnimDict(Config.DeathAnim.dict) end
+        dbg('deathThread:ended', { cycle = cycle, generation = generation, dead = dead })
     end)
 end
 
 local function applyState(data)
-    if type(data) ~= 'table' or not data.ok then return end
+    dbg('applyState:received', data)
+    if type(data) ~= 'table' or not data.ok then
+        dbg('applyState:ignored', data)
+        return
+    end
+    updateDeathInfo(data)
     state, syncedAt = data, GetGameTimer()
     if data.dead then enterDeath() end
     refreshUI()
 end
 
 local function recover(data)
-    if recovering then return end
+    dbg('recover:attempt', { recovering = recovering, dead = dead, data = data })
+    if recovering then
+        dbg('recover:blocked-already-recovering')
+        return
+    end
     recovering = true
     local thisSession = session
     cleanup()
@@ -159,11 +239,13 @@ local function recover(data)
     if thisSession ~= session or not ESX.PlayerLoaded then
         recovering = false
         DoScreenFadeIn(500)
+        dbg('recover:aborted-session-or-not-loaded', { thisSession = thisSession, session = session, playerLoaded = ESX.PlayerLoaded })
         return
     end
     local ped = PlayerPedId()
     local coords = data.point or GetEntityCoords(ped)
     local heading = data.point and data.point.heading or GetEntityHeading(ped)
+    dbg('recover:resurrecting', { ped = ped, x = coords.x, y = coords.y, z = coords.z, heading = heading, hasPoint = data.point ~= nil })
     RequestCollisionAtCoord(coords.x, coords.y, coords.z)
     SetEntityCoordsNoOffset(ped, coords.x, coords.y, coords.z, false, false, false)
     NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, heading, true, false)
@@ -182,31 +264,48 @@ local function recover(data)
     TriggerEvent('esx_death:recovered', data.point ~= nil and 'respawn' or 'revive')
     DoScreenFadeIn(600)
     recovering = false
+    dbg('recover:done', { dead = dead, recovering = recovering, esxDead = ESX.PlayerData.dead })
 end
 
 requestRespawn = function()
-    if not dead or pending or GetGameTimer() < retryAt then return end
+    dbg('requestRespawn:attempt', { dead = dead, pending = pending, retryAt = retryAt, now = GetGameTimer(), syncedAt = syncedAt, state = state })
+    if not dead or pending or GetGameTimer() < retryAt then
+        dbg('requestRespawn:blocked-initial', { dead = dead, pending = pending, retryAt = retryAt, now = GetGameTimer() })
+        return
+    end
     local early = remaining()
-    if early > 0 then return end
+    if early > 0 then
+        dbg('requestRespawn:blocked-too-early-client', { early = early })
+        return
+    end
     pending, holdStarted = true, nil
     send('hold', 0)
     refreshUI()
     local cycle = generation
     requestId = requestId + 1
     local request = requestId
+    dbg('requestRespawn:calling-server', { request = request, generation = generation })
     SetTimeout(15000, function()
         if dead and cycle == generation and request == requestId and pending then
             requestId = requestId + 1
             pending = false
             retryAt = GetGameTimer() + 5000
             send('feedback', Translate('unavailable'))
+            dbg('requestRespawn:timeout', { request = request, generation = generation, cycle = cycle })
             syncState()
         end
     end)
     xLib.callback('esx_death:respawn', false, function(result)
-        if not dead or request ~= requestId then return end
+        dbg('requestRespawn:server-response', { request = request, currentRequest = requestId, dead = dead, result = result })
+        if not dead or request ~= requestId then
+            dbg('requestRespawn:stale-response-ignored', { request = request, currentRequest = requestId, dead = dead })
+            return
+        end
         pending = false
-        if result and result.ok then return recover(result) end
+        if result and result.ok then
+            dbg('requestRespawn:accepted-recovering', result)
+            return recover(result)
+        end
         retryAt = GetGameTimer() + 5000
         send('feedback', errorMessage(result))
         refreshUI()
@@ -216,23 +315,30 @@ end
 
 AddEventHandler('esx_death:requestDistress', function()
     local _, _, cooldown = remaining()
-    if not dead or distressPending or cooldown > 0 or GetGameTimer() < distressRetryAt then return end
+    dbg('distress:attempt', { dead = dead, distressPending = distressPending, cooldown = cooldown, retryAt = distressRetryAt, now = GetGameTimer() })
+    if not dead or distressPending or cooldown > 0 or GetGameTimer() < distressRetryAt then
+        dbg('distress:blocked', { dead = dead, distressPending = distressPending, cooldown = cooldown, retryAt = distressRetryAt, now = GetGameTimer() })
+        return
+    end
     distressPending = true
     distressRetryAt = GetGameTimer() + 1500
     refreshUI()
     local cycle = generation
     distressId = distressId + 1
     local request = distressId
+    dbg('distress:calling-server', { request = request })
     SetTimeout(10000, function()
         if dead and cycle == generation and request == distressId and distressPending then
             distressId = distressId + 1
             distressPending = false
             distressRetryAt = GetGameTimer() + 5000
             send('feedback', Translate('unavailable'))
+            dbg('distress:timeout', { request = request })
             refreshUI()
         end
     end)
     xLib.callback('esx_death:distress', false, function(result)
+        dbg('distress:server-response', { request = request, currentRequest = distressId, dead = dead, result = result })
         if not dead or request ~= distressId then return end
         distressPending = false
         if result and result.ok then
@@ -247,12 +353,16 @@ AddEventHandler('esx_death:requestDistress', function()
 end)
 
 syncState = function()
-    if restorePending or not ESX.PlayerLoaded or recovering or pending then return end
+    if restorePending or not ESX.PlayerLoaded or recovering or pending then
+        dbg('syncState:blocked', { restorePending = restorePending, playerLoaded = ESX.PlayerLoaded, recovering = recovering, pending = pending })
+        return
+    end
     if dead and GetGameTimer() - syncedAt < 2000 then return end
     restorePending = true
     local thisSession = session
     SetTimeout(10000, function() if thisSession == session then restorePending = false end end)
     xLib.callback('esx_death:getState', false, function(data)
+        dbg('syncState:server-response', data)
         if thisSession ~= session then return end
         restorePending = false
         if not data or not data.ok then return end
@@ -264,15 +374,18 @@ syncState = function()
 end
 
 RegisterNetEvent('esx_death:sync', function(data)
+    dbg('event:esx_death:sync', { source = source, data = data })
     if source ~= 65535 then return end
     if ESX.PlayerLoaded and not recovering then applyState(data) end
 end)
 RegisterNetEvent('esx_death:recover', function(data)
+    dbg('event:esx_death:recover', { source = source, data = data })
     if source ~= 65535 then return end
     recover(data or {})
 end)
 
 AddEventHandler('esx:onPlayerDeath', function(data)
+    dbg('event:esx:onPlayerDeath', { dead = dead, data = data })
     if dead then return end
     deathInfo = type(data) == 'table' and data or nil
     local total = math.ceil((Config.EarlyRespawnTimer + Config.BleedoutTimer) / 1000)
@@ -282,10 +395,12 @@ AddEventHandler('esx:onPlayerDeath', function(data)
     enterDeath()
 end)
 AddEventHandler('esx:onPlayerSpawn', function()
+    dbg('event:esx:onPlayerSpawn', { recovering = recovering, dead = dead })
     if recovering then return end
     SetTimeout(1000, syncState)
 end)
 RegisterNetEvent('esx:onPlayerLogout', function()
+    dbg('event:esx:onPlayerLogout')
     session = session + 1
     restorePending = false
     cleanup()
@@ -293,12 +408,14 @@ RegisterNetEvent('esx:onPlayerLogout', function()
 end)
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
+    dbg('event:onResourceStop', { resource = resource, dead = dead })
     local wasDead = dead
     cleanup()
     if wasDead then ClearPedTasksImmediately(PlayerPedId()) end
 end)
 
 RegisterNetEvent('esx_ambulancejob:clsearch', function(medicId)
+    dbg('event:esx_ambulancejob:clsearch', { source = source, medicId = medicId, dead = dead })
     if source ~= 65535 or not dead then return end
     local player = GetPlayerFromServerId(tonumber(medicId) or -1)
     if player == -1 then return end
@@ -312,6 +429,7 @@ RegisterNetEvent('esx_ambulancejob:clsearch', function(medicId)
 end)
 
 RegisterNUICallback('ready', function(_, cb)
+    dbg('nui:ready', { dead = dead, uiReady = uiReady })
     uiReady = true
     refreshUI()
     if dead then
@@ -320,10 +438,12 @@ RegisterNUICallback('ready', function(_, cb)
     cb({ ok = true })
 end)
 RegisterNUICallback('distress', function(_, cb)
+    dbg('nui:distress-click', { dead = dead })
     TriggerEvent('esx_death:requestDistress')
     cb({ ok = dead })
 end)
 RegisterNUICallback('respawn', function(_, cb)
+    dbg('nui:respawn-click', { dead = dead, pending = pending })
     requestRespawn()
     cb({ ok = dead })
 end)

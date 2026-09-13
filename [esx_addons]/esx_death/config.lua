@@ -2,6 +2,7 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Config = {}
+Config.Debug = false
 
 -- Shared ESX language: setr esx:locale "es" (Spanish) or "en" (English).
 Config.Locale = GetConvar('esx:locale', 'en')
