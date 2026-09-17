@@ -23,3 +23,51 @@ Config.Blip = {
   Colour = 27, 
   ShortRange = true
 }
+
+-- Icon shown next to each job in the job centre.
+-- Keys are job names, values are Lucide icon names (https://lucide.dev/icons).
+-- Any job not listed here falls back to Config.DefaultJobIcon.
+Config.JobIcons = {
+  unemployed = 'User',
+  police = 'Shield',
+  ambulance = 'Ambulance',
+  doctor = 'Stethoscope',
+  mechanic = 'Wrench',
+  taxi = 'Car',
+  bus = 'Bus',
+  trucker = 'Truck',
+  delivery = 'Package',
+  realestate = 'Home',
+  lawyer = 'Scale',
+  judge = 'Gavel',
+  reporter = 'Newspaper',
+  banker = 'Landmark',
+  cardealer = 'CarFront',
+  garbage = 'Trash2',
+  gardener = 'Flower2',
+  fisherman = 'Fish',
+  miner = 'Pickaxe',
+  lumberjack = 'Trees',
+  butcher = 'Beef',
+  baker = 'Croissant',
+  chef = 'ChefHat',
+  farmer = 'Tractor',
+  fueler = 'Fuel',
+  hunter = 'Crosshair',
+  security = 'ShieldCheck',
+  pilot = 'Plane',
+  tailor = 'Scissors',
+  cashier = 'Store',
+  builder = 'HardHat'
+}
+
+Config.DefaultJobIcon = 'Briefcase'
+
+-- Optional short description shown as the second line of each job row.
+-- If a job has no description, the job's salary range is shown instead.
+-- Example:
+-- Config.JobDescriptions = {
+--   police = 'Protect and serve the city',
+--   mechanic = 'Repair and tune vehicles'
+-- }
+Config.JobDescriptions = {}

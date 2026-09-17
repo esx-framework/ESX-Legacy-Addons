@@ -1,12 +1,12 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-fx_version 'bodacious'
+fx_version 'cerulean'
 game 'gta5'
 
-description 'Provides a way for players to select a job'
+description 'Provides a way for players to select a job through a NUI job centre'
 lua54 'yes'
-version '1.0'
+version '2.0.0'
 legacyversion '1.15.0'
 
 shared_scripts {
@@ -17,8 +17,24 @@ shared_scripts {
 	'config.lua'
 }
 
+client_scripts {
+	'client/nui.lua',
+	'client/main.lua'
+}
+
 server_script 'server/main.lua'
 
-client_script 'client/main.lua'
+ui_page 'html/index.html'
 
-dependency 'es_extended'
+files {
+	'html/index.html',
+	'html/css/*.css',
+	'html/js/*.js',
+	'html/vendor/*',
+	'html/assets/*'
+}
+
+dependencies {
+	'esx_lib',
+	'es_extended'
+}

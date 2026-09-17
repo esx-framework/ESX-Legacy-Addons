@@ -1,89 +1,77 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-local menuIsShowed, isNear, TextUIdrawing = false, false, false
+local isNear, TextUIdrawing = false, false
 
+---Backwards compatible wrapper for the joblisting menu
 function ShowJobListingMenu()
-  menuIsShowed = true
-  xLib.callback('esx_joblisting:getJobsList', false, function(jobs)
-    local elements = {{unselectable = "true", title = TranslateCap('job_center'), icon = "fas fa-briefcase"}}
-
-    for i = 1, #(jobs) do
-      elements[#elements + 1] = {title = jobs[i].label, name = jobs[i].name}
-    end
-
-    ESX.OpenContext("right", elements, function(menu, SelectJob)
-      TriggerServerEvent('esx_joblisting:setJob', SelectJob.name)
-      ESX.CloseContext()
-      ESX.ShowNotification(TranslateCap('new_job', SelectJob.title), "success")
-      menuIsShowed = false
-      TextUIdrawing = false
-    end, function()
-      menuIsShowed = false
-      TextUIdrawing = false
-    end)
-  end)
+	JobListingUI.Open()
 end
 
 -- Activate menu when player is inside marker, and draw markers
 CreateThread(function()
-  while true do
-    local Sleep = 1000
+	while true do
+		local Sleep = 1000
 
-    local coords = GetEntityCoords(ESX.PlayerData.ped)
-    local isInMarker = false
+		local coords = GetEntityCoords(ESX.PlayerData.ped)
+		local isInMarker = false
+		local isNearMarker = false
 
-    for i = 1, #Config.Zones, 1 do
-      local distance = #(coords - Config.Zones[i])
+		for i = 1, #Config.Zones, 1 do
+			local distance = #(coords - Config.Zones[i])
 
-      if distance < Config.DrawDistance then
-        Sleep = 0
-        DrawMarker(Config.MarkerType, Config.Zones[i].x, Config.Zones[i].y, Config.Zones[i].z, 0.0, 0.0, 0.0, 0, 0.0, 0.0, Config.ZoneSize.x, Config.ZoneSize.y, Config.ZoneSize.z,
-        Config.MarkerColor.r, Config.MarkerColor.g, Config.MarkerColor.b, 100, false, true, 2, false, false, false, false)
+			if distance < Config.DrawDistance then
+				Sleep = 0
+				isInMarker = true
 
-        isNear = distance < (Config.ZoneSize.x / 2)
-        isInMarker = true
+				DrawMarker(Config.MarkerType, Config.Zones[i].x, Config.Zones[i].y, Config.Zones[i].z, 0.0, 0.0, 0.0, 0, 0.0, 0.0, Config.ZoneSize.x, Config.ZoneSize.y, Config.ZoneSize.z,
+				Config.MarkerColor.r, Config.MarkerColor.g, Config.MarkerColor.b, 100, false, true, 2, false, false, false, false)
 
-        if isNear and not TextUIdrawing then
-          ESX.TextUI(TranslateCap('access_job_center', xLib.interactions.getInteractKey()))
-          TextUIdrawing = true
-        else
-          if not isNear and TextUIdrawing then
-            ESX.HideUI()
-            TextUIdrawing = false
-          end
-        end
-      end
-    end
+				if distance < (Config.ZoneSize.x / 2) then
+					isNearMarker = true
+				end
+			end
+		end
 
-    if not isInMarker and TextUIdrawing then
-      ESX.HideUI()
-      TextUIdrawing = false
-    end
+		isNear = isNearMarker
 
-    Wait(Sleep)
-  end
+		if isNear and not TextUIdrawing and not JobListingUI.IsOpen() then
+			ESX.TextUI(TranslateCap('access_job_center', xLib.interactions.getInteractKey()))
+			TextUIdrawing = true
+		end
+
+		if ((isInMarker and not isNear) or not isInMarker) and TextUIdrawing then
+			ESX.HideUI()
+			TextUIdrawing = false
+		end
+
+		if not isInMarker and JobListingUI.IsOpen() then
+			JobListingUI.Close()
+		end
+
+		Wait(Sleep)
+	end
 end)
 
 -- Create blips
 if Config.Blip.Enabled then
-  CreateThread(function()
-    for i = 1, #Config.Zones, 1 do
-      xLib.blips.create({
-        coords = Config.Zones[i],
-        sprite = Config.Blip.Sprite,
-        display = Config.Blip.Display,
-        scale = Config.Blip.Scale,
-        color = Config.Blip.Colour,
-        shortRange = Config.Blip.ShortRange,
-        label = TranslateCap('blip_text')
-      })
-    end
-  end)
+	CreateThread(function()
+		for i = 1, #Config.Zones, 1 do
+			xLib.blips.create({
+				coords = Config.Zones[i],
+				sprite = Config.Blip.Sprite,
+				display = Config.Blip.Display,
+				scale = Config.Blip.Scale,
+				color = Config.Blip.Colour,
+				shortRange = Config.Blip.ShortRange,
+				label = TranslateCap('blip_text')
+			})
+		end
+	end)
 end
 
 xLib.interactions.register("open_joblisting", function()
-  ShowJobListingMenu()
+	ShowJobListingMenu()
 end, function()
-  return isNear and not menuIsShowed
+	return isNear and not JobListingUI.IsOpen()
 end)
