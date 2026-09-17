@@ -3,6 +3,11 @@
 
 Config = {}
 
+Config.Locale = 'en'
+
+-- When false, falls back to the legacy ESX context menu
+Config.UseNui = true
+
 Config.Animations = {
 
 	{

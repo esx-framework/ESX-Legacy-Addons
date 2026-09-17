@@ -54,7 +54,7 @@ local function openAnimationsSubMenu(menu)
 	end)
 end
 
-local function openAnimationsMenu()
+local function openLegacyMenu()
 	local elements = {
 		{ unselectable = true, icon = "fas fa-smile", title = "Animations" }
 	}
@@ -72,27 +72,42 @@ local function openAnimationsMenu()
 	end)
 end
 
--- Key Controls
-RegisterCommand('animmenu', function()
+local function openAnimationsMenu()
 	if not ESX.PlayerData.dead then
-		openAnimationsMenu()
+		if Config.UseNui ~= false then
+			AnimationUI.Open()
+		else
+			openLegacyMenu()
+		end
 	end
+end
+
+local function stopAnimation()
+	if not ESX.PlayerData.dead then
+		if Config.UseNui ~= false and AnimationUI.IsOpen() then
+			AnimationUI.Stop()
+		else
+			ClearPedTasks(ESX.PlayerData.ped)
+		end
+	end
+end
+
+RegisterCommand('animmenu', function()
+	openAnimationsMenu()
 end, false)
 
 RegisterCommand('cleartasks', function()
-	if not ESX.PlayerData.dead then
-		ClearPedTasks(ESX.PlayerData.ped)
-	end
+	stopAnimation()
 end, false)
 
-RegisterKeyMapping('animmenu', 'Open Animations Menu', 'keyboard', 'f3')
-RegisterKeyMapping('cleartasks', 'Stop Animation', 'keyboard', 'z')
+RegisterKeyMapping('animmenu', 'Open Animations Menu', 'keyboard', 'F3')
+RegisterKeyMapping('cleartasks', 'Stop Animation', 'keyboard', 'Z')
 
 -- Expose animations to other resources
 exports('GetConfig', function()
-    return Config
+	return Config
 end)
 
 exports('SetConfig', function(newConfig)
-    Config = newConfig
+	Config = newConfig
 end)
