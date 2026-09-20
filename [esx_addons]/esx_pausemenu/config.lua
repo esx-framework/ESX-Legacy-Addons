@@ -1,0 +1,38 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+
+Config = {}
+
+-- Visual copy used by the supplied concept. All text is configurable.
+Config.Brand = {
+    kicker = "FIVEM ROLEPLAY",
+    title = "ESX LEGACY",
+    tagline = "ROLEPLAY BEYOND LIMITS",
+    city = "Los Santos",
+    established = "2020",
+    communityLine = "BUILT BY A COMMUNITY THAT CARES"
+}
+
+Config.Text = {
+    unemployed = "Unemployed",
+    unknownJob = "Unknown",
+    leaveReason = "Disconnected from the server via ESX Pause Menu"
+}
+
+-- External links. Leave a value empty to disable that destination.
+Config.Links = {
+    discord = "https://discord.gg/esx-framework",
+    rules = "https://esx-framework.org/",
+    store = ""
+}
+
+-- If esx_scoreboard is running this command opens it from PEOPLE.
+Config.PeopleCommand = "scoreboard"
+
+-- Pause controls commonly used by GTA/FiveM.
+Config.Controls = {
+    pause = 200, -- INPUT_FRONTEND_PAUSE_ALTERNATE (ESC)
+    pauseAlt = 199 -- INPUT_FRONTEND_PAUSE (P)
+}
+
+Config.ScreenBlurMs = 180
+Config.Debug = false
