@@ -70,6 +70,12 @@ local pageCache = {}
 --- @type string[] Page cache insertion order for bounded memory.
 local pageCacheOrder = {}
 
+--- @type table<string, table> Cached filtered/sorted player references, shared by all pages of a query.
+local playerQueryCache = {}
+
+--- @type string[] Player query cache insertion order for bounded memory.
+local playerQueryCacheOrder = {}
+
 --- @type boolean Prevents stacked activity broadcasts.
 local activityBroadcastPending = false
 
@@ -112,6 +118,14 @@ local function getPageRefreshInterval()
   return cfgNumber("PageRefreshInterval", 15000, 5000, 60000)
 end
 
+local function getPageRefreshBatchSize()
+  return cfgNumber("PageRefreshBatchSize", 25, 1, 250)
+end
+
+local function getPageRefreshBatchDelay()
+  return cfgNumber("PageRefreshBatchDelay", 50, 0, 1000)
+end
+
 local function getFullReconcileInterval()
   return cfgNumber("FullReconcileInterval", 60000, 30000, 300000)
 end
@@ -148,9 +162,15 @@ local function getMaxPageCacheEntries()
   return cfgNumber("MaxPageCacheEntries", 256, 32, 1024)
 end
 
+local function getMaxPlayerQueryCacheEntries()
+  return cfgNumber("MaxPlayerQueryCacheEntries", 64, 8, 256)
+end
+
 local function clearPageCache()
   pageCache = {}
   pageCacheOrder = {}
+  playerQueryCache = {}
+  playerQueryCacheOrder = {}
 end
 
 local function sanitizeString(value, maxLen, fallback)
@@ -451,10 +471,20 @@ local function refreshPings()
   end
 
   lastPingUpdate = now
+  local changed = false
+
   for src, record in pairs(playersById) do
     if GetPlayerName(src) then
-      record.ping = GetPlayerPing(src) or 0
+      local ping = GetPlayerPing(src) or 0
+      if record.ping ~= ping then
+        record.ping = ping
+        changed = true
+      end
     end
+  end
+
+  if not changed then
+    return
   end
 
   pingRevision = pingRevision + 1
@@ -704,12 +734,9 @@ local function sortPlayers(players, sortBy, sortAsc)
   end)
 end
 
-function ScoreboardModule.BuildPlayerPage(data)
-  refreshPings()
-
-  local page, pageSize, search, sortBy, sortAsc = normalizePageRequest(data)
-  local cacheKey = ("%s:%s:%s:%s:%s:%s:%s"):format(playersRevision, pingRevision, #search, search, page, pageSize, sortBy .. tostring(sortAsc))
-  local cached = pageCache[cacheKey]
+local function buildPlayerQuery(search, sortBy, sortAsc)
+  local queryKey = ("%s:%s:%s:%s:%s"):format(playersRevision, pingRevision, #search, search, sortBy .. tostring(sortAsc))
+  local cached = playerQueryCache[queryKey]
   if cached then
     return cached
   end
@@ -723,7 +750,34 @@ function ScoreboardModule.BuildPlayerPage(data)
 
   sortPlayers(filtered, sortBy, sortAsc)
 
-  local total = #filtered
+  cached = {
+    players = filtered,
+    total = #filtered
+  }
+
+  playerQueryCache[queryKey] = cached
+  playerQueryCacheOrder[#playerQueryCacheOrder + 1] = queryKey
+
+  while #playerQueryCacheOrder > getMaxPlayerQueryCacheEntries() do
+    playerQueryCache[table.remove(playerQueryCacheOrder, 1)] = nil
+  end
+
+  return cached
+end
+
+function ScoreboardModule.BuildPlayerPage(data)
+  refreshPings()
+
+  local page, pageSize, search, sortBy, sortAsc = normalizePageRequest(data)
+  local cacheKey = ("%s:%s:%s:%s:%s:%s:%s"):format(playersRevision, pingRevision, #search, search, page, pageSize, sortBy .. tostring(sortAsc))
+  local cached = pageCache[cacheKey]
+  if cached then
+    return cached
+  end
+
+  local query = buildPlayerQuery(search, sortBy, sortAsc)
+  local filtered = query.players
+  local total = query.total
   local totalPages = math.max(1, math.ceil(total / pageSize))
   if page > totalPages then
     page = totalPages
@@ -958,10 +1012,20 @@ CreateThread(function()
     Wait(getPageRefreshInterval())
     if next(activeClients) then
       refreshPings()
+
+      local refreshed = 0
+      local batchSize = getPageRefreshBatchSize()
+      local batchDelay = getPageRefreshBatchDelay()
+
       for src in pairs(activeClients) do
         local state = requestState[src]
         if state and state.pageRequest and (state.pageRevision ~= playersRevision or state.pingRevision ~= pingRevision) then
           ScoreboardModule.SendPage(src, state.pageRequest)
+          refreshed = refreshed + 1
+
+          if refreshed % batchSize == 0 and batchDelay > 0 then
+            Wait(batchDelay)
+          end
         end
       end
     end

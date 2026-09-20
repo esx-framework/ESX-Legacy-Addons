@@ -96,8 +96,8 @@ AddEventHandler('esx_jobs:action', function(job, zone, zoneKey)
 			end
 		end
 
-		if xLib.game.isSpawnPointClear(spawnPoint.Pos, 5.0) then
-			spawnVehicle(spawnPoint, vehicle, zone.Caution)
+		if spawnPoint and vehicle and xLib.game.isSpawnPointClear(spawnPoint.Pos, 5.0) then
+			spawnVehicle(zoneKey)
 		else
 			ESX.ShowNotification(TranslateCap('spawn_blocked'))
 		end
@@ -249,9 +249,9 @@ function refreshBlips()
 end
 
 
-function spawnVehicle(spawnPoint, vehicle, vehicleCaution)
+function spawnVehicle(zoneKey)
 	hintIsShowed = false
-	TriggerServerEvent('esx_jobs:caution', 'take', vehicleCaution, spawnPoint, vehicle)
+	TriggerServerEvent('esx_jobs:caution', 'take', zoneKey)
 end
 
 RegisterNetEvent('esx_jobs:spawnJobVehicle', function(spawnPoint, vehicle)

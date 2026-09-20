@@ -72,6 +72,12 @@ Config.SummaryInterval = 10000
 --- Interval (ms) to refresh the visible player page
 Config.PageRefreshInterval = 15000
 
+--- Number of open scoreboards refreshed before yielding the server thread
+Config.PageRefreshBatchSize = 25
+
+--- Delay (ms) between open-scoreboard refresh batches
+Config.PageRefreshBatchDelay = 50
+
 --- Interval (ms) to refresh ping values server-side
 Config.PingRefreshInterval = 30000
 
@@ -82,6 +88,7 @@ Config.PageRequestCooldown = 1500
 Config.DefaultPageSize = 50
 Config.MaxPageSize = 100
 Config.MaxPageCacheEntries = 256
+Config.MaxPlayerQueryCacheEntries = 64
 
 --- Server display name shown in the scoreboard header
 Config.ServerName = "ESX Server"

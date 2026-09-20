@@ -18,6 +18,12 @@ Config.SummaryInterval = 10000
 --- Interval (ms) to refresh visible player pages for clients with scoreboard open
 Config.PageRefreshInterval = 15000
 
+--- Number of open scoreboards refreshed before yielding the server thread
+Config.PageRefreshBatchSize = 25
+
+--- Delay (ms) between open-scoreboard refresh batches
+Config.PageRefreshBatchDelay = 50
+
 --- Interval (ms) to refresh player ping values server-side
 Config.PingRefreshInterval = 30000
 
@@ -41,6 +47,9 @@ Config.MaxPageSize = 100
 
 --- Maximum cached page payloads kept between player/ping changes
 Config.MaxPageCacheEntries = 256
+
+--- Maximum cached filtered/sorted player queries kept between player/ping changes
+Config.MaxPlayerQueryCacheEntries = 64
 
 --- Maximum search text length accepted from the UI
 Config.MaxSearchLength = 48

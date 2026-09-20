@@ -3,6 +3,77 @@
 
 local playersWorking = {}
 
+local function getVector3(coords)
+	if type(coords) == "vector3" then
+		return coords
+	end
+
+	if type(coords) == "table" and coords.x and coords.y and coords.z then
+		return vector3(coords.x, coords.y, coords.z)
+	end
+end
+
+local function getZoneDistance(zone)
+	local size = zone and zone.Size
+	if type(size) ~= "table" then
+		return 5.0
+	end
+
+	return math.max(tonumber(size.x) or 0.0, tonumber(size.y) or 0.0, tonumber(size.z) or 0.0, 5.0)
+end
+
+local function isNearZone(xPlayer, zone)
+	local coords = getVector3(zone and zone.Pos)
+	if not coords then
+		return false
+	end
+
+	return #(xPlayer.getCoords(true) - coords) <= getZoneDistance(zone)
+end
+
+local function getJobVehicleSpawn(xPlayer, zoneKey)
+	if type(zoneKey) ~= "string" then
+		return
+	end
+
+	local jobObject = Config.Jobs[xPlayer.getJob().name]
+	local spawnerZone = jobObject and jobObject.Zones and jobObject.Zones[zoneKey]
+	if not spawnerZone or spawnerZone.Type ~= "vehspawner" or not isNearZone(xPlayer, spawnerZone) then
+		return
+	end
+
+	local spawnPoint
+	for _, zone in pairs(jobObject.Zones) do
+		if zone.Type == "vehspawnpt" and zone.Spawner == spawnerZone.Spawner then
+			spawnPoint = zone
+			break
+		end
+	end
+
+	local vehicle
+	for _, jobVehicle in pairs(jobObject.Vehicles or {}) do
+		if jobVehicle.Spawner == spawnerZone.Spawner then
+			vehicle = jobVehicle
+			break
+		end
+	end
+
+	if not spawnPoint or not vehicle then
+		return
+	end
+
+	return spawnerZone, spawnPoint, vehicle
+end
+
+local function isSpawnPointClear(spawnPoint)
+	local coords = getVector3(spawnPoint and spawnPoint.Pos)
+	if not coords then
+		return false
+	end
+
+	return #xLib.onesync.getVehiclesInArea(coords, 5.0) == 0
+end
+
 CreateThread(function()
 	while true do
 		Wait(1000)
@@ -104,12 +175,36 @@ RegisterServerEvent('esx_jobs:stopWork', function()
 	end
 end)
 
-RegisterNetEvent('esx_jobs:caution', function(cautionType, cautionAmount, spawnPoint, vehicle)
+RegisterNetEvent('esx_jobs:caution', function(cautionType, requestValue)
 	local xPlayer = ESX.Player(source)
+	if not xPlayer then
+		return
+	end
+
 	local identifier = xPlayer.getIdentifier()
 	if cautionType == 'take' then
+		local spawnerZone, spawnPoint, vehicle = getJobVehicleSpawn(xPlayer, requestValue)
+		if not spawnerZone then
+			return
+		end
+
+		if not isSpawnPointClear(spawnPoint) then
+			xPlayer.showNotification(TranslateCap('spawn_blocked'))
+			return
+		end
+
+		local cautionAmount = ESX.Math.Round(tonumber(spawnerZone.Caution) or 0)
 		if cautionAmount <= Config.MaxCaution and cautionAmount >= 0 then
+			if cautionAmount == 0 then
+				TriggerClientEvent('esx_jobs:spawnJobVehicle', xPlayer.src, spawnPoint, vehicle)
+				return
+			end
+
 			TriggerEvent('esx_addonaccount:getAccount', 'caution', identifier, function(account)
+				if not account then
+					return
+				end
+
 				if xPlayer.getAccount('bank').money >= cautionAmount then
 					xPlayer.removeAccountMoney('bank', cautionAmount, "Caution Fine")
 					account.addMoney(cautionAmount)
@@ -121,8 +216,13 @@ RegisterNetEvent('esx_jobs:caution', function(cautionType, cautionAmount, spawnP
 			end)
 		end
 	elseif cautionType == 'give_back' then
-		if cautionAmount <= 1 and cautionAmount > 0 then
+		local cautionAmount = tonumber(requestValue)
+		if cautionAmount and cautionAmount <= 1 and cautionAmount > 0 then
 			TriggerEvent('esx_addonaccount:getAccount', 'caution', identifier, function(account)
+				if not account then
+					return
+				end
+
 				local caution = account.money
 				local toGive = ESX.Math.Round(caution * cautionAmount)
 	

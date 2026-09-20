@@ -26,4 +26,8 @@ client_scripts {
 	'client/main.lua',
 }
 
-dependency 'es_extended'
+dependencies {
+	'esx_lib',
+	'es_extended',
+	'/onesync'
+}

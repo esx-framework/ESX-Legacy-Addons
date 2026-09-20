@@ -11,7 +11,10 @@ lua54 'yes'
 version '1.0'
 legacyversion '1.15.0'
 
-shared_script '@es_extended/imports.lua'
+shared_scripts {
+	'@esx_lib/imports.lua',
+	'@es_extended/imports.lua'
+}
 
 server_scripts {
 	'@es_extended/locale.lua',
@@ -27,4 +30,7 @@ client_scripts {
 	'client/main.lua'
 }
 
-dependency 'es_extended'
+dependencies {
+	'esx_lib',
+	'es_extended'
+}
