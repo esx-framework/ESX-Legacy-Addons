@@ -11,8 +11,13 @@ Config.Debug = false
 -- CORE CONFIGURATION
 -- ════════════════════════════════════════════════════════════════
 
--- Inventory system ('esx' or 'ox_inventory')
-Config.Inventory = 'ox_inventory'
+-- Inventory system ('esx', 'ox_inventory', or 'auto')
+-- Use 'esx' for the built-in ESX inventory UI.
+Config.Inventory = 'esx'
+
+-- Weight used when a shop item does not define one. ESX inventory requires
+-- items to exist in the item registry before they can be carried.
+Config.DefaultItemWeight = 1
 
 -- ════════════════════════════════════════════════════════════════
 -- IMAGE CONFIGURATION

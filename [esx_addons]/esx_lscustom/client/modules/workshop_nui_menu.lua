@@ -66,7 +66,7 @@ function WorkshopNuiMenu.Build(data, D)
                     addElement(elements, { label = TranslateCap('by_default'), modType = k, modNum = { 0, 0, 0 } }, k, v, vehiclePrice, currentMods, D)
                 elseif v.modType == 'color1' or v.modType == 'color2' or v.modType == 'pearlescentColor' or v.modType == 'wheelColor' then
                     addElement(elements, { label = TranslateCap('by_default'), modType = k, modNum = myCar[v.modType] }, k, v, vehiclePrice, currentMods, D)
-                elseif v.modType == 17 then
+                elseif D.IsTurboMod(v.modType) then
                     addElement(elements, { label = TranslateCap('no_turbo'), modType = k, modNum = false }, k, v, vehiclePrice, currentMods, D)
                 elseif v.modType == 23 then
                     addElement(elements, { label = TranslateCap('by_default'), modType = 'modFrontWheels', modNum = -1, wheelType = -1, price = Config.DefaultWheelsPriceMultiplier }, k, v, vehiclePrice, currentMods, D)
@@ -135,7 +135,7 @@ function WorkshopNuiMenu.Build(data, D)
                             addElement(elements, { label = label, modType = k, modNum = j }, k, v, vehiclePrice, currentMods, D)
                         end
                     end
-                elseif v.modType == 17 then
+                elseif D.IsTurboMod(v.modType) then
                     local label = currentMods[k] and ('Turbo - ' .. TranslateCap('installed')) or 'Turbo'
                     addElement(elements, { label = label, modType = k, modNum = true }, k, v, vehiclePrice, currentMods, D)
                 else

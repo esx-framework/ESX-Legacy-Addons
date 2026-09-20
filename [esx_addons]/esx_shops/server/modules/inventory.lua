@@ -7,7 +7,7 @@
 function ValidateInventorySpace(source, items)
 	local itemCount = #items
 
-	if Config.Inventory == 'ox_inventory' then
+	if GetShopInventoryBackend() == 'ox_inventory' then
 		local simulatedItems = {}
 		for i = 1, itemCount do
 			local item = items[i]
@@ -23,14 +23,25 @@ function ValidateInventorySpace(source, items)
 		return true
 	else
 		local xPlayer = ESX.Player(source)
-		local simulatedWeight = 0
+		if not xPlayer then
+			return false
+		end
+
+		local currentWeight = xPlayer.getWeight and xPlayer.getWeight() or xPlayer.weight or 0
+		local maxWeight = xPlayer.getMaxWeight and xPlayer.getMaxWeight() or xPlayer.maxWeight or 0
+		local addedWeight = 0
+
 		for i = 1, itemCount do
 			local item = items[i]
-			if not xPlayer.canCarryItem(item.name, item.quantity) then
+			local itemData = ESX.Items and ESX.Items[item.name]
+			if not itemData then
 				return false
 			end
+
+			addedWeight = addedWeight + ((itemData.weight or Config.DefaultItemWeight or 1) * item.quantity)
 		end
-		return true
+
+		return (currentWeight + addedWeight) <= maxWeight
 	end
 end
 
@@ -47,7 +58,7 @@ end
 function AddItemsToInventory(source, items)
 	local itemCount = #items
 
-	if Config.Inventory == 'ox_inventory' then
+	if GetShopInventoryBackend() == 'ox_inventory' then
 		for i = 1, itemCount do
 			local item = items[i]
 			local success = exports.ox_inventory:AddItem(source, item.name, item.quantity)
@@ -58,9 +69,17 @@ function AddItemsToInventory(source, items)
 		end
 	else
 		local xPlayer = ESX.Player(source)
+		if not xPlayer then
+			return false
+		end
+
 		for i = 1, itemCount do
 			local item = items[i]
-			xPlayer.addInventoryItem(item.name, item.quantity)
+			local success = xPlayer.addInventoryItem(item.name, item.quantity)
+			if success == false then
+				DebugPrint(_U('item_add_failed', item.name, source))
+				return false
+			end
 		end
 	end
 

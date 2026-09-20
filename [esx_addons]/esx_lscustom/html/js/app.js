@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2022-2026 ESX Framework */
 (() => {
-  const resourceName = typeof GetParentResourceName === 'function' ? GetParentResourceName() : 'esx_lscustom';
+  const isLocalPreview = typeof GetParentResourceName !== 'function';
+  const resourceName = isLocalPreview ? 'esx_lscustom' : GetParentResourceName();
   const { icons, catalog, createCart } = WorkshopUI;
   const get = (id) => document.getElementById(id);
   const app = get('app');
@@ -16,7 +17,8 @@
       backButton: 'Back', add: 'Add', pay: 'Pay', cart: 'Cart', clear: 'Clear', total: 'Total', installed: 'Installed',
       noOptions: 'No options available.', emptyCart: 'No pending changes.', mod: 'Mod',
       customize: 'Customization', search: 'Search options', noResults: 'No matching options.', selection: 'Selection',
-      inCart: 'In cart', addToCart: 'Add to cart', list: 'List', grid: 'Grid', requestFailed: 'Action failed. Please try again.'
+      inCart: 'In cart', addToCart: 'Add to cart', list: 'List', grid: 'Grid', requestFailed: 'Action failed. Please try again.',
+      freeCameraHelp: 'Free camera | mouse: orbit | wheel: zoom | E: back'
     }
   };
   const t = (key) => state.locale[key] || key;
@@ -25,6 +27,45 @@
   let toastTimer;
   let requestQueue = Promise.resolve();
   let session = 0;
+
+  const previewMenus = {
+    main: {
+      id: 'main', title: 'LS CUSTOMS', parent: null,
+      elements: [
+        { label: 'Upgrades', value: 'upgrades', action: 'menu' },
+        { label: 'Cosmetics', value: 'cosmetics', action: 'menu' },
+        { label: 'Camera', value: 'cameraMenu', action: 'camera' },
+        { label: 'Checkout cart', value: 'cartCheckout', action: 'checkout', disabled: true },
+        { label: 'Clear cart', value: 'cartClear', action: 'clear' }
+      ]
+    },
+    upgrades: {
+      id: 'upgrades', title: 'Upgrades', parent: 'main',
+      elements: [
+        { label: 'Engine level 1', menuKey: 'modEngine', modType: 'modEngine', modNum: 0, price: 6975, action: 'mod' },
+        { label: 'Brakes level 2', menuKey: 'modBrakes', modType: 'modBrakes', modNum: 1, price: 4650, action: 'mod' },
+        { label: 'Transmission level 3', menuKey: 'modTransmission', modType: 'modTransmission', modNum: 2, price: 23255, action: 'mod' },
+        { label: 'Turbo', menuKey: 'modTurbo', modType: 'modTurbo', modNum: true, price: 27905, action: 'mod' }
+      ]
+    },
+    cosmetics: {
+      id: 'cosmetics', title: 'Cosmetics', parent: 'main',
+      elements: [
+        { label: 'Primary respray', value: 'primaryRespray', action: 'menu', color: 'red' },
+        { label: 'Window tint', menuKey: 'windowTint', modType: 'windowTint', modNum: 2, price: 2500, action: 'mod' },
+        { label: 'Neon blue', menuKey: 'neonColor', modType: 'neonColor', modNum: [0, 80, 255], price: 3500, action: 'mod' },
+        { label: 'Xenon lights', menuKey: 'modXenon', modType: 'modXenon', modNum: true, price: 4500, action: 'mod' }
+      ]
+    },
+    primaryRespray: {
+      id: 'primaryRespray', title: 'Primary respray', parent: 'cosmetics',
+      elements: [
+        { label: 'Classic red', menuKey: 'color1', modType: 'color1', modNum: 27, price: 3200, action: 'mod', color: 'red' },
+        { label: 'Racing blue', menuKey: 'color1', modType: 'color1', modNum: 64, price: 3200, action: 'mod', color: 'blue' },
+        { label: 'Matte black', menuKey: 'color1', modType: 'color1', modNum: 12, price: 3200, action: 'mod', color: 'black' }
+      ]
+    }
+  };
 
   function showToast(message, error = false) {
     if (!message || !state.open) return;
@@ -35,9 +76,16 @@
     toastTimer = setTimeout(() => get('toast').classList.add('hidden'), 2600);
   }
 
+  function setControlGuide(visible, message) {
+    const guide = get('controlGuide');
+    guide.textContent = message || t('freeCameraHelp');
+    guide.classList.toggle('hidden', !visible);
+  }
+
   // Serialize previews and mutations so a rapid selection cannot apply out of order.
   function request(action, data = {}) {
     if (!state.open) return Promise.resolve();
+    if (isLocalPreview) return Promise.resolve(handlePreviewRequest(action, data));
     const requestSession = session;
     const mutation = ['addToCart', 'checkout', 'clearCart', 'openMenu'].includes(action);
     if (mutation && state.busy) return Promise.resolve();
@@ -60,6 +108,50 @@
       if (mutation && requestSession === session) { state.busy = false; renderActions(); }
     });
     return requestQueue;
+  }
+
+  function updatePreviewCheckoutState() {
+    previewMenus.main.elements.forEach((item) => {
+      if (item.action === 'checkout') item.disabled = state.total <= 0;
+    });
+  }
+
+  function handlePreviewRequest(action, data = {}) {
+    if (action === 'openMenu') {
+      updatePreviewCheckoutState();
+      applyServerState({ menu: previewMenus[data.value] || previewMenus.cosmetics, root: previewMenus.main.elements, cart: state.cart, total: state.total, stats: state.stats });
+    } else if (action === 'preview') {
+      state.active = data;
+      applyServerState({
+        stats: {
+          speed: { value: 72, delta: data.modType === 'modTurbo' ? 8 : 1 },
+          accel: { value: 68, delta: data.modType === 'modTurbo' ? 12 : 2 },
+          brake: { value: 58, delta: data.modType === 'modBrakes' ? 9 : 0 },
+          handling: { value: 61, delta: 1 }
+        }
+      });
+    } else if (action === 'addToCart') {
+      if (!catalog.isQueued(data, state.cart)) state.cart = [...state.cart, data];
+      state.total = state.cart.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      updatePreviewCheckoutState();
+      applyServerState({ menu: state.menu, cart: state.cart, total: state.total });
+      showToast(`${t('addToCart')}: ${money(data.price)}`);
+    } else if (action === 'clearCart') {
+      state.cart = [];
+      state.total = 0;
+      updatePreviewCheckoutState();
+      applyServerState({ menu: state.menu, cart: state.cart, total: state.total });
+      showToast('Cart cleared.');
+    } else if (action === 'checkout') {
+      showToast(state.total > 0 ? `Preview payment: ${money(state.total)}` : t('emptyCart'), state.total <= 0);
+    } else if (action === 'camera') {
+      const view = data.value === 'free' ? 'free' : data.value || 'default';
+      setCamera(view);
+      setControlGuide(view === 'free');
+    } else if (action === 'close') {
+      app.classList.add('hidden');
+      state.open = false;
+    }
   }
 
   function labelButton(id, label) {
@@ -109,7 +201,7 @@
     get('selectionPrice').textContent = item ? money(item.price) : '--';
     get('addBtn').disabled = state.busy || !item || item.installed || item.disabled || queued;
     get('addBtn').querySelector('[data-label]').textContent = t(queued ? 'inCart' : item?.installed ? 'installed' : 'addToCart');
-    get('backBtn').hidden = !state.menu?.parent;
+    get('backBtn').hidden = !state.menu?.parent || state.menu.parent === 'main';
     get('backBtn').disabled = state.busy;
     cart.render(state.cart, state.total, state.busy);
   }
@@ -135,7 +227,7 @@
   }
 
   function renderOptions() {
-    const items = (state.menu?.elements || []).filter((item) => item.action === 'mod' || item.action === 'menu');
+    const items = (state.menu?.elements || []).filter((item) => item.action === 'mod' || (item.action === 'menu' && state.menu?.id !== 'main'));
     get('optionCount').textContent = catalog.render({
       container: get('optionList'), items, cart: state.cart, active: state.active,
       query: search.value, layout: state.layout, t, money,
@@ -157,6 +249,7 @@
     if (data.locale) state.locale = { ...state.locale, ...data.locale };
     if (data.currency) state.currency = data.currency;
     if (Array.isArray(data.cart)) state.cart = data.cart;
+    if (Array.isArray(data.root)) state.root = data.root;
     if (typeof data.total === 'number') state.total = data.total;
     if (data.menu) {
       const changed = data.menu.id !== state.menu?.id;
@@ -202,6 +295,7 @@
       setCamera('default');
       get('vehicleName').textContent = data.subtitle || 'VEHICLE';
       app.classList.remove('hidden');
+      setControlGuide(false);
       applyServerState(data);
     } else if (data.action === 'close') {
       session += 1;
@@ -210,6 +304,7 @@
       cart.setOpen(false, false);
       app.classList.add('hidden');
       get('toast').classList.add('hidden');
+      setControlGuide(false);
       clearTimeout(toastTimer);
     } else if (!state.open) {
       return;
@@ -220,6 +315,9 @@
       renderStats(state.stats);
     } else if (data.action === 'cameraState') {
       setCamera(data.view);
+      setControlGuide(data.view === 'free');
+    } else if (data.action === 'controlGuide') {
+      setControlGuide(data.visible === true, data.message);
     } else if (data.action === 'toast' || data.action === 'purchaseResult') {
       showToast(data.message, data.success === false);
     }
@@ -231,7 +329,7 @@
   });
   get('closeBtn').addEventListener('click', () => request('close'));
   get('backBtn').addEventListener('click', () => {
-    if (state.menu?.parent) request('openMenu', { value: state.menu.parent });
+    if (state.menu?.parent && state.menu.parent !== 'main') request('openMenu', { value: state.menu.parent });
   });
   for (const layout of ['list', 'grid']) {
     get(`${layout}ViewBtn`).addEventListener('click', () => {
@@ -253,8 +351,30 @@
       else request('close');
     } else if (event.key === 'Backspace' && event.target.tagName !== 'INPUT' && !event.target.isContentEditable && state.menu?.parent) {
       event.preventDefault();
-      request('openMenu', { value: state.menu.parent });
+      if (state.menu.parent !== 'main') request('openMenu', { value: state.menu.parent });
     }
   });
   icons.hydrate();
+
+  if (isLocalPreview) {
+    window.dispatchEvent(new MessageEvent('message', {
+      data: {
+        action: 'open',
+        title: 'LS CUSTOMS',
+        subtitle: 'LOCAL PREVIEW',
+        features: { camera: true, stats: true },
+        menu: previewMenus.cosmetics,
+        root: previewMenus.main.elements,
+        cart: [],
+        total: 0,
+        currency: '$',
+        stats: {
+          speed: { value: 64, delta: 0 },
+          accel: { value: 56, delta: 0 },
+          brake: { value: 48, delta: 0 },
+          handling: { value: 52, delta: 0 }
+        }
+      }
+    }));
+  }
 })();

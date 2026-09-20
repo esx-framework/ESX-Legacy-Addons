@@ -48,7 +48,8 @@ Config.DefaultImagePath = "nui://esx_shops/web/images"
 Config.DefaultImageFormat = "png" -- png, webp, jpg, etc.
 
 -- Inventory system
-Config.Inventory = 'esx' -- or 'ox_inventory'
+Config.Inventory = 'esx' -- 'esx', 'ox_inventory', or 'auto'
+Config.DefaultItemWeight = 1
 
 -- Tax settings
 Config.TaxRate = 0.19 -- 19% VAT
@@ -71,7 +72,7 @@ Each shop needs items, categories (optional), and locations:
 ```lua
 Config.Zones.TwentyFourSeven = {
 	Items = {
-		{name = "burger", label = "Burger", price = 15, category = "food"},
+		{name = "burger", label = "Burger", price = 15, category = "food", weight = 1},
 	},
 	Categories = {
 		{id = "food", label = "Food", icon = "fa-solid fa-burger"},

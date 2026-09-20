@@ -17,6 +17,27 @@ function ValidatePlayer(source)
 	return xPlayer
 end
 
+---Returns the inventory backend this resource should use.
+---@return string backend
+function GetShopInventoryBackend()
+	local configured = Config.Inventory or 'esx'
+
+	if configured == 'ox' then
+		configured = 'ox_inventory'
+	end
+
+	if configured == 'auto' then
+		return GetResourceState('ox_inventory') == 'started' and 'ox_inventory' or 'esx'
+	end
+
+	if configured == 'ox_inventory' and GetResourceState('ox_inventory') ~= 'started' then
+		DebugPrint('[esx_shops] ox_inventory is configured but not started, falling back to ESX inventory')
+		return 'esx'
+	end
+
+	return configured
+end
+
 ---Validates zone exists
 ---@param zone string Zone name
 ---@param source number Player source for logging

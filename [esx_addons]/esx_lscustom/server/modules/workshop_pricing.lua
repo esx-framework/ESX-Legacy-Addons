@@ -7,6 +7,10 @@ local function isPerformanceMod(modType)
     return modType == 11 or modType == 12 or modType == 13 or modType == 15 or modType == 16
 end
 
+local function isTurboMod(modType)
+    return modType == 17 or modType == 18
+end
+
 local function getExpectedCartModType(menuKey, menu)
     if menu.modType == 23 then
         return 'modFrontWheels'
@@ -76,7 +80,7 @@ function WorkshopPricing.CalculateCartItem(item, vehiclePrice)
         return math.floor(vehiclePrice * pricePercent / 100)
     end
 
-    if menu.modType == 17 then
+    if isTurboMod(menu.modType) then
         if item.modNum ~= true then return nil end
         return math.floor(vehiclePrice * (tonumber(menu.price and menu.price[1]) or 0) / 100)
     end

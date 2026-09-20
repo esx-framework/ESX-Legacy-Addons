@@ -154,7 +154,7 @@ function GetAction(data)
                         modType = k,
                         modNum = myCar[v.modType]
                     }
-                elseif v.modType == 17 then
+                elseif D.IsTurboMod(v.modType) then
                     elements[#elements + 1] = {
                         label = ' ' .. TranslateCap('no_turbo'),
                         modType = k,
@@ -317,7 +317,7 @@ function GetAction(data)
                         elements[#elements + 1] = { label = label, modType = k, modNum = j }
                         if j == modCount - 1 then break end
                     end
-                elseif v.modType == 17 then
+                elseif D.IsTurboMod(v.modType) then
                     local label = ''
                     if currentMods[k] then
                         label = 'Turbo - <span style="color:cornflowerblue;">' .. TranslateCap('installed') .. '</span>'

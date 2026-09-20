@@ -42,6 +42,7 @@ function WorkshopLocale.GetNuiPayload()
         addToCart = TranslateCap('ui_add_to_cart'),
         list = TranslateCap('ui_list'),
         grid = TranslateCap('ui_grid'),
-        requestFailed = TranslateCap('ui_request_failed')
+        requestFailed = TranslateCap('ui_request_failed'),
+        freeCameraHelp = TranslateCap('free_camera_help')
     }
 end

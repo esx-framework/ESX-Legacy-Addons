@@ -547,7 +547,7 @@ Config.Menus = {
 	modTurbo = {
 		label = TranslateCap('turbo'),
 		parent = 'upgrades',
-		modType = 17,
+		modType = 18,
 		price = {55.81}
 	},
 	cosmetics = {

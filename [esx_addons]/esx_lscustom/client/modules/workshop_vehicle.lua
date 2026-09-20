@@ -7,6 +7,10 @@ function WorkshopVehicle.IsPerformanceMod(modType)
     return modType == 11 or modType == 12 or modType == 13 or modType == 15 or modType == 16
 end
 
+function WorkshopVehicle.IsTurboMod(modType)
+    return modType == 17 or modType == 18
+end
+
 function WorkshopVehicle.GetPrice(vehicle, vehicles)
     local vehiclePrice = 50000
 
@@ -32,7 +36,7 @@ function WorkshopVehicle.CalculateMenuPrice(_, menuConfig, current, vehiclePrice
         return math.floor(vehiclePrice * (tonumber(pricePercent) or 0) / 100)
     end
 
-    if menuConfig.modType == 17 then
+    if WorkshopVehicle.IsTurboMod(menuConfig.modType) then
         return math.floor(vehiclePrice * (tonumber(menuConfig.price and menuConfig.price[1]) or 0) / 100)
     end
 

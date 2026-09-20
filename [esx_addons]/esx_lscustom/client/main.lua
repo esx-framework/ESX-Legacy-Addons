@@ -9,6 +9,7 @@ local cartPreviewProps, lastPaidVehicleProps
 local nuiIsOpen, currentNuiMenu, currentNuiColor = false, 'main', nil
 local CloseWorkshop
 local SendNuiState
+local DefaultNuiMenu = 'cosmetics'
 
 function IsLSCustomNuiOpen()
     return nuiIsOpen
@@ -24,6 +25,10 @@ end
 
 local function IsPerformanceMod(modType)
     return WorkshopVehicle.IsPerformanceMod(modType)
+end
+
+local function IsTurboMod(modType)
+    return WorkshopVehicle.IsTurboMod(modType)
 end
 
 local function CalculateMenuPrice(menuKey, menuConfig, current, vehiclePrice)
@@ -221,6 +226,7 @@ local function BuildNuiMenu(data)
         GetMyCar = function() return myCar end,
         GetVehiclePrice = GetVehiclePrice,
         IsDefaultOrInstalled = IsDefaultOrInstalled,
+        IsTurboMod = IsTurboMod,
         IsPerformanceMod = IsPerformanceMod
     })
 end
@@ -244,6 +250,7 @@ function SendNuiState(menu)
     SendNUIMessage({
         action = 'state',
         menu = menu or BuildNuiMenu({ value = currentNuiMenu, color = currentNuiColor }),
+        root = BuildNuiMenu({ value = 'main' }).elements,
         cart = GetCartPayload(),
         total = GetCartTotal(),
         currency = Config.Currency or '$',
@@ -478,7 +485,7 @@ local function OpenLSCustomsInterface(vehicle)
 
     lsMenuIsShowed = true
     nuiIsOpen = true
-    currentNuiMenu = 'main'
+    currentNuiMenu = DefaultNuiMenu
     currentNuiColor = nil
     pendingCartPurchase = false
 
@@ -502,7 +509,8 @@ local function OpenLSCustomsInterface(vehicle)
             camera = Config.Workshop and Config.Workshop.EnableCamera == true,
             stats = Config.Workshop and Config.Workshop.EnableStats == true
         },
-        menu = BuildNuiMenu({ value = 'main' }),
+        menu = BuildNuiMenu({ value = currentNuiMenu }),
+        root = BuildNuiMenu({ value = 'main' }).elements,
         cart = GetCartPayload(),
         total = GetCartTotal(),
         currency = Config.Currency or '$',
@@ -520,7 +528,7 @@ RegisterNUICallback('openMenu', function(data, cb)
     local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
     RestoreVehicleProps(vehicle, cartPreviewProps)
 
-    currentNuiMenu = data and data.value or 'main'
+    currentNuiMenu = data and data.value or DefaultNuiMenu
     currentNuiColor = data and data.color or nil
     local menu = BuildNuiMenu({
         value = currentNuiMenu,
@@ -596,6 +604,7 @@ LSCustomLegacyDeps = {
     GetVehiclePrice = GetVehiclePrice,
     HandleWorkshopAction = HandleWorkshopAction,
     IsDefaultOrInstalled = IsDefaultOrInstalled,
+    IsTurboMod = IsTurboMod,
     RestoreVehicleProps = RestoreVehicleProps,
     SetCartPreviewProps = function(props) cartPreviewProps = props end,
     UpdateMods = UpdateMods

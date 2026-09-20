@@ -8,6 +8,7 @@
 ---@field label string Display label shown in UI
 ---@field price number Gross price including tax (e.g., 100)
 ---@field category string|nil Category identifier (e.g., "food", "drinks")
+---@field weight number|nil ESX inventory item weight used when auto-registering configured shop items
 ---@field image string|nil Image URL for UI display - If not provided, auto-generated from Config.DefaultImagePath/{name}.{Config.DefaultImageFormat}
 ---@field limit number|nil Maximum purchase quantity per transaction
 

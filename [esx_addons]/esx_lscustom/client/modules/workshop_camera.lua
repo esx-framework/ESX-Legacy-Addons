@@ -95,6 +95,7 @@ function WorkshopCamera.ExitFree()
     if not workshopFreeCam then return end
 
     workshopFreeCam = false
+    SendNUIMessage({ action = 'controlGuide', visible = false })
     SendNUIMessage({ action = 'cameraState', view = currentView })
     if shouldRefocusNui() then
         SetNuiFocus(true, true)
@@ -106,6 +107,7 @@ function WorkshopCamera.EnterFree()
 
     workshopFreeCam = true
     currentView = 'orbit'
+    SendNUIMessage({ action = 'controlGuide', visible = true, message = TranslateCap('free_camera_help') })
     SendNUIMessage({ action = 'cameraState', view = 'free' })
     SetNuiFocus(false, false)
 
@@ -133,10 +135,6 @@ function WorkshopCamera.EnterFree()
             end
 
             WorkshopCamera.Update()
-
-            BeginTextCommandDisplayHelp('STRING')
-            AddTextComponentSubstringPlayerName(TranslateCap('free_camera_help'))
-            EndTextCommandDisplayHelp(0, false, false, -1)
 
             if IsControlJustReleased(0, 38) then
                 WorkshopCamera.ExitFree()
@@ -169,6 +167,7 @@ end
 
 function WorkshopCamera.Stop()
     workshopFreeCam = false
+    SendNUIMessage({ action = 'controlGuide', visible = false })
     RenderScriptCams(false, false, 500, true, true)
     if workshopCam then
         DestroyCam(workshopCam, false)
