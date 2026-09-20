@@ -161,7 +161,12 @@ local OFFLINE_SEARCH_COOLDOWN_MS = math.max(
 	math.floor(tonumber(Config.AdminLimits and Config.AdminLimits.OfflineSearchCooldownMs) or 1000)
 )
 
-local offlineSearchCooldowns = {}
+local offlineSearchLimiter = xLib.rateLimiter({
+	capacity = 1,
+	refill = 1,
+	interval = math.max(1, OFFLINE_SEARCH_COOLDOWN_MS > 0 and OFFLINE_SEARCH_COOLDOWN_MS or 1),
+	staleMs = 60000
+})
 
 local SEARCH_COLUMNS = [[
 	SELECT
@@ -234,16 +239,8 @@ local function isOfflineSearchRateLimited(src)
 		return false
 	end
 
-	local now = getNowMs()
-	local last = offlineSearchCooldowns[src] or 0
-
-	if last > 0 and now >= last and now - last < OFFLINE_SEARCH_COOLDOWN_MS then
-		return true
-	end
-
-	offlineSearchCooldowns[src] = now
-
-	return false
+	local allowed = offlineSearchLimiter:consume(src)
+	return not allowed
 end
 
 local function buildOfflineEntry(row, canSeeSensitive)

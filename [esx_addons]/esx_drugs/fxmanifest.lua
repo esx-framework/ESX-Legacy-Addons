@@ -7,7 +7,7 @@ game 'gta5'
 lua54 'yes'
 description 'Allows players to harvest and sell marijuana'
 version '1.0.1'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_script '@es_extended/imports.lua'
 
@@ -29,5 +29,6 @@ client_scripts {
 }
 
 dependencies {
+	'esx_lib',
 	'es_extended'
 }

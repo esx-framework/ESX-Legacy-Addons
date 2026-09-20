@@ -8,9 +8,10 @@ author 'ESX-Framework'
 description 'Allows resources to store account data, such as society funds'
 lua54 'yes'
 version '1.1'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 server_scripts {
+	'@esx_lib/imports.lua',
 	'@es_extended/imports.lua',
 	'@oxmysql/lib/MySQL.lua',
 	'server/classes/addonaccount.lua',
@@ -23,4 +24,7 @@ server_exports {
 	'GetAccount'
 }
 
-dependency 'es_extended'
+dependencies {
+	'esx_lib',
+	'es_extended'
+}

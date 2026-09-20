@@ -8,11 +8,14 @@ game 'gta5'
 description 'Handles the overall status system for Hunger, Thrist and others'
 
 version '1.1'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 lua54 'yes'
 
-shared_script '@es_extended/imports.lua'
+shared_scripts {
+	'@esx_lib/imports.lua',
+	'@es_extended/imports.lua'
+}
 
 server_scripts {
 	'@oxmysql/lib/MySQL.lua',
@@ -34,4 +37,7 @@ files {
 	'html/scripts/app.js'
 }
 
-dependency 'es_extended'
+dependencies {
+	'esx_lib',
+	'es_extended'
+}

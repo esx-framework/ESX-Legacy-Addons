@@ -5,14 +5,13 @@ ESXMechanicJob = {
 	PlayerWorkStates = {},
 	PlayersNPCJobs = {},
 	LastNPCJobReward = {},
-	RateLimits = {}
+	RateLimiters = {}
 }
 
 function ESXMechanicJob.clearPlayerState(source)
 	ESXMechanicJob.PlayerWorkStates[source] = nil
 	ESXMechanicJob.PlayersNPCJobs[source] = nil
 	ESXMechanicJob.LastNPCJobReward[source] = nil
-	ESXMechanicJob.RateLimits[source] = nil
 end
 
 AddEventHandler('playerDropped', function()

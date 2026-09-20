@@ -8,7 +8,7 @@ game 'gta5'
 description 'Allows players to RP as a mechanic (repair and modify vehicles)'
 lua54 'yes'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
 	'@esx_lib/imports.lua',
@@ -43,6 +43,7 @@ server_scripts {
 }
 
 dependencies {
+	'esx_lib',
 	'es_extended',
 	'esx_society',
 	'esx_billing'

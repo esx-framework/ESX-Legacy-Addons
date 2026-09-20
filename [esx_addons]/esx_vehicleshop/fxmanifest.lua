@@ -6,7 +6,7 @@ game 'gta5'
 lua54 'yes'
 description 'Allows Players to buy & sell vehicles'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
 	'@esx_lib/imports.lua',
@@ -28,6 +28,9 @@ client_scripts {
 	'client/*.lua'
 }
 
-dependency 'es_extended'
+dependencies {
+	'esx_lib',
+	'es_extended'
+}
 
 export 'GeneratePlate'

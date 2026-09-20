@@ -8,7 +8,7 @@ game 'gta5'
 description 'Adds the ability to customise your clothing'
 
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 lua54 'yes'
 
@@ -31,6 +31,7 @@ client_scripts {
 }
 
 dependencies {
+	'esx_lib',
 	'es_extended',
 	'esx_skin'
 }

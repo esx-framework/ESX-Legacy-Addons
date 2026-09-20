@@ -8,7 +8,7 @@ end
 })
 local RegisteredSocieties = {}
 local SocietiesByName = {}
-local gradeUpdateLastAt = {}
+local gradeUpdateLimiters = {}
 
 local function getValidAmount(amount)
 	amount = tonumber(amount)
@@ -75,15 +75,19 @@ local function isGradeUpdateLimited(source, job, action)
 		return false
 	end
 
-	local key = ('%s:%s:%s'):format(source, job, action)
-	local now = GetGameTimer()
-
-	if now - (gradeUpdateLastAt[key] or 0) < cooldown then
-		return true
+	local limiter = gradeUpdateLimiters[action]
+	if not limiter then
+		limiter = xLib.rateLimiter({
+			capacity = 1,
+			refill = 1,
+			interval = cooldown,
+			staleMs = math.max(60000, cooldown * 4)
+		})
+		gradeUpdateLimiters[action] = limiter
 	end
 
-	gradeUpdateLastAt[key] = now
-	return false
+	local allowed = limiter:consume(('%s:%s'):format(source, job))
+	return not allowed
 end
 
 local function refreshJobOrFallback(job)
@@ -633,7 +637,12 @@ local UNIFORM_PROP_DRAWABLES <const> = {
 	ears_1 = true
 }
 
-local lastUniformSaveAt = {}
+local uniformSaveLimiter = xLib.rateLimiter({
+	capacity = 1,
+	refill = 1,
+	interval = math.max(1, Config.UniformSaveCooldown or 30000),
+	staleMs = math.max(60000, (Config.UniformSaveCooldown or 30000) * 4)
+})
 local uniformSaveInFlight = {}
 
 local function getUniformComponentBounds(component)
@@ -719,8 +728,7 @@ xLib.callback.registerCompat('esx_society:setJobUniform', function(source, cb, j
 		return cb(false)
 	end
 
-	local now = GetGameTimer()
-	local cooldownLeft = Config.UniformSaveCooldown - (now - (lastUniformSaveAt[job] or 0))
+	local cooldownLeft = uniformSaveLimiter:retryAfter(job)
 
 	if uniformSaveInFlight[job] or cooldownLeft > 0 then
 		xPlayer.showNotification(TranslateCap('uniform_cooldown', math.max(1, math.ceil(math.max(cooldownLeft, 0) / 1000))))
@@ -791,21 +799,23 @@ xLib.callback.registerCompat('esx_society:setJobUniform', function(source, cb, j
 	end
 
 	uniformSaveInFlight[job] = true
+	uniformSaveLimiter:consume(job)
 
 	MySQL.update(query, parameters, function(affectedRows)
 		uniformSaveInFlight[job] = nil
 
 		if not affectedRows or affectedRows == 0 then
+			uniformSaveLimiter:reset(job)
 			xPlayer.showNotification(TranslateCap('uniform_failed'))
 			return cb(false)
 		end
 
 		if not refreshJobOrFallback(job) then
+			uniformSaveLimiter:reset(job)
 			xPlayer.showNotification(TranslateCap('uniform_failed'))
 			return cb(false)
 		end
 
-		lastUniformSaveAt[job] = GetGameTimer()
 		xPlayer.showNotification(TranslateCap('uniform_saved', gradeLabel))
 		cb(true)
 	end)

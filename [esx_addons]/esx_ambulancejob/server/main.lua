@@ -2,8 +2,14 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 local playersHealing = {}
-local reviveCooldowns = {}
-local itemCooldowns, actionCooldowns = {}, {}
+local reviveLimiter = xLib.rateLimiter({ capacity = 1, refill = 1, interval = 8000, staleMs = 60000 })
+local actionLimiter = xLib.rateLimiter({ capacity = 1, refill = 1, interval = 3000, staleMs = 60000 })
+local pharmacyLimiter = xLib.rateLimiter({
+    capacity = 1,
+    refill = 1,
+    interval = math.max(1, tonumber(Config.PharmacyCooldown) or 5000),
+    staleMs = 60000
+})
 
 local function deathDbg(message, data)
     if not Config.DebugDeath then return end
@@ -107,7 +113,6 @@ RegisterNetEvent('esx_ambulancejob:revive', function(playerId)
     local xPlayer = ESX.GetPlayerFromId(src)
     local target = tonumber(playerId)
     local xTarget = target and ESX.GetPlayerFromId(target)
-    local now = GetGameTimer()
     deathDbg('revive:attempt', { src = src, target = target, hasMedic = xPlayer ~= nil, hasTarget = xTarget ~= nil })
     if not isAmbulanceOnDuty(xPlayer) then
         deathDbg('revive:blocked-medic-not-on-duty', { src = src, job = xPlayer and xPlayer.job })
@@ -122,8 +127,9 @@ RegisterNetEvent('esx_ambulancejob:revive', function(playerId)
         deathDbg('revive:blocked-medic-dead', { src = src })
         return
     end
-    if reviveCooldowns[src] and now - reviveCooldowns[src] < 8000 then
-        deathDbg('revive:blocked-cooldown', { src = src, elapsed = now - reviveCooldowns[src] })
+    local reviveAllowed, reviveRetry = reviveLimiter:consume(src)
+    if not reviveAllowed then
+        deathDbg('revive:blocked-cooldown', { src = src, retryAfter = reviveRetry })
         return
     end
     local nearby = isNearPlayer(src, target, 8.0)
@@ -132,7 +138,6 @@ RegisterNetEvent('esx_ambulancejob:revive', function(playerId)
         deathDbg('revive:blocked-nearby-or-target-alive', { src = src, target = target, nearby = nearby, targetDead = targetDead })
         return
     end
-    reviveCooldowns[src] = now
     local ok = exports.esx_death:Revive(target, 'ems')
     deathDbg('revive:export-result', { src = src, target = target, ok = ok })
     if ok then
@@ -170,7 +175,7 @@ RegisterNetEvent('esx_ambulancejob:svsearch', function()
 end)
 
 AddEventHandler('esx:playerDropped', function(playerId)
-    reviveCooldowns[playerId], itemCooldowns[playerId], actionCooldowns[playerId], playersHealing[playerId] = nil, nil, nil, nil
+    playersHealing[playerId] = nil
 end)
 
 RegisterNetEvent('esx_ambulancejob:heal')
@@ -178,13 +183,11 @@ AddEventHandler('esx_ambulancejob:heal', function(target, type)
 	local src = source
 	local xPlayer = ESX.GetPlayerFromId(source)
 	local xTarget = ESX.GetPlayerFromId(tonumber(target))
-	local now = GetGameTimer()
 	type = tostring(type or '')
 
 	if not isAmbulanceOnDuty(xPlayer) or not xTarget or (type ~= 'small' and type ~= 'big') or not isNearPlayer(src, xTarget.source, 8.0) then return end
-	if actionCooldowns[src] and now - actionCooldowns[src] < 3000 then return end
+	if not actionLimiter:consume(src) then return end
 
-	actionCooldowns[src] = now
 	TriggerClientEvent('esx_ambulancejob:heal', xTarget.source, type)
 end)
 
@@ -193,12 +196,10 @@ AddEventHandler('esx_ambulancejob:putInVehicle', function(target)
 	local src = source
 	local xPlayer = ESX.GetPlayerFromId(source)
 	local xTarget = ESX.GetPlayerFromId(tonumber(target))
-	local now = GetGameTimer()
 
 	if not isAmbulanceOnDuty(xPlayer) or not xTarget or not isNearPlayer(src, xTarget.source, 8.0) then return end
-	if actionCooldowns[src] and now - actionCooldowns[src] < 3000 then return end
+	if not actionLimiter:consume(src) then return end
 
-	actionCooldowns[src] = now
 	TriggerClientEvent('esx_ambulancejob:putInVehicle', xTarget.source)
 end)
 
@@ -298,7 +299,6 @@ RegisterNetEvent('esx_ambulancejob:giveItem')
 AddEventHandler('esx_ambulancejob:giveItem', function(itemName, amount)
 	local xPlayer = ESX.GetPlayerFromId(source)
 	amount = getValidItemAmount(amount)
-	local now = GetGameTimer()
 
 	if not isAmbulanceOnDuty(xPlayer) then
 		print(('[^2WARNING^7] Player ^5%s^7 Tried Giving Themselves -> ^5' .. tostring(itemName) .. '^7!'):format(source))
@@ -308,8 +308,7 @@ AddEventHandler('esx_ambulancejob:giveItem', function(itemName, amount)
 		return
 	end
 
-	if itemCooldowns[source] and now - itemCooldowns[source] < (Config.PharmacyCooldown or 5000) then return end
-	itemCooldowns[source] = now
+	if not pharmacyLimiter:consume(source) then return end
 
 	if xPlayer.canCarryItem(itemName, amount) then
 		xPlayer.addInventoryItem(itemName, amount)

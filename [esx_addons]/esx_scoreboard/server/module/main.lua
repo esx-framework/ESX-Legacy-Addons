@@ -41,6 +41,8 @@ local activeClients = {}
 --- @type table<number, table> Per-client request state and selected page.
 local requestState = {}
 
+local requestLimiters = {}
+
 --- @type table<number, table> Public player records keyed by source.
 local playersById = {}
 
@@ -231,20 +233,24 @@ local function isRateLimited(src, key, cooldownMs)
     return true
   end
 
-  local state = requestState[src]
-  if not state then
-    state = {}
-    requestState[src] = state
+  cooldownMs = math.max(1, math.floor(tonumber(cooldownMs) or 1))
+
+  local limiterState = requestLimiters[key]
+  if not limiterState or limiterState.cooldownMs ~= cooldownMs then
+    limiterState = {
+      cooldownMs = cooldownMs,
+      limiter = xLib.rateLimiter({
+        capacity = 1,
+        refill = 1,
+        interval = cooldownMs,
+        staleMs = math.max(60000, cooldownMs * 4)
+      })
+    }
+    requestLimiters[key] = limiterState
   end
 
-  local now = nowMs()
-  local previous = state[key] or 0
-  if previous > 0 and now - previous < cooldownMs then
-    return true
-  end
-
-  state[key] = now
-  return false
+  local allowed = limiterState.limiter:consume(src)
+  return not allowed
 end
 
 local function getPlayer(src)
@@ -958,7 +964,6 @@ AddEventHandler("playerDropped", function()
 
   removePlayer(src)
   activeClients[src] = nil
-  requestState[src] = nil
 end)
 
 AddEventHandler("esx:setJob", function(source)

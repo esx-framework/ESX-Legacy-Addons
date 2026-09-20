@@ -2,7 +2,12 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 local activeRequests = {}
-local requestCooldowns = {}
+local requestLimiter = xLib.rateLimiter({
+	capacity = 1,
+	refill = 1,
+	interval = math.max(1, tonumber(Config.PurchaseCooldown) or 750),
+	staleMs = math.max(60000, (tonumber(Config.PurchaseCooldown) or 750) * 4)
+})
 local ammoStateRequests = {}
 local ammoStateRequestId = 0
 
@@ -12,15 +17,12 @@ end
 
 local function BeginRequest(source, action)
 	local key = GetRequestKey(source, action)
-	local now = GetGameTimer()
-	local cooldown = tonumber(Config.PurchaseCooldown) or 750
 
-	if activeRequests[key] or (requestCooldowns[key] and requestCooldowns[key] > now) then
+	if activeRequests[key] or not requestLimiter:consume(key) then
 		return nil
 	end
 
 	activeRequests[key] = true
-	requestCooldowns[key] = now + math.max(cooldown, 0)
 	return key
 end
 
@@ -149,12 +151,6 @@ AddEventHandler('playerDropped', function()
 	for key in pairs(activeRequests) do
 		if key:sub(1, #prefix) == prefix then
 			activeRequests[key] = nil
-		end
-	end
-
-	for key in pairs(requestCooldowns) do
-		if key:sub(1, #prefix) == prefix then
-			requestCooldowns[key] = nil
 		end
 	end
 

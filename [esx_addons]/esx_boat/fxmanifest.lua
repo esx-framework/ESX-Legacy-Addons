@@ -8,7 +8,7 @@ game 'gta5'
 description 'Allows players to buy a boat'
 lua54 'yes'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
 	'@esx_lib/imports.lua',
@@ -32,6 +32,7 @@ client_scripts {
 }
 
 dependencies {
+	'esx_lib',
 	'es_extended',
 	'esx_vehicleshop'
 }

@@ -7,7 +7,7 @@ lua54 'yes'
 
 description 'Allows Players to recieve and Send Bills'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
 	'@esx_lib/imports.lua',
@@ -24,4 +24,7 @@ server_scripts {
 
 client_script 'client/main.lua'
 
-dependency 'es_extended'
+dependencies {
+	'esx_lib',
+	'es_extended'
+}

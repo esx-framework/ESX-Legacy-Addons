@@ -4,8 +4,6 @@
 local playersProcessingCannabis = {}
 local playersPickingCannabis = {}
 local playersSellingDrugs = {}
-local pickupCooldowns = {}
-local sellCooldowns = {}
 
 local PickupCooldown = 3500
 local PickupDuration = 3000
@@ -16,6 +14,8 @@ local SellDistance = 3.0
 local SellCooldown = 1500
 local MinCannabisPickup = 1
 local MaxCannabisPickup = 3
+local pickupLimiter = xLib.rateLimiter({ capacity = 1, refill = 1, interval = PickupCooldown, staleMs = 60000 })
+local sellLimiter = xLib.rateLimiter({ capacity = 1, refill = 1, interval = SellCooldown, staleMs = 60000 })
 
 local function NormalizeInteger(value, min, max)
 	value = tonumber(value)
@@ -108,8 +108,7 @@ AddEventHandler('esx_drugs:sellDrug', function(itemName, amount)
 		return
 	end
 
-	local now = GetGameTimer()
-	if (sellCooldowns[src] or 0) + SellCooldown > now then
+	if not sellLimiter:consume(src) then
 		return
 	end
 
@@ -139,7 +138,6 @@ AddEventHandler('esx_drugs:sellDrug', function(itemName, amount)
 	end
 
 	playersSellingDrugs[src] = true
-	sellCooldowns[src] = now
 	price = ESX.Math.Round(price * amount)
 
 	local removed = xPlayer.removeInventoryItem(xItem.name, amount)
@@ -191,14 +189,12 @@ AddEventHandler('esx_drugs:pickedUpCannabis', function(plantCoords)
 		return
 	end
 
-	local now = GetGameTimer()
-	if (pickupCooldowns[src] or 0) + PickupCooldown > now then
+	if not pickupLimiter:consume(src) then
 		return
 	end
 
 	if ValidatePickupCannabis(src, plantCoords) then
 		playersPickingCannabis[src] = true
-		pickupCooldowns[src] = now
 
 		SetTimeout(PickupDuration, function()
 			if not playersPickingCannabis[src] then
@@ -337,8 +333,6 @@ AddEventHandler('esx:playerDropped', function(playerId, reason)
 	CancelProcessing(playerId)
 	playersPickingCannabis[playerId] = nil
 	playersSellingDrugs[playerId] = nil
-	pickupCooldowns[playerId] = nil
-	sellCooldowns[playerId] = nil
 end)
 
 RegisterServerEvent('esx:onPlayerDeath')

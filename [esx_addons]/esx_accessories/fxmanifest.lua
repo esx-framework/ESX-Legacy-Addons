@@ -9,7 +9,7 @@ description 'Provides a way for players to customise their appearence with acces
 lua54 'yes'
 
 version '1.1'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
     '@esx_lib/imports.lua',
@@ -28,7 +28,8 @@ client_scripts {
 }
 
 dependencies {
-    'es_extended',
+	'esx_lib',
+	'es_extended',
     'esx_skin',
     'esx_datastore'
 }

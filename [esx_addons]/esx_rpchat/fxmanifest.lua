@@ -9,7 +9,7 @@ description 'Adds Command for RP, such as: /me, /do, /OOC and more'
 lua54 'yes'
 
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
 	'@esx_lib/imports.lua',

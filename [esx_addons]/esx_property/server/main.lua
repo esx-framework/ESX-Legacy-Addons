@@ -33,11 +33,16 @@ local PM = Config.PlayerManagement
 local Properties = {}
 local PropertyLocks = {}
 local PendingPropertySales = {}
-local PropertyRaidCooldowns = {}
 
 local PropertyActionDistance = 6.0
 local PropertySaleOfferDuration = 30000
 local PropertyRaidCooldown = 30000
+local propertyRaidLimiter = xLib.rateLimiter({
+  capacity = 1,
+  refill = 1,
+  interval = PropertyRaidCooldown,
+  staleMs = math.max(60000, PropertyRaidCooldown * 4)
+})
 
 local function SavePropertiesToDisk(Reason)
   if Properties and #Properties > 0 then
@@ -990,8 +995,7 @@ xLib.callback.registerCompat("esx_property:CanRaid", function(source, cb, Proper
     return cb(false)
   end
 
-  local now = GetGameTimer()
-  if PropertyRaidCooldowns[source] and PropertyRaidCooldowns[source] > now then
+  if propertyRaidLimiter:retryAfter(source) > 0 then
     return cb(false)
   end
 
@@ -1016,7 +1020,7 @@ xLib.callback.registerCompat("esx_property:CanRaid", function(source, cb, Proper
   end
 
   PropertyLocks[PropertyId] = true
-  PropertyRaidCooldowns[source] = now + PropertyRaidCooldown
+  propertyRaidLimiter:consume(source)
   cb(true)
 
   CreateThread(function()
@@ -1528,7 +1532,6 @@ end)
 
 AddEventHandler('playerDropped', function()
   local source = source
-  PropertyRaidCooldowns[source] = nil
   for token, offer in pairs(PendingPropertySales) do
     if offer.seller == source or offer.target == source then
       PendingPropertySales[token] = nil

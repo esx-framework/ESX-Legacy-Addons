@@ -4,8 +4,9 @@
 local BANK = {}
 
 local spawnedPeds, netIdTable = {}, {}
-local playerSessions, playerCooldowns, playerLocks = {}, {}, {}
+local playerSessions, playerLocks = {}, {}
 local atmModelLookup = {}
+local rateLimiters = {}
 
 local TRANSACTION_TYPES = {
     deposit = "DEPOSIT",
@@ -152,15 +153,27 @@ local function FormatLogValue(value)
 end
 
 local function IsRateLimited(playerId, key, cooldownMs)
-    local now = GetGameTimer()
-    playerCooldowns[playerId] = playerCooldowns[playerId] or {}
-
-    if (playerCooldowns[playerId][key] or 0) > now then
-        return true
+    cooldownMs = math.max(0, math.floor(tonumber(cooldownMs) or 0))
+    if cooldownMs <= 0 then
+        return false
     end
 
-    playerCooldowns[playerId][key] = now + cooldownMs
-    return false
+    local limiterState = rateLimiters[key]
+    if not limiterState or limiterState.cooldownMs ~= cooldownMs then
+        limiterState = {
+            cooldownMs = cooldownMs,
+            limiter = xLib.rateLimiter({
+                capacity = 1,
+                refill = 1,
+                interval = cooldownMs,
+                staleMs = math.max(60000, cooldownMs * 4)
+            })
+        }
+        rateLimiters[key] = limiterState
+    end
+
+    local allowed = limiterState.limiter:consume(playerId)
+    return not allowed
 end
 
 local function AcquirePlayerLock(playerId)
@@ -779,7 +792,6 @@ end)
 AddEventHandler("playerDropped", function()
     local playerId = source
     playerSessions[playerId] = nil
-    playerCooldowns[playerId] = nil
     playerLocks[playerId] = nil
 end)
 

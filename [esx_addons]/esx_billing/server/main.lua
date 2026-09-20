@@ -1,7 +1,12 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-local BillingCooldowns = {}
+local billingLimiter = xLib.rateLimiter({
+	capacity = 1,
+	refill = 1,
+	interval = math.max(1, tonumber(Config.BillingCooldown) or 3000),
+	staleMs = 60000
+})
 local BillingDailyTotals = {}
 local BillingLocks = {}
 local PendingBillConfirmations = {}
@@ -151,9 +156,7 @@ RegisterNetEvent('esx_billing:sendBill', function(targetId, sharedAccountName, l
 	end
 
 	local now = GetGameTimer()
-	local cooldown = tonumber(Config.BillingCooldown) or 3000
-	if BillingCooldowns[src] and now - BillingCooldowns[src] < cooldown then return end
-	BillingCooldowns[src] = now
+	if not billingLimiter:consume(src) then return end
 
 	if not isNearPlayer(src, xTarget.src) then return end
 	if not hasDailyQuota(xPlayer.getIdentifier(), amount) then return end

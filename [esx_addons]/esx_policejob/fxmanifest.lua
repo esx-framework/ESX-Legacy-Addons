@@ -8,7 +8,7 @@ game 'gta5'
 description 'Allows Players to RP as Police Officers (cars, outfits, handcuffing etc)'
 lua54 'yes'
 version '1.0.2'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
 	'@esx_lib/imports.lua',
@@ -31,6 +31,7 @@ client_scripts {
 }
 
 dependencies {
+	'esx_lib',
 	'es_extended',
 	'esx_billing',
 	'esx_vehicleshop'

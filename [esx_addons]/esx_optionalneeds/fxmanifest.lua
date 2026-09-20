@@ -8,9 +8,12 @@ game 'gta5'
 description 'Adds the ability to get drunk'
 lua54 'yes'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
-shared_script '@es_extended/imports.lua'
+shared_scripts {
+    '@esx_lib/imports.lua',
+    '@es_extended/imports.lua'
+}
 
 server_scripts {
     '@es_extended/locale.lua',
@@ -21,4 +24,9 @@ server_scripts {
 
 client_scripts {
     'client/main.lua'
+}
+
+dependencies {
+    'esx_lib',
+    'es_extended'
 }
