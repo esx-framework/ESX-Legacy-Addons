@@ -472,21 +472,34 @@ function Logs.purge()
         return 0
     end
 
+    local batchSize = math.max(50, math.min(tonumber(config().PurgeBatchSize) or 250, 1000))
+    local maxBatches = math.max(1, math.min(tonumber(config().PurgeMaxBatches) or 4, 20))
+    local batchDelay = math.max(0, math.min(tonumber(config().PurgeBatchDelay) or 250, 5000))
     local removed = 0
+    local deleteSql = ([[
+        DELETE l FROM admin_logs l
+        JOIN (
+            SELECT id FROM (
+                SELECT id
+                FROM admin_logs
+                WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)
+                ORDER BY created_at ASC, id ASC
+                LIMIT %d
+            ) expired_ids
+        ) expired ON expired.id = l.id
+    ]]):format(batchSize)
 
-    for _ = 1, 20 do
-        local affected = Helpers.safeUpdate(
-            "DELETE FROM admin_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY) LIMIT 1000",
-            { math.floor(days) })
+    for _ = 1, maxBatches do
+        local affected = Helpers.safeUpdate(deleteSql, { math.floor(days) })
 
         affected = tonumber(affected) or 0
         removed = removed + affected
 
-        if affected < 1000 then
+        if affected < batchSize then
             break
         end
 
-        Wait(0)
+        Wait(batchDelay)
     end
 
     return removed

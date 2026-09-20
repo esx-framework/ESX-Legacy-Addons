@@ -9,6 +9,7 @@ local MIGRATION_NAME <const> = "schema"
 local INDEX_MIGRATION_NAME <const> = "performance_indexes"
 local FILTER_INDEX_MIGRATION_NAME <const> = "filter_indexes"
 local MILEAGE_PRECISION_MIGRATION_NAME <const> = "mileage_precision"
+local POUND_NORMALIZATION_MIGRATION_NAME <const> = "pound_normalization"
 local LEGACY_MIGRATION_VERSION <const> = "1"
 local MIGRATION_VERSION <const> = "1.14.2"
 
@@ -165,6 +166,7 @@ local INDEXES <const> = {
     { "idx_owned_vehicles_owner_custom_name", "(`owner`, `custom_name`)" },
     { "idx_owned_vehicles_owner_stored_pound_plate", "(`owner`, `stored`, `pound`, `plate`)" },
     { "idx_owned_vehicles_owner_pound_plate_stored", "(`owner`, `pound`, `plate`, `stored`)" },
+    { "idx_owned_vehicles_plate_stored_pound", "(`plate`, `stored`, `pound`)" },
     { "idx_owned_vehicles_owner_favorite_plate", "(`owner`, `is_favorite`, `plate`)" },
 }
 
@@ -257,6 +259,21 @@ CreateThread(function()
             end
 
             markMigrationApplied(FILTER_INDEX_MIGRATION_NAME)
+        end
+
+        if not migrationApplied(appliedMigrationVersion(POUND_NORMALIZATION_MIGRATION_NAME)) then
+            ensureMigrationTable()
+
+            if ensureColumn("pound", "VARCHAR(60) NULL DEFAULT NULL") then
+                added = added + 1
+            end
+
+            if ensureIndex("idx_owned_vehicles_plate_stored_pound", "(`plate`, `stored`, `pound`)") then
+                indexed = indexed + 1
+            end
+
+            MySQL.update.await(("UPDATE `%s` SET `pound` = NULL WHERE `pound` = ''"):format(TABLE))
+            markMigrationApplied(POUND_NORMALIZATION_MIGRATION_NAME)
         end
 
         if not migrationApplied(appliedMigrationVersion(MILEAGE_PRECISION_MIGRATION_NAME)) then

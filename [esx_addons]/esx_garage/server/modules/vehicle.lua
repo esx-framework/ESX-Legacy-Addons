@@ -1444,7 +1444,7 @@ local function queueDeletedVehicleImpound(plate, model)
 
         local condition, plateParams = plateCondition(plate)
         local ok, row = pcall(MySQL.single.await,
-            ("SELECT `stored`, `pound`, `vehicle` FROM `owned_vehicles` WHERE %s AND `stored` = 0 AND (`pound` IS NULL OR `pound` = '') LIMIT 1")
+            ("SELECT `stored`, `pound`, `vehicle` FROM `owned_vehicles` WHERE %s AND `stored` = 0 AND `pound` IS NULL LIMIT 1")
             :format(condition),
             plateParams)
 

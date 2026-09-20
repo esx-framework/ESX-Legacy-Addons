@@ -176,6 +176,21 @@ local function ensureAdminLogSearchIndexes()
             print("[esx-adminmenu] Created idx_admin_logs_action_only")
         end
     end
+
+    if not indexExists("admin_logs", "idx_admin_logs_created_id") and not indexStartsWith("admin_logs", { "created_at", "id" }) then
+        print("[esx-adminmenu] Creating admin_logs retention index...")
+
+        local result = Helpers.safeQuery([[
+            ALTER TABLE admin_logs
+            ADD INDEX idx_admin_logs_created_id (created_at, id)
+        ]])
+
+        if result == nil then
+            print("[esx-adminmenu] Failed to create idx_admin_logs_created_id")
+        else
+            print("[esx-adminmenu] Created idx_admin_logs_created_id")
+        end
+    end
 end
 
 local function initDB()
@@ -216,7 +231,8 @@ local function initDB()
 			INDEX idx_admin_logs_actor (actor_identifier),
 			INDEX idx_admin_logs_target (target_identifier),
 			INDEX idx_admin_logs_action (namespace, action),
-			INDEX idx_admin_logs_created (created_at)
+			INDEX idx_admin_logs_created (created_at),
+			INDEX idx_admin_logs_created_id (created_at, id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 	]])
 	
