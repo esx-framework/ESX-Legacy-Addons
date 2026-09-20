@@ -76,6 +76,15 @@ local function NormalizeVehiclePropsForPaidCart(vehicleProps, cart)
     return WorkshopVehicle.NormalizePropsForPaidCart(vehicleProps, cart, myCar)
 end
 
+local function EnsureWorkshopVehicleModsLoaded(vehicle)
+    if not vehicle or vehicle == 0 then return end
+
+    SetVehicleModKit(vehicle, 0)
+    while not IsVehicleModLoadDone(vehicle) do
+        Wait(0)
+    end
+end
+
 local function ResetWorkshopCamera()
     if not Config.Workshop or not Config.Workshop.EnableCamera then return end
     if not WorkshopCamera then return end
@@ -365,9 +374,14 @@ local function CheckoutCart()
         return
     end
 
-    RestoreVehicleProps(vehicle, cartPreviewProps)
+    RestoreVehicleProps(vehicle, myCar)
+    for i = 1, #cart do
+        UpdateMods(cart[i])
+    end
+
     local vehicleProps = NormalizeVehiclePropsForPaidCart(xLib.game.getVehicleProperties(vehicle), cart)
     RestoreVehicleProps(vehicle, vehicleProps)
+    cartPreviewProps = vehicleProps
     lastPaidVehicleProps = vehicleProps
     pendingCartPurchase = true
     TriggerServerEvent('esx_lscustom:buyCart', {
@@ -490,6 +504,7 @@ local function OpenLSCustomsInterface(vehicle)
     pendingCartPurchase = false
 
     FreezeEntityPosition(vehicle, true)
+    EnsureWorkshopVehicleModsLoaded(vehicle)
     myCar = xLib.game.getVehicleProperties(vehicle)
     cartPreviewProps = myCar
     ClearCart()
@@ -672,6 +687,7 @@ CreateThread(function()
                                 else
                                     lsMenuIsShowed = true
                                     FreezeEntityPosition(vehicle, true)
+                                    EnsureWorkshopVehicleModsLoaded(vehicle)
                                     myCar = xLib.game.getVehicleProperties(vehicle)
                                     cartPreviewProps = myCar
                                     ClearCart()

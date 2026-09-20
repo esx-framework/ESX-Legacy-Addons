@@ -3,6 +3,7 @@
 
 local currentShop = nil
 local uiOpen = false
+local openingShop = false
 local nuiReady = false
 
 -- NUI Ready Callback
@@ -14,7 +15,7 @@ end)
 ---Opens shop NUI
 ---@param zone string Shop zone name
 function OpenShop(zone)
-	if uiOpen then
+	if uiOpen or openingShop then
 		DebugPrint('[esx_shops] Shop already open')
 		return
 	end
@@ -30,6 +31,7 @@ function OpenShop(zone)
 
 	local callbackReceived = false
 	local defaultTaxRate = Config.TaxRate
+	openingShop = true
 
 	local processedItems = ProcessItemImages(zoneData.Items)
 
@@ -53,6 +55,7 @@ function OpenShop(zone)
 
 			currentShop = zone
 			uiOpen = true
+			openingShop = false
 		end
 	end)
 
@@ -77,6 +80,7 @@ function OpenShop(zone)
 
 		currentShop = zone
 		uiOpen = true
+		openingShop = false
 	end)
 end
 
@@ -84,6 +88,7 @@ function CloseShop()
 	xLib.nui.close({ type = 'closeShop' })
 	currentShop = nil
 	uiOpen = false
+	openingShop = false
 end
 
 ---Gets current shop name

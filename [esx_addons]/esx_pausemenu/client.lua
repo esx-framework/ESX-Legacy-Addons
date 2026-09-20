@@ -4,6 +4,11 @@ local RESOURCE <const> = GetCurrentResourceName()
 local isOpen = false
 local isOpening = false
 local nativePauseOpen = false
+local NATIVE_MAP_CLOSE_CONTROLS <const> = {
+    177, -- INPUT_CELLPHONE_CANCEL / Backspace
+    202, -- INPUT_FRONTEND_CANCEL / ESC
+    322 -- INPUT_REPLAY_EXIT / ESC
+}
 
 local function debugPrint(message)
     if Config.Debug then
@@ -58,6 +63,26 @@ local function buildConfigForNui()
     }
 end
 
+local function shouldCloseNativeMap()
+    DisableControlAction(0, Config.Controls.pause, true)
+    DisableControlAction(0, Config.Controls.pauseAlt, true)
+
+    if IsDisabledControlJustReleased(0, Config.Controls.pause) or IsDisabledControlJustReleased(0, Config.Controls.pauseAlt) then
+        return true
+    end
+
+    for i = 1, #NATIVE_MAP_CLOSE_CONTROLS do
+        local control = NATIVE_MAP_CLOSE_CONTROLS[i]
+        DisableControlAction(0, control, true)
+
+        if IsDisabledControlJustReleased(0, control) then
+            return true
+        end
+    end
+
+    return false
+end
+
 local function openMenu()
     if isOpen or isOpening or nativePauseOpen or IsPauseMenuActive() or not ESX.PlayerLoaded then
         return
@@ -108,7 +133,12 @@ local function openNativePause(openMap)
         end
 
         while IsPauseMenuActive() do
-            Wait(250)
+            if openMap and shouldCloseNativeMap() then
+                SetFrontendActive(false)
+                break
+            end
+
+            Wait(openMap and 0 or 250)
         end
 
         nativePauseOpen = false

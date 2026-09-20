@@ -54,7 +54,9 @@ function ProcessPurchase(source, purchaseData, zone, cb)
 		return
 	end
 
-	if not ValidateInventorySpace(source, validatedItems) then
+	local inventoryBackend = GetShopInventoryBackend()
+
+	if inventoryBackend == 'ox_inventory' and not ValidateInventorySpace(source, validatedItems) then
 		local message = _U('inventory_full')
 		xPlayer.showNotification(message)
 		cb(false, message)
@@ -70,7 +72,7 @@ function ProcessPurchase(source, purchaseData, zone, cb)
 		return
 	end
 
-	if not ValidateInventorySpaceFinal(source, validatedItems) then
+	if inventoryBackend == 'ox_inventory' and not ValidateInventorySpaceFinal(source, validatedItems) then
 		local message = _U('inventory_full')
 		xPlayer.showNotification(message)
 		cb(false, message)

@@ -66,31 +66,86 @@ local function cartHasMod(cart, modType)
     return false
 end
 
+local function cartHasOffColor(cart, modType)
+    for i = 1, #cart do
+        local item = cart[i]
+        if item.modType == modType and item.modNum and item.modNum[1] == 0 and item.modNum[2] == 0 and item.modNum[3] == 0 then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function cartHasDefaultValue(cart, modType)
+    for i = 1, #cart do
+        if cart[i].modType == modType and cart[i].modNum == -1 then
+            return true
+        end
+    end
+
+    return false
+end
+
 function WorkshopVehicle.NormalizePropsForPaidCart(vehicleProps, cart, originalProps)
     if type(vehicleProps) ~= 'table' or type(cart) ~= 'table' or type(originalProps) ~= 'table' then return vehicleProps end
 
     if cartHasMod(cart, 'tyreSmokeColor') then
-        vehicleProps.modSmokeEnabled = true
+        if cartHasOffColor(cart, 'tyreSmokeColor') then
+            vehicleProps.modSmokeEnabled = false
+        else
+            vehicleProps.modSmokeEnabled = true
+        end
     else
         vehicleProps.modSmokeEnabled = originalProps.modSmokeEnabled == true
         vehicleProps.tyreSmokeColor = originalProps.tyreSmokeColor
     end
 
     if cartHasMod(cart, 'neonColor') then
-        vehicleProps.neonEnabled = { true, true, true, true }
+        if cartHasOffColor(cart, 'neonColor') then
+            vehicleProps.neonEnabled = { false, false, false, false }
+        else
+            vehicleProps.neonEnabled = { true, true, true, true }
+        end
     else
         vehicleProps.neonEnabled = originalProps.neonEnabled
         vehicleProps.neonColor = originalProps.neonColor
     end
 
-    if cartHasMod(cart, 'xenonColor') or cartHasMod(cart, 'modXenon') then
-        vehicleProps.modXenon = true
-    else
-        vehicleProps.modXenon = originalProps.modXenon == true
+    local xenonOff = false
+
+    for i = 1, #cart do
+        local item = cart[i]
+        if (item.modType == 'xenonColor' or item.modType == 'modXenon') and item.modNum == false then
+            xenonOff = true
+            break
+        end
     end
 
-    if not cartHasMod(cart, 'xenonColor') then
+    if cartHasMod(cart, 'xenonColor') or cartHasMod(cart, 'modXenon') then
+        if xenonOff then
+            vehicleProps.modXenon = false
+            vehicleProps.xenonColor = originalProps.xenonColor
+        else
+            vehicleProps.modXenon = true
+        end
+    else
+        vehicleProps.modXenon = originalProps.modXenon == true
         vehicleProps.xenonColor = originalProps.xenonColor
+    end
+
+    if cartHasMod(cart, 'modTurbo') then
+        vehicleProps.modTurbo = true
+    else
+        vehicleProps.modTurbo = originalProps.modTurbo == true
+    end
+
+    if cartHasDefaultValue(cart, 'plateIndex') then
+        vehicleProps.plateIndex = originalProps.plateIndex
+    end
+
+    if cartHasDefaultValue(cart, 'windowTint') then
+        vehicleProps.windowTint = originalProps.windowTint
     end
 
     return vehicleProps

@@ -800,9 +800,9 @@ Config.Menus = {
 		wheelType = 6,
 		price = 3.26
 	},
-		modBackWheelsType6 = {
+	modBackWheelsType6 = {
 		label = TranslateCap('motorcycle'),
-		parent = 'modBackWheelsTypes',
+		parent = 'modFrontWheelsTypes',
 		modType = 24,
 		wheelType = 6,
 		price = 3.26

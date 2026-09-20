@@ -35,6 +35,48 @@ local function isFiniteNumber(value)
 end
 
 ---@param value any
+---@return number?
+local function vehicleModelHash(value)
+    if type(value) == "number" and isFiniteNumber(value) then
+        return math.floor(value)
+    end
+
+    if type(value) ~= "string" then
+        return nil
+    end
+
+    value = value:gsub("^%s+", ""):gsub("%s+$", "")
+    if value == "" then
+        return nil
+    end
+
+    local numeric = tonumber(value)
+    if numeric and isFiniteNumber(numeric) then
+        return math.floor(numeric)
+    end
+
+    local ok, hash = pcall(GetHashKey, value)
+    if ok and type(hash) == "number" and hash ~= 0 then
+        return hash
+    end
+
+    return nil
+end
+
+---@param value number
+---@return number
+local function unsignedModelHash(value)
+    return value < 0 and value + 4294967296 or value
+end
+
+---@param left number
+---@param right number
+---@return boolean
+local function sameVehicleModel(left, right)
+    return left == right or unsignedModelHash(left) == unsignedModelHash(right)
+end
+
+---@param value any
 ---@return integer
 local function storedValue(value)
     return (value == true or value == 1 or value == "1") and 1 or 0
@@ -275,28 +317,24 @@ local function storedVehicleModel(row)
         return nil
     end
 
-    return tonumber(storedProps.model)
+    return vehicleModelHash(storedProps.model)
 end
 
 ---@param row OwnedVehicleRow
 ---@param entity integer
 ---@return boolean, number?
 local function validateStoredModel(row, entity)
-    local storedModel = storedVehicleModel(row)
-    if not storedModel then
-        return false, nil
-    end
-
-    local entityModel = GetEntityModel(entity)
+    local entityModel = vehicleModelHash(GetEntityModel(entity))
     if not entityModel then
         return false, nil
     end
 
-    if entityModel ~= storedModel then
+    local storedModel = storedVehicleModel(row)
+    if storedModel and not sameVehicleModel(entityModel, storedModel) then
         return false, nil
     end
 
-    return true, storedModel
+    return true, entityModel
 end
 
 ---@param xVehicle table

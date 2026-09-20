@@ -369,6 +369,28 @@ local function serverCall(name, payload)
     return result
 end
 
+local STORE_ERROR_LOCALES <const> = {
+    already_stored = "store_error_already_stored",
+    model_mismatch = "store_error_model_mismatch",
+    no_location = "store_error_no_location",
+    no_vehicle = "not_in_vehicle",
+    not_allowed = "cannot_access_garage",
+    not_owned = "not_owning_veh",
+    plate_conflict = "store_error_plate_conflict",
+    plate_mismatch = "store_error_plate_mismatch",
+    too_far = "store_error_too_far",
+}
+
+---@param result table?
+local function showStoreError(result)
+    local locale = result and STORE_ERROR_LOCALES[result.error]
+    if locale then
+        return ESX.ShowNotification(TranslateCap(locale), "error")
+    end
+
+    ESX.ShowNotification(TranslateCap("cannot_store"), "error")
+end
+
 ---@param data table?
 ---@return table?, string?
 local function fetchVehiclePage(data)
@@ -508,7 +530,7 @@ local function storeCurrentVehicle()
     if result and result.success then
         ESX.ShowNotification(TranslateCap("veh_stored"), "success")
     else
-        ESX.ShowNotification(TranslateCap("cannot_store"), "error")
+        showStoreError(result)
     end
 end
 

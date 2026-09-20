@@ -27,21 +27,14 @@ function ValidateInventorySpace(source, items)
 			return false
 		end
 
-		local currentWeight = xPlayer.getWeight and xPlayer.getWeight() or xPlayer.weight or 0
-		local maxWeight = xPlayer.getMaxWeight and xPlayer.getMaxWeight() or xPlayer.maxWeight or 0
-		local addedWeight = 0
-
 		for i = 1, itemCount do
 			local item = items[i]
-			local itemData = ESX.Items and ESX.Items[item.name]
-			if not itemData then
+			if not ESX.Items or not ESX.Items[item.name] then
 				return false
 			end
-
-			addedWeight = addedWeight + ((itemData.weight or Config.DefaultItemWeight or 1) * item.quantity)
 		end
 
-		return (currentWeight + addedWeight) <= maxWeight
+		return true
 	end
 end
 

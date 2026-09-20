@@ -8,7 +8,7 @@ Config.Brand = {
     title = "ESX LEGACY",
     tagline = "ROLEPLAY BEYOND LIMITS",
     city = "Los Santos",
-    established = "2020",
+    established = "2015",
     communityLine = "BUILT BY A COMMUNITY THAT CARES"
 }
 

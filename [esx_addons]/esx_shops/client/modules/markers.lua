@@ -3,6 +3,8 @@
 
 local markerZones = {}
 local lastZone = nil
+local nearbyZone = nil
+local textShown = false
 
 local ENTER_DISTANCE = 2.0
 local EXIT_DISTANCE = 2.5
@@ -38,15 +40,32 @@ function RegisterShopMarkers()
 				marker = zoneData.ShowMarker and createMarkerOptions() or false,
 				onEnter = function()
 					lastZone = zoneName
+					nearbyZone = zoneName
 					OnMarkerEnter(zoneName)
 
 					local msg = GetCurrentActionMsg()
-					if msg then
+					if msg and not IsUIOpen() and not textShown then
 						ESX.TextUI(msg)
+						textShown = true
+					end
+				end,
+				onInside = function()
+					local msg = GetCurrentActionMsg()
+					if nearbyZone == zoneName and msg and not IsUIOpen() and not textShown then
+						ESX.TextUI(msg)
+						textShown = true
 					end
 				end,
 				onExit = function()
-					ESX.HideUI()
+					if nearbyZone == zoneName then
+						nearbyZone = nil
+					end
+
+					if textShown then
+						ESX.HideUI()
+						textShown = false
+					end
+
 					OnMarkerExit(zoneName)
 				end
 			})
@@ -59,6 +78,11 @@ function GetLastZone()
 	return lastZone
 end
 
+---@return string|nil
+function GetNearbyShopZone()
+	return nearbyZone
+end
+
 function RemoveShopMarkers()
 	for i = 1, #markerZones do
 		if markerZones[i] and markerZones[i].remove then
@@ -68,4 +92,6 @@ function RemoveShopMarkers()
 
 	markerZones = {}
 	lastZone = nil
+	nearbyZone = nil
+	textShown = false
 end

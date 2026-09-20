@@ -103,7 +103,7 @@ function applyBrand(brand = {}) {
     setText('brandKicker', brand.kicker || 'FIVEM ROLEPLAY');
     setText('brandTagline', brand.tagline || 'ROLEPLAY BEYOND LIMITS');
     setText('cityTop', brand.city || 'Los Santos');
-    setText('establishedText', brand.established || '2020');
+    setText('establishedText', brand.established || '2015');
     setText('communityLine', brand.communityLine || 'BUILT BY A COMMUNITY THAT CARES');
 }
 
@@ -333,7 +333,7 @@ const demoData = {
         brandColor: '#FB9B04', darkestColor: '#161616', darkColor: '#252525', midColor: '#383838', lightColor: '#969696', lightestColor: '#F2F2F2'
     },
     config: {
-        brand: { kicker: 'FIVEM ROLEPLAY', tagline: 'ROLEPLAY BEYOND LIMITS', city: 'Los Santos', established: '2020', communityLine: 'BUILT BY A COMMUNITY THAT CARES' },
+        brand: { kicker: 'FIVEM ROLEPLAY', tagline: 'ROLEPLAY BEYOND LIMITS', city: 'Los Santos', established: '2015', communityLine: 'BUILT BY A COMMUNITY THAT CARES' },
         links: { discord: 'https://discord.gg/esx-framework', rules: 'https://esx-framework.org/', store: 'https://store.example.com' }
     },
     player: { id: 152, name: 'Rwixy', role: 'Unemployed', bank: 125460, cash: 3250, job: 'Unemployed', playTime: 45360, players: 231, maxPlayers: 1024, serverName: 'ESX LEGACY' },

@@ -69,6 +69,42 @@ local function getPaymentDeadline()
 	return os.time() + 45
 end
 
+local function getPaidCartProps(cart)
+	local paid = {}
+	if type(cart) ~= 'table' then return paid end
+
+	for i = 1, #cart do
+		local normalized = WorkshopPricing.NormalizeCartItem(cart[i])
+		if normalized then
+			local modType = normalized.modType
+			paid[modType] = true
+
+			if modType == 'modFrontWheels' or modType == 'modBackWheels' then
+				paid.wheels = true
+			elseif modType == 'neonColor' then
+				paid.neonEnabled = true
+			elseif modType == 'tyreSmokeColor' then
+				paid.modSmokeEnabled = true
+			elseif modType == 'xenonColor' then
+				paid.modXenon = true
+			end
+		end
+	end
+
+	return paid
+end
+
+local function restoreUnpaidWatchedProps(vehicleProps, originalProps, paidProps)
+	if type(vehicleProps) ~= 'table' or type(originalProps) ~= 'table' then return end
+
+	local watchedProps = WorkshopValidation.GetWatchedVehicleProps()
+	for watchedKey in pairs(watchedProps) do
+		if not paidProps[watchedKey] then
+			vehicleProps[watchedKey] = originalProps[watchedKey]
+		end
+	end
+end
+
 local function decodeVehicleProps(vehicleJson)
 	if type(vehicleJson) ~= 'string' then return nil end
 
@@ -219,13 +255,15 @@ RegisterNetEvent('esx_lscustom:buyCart', function(payload, netId)
 		return sendCartResult(source, false, TranslateCap('no_valid_changes'))
 	end
 
+	restoreUnpaidWatchedProps(vehicleProps, session.props, getPaidCartProps(payload.cart))
+
 	local validProps, invalidProp = WorkshopValidation.VehiclePropsMatchPaidCart(session.props, vehicleProps, payload.cart)
 	if not validProps then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to save unpaid LS Customs property ^5%s^7'):format(source, tostring(invalidProp)))
 		return sendCartResult(source, false, TranslateCap('purchase_invalid_changes'))
 	end
 
-	local validValues, invalidValue = WorkshopValidation.CartValuesMatchVehicleProps(vehicleProps, payload.cart)
+	local validValues, invalidValue = WorkshopValidation.CartValuesMatchVehicleProps(vehicleProps, payload.cart, session.props)
 	if not validValues then
 		print(('[^3WARNING^7] Player ^5%s^7 attempted LS Customs cart mismatch on ^5%s^7'):format(source, tostring(invalidValue)))
 		return sendCartResult(source, false, TranslateCap('purchase_vehicle_mismatch'))
@@ -304,10 +342,25 @@ RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netI
 	end
 
 	if Config.Workshop and Config.Workshop.UseCart then
-		local validPaidProps, invalidPaidProp = WorkshopValidation.WatchedVehiclePropsEqual(session.paidProps, vehicleProps)
-		if not validPaidProps then
-			print(('[^3WARNING^7] Player ^5%s^7 attempted to save unpaid LS Customs property ^5%s^7'):format(source, tostring(invalidPaidProp)))
+		local paidProps = session.paidProps
+		restoreUnpaidWatchedProps(vehicleProps, paidProps, {})
+
+		local paidPropsMatch, invalidPaidProp = WorkshopValidation.WatchedVehiclePropsEqual(session.paidProps, vehicleProps)
+		if not paidPropsMatch then
+			print(('[^3WARNING^7] Player ^5%s^7 attempted to save LS Customs property ^5%s^7 outside the paid snapshot'):format(source, tostring(invalidPaidProp)))
 			return
+		end
+
+		local watchedProps = WorkshopValidation.GetWatchedVehicleProps()
+		for watchedKey in pairs(watchedProps) do
+			if paidProps[watchedKey] ~= nil then
+				local oldValue = vehicleProps[watchedKey]
+				local staleToggle = oldValue == false and paidProps[watchedKey] == true
+				if oldValue ~= nil and type(oldValue) ~= 'table' and not staleToggle and oldValue ~= paidProps[watchedKey] then
+					print(('[^3WARNING^7] Player ^5%s^7 attempted to save unpaid LS Customs property ^5%s^7 (overridden from paid snapshot)'):format(source, tostring(watchedKey)))
+				end
+				vehicleProps[watchedKey] = paidProps[watchedKey]
+			end
 		end
 	end
 
