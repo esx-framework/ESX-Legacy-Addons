@@ -15,8 +15,7 @@
     for (const [id, key] of Object.entries({
       eyebrow: 'eyebrow', 'title-first': 'titleFirst', 'title-second': 'titleSecond',
       'title-accent': 'titleAccent', 'description-first': 'descriptionFirst',
-      'description-second': 'descriptionSecond', 'automatic-transfer': 'automaticTransfer',
-      'time-remaining': 'timeRemaining'
+      'description-second': 'descriptionSecond', 'automatic-transfer': 'automaticTransfer'
     })) $(id).textContent = t(key);
   }
   const number = value => Math.max(0, Number(value) || 0);
@@ -52,6 +51,11 @@
       for (const [property, value] of [['--brand', state.brand.color], ['--brand-bright', state.brand.bright]]) {
         if (/^#[\da-f]{6}$/i.test(value)) document.documentElement.style.setProperty(property, value);
       }
+      if (/^#[\da-f]{6}$/i.test(state.brand.color)) {
+        const hex = state.brand.color.slice(1);
+        const rgb = [0, 2, 4].map(offset => parseInt(hex.slice(offset, offset + 2), 16)).join(',');
+        document.documentElement.style.setProperty('--brand-rgb', rgb);
+      }
     }
     const [minutes, seconds] = formatTime(state.remaining).split(':');
     $('countdown').replaceChildren(document.createTextNode(minutes), Object.assign(document.createElement('span'), { textContent: ':' }), document.createTextNode(seconds));
@@ -67,7 +71,6 @@
     $('distress-title').textContent = t(state.distressPending ? 'distressSending' : cooldown > 0 ? 'distressRequested' : state.distressSent ? 'distressRepeat' : 'distressRequest');
     $('distress-description').textContent = cooldown > 0 ? t('distressCooldown', { time: formatTime(cooldown) }) : t('distressDescription');
     $('respawn').disabled = early > 0 || !!state.pending;
-    $('lock-icon').style.opacity = early > 0 ? '1' : '0';
     $('respawn-title').textContent = t(state.pending ? 'respawnPreparing' : 'respawnTitle');
     const cost = number(state.fine) > 0 && number(state.remaining) > 0
       ? `$${number(state.fine).toLocaleString(t('numberLocale'))}` : t('respawnFree');
