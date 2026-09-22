@@ -2,7 +2,7 @@
 -- Copyright (C) 2026 ESX Framework
 
 Config = {}
-Config.Locale = 'en' -- Use GetConvar('esx:locale', 'en') to follow the server language.
+Config.Locale = GetConvar('esx:locale', 'en')
 Config.EnableControls = true
 
 Config.Radial = {

@@ -105,7 +105,7 @@ local function profileFor(player)
         name = player.getName(),
         id = player.getSource(),
         age = ageFromBirth(player.get('dateofbirth')),
-        gender = sex == 'm' and 'Male' or sex == 'f' and 'Female' or nil,
+        gender = sex == 'm' and TranslateCap('gender_male') or sex == 'f' and TranslateCap('gender_female') or nil,
         phone = player.get('phoneNumber'),
         job = {
             name = job.name,
@@ -150,21 +150,21 @@ local function changeJob(source, name)
     local player = ESX.Player(source)
 
     if not player or type(name) ~= 'string' or not IsNearCentre(source) then
-        return {ok = false, message = 'Please visit the Job Center to change jobs.'}
+        return {ok = false, message = TranslateCap('visit_center')}
     end
 
     if not IsJobAvailable(name) then
-        return {ok = false, message = 'This job is not available.'}
+        return {ok = false, message = TranslateCap('job_unavailable')}
     end
 
     if player.getJob().name == name then
-        return {ok = false, message = 'You already have this job.'}
+        return {ok = false, message = TranslateCap('already_job')}
     end
 
     local now = GetGameTimer()
 
     if lastChange[source] and now - lastChange[source] < 1500 then
-        return {ok = false, message = 'Please wait a moment before changing jobs again.'}
+        return {ok = false, message = TranslateCap('change_cooldown')}
     end
 
     lastChange[source] = now
@@ -198,8 +198,10 @@ exports('UpdateJobProgress', function(playerId, name, data)
     }
 
     if type(data.stats) == 'table' then
+        local count = 0
+
         for key, value in pairs(data.stats) do
-            if #progress.stats >= 64 then
+            if count >= 64 then
                 break
             end
 
@@ -207,10 +209,39 @@ exports('UpdateJobProgress', function(playerId, name, data)
                 key = tostring(key)
             end
 
-            if type(value) == 'number' and math.abs(value) < 1e15 then
+            local valid = type(value) == 'number' and math.abs(value) < 1e15 or type(value) == 'string' and #value <= 64
+
+            if key ~= 'extra' and valid then
                 progress.stats[key] = value
-            elseif type(value) == 'string' and #value <= 64 then
-                progress.stats[key] = value
+                count = count + 1
+            end
+        end
+
+        if type(data.stats.extra) == 'table' then
+            local extra = {}
+
+            for i = 1, #data.stats.extra do
+                if #extra >= 3 then
+                    break
+                end
+
+                local entry = data.stats.extra[i]
+
+                if type(entry) == 'table' then
+                    local label = xLib.validation.string(entry.label, {maxLength = 64})
+                    local value = xLib.validation.string(type(entry.value) == 'number' and tostring(entry.value) or entry.value, {maxLength = 64})
+
+                    if label and value then
+                        extra[#extra + 1] = {
+                            label = label,
+                            value = value
+                        }
+                    end
+                end
+            end
+
+            if #extra > 0 then
+                progress.stats.extra = extra
             end
         end
     end
@@ -225,12 +256,14 @@ exports('UpdateJobProgress', function(playerId, name, data)
 
             if type(task) == 'table' then
                 local title = xLib.validation.string(task.title, {maxLength = 64})
+                local description = xLib.validation.string(task.description, {maxLength = 128})
                 local current = xLib.validation.integer(task.current, 0, 100000, 'floor')
                 local target = xLib.validation.integer(task.target, 0, 100000, 'floor')
 
                 if title and current and target then
                     progress.tasks[#progress.tasks + 1] = {
                         title = title,
+                        description = description,
                         current = current,
                         target = target
                     }

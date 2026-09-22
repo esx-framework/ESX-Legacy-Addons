@@ -159,7 +159,6 @@ function OpenVehicleSpawnerMenu()
                 xLib.callback("esx_taxijob:SpawnVehicle", false, function()
                     return
                 end, vehicleProps.model, vehicleProps)
-                TriggerServerEvent('esx_society:removeVehicleFromGarage', 'taxi', vehicleProps)
                 ESX.CloseContext()
             end, function(menu)
                 CurrentAction = 'vehicle_spawner'

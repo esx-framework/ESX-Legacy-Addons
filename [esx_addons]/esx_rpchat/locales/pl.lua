@@ -11,4 +11,5 @@ Locales['pl'] = {
   ['do_prefix'] = 'do | %s',
   ['generic_argument_name'] = 'wiadomość',
   ['generic_argument_help'] = 'wysyłana wiadomość',
+  ['rate_limited'] = 'Poczekaj %s s przed wysłaniem kolejnej wiadomości.',
 }

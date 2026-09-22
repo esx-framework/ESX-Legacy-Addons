@@ -171,6 +171,25 @@ local function validateGarageVehicle(vehicle)
 	return true
 end
 
+local function getGarageVehicleEntity(source, vehicle)
+	local ped = GetPlayerPed(source)
+	if not ped or ped == 0 then return nil end
+
+	local entity = GetVehiclePedIsIn(ped, false)
+	if not entity or entity == 0 then
+		entity = GetVehiclePedIsIn(ped, true)
+	end
+
+	if not entity or entity == 0 or not DoesEntityExist(entity) then return nil end
+	if #(GetEntityCoords(ped) - GetEntityCoords(entity)) > 10.0 then return nil end
+	if normalizePlate(GetVehicleNumberPlateText(entity)) ~= vehicle.plate then return nil end
+
+	local model = type(vehicle.model) == 'string' and (tonumber(vehicle.model) or joaat(vehicle.model)) or vehicle.model
+	if model ~= nil and GetEntityModel(entity) ~= model then return nil end
+
+	return entity
+end
+
 local function getValidJobGrade(job, grade)
 	grade = tonumber(grade)
 	if not grade or grade ~= math.floor(grade) then
@@ -345,6 +364,15 @@ AddEventHandler('esx_society:putVehicleInGarage', function(societyName, vehicle)
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to put vehicle in non-existing society garage - ^5%s^7!'):format(source, societyName))
 		return
 	end
+
+	local entity = getGarageVehicleEntity(source, vehicle)
+	if not entity then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to store a vehicle they are not using in society garage - ^5%s^7!'):format(source, societyName))
+		return
+	end
+
+	vehicle.model = GetEntityModel(entity)
+
 	TriggerEvent('esx_datastore:getSharedDataStore', society.datastore, function(store)
 		local garage = store.get('garage') or {}
 
@@ -356,6 +384,7 @@ AddEventHandler('esx_society:putVehicleInGarage', function(societyName, vehicle)
 
 		table.insert(garage, vehicle)
 		store.set('garage', garage)
+		DeleteEntity(entity)
 	end)
 end)
 

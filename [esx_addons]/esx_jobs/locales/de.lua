@@ -25,6 +25,7 @@ Locales['de'] = {
   ['spawn_veh_button'] = 'Drücke [E] um das Lieferfahrzeug auszuparken',
   ['spawn_truck_button'] = 'Drücke [E] um dem Truck auszuparken.',
   ['spawn_blocked'] = 'Ein Fahrzeug blockiert den ausparkpunkt!',
+  ['vehicle_already_out'] = 'Du musst zuerst dein aktuelles Fahrzeug zurückgeben!',
   ['service_vh'] = 'Service Fahrzeug',
   ['return_vh'] = 'Fahrzeug rückgabe',
   ['return_vh_button'] = 'Drücke [E] um das Fahrzeug zurückzugeben.',

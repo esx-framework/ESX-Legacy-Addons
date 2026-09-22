@@ -63,6 +63,7 @@ Locales['fi'] = {
   -- Service
   ['service_max'] = 'et voi astua vuoroon, maksimi poliiseja jo kentällä: %s/%s',
   ['service_not'] = 'et voi astua vuoroon, sinulla ei ole työvaatteita päällä.',
+  ['off_duty'] = 'et ole vuorossa.',
   ['service_anonunce'] = 'vuoro informaatio',
   ['service_in'] = 'astuit vuoroon, tervetuloa!',
   ['service_in_announce'] = 'henkilö %s astui vuoroon!',

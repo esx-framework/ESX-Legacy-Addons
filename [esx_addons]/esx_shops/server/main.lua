@@ -7,7 +7,7 @@ local function RegisterConfiguredShopItems()
 		return
 	end
 
-	if type(ESX.AddItems) ~= 'function' then
+	if not ESX.IsFunctionReference(ESX.AddItems) then
 		DebugPrint('[esx_shops] ESX.AddItems is not available; make sure shop items exist in the items table')
 		return
 	end

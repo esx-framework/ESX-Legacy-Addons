@@ -63,6 +63,7 @@ Locales['pl'] = {
   -- Service
   ['service_max'] = 'nie możesz wejść do służby, maksymalna liczba oficerów w służbie: %s/%s',
   ['service_not'] = 'nie rozpoczynasz służby! Najpierw musisz się przebrać.',
+  ['off_duty'] = 'nie jesteś na służbie.',
   ['service_anonunce'] = 'informacje o służbie',
   ['service_in'] = 'rozpoczynasz służbe, Witaj!',
   ['service_in_announce'] = 'operator %s rozpoczyna służbę!',

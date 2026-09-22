@@ -3,7 +3,7 @@
 
 local Wardrobe = { removed = {}, hairFixed = false, savedHair = nil }
 Accessories.Wardrobe = Wardrobe
-local forceHairSkin
+local hairOverride
 
 local function snapshot(skin)
     local result = {}
@@ -54,6 +54,7 @@ function Wardrobe.Clear()
     Wardrobe.lastSkin = nil
     Wardrobe.hairFixed = false
     Wardrobe.savedHair = nil
+    hairOverride = nil
 end
 
 function Wardrobe.Read()
@@ -103,9 +104,21 @@ local function validValues(category, values)
     return true
 end
 
+local function setHair(hair)
+    SetPedComponentVariation(PlayerPedId(), 2, hair.hair_1, hair.hair_2, 2)
+    SetPedHairColor(PlayerPedId(), hair.hair_color_1, hair.hair_color_2)
+end
+
+local function forceHairSkin(hair)
+    hairOverride = hair
+    if hair then setHair(hair) end
+    Wardrobe.lastSkin = snapshot(exports.skinchanger:GetSkin())
+end
+
 local function apply(skin, patch)
     -- Keep skinchanger's state consistent with the ped and other ESX clothing scripts.
     exports.skinchanger:LoadClothes(skin, patch)
+    if Wardrobe.hairFixed and hairOverride then setHair(hairOverride) end
     Wardrobe.lastSkin = snapshot(exports.skinchanger:GetSkin())
 end
 
@@ -160,9 +173,8 @@ function Wardrobe.Restore()
     if next(patch) then apply(skin, patch) end
     Wardrobe.removed = {}
     if Wardrobe.hairFixed and Wardrobe.savedHair then
-        SetPedComponentVariation(PlayerPedId(), 2, Wardrobe.savedHair.hair_1, Wardrobe.savedHair.hair_2, 2)
-        SetPedHairColor(PlayerPedId(), Wardrobe.savedHair.hair_color_1, Wardrobe.savedHair.hair_color_2)
-        forceHairSkin(Wardrobe.savedHair)
+        setHair(Wardrobe.savedHair)
+        forceHairSkin(nil)
         Wardrobe.hairFixed = false
         Wardrobe.savedHair = nil
     end
@@ -194,17 +206,6 @@ function Wardrobe.RepairHair()
     return true
 end
 
-function forceHairSkin(hair)
-    local skin = exports.skinchanger:GetSkin()
-    if type(skin) == 'table' then
-        skin.hair_1 = hair.hair_1 or 0
-        skin.hair_2 = hair.hair_2 or 0
-        skin.hair_color_1 = hair.hair_color_1 or 0
-        skin.hair_color_2 = hair.hair_color_2 or 0
-    end
-    Wardrobe.lastSkin = snapshot(exports.skinchanger:GetSkin())
-end
-
 function Wardrobe.ToggleFixHair()
     local ped = PlayerPedId()
     if not Wardrobe.IsSupported() then return false, 'unsupported' end
@@ -215,9 +216,8 @@ function Wardrobe.ToggleFixHair()
     playClothingAnimation({ id = 'repairHair' }, direction)
 
     if Wardrobe.hairFixed and Wardrobe.savedHair then
-        SetPedComponentVariation(ped, 2, Wardrobe.savedHair.hair_1, Wardrobe.savedHair.hair_2, 2)
-        SetPedHairColor(ped, Wardrobe.savedHair.hair_color_1, Wardrobe.savedHair.hair_color_2)
-        forceHairSkin(Wardrobe.savedHair)
+        setHair(Wardrobe.savedHair)
+        forceHairSkin(nil)
         Wardrobe.hairFixed, Wardrobe.savedHair = false, nil
     else
         Wardrobe.savedHair = {
@@ -226,10 +226,8 @@ function Wardrobe.ToggleFixHair()
             hair_color_1 = (type(skin.hair_color_1) == 'number' and skin.hair_color_1) or 0,
             hair_color_2 = (type(skin.hair_color_2) == 'number' and skin.hair_color_2) or 0
         }
-        SetPedComponentVariation(ped, 2, 0, 0, 2)
-        SetPedHairColor(ped, 0, 0)
-        forceHairSkin({ hair_1 = 0, hair_2 = 0, hair_color_1 = 0, hair_color_2 = 0 })
         Wardrobe.hairFixed = true
+        forceHairSkin({ hair_1 = 0, hair_2 = 0, hair_color_1 = 0, hair_color_2 = 0 })
     end
     return true
 end

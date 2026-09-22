@@ -11,4 +11,5 @@ Locales['en'] = {
   ['do_prefix'] = 'do | %s',
   ['generic_argument_name'] = 'message',
   ['generic_argument_help'] = 'the message',
+  ['rate_limited'] = 'Please wait %s seconds before sending another message.',
 }

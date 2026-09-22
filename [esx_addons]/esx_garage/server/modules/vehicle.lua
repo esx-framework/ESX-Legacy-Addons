@@ -330,7 +330,7 @@ local function validateStoredModel(row, entity)
     end
 
     local storedModel = storedVehicleModel(row)
-    if storedModel and not sameVehicleModel(entityModel, storedModel) then
+    if not storedModel or not sameVehicleModel(entityModel, storedModel) then
         return false, nil
     end
 
@@ -669,7 +669,7 @@ local function hasUnmanagedWorldVehicle(plateKey, expectedModel, managedEntity)
     for i = 1, #vehicles do
         local veh = vehicles[i]
         if veh ~= managedEntity
-            and GetEntityModel(veh) == expectedModel
+            and sameVehicleModel(GetEntityModel(veh), expectedModel)
             and normPlate(GetVehicleNumberPlateText(veh) or "") == plateKey then
             return true
         end
@@ -1491,7 +1491,7 @@ local function queueDeletedVehicleImpound(plate, model)
         end
 
         local storedModel = storedVehicleModel(row)
-        if type(model) == "number" and model ~= 0 and storedModel and storedModel ~= model then
+        if type(model) == "number" and model ~= 0 and storedModel and not sameVehicleModel(storedModel, model) then
             return
         end
 

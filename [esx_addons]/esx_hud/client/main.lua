@@ -15,7 +15,21 @@ function HUD:Toggle(state)
     if state then self:UpdateRadar() else DisplayRadar(false) end
 end
 
+function HUD:GetTheme()
+    local theme = xLib.colors.getESXTheme({
+        primaryColor = Config.Default.AccentColor ~= "" and Config.Default.AccentColor or nil,
+        secondaryColor = "#191919",
+    })
+
+    if theme.logoUrl == "" then
+        theme.logoUrl = Config.Default.ServerLogo or ""
+    end
+
+    return theme
+end
+
 function HUD:SetHudColor()
+    initialConfig.Theme = self:GetTheme()
     xLib.nui.send({ type = "SET_CONFIG_DATA", value = initialConfig })
 end
 

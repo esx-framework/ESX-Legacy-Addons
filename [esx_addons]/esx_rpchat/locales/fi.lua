@@ -11,4 +11,5 @@ Locales['fi'] = {
   ['do_prefix'] = 'do | %s',
   ['generic_argument_name'] = 'viesti',
   ['generic_argument_help'] = 'viestin sisältö',
+  ['rate_limited'] = 'Odota %s sekuntia ennen kuin lähetät uuden viestin.',
 }

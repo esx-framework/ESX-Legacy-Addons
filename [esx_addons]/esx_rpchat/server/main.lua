@@ -27,13 +27,14 @@ local chatLimiters = {
 	ooc = createChatLimiter('OocCooldown', 3000),
 	twt = createChatLimiter('TwtCooldown', 10000),
 	anontwt = createChatLimiter('AnonTwtCooldown', 15000),
+	me = createChatLimiter('MeCooldown', 1000),
+	['do'] = createChatLimiter('DoCooldown', 1000),
 }
 
 local function sendRateLimitMessage(playerId, remainingMs)
 	local seconds = math.max(1, math.ceil(remainingMs / 1000))
-	local message = (Config.RateLimitMessage or "Please wait %s seconds before sending another message."):format(seconds)
 
-	TriggerClientEvent('chat:addMessage', playerId, {args = {'SYSTEM', message}, color = {255, 0, 0}})
+	TriggerClientEvent('chat:addMessage', playerId, {args = {'SYSTEM', TranslateCap('rate_limited', seconds)}, color = {255, 0, 0}})
 end
 
 local function isRateLimited(playerId, key)
@@ -59,8 +60,31 @@ local function getProximityDistance()
 	return distance
 end
 
+local function getProximityMaxLength()
+	local maxLength = math.floor(tonumber(Config.ProximityMaxLength) or 256)
+	if maxLength <= 0 then
+		return 256
+	end
+	return maxLength
+end
+
+local function clampProximityMessage(message)
+	local maxLength = getProximityMaxLength()
+	local length = utf8.len(message)
+
+	if not length then
+		return message:sub(1, maxLength)
+	end
+
+	if length <= maxLength then
+		return message
+	end
+
+	return message:sub(1, utf8.offset(message, maxLength + 1) - 1)
+end
+
 local function getProximityTargets(playerId)
-	local nearby = xLib.onesync.getPlayersInArea(playerId, getProximityDistance(), nil, GetPlayerRoutingBucket(playerId))
+	local nearby = ESX.OneSync.GetPlayersInArea(playerId, getProximityDistance(), nil, GetPlayerRoutingBucket(playerId)) or {}
 	local targets = {}
 	local hasSender = false
 
@@ -134,7 +158,11 @@ RegisterCommand('me', function(playerId, args, rawCommand)
 	if playerId == 0 then
 		print('[^1ERROR^7] This Command Cannot Be Used By The Console!')
 	else
-		args = table.concat(args, ' ')
+		if isRateLimited(playerId, 'me') then
+			return
+		end
+
+		args = clampProximityMessage(table.concat(args, ' '))
 		local playerName = GetRealPlayerName(playerId)
 
 		sendProximityMessage(playerId, TranslateCap('me_prefix', playerName), args, {255, 0, 0})
@@ -145,7 +173,11 @@ RegisterCommand('do', function(playerId, args, rawCommand)
 	if playerId == 0 then
 		print('[^1ERROR^7] This Command Cannot Be Used By The Console!')
 	else
-		args = table.concat(args, ' ')
+		if isRateLimited(playerId, 'do') then
+			return
+		end
+
+		args = clampProximityMessage(table.concat(args, ' '))
 		local playerName = GetRealPlayerName(playerId)
 
 		sendProximityMessage(playerId, TranslateCap('do_prefix', playerName), args, {0, 0, 255})

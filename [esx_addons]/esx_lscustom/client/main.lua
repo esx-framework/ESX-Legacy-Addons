@@ -5,7 +5,7 @@ local Vehicles, myCar = {}, {}
 local lsMenuIsShowed, HintDisplayed, isInLSMarker = false, false, false
 local gameBuild = GetGameBuildNumber()
 local pendingCartPurchase = false
-local cartPreviewProps, lastPaidVehicleProps
+local cartPreviewProps
 local nuiIsOpen, currentNuiMenu, currentNuiColor = false, 'main', nil
 local CloseWorkshop
 local SendNuiState
@@ -77,12 +77,16 @@ local function NormalizeVehiclePropsForPaidCart(vehicleProps, cart)
 end
 
 local function EnsureWorkshopVehicleModsLoaded(vehicle)
-    if not vehicle or vehicle == 0 then return end
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return false end
 
     SetVehicleModKit(vehicle, 0)
-    while not IsVehicleModLoadDone(vehicle) do
+    local timeout = GetGameTimer() + 5000
+    while not IsVehicleModLoadDone(vehicle) and GetGameTimer() < timeout do
         Wait(0)
+        if not DoesEntityExist(vehicle) then return false end
     end
+
+    return true
 end
 
 local function ResetWorkshopCamera()
@@ -95,19 +99,23 @@ local function RestoreVehicleProps(vehicle, props)
     WorkshopVehicle.RestoreProps(vehicle, props)
 end
 
-RegisterNetEvent('esx:playerLoaded')
-AddEventHandler('esx:playerLoaded', function()
+local function LoadVehiclePrices()
     xLib.callback('esx_lscustom:getVehiclesPrices', false, function(vehicles)
-        Vehicles = vehicles
+        Vehicles = vehicles or {}
     end)
-end)
+end
 
-RegisterNetEvent('esx_lscustom:installMod')
-AddEventHandler('esx_lscustom:installMod', function()
-    local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
-    local NetId = NetworkGetNetworkIdFromEntity(vehicle)
-    myCar = xLib.game.getVehicleProperties(vehicle)
-    TriggerServerEvent('esx_lscustom:refreshOwnedVehicle', myCar, NetId)
+RegisterNetEvent('esx:playerLoaded')
+AddEventHandler('esx:playerLoaded', LoadVehiclePrices)
+
+if ESX.PlayerLoaded then
+    CreateThread(LoadVehiclePrices)
+end
+
+RegisterNetEvent('esx_lscustom:setVehiclesPrices', function(vehicles)
+    if type(vehicles) == 'table' then
+        Vehicles = vehicles
+    end
 end)
 
 RegisterNetEvent('esx_lscustom:restoreMods', function(netId, props)
@@ -130,18 +138,17 @@ AddEventHandler('esx_lscustom:cancelInstallMod', function()
     RestoreVehicleProps(vehicle, myCar)
 end)
 
-RegisterNetEvent('esx_lscustom:cartPurchaseResult')
-AddEventHandler('esx_lscustom:cartPurchaseResult', function(result)
+local function HandleCartPurchaseResult(success, message, paidProps)
     pendingCartPurchase = false
 
-    if not result or not result.success then
-        lastPaidVehicleProps = nil
-        ESX.ShowNotification(result and result.message or TranslateCap('not_enough_money'))
+    if not success then
+        message = message or TranslateCap('purchase_invalid')
+        ESX.ShowNotification(message)
         if nuiIsOpen then
             SendNUIMessage({
                 action = 'purchaseResult',
                 success = false,
-                message = result and result.message or TranslateCap('not_enough_money')
+                message = message
             })
             SendNuiState()
         elseif lsMenuIsShowed then
@@ -152,19 +159,12 @@ AddEventHandler('esx_lscustom:cartPurchaseResult', function(result)
 
     local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
     if vehicle and vehicle ~= 0 then
-        local vehicleProps = lastPaidVehicleProps or xLib.game.getVehicleProperties(vehicle)
-        RestoreVehicleProps(vehicle, vehicleProps)
-        TriggerServerEvent('esx_lscustom:refreshOwnedVehicle', vehicleProps, NetworkGetNetworkIdFromEntity(vehicle))
-        SetTimeout(500, function()
-            TriggerServerEvent('esx_lscustom:stopModing', vehicleProps.plate)
-        end)
+        RestoreVehicleProps(vehicle, paidProps)
     end
 
-    lastPaidVehicleProps = nil
-
-    ESX.ShowNotification(result.message or TranslateCap('purchased'))
+    ESX.ShowNotification(message or TranslateCap('purchased'))
     CloseWorkshop(true)
-end)
+end
 
 AddEventHandler('onClientResourceStop', function(resource)
 	if resource == GetCurrentResourceName() then
@@ -217,7 +217,6 @@ function CloseWorkshop(save)
     pendingCartPurchase = false
     myCar = {}
     cartPreviewProps = nil
-    lastPaidVehicleProps = nil
     currentNuiColor = nil
     ClearCart()
 end
@@ -382,12 +381,18 @@ local function CheckoutCart()
     local vehicleProps = NormalizeVehiclePropsForPaidCart(xLib.game.getVehicleProperties(vehicle), cart)
     RestoreVehicleProps(vehicle, vehicleProps)
     cartPreviewProps = vehicleProps
-    lastPaidVehicleProps = vehicleProps
     pendingCartPurchase = true
-    TriggerServerEvent('esx_lscustom:buyCart', {
+
+    local payload = {
         cart = cart,
         vehicleProps = vehicleProps
-    }, NetworkGetNetworkIdFromEntity(vehicle))
+    }
+    local netId = NetworkGetNetworkIdFromEntity(vehicle)
+
+    CreateThread(function()
+        local ok, success, message = pcall(xLib.callback.await, 'esx_lscustom:buyCart', false, payload, netId)
+        HandleCartPurchaseResult(ok and success == true, ok and message or nil, vehicleProps)
+    end)
 end
 
 local function HandleWorkshopAction(current, parent)
@@ -504,7 +509,11 @@ local function OpenLSCustomsInterface(vehicle)
     pendingCartPurchase = false
 
     FreezeEntityPosition(vehicle, true)
-    EnsureWorkshopVehicleModsLoaded(vehicle)
+    if not EnsureWorkshopVehicleModsLoaded(vehicle) then
+        CloseWorkshop(false)
+        return
+    end
+
     myCar = xLib.game.getVehicleProperties(vehicle)
     cartPreviewProps = myCar
     ClearCart()
@@ -520,6 +529,7 @@ local function OpenLSCustomsInterface(vehicle)
         action = 'open',
         title = 'LS CUSTOMS',
         subtitle = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)),
+        theme = xLib.colors.getESXTheme(),
         features = {
             camera = Config.Workshop and Config.Workshop.EnableCamera == true,
             stats = Config.Workshop and Config.Workshop.EnableStats == true
@@ -687,19 +697,22 @@ CreateThread(function()
                                 else
                                     lsMenuIsShowed = true
                                     FreezeEntityPosition(vehicle, true)
-                                    EnsureWorkshopVehicleModsLoaded(vehicle)
-                                    myCar = xLib.game.getVehicleProperties(vehicle)
-                                    cartPreviewProps = myCar
-                                    ClearCart()
-                                    WorkshopCamera.Start(vehicle)
+                                    if EnsureWorkshopVehicleModsLoaded(vehicle) then
+                                        myCar = xLib.game.getVehicleProperties(vehicle)
+                                        cartPreviewProps = myCar
+                                        ClearCart()
+                                        WorkshopCamera.Start(vehicle)
 
-                                    local netId = NetworkGetNetworkIdFromEntity(vehicle)
-                                    TriggerServerEvent('esx_lscustom:startModing', myCar, netId)
+                                        local netId = NetworkGetNetworkIdFromEntity(vehicle)
+                                        TriggerServerEvent('esx_lscustom:startModing', myCar, netId)
 
-                                    ESX.UI.Menu.CloseAll()
-                                    GetAction({
-                                        value = 'main'
-                                    })
+                                        ESX.UI.Menu.CloseAll()
+                                        GetAction({
+                                            value = 'main'
+                                        })
+                                    else
+                                        CloseWorkshop(false)
+                                    end
                                 end
 
                             end

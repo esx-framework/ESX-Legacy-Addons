@@ -15,7 +15,9 @@ legacyversion "1.16.0"
 shared_scripts {
     "@esx_lib/imports.lua",
     "@es_extended/imports.lua",
-    "config.lua"
+    "@es_extended/locale.lua",
+    "config.lua",
+    "locales/*.lua"
 }
 
 client_script "client.lua"

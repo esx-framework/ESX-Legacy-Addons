@@ -1,15 +1,29 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-local Blips, JobBlips, isInMarker, hintToDisplay, onDuty, spawner, myPlate, vehicleObjInCaseofDrop, vehicleInCaseofDrop, vehicleMaxHealth =
-	{}, {}, false, "no hint to display", false, 0, {}, nil, nil, nil
+local Blips, JobBlips, isInMarker, hintToDisplay, onDuty, spawner, myVehicles =
+	{}, {}, false, "no hint to display", false, 0, {}
 
 local PlayerPedId = PlayerPedId
 local IsPedInAnyVehicle = IsPedInAnyVehicle
 local GetVehiclePedIsIn = GetVehiclePedIsIn
-local GetVehicleNumberPlateText = GetVehicleNumberPlateText
 local GetPedInVehicleSeat = GetPedInVehicleSeat
-local GetVehicleEngineHealth = GetVehicleEngineHealth
+
+local function isJobVehicle(vehicle)
+	if not NetworkGetEntityIsNetworked(vehicle) then
+		return false
+	end
+
+	local netId = NetworkGetNetworkIdFromEntity(vehicle)
+
+	for i = 1, #myVehicles do
+		if myVehicles[i] == netId then
+			return true
+		end
+	end
+
+	return false
+end
 
 RegisterNetEvent('esx:playerLoaded', function(xPlayer)
 	ESX.PlayerLoaded = true
@@ -102,61 +116,15 @@ AddEventHandler('esx_jobs:action', function(job, zone, zoneKey)
 			ESX.ShowNotification(TranslateCap('spawn_blocked'))
 		end
 	elseif zone.Type == "vehdelete" then
-		local looping = true
+		local playerPed = PlayerPedId()
 
-		for k, v in pairs(Config.Jobs) do
-			if playerJob == k then
-				for l, w in pairs(v.Zones) do
-					if w.Type == "vehdelete" and w.Spawner == zone.Spawner then
-						local playerPed = PlayerPedId()
+		if IsPedInAnyVehicle(playerPed, false) then
+			local vehicle = GetVehiclePedIsIn(playerPed, false)
 
-						if IsPedInAnyVehicle(playerPed, false) then
-							local vehicle = GetVehiclePedIsIn(playerPed, false)
-							local plate = GetVehicleNumberPlateText(vehicle)
-							plate = string.gsub(plate, " ", "")
-							local driverPed = GetPedInVehicleSeat(vehicle, -1)
-							local vehicleMaxHealth = GetVehicleEngineHealth(vehicle)
-
-							if playerPed == driverPed then
-								for i = 1, #myPlate, 1 do
-									if myPlate[i] == plate then
-										local vehicleHealth = GetVehicleEngineHealth(vehicleInCaseofDrop)
-										local giveBack = ESX.Math.Round(vehicleHealth / vehicleMaxHealth, 2)
-
-										TriggerServerEvent('esx_jobs:caution', "give_back", giveBack, 0, 0)
-										DeleteVehicle(GetVehiclePedIsIn(playerPed, false))
-
-										if w.Teleport ~= 0 then
-											xLib.entity.Teleport(playerPed, w.Teleport)
-										end
-
-										table.remove(myPlate, i)
-
-										if vehicleObjInCaseofDrop.HasCaution then
-											vehicleInCaseofDrop = nil
-											vehicleObjInCaseofDrop = nil
-											vehicleMaxHealth = nil
-										end
-
-										break
-									end
-								end
-							else
-								ESX.ShowNotification(TranslateCap('not_your_vehicle'))
-							end
-						end
-
-						looping = false
-						break
-					end
-
-					if looping == false then
-						break
-					end
-				end
-			end
-			if looping == false then
-				break
+			if GetPedInVehicleSeat(vehicle, -1) ~= playerPed then
+				ESX.ShowNotification(TranslateCap('not_your_vehicle'))
+			elseif isJobVehicle(vehicle) then
+				TriggerServerEvent('esx_jobs:caution', 'give_back', zoneKey)
 			end
 		end
 	elseif zone.Type == "delivery" then
@@ -189,10 +157,12 @@ AddEventHandler('esx_jobs:hasExitedMarker', function(zone)
 	isInMarker = false
 end)
 
-RegisterNetEvent('esx:setJob', function(job)
+RegisterNetEvent('esx:setJob', function(job, lastJob)
 	ESX.PlayerData.job = job
 	onDuty = false
-	myPlate = {} -- loosing vehicle caution in case player changes job.
+	if not lastJob or lastJob.name ~= job.name then
+		myVehicles = {} -- loosing vehicle caution in case player changes job.
+	end
 	spawner = 0
 	deleteBlips()
 	refreshBlips()
@@ -254,29 +224,39 @@ function spawnVehicle(zoneKey)
 	TriggerServerEvent('esx_jobs:caution', 'take', zoneKey)
 end
 
-RegisterNetEvent('esx_jobs:spawnJobVehicle', function(spawnPoint, vehicle)
-	local playerPed = PlayerPedId()
+RegisterNetEvent('esx_jobs:spawnJobVehicle', function(netId, spawnPoint, vehicle)
+	table.insert(myVehicles, netId)
 
-	xLib.game.spawnVehicle(vehicle.Hash, spawnPoint.Pos, spawnPoint.Heading, function(spawnedVehicle)
-		if vehicle.Trailer ~= "none" then
-			xLib.game.spawnVehicle(vehicle.Trailer, spawnPoint.Pos, spawnPoint.Heading, function(trailer)
-				AttachVehicleToTrailer(spawnedVehicle, trailer, 1.1)
-			end)
+	local timeout = GetGameTimer() + 5000
+	while not NetworkDoesEntityExistWithNetworkId(netId) and GetGameTimer() < timeout do
+		Wait(50)
+	end
+
+	if not NetworkDoesEntityExistWithNetworkId(netId) then
+		return
+	end
+
+	local spawnedVehicle = NetToVeh(netId)
+
+	TaskWarpPedIntoVehicle(PlayerPedId(), spawnedVehicle, -1)
+
+	if vehicle.Trailer ~= "none" then
+		xLib.game.spawnVehicle(vehicle.Trailer, spawnPoint.Pos, spawnPoint.Heading, function(trailer)
+			AttachVehicleToTrailer(spawnedVehicle, trailer, 1.1)
+		end)
+	end
+end)
+
+RegisterNetEvent('esx_jobs:vehicleReturned', function(netId, teleport)
+	for i = #myVehicles, 1, -1 do
+		if myVehicles[i] == netId then
+			table.remove(myVehicles, i)
 		end
+	end
 
-		-- save & set plate
-		local plate = 'WORK' .. math.random(100, 900)
-		SetVehicleNumberPlateText(spawnedVehicle, plate)
-		table.insert(myPlate, plate)
-		plate = string.gsub(plate, " ", "")
-
-		TaskWarpPedIntoVehicle(playerPed, spawnedVehicle, -1)
-
-		if not vehicle.HasCaution then return end
-		vehicleInCaseofDrop = spawnedVehicle
-		vehicleObjInCaseofDrop = vehicle
-		vehicleMaxHealth = GetVehicleEngineHealth(spawnedVehicle)
-	end)
+	if teleport and teleport ~= 0 then
+		xLib.entity.Teleport(PlayerPedId(), teleport)
+	end
 end)
 
 -- Display markers (only if on duty and the player's job ones)
@@ -445,15 +425,11 @@ CreateThread(function()
 							if IsPedInAnyVehicle(playerPed, false) then
 								local vehicle = GetVehiclePedIsIn(playerPed, false)
 								local driverPed = GetPedInVehicleSeat(vehicle, -1)
-								local plate = GetVehicleNumberPlateText(vehicle)
-								plate = string.gsub(plate, " ", "")
 
 								if playerPed == driverPed then
-									for i = 1, #myPlate, 1 do
-										if myPlate[i] == plate then
-											hintToDisplay = zone.Hint
-											break
-										end
+									if isJobVehicle(vehicle) then
+										hintToDisplay = zone.Hint
+										ESX.ShowHelpNotification(hintToDisplay)
 									end
 								else
 									hintToDisplay = TranslateCap('not_your_vehicle')

@@ -2,7 +2,10 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 local Vehicles
+local VehiclesSignature
+local VehiclePricesRefreshInterval = 600000
 local Customs = {}
+local PurchasingPlayers, PurchasingPlates = {}, {}
 local purchaseLimiter = xLib.rateLimiter({
 	capacity = 1,
 	refill = 1,
@@ -46,14 +49,40 @@ local function getCurrentVehicle(source)
 	return vehicle
 end
 
+local function isCurrentVehicleNetId(source, netId)
+	local vehicle = getCurrentVehicle(source)
+	netId = tonumber(netId)
+	return vehicle ~= nil and netId ~= nil and NetworkGetEntityFromNetworkId(netId) == vehicle
+end
+
 local function getSession(source, plate)
 	local sourceSessions = Customs[tostring(source)]
 	return sourceSessions and sourceSessions[plate]
 end
 
+local function loadVehiclePrices()
+	MySQL.query('SELECT model, price FROM vehicles ORDER BY model', function(result)
+		if type(result) ~= 'table' then return end
+
+		local signature = json.encode(result)
+		if signature == VehiclesSignature then return end
+
+		Vehicles = result
+		VehiclesSignature = signature
+		TriggerClientEvent('esx_lscustom:setVehiclesPrices', -1, Vehicles)
+	end)
+end
+
+MySQL.ready(function()
+	while true do
+		loadVehiclePrices()
+		Wait(VehiclePricesRefreshInterval)
+	end
+end)
+
 local function getVehicleBasePrice(model)
 	if not Vehicles then
-		Vehicles = MySQL.query.await('SELECT model, price FROM vehicles')
+		return nil
 	end
 
 	for i = 1, #Vehicles do
@@ -63,10 +92,6 @@ local function getVehicleBasePrice(model)
 	end
 
 	return 50000
-end
-
-local function getPaymentDeadline()
-	return os.time() + 45
 end
 
 local function getPaidCartProps(cart)
@@ -123,17 +148,26 @@ local function isMechanic(xPlayer)
 	return job and job.name == 'mechanic'
 end
 
-local function canSaveOwnedVehicle(xPlayer, owner)
-	if owner == xPlayer.getIdentifier() then
+local function isExtendedVehicleEntity(vehicle, plate, storedPlate)
+	local xVehicle = ESX.GetExtendedVehicleFromPlate(storedPlate)
+	if not xVehicle and storedPlate ~= plate then
+		xVehicle = ESX.GetExtendedVehicleFromPlate(plate)
+	end
+
+	return not xVehicle or xVehicle:getEntity() == vehicle
+end
+
+local function canSaveOwnedVehicle(xPlayer, record, plate, vehicle)
+	if record.owner == xPlayer.getIdentifier() then
 		return true
 	end
 
 	local ownership = getOwnershipConfig()
-	return ownership.AllowMechanicCustomerVehicles == true and isMechanic(xPlayer)
+	return ownership.AllowMechanicCustomerVehicles == true and isMechanic(xPlayer) and isExtendedVehicleEntity(vehicle, plate, record.plate)
 end
 
 local function getOwnedVehicleRecord(plate, model)
-	local result = MySQL.single.await('SELECT owner, vehicle FROM owned_vehicles WHERE plate = ?', {plate})
+	local result = MySQL.single.await('SELECT owner, plate, vehicle FROM owned_vehicles WHERE plate = ?', {plate})
 	if not result then return nil, 'owner' end
 
 	local storedProps = decodeVehicleProps(result.vehicle)
@@ -145,29 +179,164 @@ local function getOwnedVehicleRecord(plate, model)
 	return result
 end
 
-local function validateRequiredOwnership(xPlayer, plate, model)
-	local ownership = getOwnershipConfig()
-	if ownership.RequireOwned ~= true then
+local function getPurchaseSession(source, xPlayer, plate, model, netId)
+	if Config.IsMechanicJobOnly and not isMechanic(xPlayer) then
+		return nil, 'workshop_session_invalid'
+	end
+
+	local vehicle = getCurrentVehicle(source)
+	if not vehicle or not isNearCustoms(source) then
+		return nil, 'workshop_session_invalid'
+	end
+
+	if GetEntityModel(vehicle) ~= model or normalizePlate(GetVehicleNumberPlateText(vehicle) or '') ~= plate then
+		return nil, 'vehicle_session_mismatch'
+	end
+
+	local session = getSession(source, plate)
+	if not session or session.netId ~= netId or not isCurrentVehicleNetId(source, netId) then
+		return nil, 'workshop_session_missing'
+	end
+
+	return session, nil, vehicle
+end
+
+local function chargeCartPurchase(xPlayer, total)
+	if Config.IsMechanicJobOnly then
+		local societyAccount
+
+		TriggerEvent('esx_addonaccount:getSharedAccount', 'society_mechanic', function(account)
+			societyAccount = account
+		end)
+
+		if not societyAccount or total > societyAccount.money then
+			return false
+		end
+
+		societyAccount.removeMoney(total)
 		return true
 	end
 
-	local record, reason = getOwnedVehicleRecord(plate, model)
-	if not record then
-		return false, reason
+	if total > xPlayer.getMoney() then
+		return false
 	end
 
-	if not canSaveOwnedVehicle(xPlayer, record.owner) then
-		return false, 'owner'
-	end
-
+	xPlayer.removeMoney(total, "LSC Purchase")
 	return true
 end
 
-local function sendCartResult(source, success, message)
-	TriggerClientEvent('esx_lscustom:cartPurchaseResult', source, {
-		success = success,
-		message = message
-	})
+local function prepareCartPurchase(source, payload, netId)
+	local xPlayer = ESX.Player(source)
+
+	if not xPlayer then
+		print('^3[WARNING]^0 The player could\'nt be found.')
+		return nil, 'purchase_invalid'
+	end
+
+	if type(payload) ~= 'table' or type(payload.vehicleProps) ~= 'table' then
+		return nil, 'purchase_invalid'
+	end
+
+	if not purchaseLimiter:consume(source) then
+		return nil, 'purchase_wait'
+	end
+
+	local vehicleProps = payload.vehicleProps
+	vehicleProps.plate = normalizePlate(vehicleProps.plate)
+	local model = tonumber(vehicleProps.model)
+
+	if not vehicleProps.plate or not model or not netId then
+		return nil, 'workshop_session_invalid'
+	end
+
+	local session, sessionError = getPurchaseSession(source, xPlayer, vehicleProps.plate, model, netId)
+	if not session then
+		return nil, sessionError
+	end
+
+	local basePrice = getVehicleBasePrice(model)
+	if not basePrice then
+		return nil, 'purchase_wait'
+	end
+
+	local total = WorkshopPricing.CalculateCartTotal(payload.cart, basePrice)
+	if not total or total <= 0 then
+		return nil, 'no_valid_changes'
+	end
+
+	return {
+		cart = payload.cart,
+		vehicleProps = vehicleProps,
+		plate = vehicleProps.plate,
+		model = model,
+		netId = netId,
+		total = total
+	}
+end
+
+local function completeCartPurchase(source, purchase)
+	local record, recordError = getOwnedVehicleRecord(purchase.plate, purchase.model)
+
+	local xPlayer = ESX.Player(source)
+	if not xPlayer then
+		return false, TranslateCap('purchase_invalid')
+	end
+
+	local session, sessionError, vehicle = getPurchaseSession(source, xPlayer, purchase.plate, purchase.model, purchase.netId)
+	if not session then
+		return false, TranslateCap(sessionError)
+	end
+
+	local ownership = getOwnershipConfig()
+	local canSave = record and canSaveOwnedVehicle(xPlayer, record, purchase.plate, vehicle)
+
+	if ownership.RequireOwned == true and not canSave then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to buy LS Customs changes for a blocked vehicle (^5%s^7)'):format(source, tostring(record and 'owner' or recordError)))
+		return false, TranslateCap('workshop_session_invalid')
+	end
+
+	local vehicleProps = purchase.vehicleProps
+	local referenceProps = record and record.props or session.props
+	local paidKeys = getPaidCartProps(purchase.cart)
+
+	restoreUnpaidWatchedProps(vehicleProps, referenceProps, paidKeys)
+
+	local validProps, invalidProp = WorkshopValidation.VehiclePropsMatchPaidCart(referenceProps, vehicleProps, purchase.cart)
+	if not validProps then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to save unpaid LS Customs property ^5%s^7'):format(source, tostring(invalidProp)))
+		return false, TranslateCap('purchase_invalid_changes')
+	end
+
+	local validValues, invalidValue = WorkshopValidation.CartValuesMatchVehicleProps(vehicleProps, purchase.cart, referenceProps)
+	if not validValues then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted LS Customs cart mismatch on ^5%s^7'):format(source, tostring(invalidValue)))
+		return false, TranslateCap('purchase_vehicle_mismatch')
+	end
+
+	if not chargeCartPurchase(xPlayer, purchase.total) then
+		return false, TranslateCap('not_enough_money')
+	end
+
+	local savedProps = vehicleProps
+	if record then
+		savedProps = record.props
+		for key in pairs(paidKeys) do
+			savedProps[key] = vehicleProps[key]
+		end
+	end
+
+	if canSave and ownership.SaveOwnedVehicles ~= false then
+		MySQL.update('UPDATE owned_vehicles SET vehicle = ? WHERE owner = ? AND plate = ?', {json.encode(savedProps), record.owner, purchase.plate})
+	end
+
+	Customs[tostring(source)][purchase.plate] = nil
+
+	local vehState = Entity(vehicle).state
+	if vehState.VehicleProperties then
+		vehState:set("VehicleProperties", savedProps, true)
+	end
+
+	return true, TranslateCap('tuning_applied', Config.Currency or '$', ESX.Math.GroupDigits(purchase.total))
 end
 
 RegisterNetEvent('esx_lscustom:startModing', function(props, netId)
@@ -186,6 +355,10 @@ RegisterNetEvent('esx_lscustom:startModing', function(props, netId)
 
 	local vehicle = getCurrentVehicle(source)
 	if not vehicle or GetEntityModel(vehicle) ~= model or normalizePlate(GetVehicleNumberPlateText(vehicle) or '') ~= props.plate then
+		return
+	end
+
+	if not isCurrentVehicleNetId(source, netId) then
 		return
 	end
 
@@ -211,87 +384,30 @@ RegisterNetEvent('esx_lscustom:stopModing', function(plate)
 	end
 end)
 
-RegisterNetEvent('esx_lscustom:buyCart', function(payload, netId)
-	local source = source
-	local xPlayer = ESX.Player(source)
-
-	if not xPlayer then return print('^3[WARNING]^0 The player could\'nt be found.') end
-	if Config.IsMechanicJobOnly and xPlayer.getJob().name ~= 'mechanic' then return end
-	if type(payload) ~= 'table' or type(payload.vehicleProps) ~= 'table' then
-		return sendCartResult(source, false, TranslateCap('purchase_invalid'))
+xLib.callback.register('esx_lscustom:buyCart', function(source, payload, netId)
+	local purchase, purchaseError = prepareCartPurchase(source, payload, netId)
+	if not purchase then
+		return false, TranslateCap(purchaseError)
 	end
 
-	local allowed = purchaseLimiter:consume(source)
-	if not allowed then
-		return sendCartResult(source, false, TranslateCap('purchase_wait'))
+	if PurchasingPlayers[source] or PurchasingPlates[purchase.plate] then
+		return false, TranslateCap('purchase_wait')
 	end
 
-	local vehicleProps = payload.vehicleProps
-	vehicleProps.plate = normalizePlate(vehicleProps.plate)
-	local model = tonumber(vehicleProps.model)
-	local vehicle = getCurrentVehicle(source)
+	PurchasingPlayers[source] = true
+	PurchasingPlates[purchase.plate] = true
 
-	if not vehicleProps.plate or not model or not netId or not vehicle or not isNearCustoms(source) then
-		return sendCartResult(source, false, TranslateCap('workshop_session_invalid'))
+	local ok, success, message = pcall(completeCartPurchase, source, purchase)
+
+	PurchasingPlayers[source] = nil
+	PurchasingPlates[purchase.plate] = nil
+
+	if not ok then
+		print(('[^1ERROR^7] LS Customs purchase failed for player ^5%s^7: %s'):format(source, tostring(success)))
+		return false, TranslateCap('purchase_invalid')
 	end
 
-	if GetEntityModel(vehicle) ~= model or normalizePlate(GetVehicleNumberPlateText(vehicle) or '') ~= vehicleProps.plate then
-		return sendCartResult(source, false, TranslateCap('vehicle_session_mismatch'))
-	end
-
-	local session = getSession(source, vehicleProps.plate)
-	if not session or session.netId ~= netId then
-		return sendCartResult(source, false, TranslateCap('workshop_session_missing'))
-	end
-
-	local validOwnership, ownershipError = validateRequiredOwnership(xPlayer, vehicleProps.plate, model)
-	if not validOwnership then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted to buy LS Customs changes for a blocked vehicle (^5%s^7)'):format(source, tostring(ownershipError)))
-		return sendCartResult(source, false, TranslateCap('workshop_session_invalid'))
-	end
-
-	local total = WorkshopPricing.CalculateCartTotal(payload.cart, getVehicleBasePrice(model))
-	if not total or total <= 0 then
-		return sendCartResult(source, false, TranslateCap('no_valid_changes'))
-	end
-
-	restoreUnpaidWatchedProps(vehicleProps, session.props, getPaidCartProps(payload.cart))
-
-	local validProps, invalidProp = WorkshopValidation.VehiclePropsMatchPaidCart(session.props, vehicleProps, payload.cart)
-	if not validProps then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted to save unpaid LS Customs property ^5%s^7'):format(source, tostring(invalidProp)))
-		return sendCartResult(source, false, TranslateCap('purchase_invalid_changes'))
-	end
-
-	local validValues, invalidValue = WorkshopValidation.CartValuesMatchVehicleProps(vehicleProps, payload.cart, session.props)
-	if not validValues then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted LS Customs cart mismatch on ^5%s^7'):format(source, tostring(invalidValue)))
-		return sendCartResult(source, false, TranslateCap('purchase_vehicle_mismatch'))
-	end
-
-	if Config.IsMechanicJobOnly then
-		local societyAccount
-
-		TriggerEvent('esx_addonaccount:getSharedAccount', 'society_mechanic', function(account)
-			societyAccount = account
-		end)
-
-		if societyAccount and total <= societyAccount.money then
-			societyAccount.removeMoney(total)
-			session.paidUntil = getPaymentDeadline()
-			session.paidProps = vehicleProps
-			sendCartResult(source, true, TranslateCap('tuning_applied', Config.Currency or '$', ESX.Math.GroupDigits(total)))
-		else
-			sendCartResult(source, false, TranslateCap('not_enough_money'))
-		end
-	elseif total <= xPlayer.getMoney() then
-		xPlayer.removeMoney(total, "LSC Purchase")
-		session.paidUntil = getPaymentDeadline()
-		session.paidProps = vehicleProps
-		sendCartResult(source, true, TranslateCap('tuning_applied', Config.Currency or '$', ESX.Math.GroupDigits(total)))
-	else
-		sendCartResult(source, false, TranslateCap('not_enough_money'))
-	end
+	return success, message
 end)
 
 AddEventHandler('esx:playerDropped', function(src)
@@ -312,101 +428,6 @@ AddEventHandler('esx:playerDropped', function(src)
     end
 end)
 
-RegisterNetEvent('esx_lscustom:buyMod', function()
-	local source = source
-	local xPlayer = ESX.Player(source)
-	if not xPlayer then return print('^3[WARNING]^0 The player could\'nt be found.') end
-	print(('[^3WARNING^7] Player ^5%s^7 attempted to use deprecated LS Customs buyMod event'):format(source))
-	TriggerClientEvent('esx_lscustom:cancelInstallMod', source)
-end)
-
-RegisterNetEvent('esx_lscustom:refreshOwnedVehicle', function(vehicleProps, netId)
-	local src = tostring(source)
-	local xPlayer = ESX.Player(source)
-
-  if not vehicleProps then return print('^3[WARNING]^0 The vehicle Props could\'nt be found.') end
-  if not vehicleProps.plate then return print('^3[WARNING]^0 The vehicle plate could\'nt be found.') end
-  if not vehicleProps.model then return print('^3[WARNING]^0 The vehicle model could\'nt be found.') end
-
-  if not xPlayer then return print('^3[WARNING]^0 The player could\'nt be found.') end
-  if Config.IsMechanicJobOnly and xPlayer.getJob().name ~= 'mechanic' then return end
-
-	vehicleProps.plate = normalizePlate(vehicleProps.plate)
-	local model = tonumber(vehicleProps.model)
-	if not vehicleProps.plate or not model or not isNearCustoms(source) then return end
-
-	local session = getSession(source, vehicleProps.plate)
-	if not session or session.netId ~= netId or not session.paidUntil or session.paidUntil < os.time() then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted to save LS Customs changes without a valid payment'):format(source))
-		return
-	end
-
-	if Config.Workshop and Config.Workshop.UseCart then
-		local paidProps = session.paidProps
-		restoreUnpaidWatchedProps(vehicleProps, paidProps, {})
-
-		local paidPropsMatch, invalidPaidProp = WorkshopValidation.WatchedVehiclePropsEqual(session.paidProps, vehicleProps)
-		if not paidPropsMatch then
-			print(('[^3WARNING^7] Player ^5%s^7 attempted to save LS Customs property ^5%s^7 outside the paid snapshot'):format(source, tostring(invalidPaidProp)))
-			return
-		end
-
-		local watchedProps = WorkshopValidation.GetWatchedVehicleProps()
-		for watchedKey in pairs(watchedProps) do
-			if paidProps[watchedKey] ~= nil then
-				local oldValue = vehicleProps[watchedKey]
-				local staleToggle = oldValue == false and paidProps[watchedKey] == true
-				if oldValue ~= nil and type(oldValue) ~= 'table' and not staleToggle and oldValue ~= paidProps[watchedKey] then
-					print(('[^3WARNING^7] Player ^5%s^7 attempted to save unpaid LS Customs property ^5%s^7 (overridden from paid snapshot)'):format(source, tostring(watchedKey)))
-				end
-				vehicleProps[watchedKey] = paidProps[watchedKey]
-			end
-		end
-	end
-
-	local currentVehicle = getCurrentVehicle(source)
-	if not currentVehicle or GetEntityModel(currentVehicle) ~= model or normalizePlate(GetVehicleNumberPlateText(currentVehicle) or '') ~= vehicleProps.plate then
-		return
-	end
-
-	local ownership = getOwnershipConfig()
-	local record = getOwnedVehicleRecord(vehicleProps.plate, model)
-	local shouldSaveOwnedVehicle = ownership.SaveOwnedVehicles ~= false and record and canSaveOwnedVehicle(xPlayer, record.owner)
-
-	if ownership.RequireOwned == true and not shouldSaveOwnedVehicle then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted to save LS Customs changes for a blocked vehicle'):format(source))
-		return
-	end
-
-	if shouldSaveOwnedVehicle then
-		MySQL.update('UPDATE owned_vehicles SET vehicle = ? WHERE owner = ? AND plate = ?', {json.encode(vehicleProps), record.owner, vehicleProps.plate})
-	end
-
-	session.paidUntil = nil
-	session.paidProps = nil
-	if Customs[src] then
-		if Customs[src][tostring(vehicleProps.plate)] then
-			Customs[src][tostring(vehicleProps.plate)].props = vehicleProps
-		else
-			Customs[src][tostring(vehicleProps.plate)] = {props = vehicleProps, netId = netId}
-		end
-	else
-		Customs[src] = {}
-		Customs[src][tostring(vehicleProps.plate)] = {props = vehicleProps, netId = netId}
-	end
-
-	local veh = NetworkGetEntityFromNetworkId(netId)
-	if veh and veh ~= 0 and DoesEntityExist(veh) then
-		local vehState = Entity(veh).state
-		if vehState.VehicleProperties then
-			vehState:set("VehicleProperties", vehicleProps, true)
-		end
-	end
-end)
-
 xLib.callback.registerCompat('esx_lscustom:getVehiclesPrices', function(source, cb)
-	if not Vehicles then
-		Vehicles = MySQL.query.await('SELECT model, price FROM vehicles')
-	end
-	cb(Vehicles)
+	cb(Vehicles or {})
 end)

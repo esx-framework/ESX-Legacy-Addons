@@ -11,4 +11,5 @@ Locales['nl'] = {
   ['do_prefix'] = 'doe | %s',
   ['generic_argument_name'] = 'bericht',
   ['generic_argument_help'] = 'het bericht',
+  ['rate_limited'] = 'Wacht %s seconden voordat je nog een bericht stuurt.',
 }

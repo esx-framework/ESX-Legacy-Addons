@@ -18,6 +18,16 @@ local function isPoliceOnDuty(xPlayer)
 	return job and job.name == 'police' and job.onDuty ~= false
 end
 
+local function notifyOffDuty(xPlayer)
+	local job = xPlayer and xPlayer.getJob()
+	if not job or job.name ~= 'police' or job.onDuty ~= false then
+		return false
+	end
+
+	xPlayer.showNotification(TranslateCap('off_duty'))
+	return true
+end
+
 local function generateJobVehiclePlate()
 	return xLib.vehiclePlate.generateUnique({
 		prefix = 'POL',
@@ -158,7 +168,9 @@ AddEventHandler('esx_policejob:confiscatePlayerItem', function(target, itemType,
 	local sourceXPlayer = ESX.Player(source)
 	local targetXPlayer = ESX.Player(target)
 	if not isPoliceOnDuty(sourceXPlayer) or not targetXPlayer or not isNearPlayer(source, target, 5.0) or not cuffedPlayers[tonumber(target)] then
-		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit The Confuscation System!'):format(source))
+		if not notifyOffDuty(sourceXPlayer) then
+			print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit The Confuscation System!'):format(source))
+		end
 		return
 	end
 
@@ -236,7 +248,7 @@ AddEventHandler('esx_policejob:handcuff', function(target)
 			end)
 		end
 		TriggerClientEvent('esx_policejob:handcuff', target)
-	else
+	elseif not notifyOffDuty(xPlayer) then
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Handcuffs!'):format(source))
 	end
 end)
@@ -247,7 +259,7 @@ AddEventHandler('esx_policejob:drag', function(target)
 
 	if isPoliceOnDuty(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
 		TriggerClientEvent('esx_policejob:drag', target, source)
-	else
+	elseif not notifyOffDuty(xPlayer) then
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging!'):format(source))
 	end
 end)
@@ -258,7 +270,7 @@ AddEventHandler('esx_policejob:putInVehicle', function(target)
 
 	if isPoliceOnDuty(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
 		TriggerClientEvent('esx_policejob:putInVehicle', target)
-	else
+	elseif not notifyOffDuty(xPlayer) then
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Garage!'):format(source))
 	end
 end)
@@ -269,7 +281,7 @@ AddEventHandler('esx_policejob:OutVehicle', function(target)
 
 	if isPoliceOnDuty(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 8.0) then
 		TriggerClientEvent('esx_policejob:OutVehicle', target)
-	else
+	elseif not notifyOffDuty(xPlayer) then
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging Out Of Vehicle!'):format(source))
 	end
 end)
@@ -285,7 +297,9 @@ AddEventHandler('esx_policejob:getStockItem', function(itemName, count)
 	count = getValidCount(count)
 
 	if not count or not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock withdrawal!'):format(source))
+		if not notifyOffDuty(xPlayer) then
+			print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock withdrawal!'):format(source))
+		end
 		return
 	end
 
@@ -317,7 +331,9 @@ AddEventHandler('esx_policejob:putStockItems', function(itemName, count)
 	count = getValidCount(count)
 
 	if not count or not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock deposit!'):format(source))
+		if not notifyOffDuty(xPlayer) then
+			print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock deposit!'):format(source))
+		end
 		return
 	end
 
@@ -572,7 +588,9 @@ xLib.callback.registerCompat('esx_policejob:buyJobVehicle', function(source, cb,
 
 	-- vehicle model not found
 	if not isPoliceOnDuty(xPlayer) or price == 0 or not isNearPoliceVehicleShop(source, type) then
-		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Buy Invalid Vehicle - ^5%s^7!'):format(source, tostring(model)))
+		if not notifyOffDuty(xPlayer) then
+			print(('[^3WARNING^7] Player ^5%s^7 Attempted To Buy Invalid Vehicle - ^5%s^7!'):format(source, tostring(model)))
+		end
 		return cb(false)
 	end
 

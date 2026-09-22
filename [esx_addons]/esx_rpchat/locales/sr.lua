@@ -11,4 +11,5 @@ Locales['sr'] = {
   ['do_prefix'] = 'do | %s',
   ['generic_argument_name'] = 'poruka',
   ['generic_argument_help'] = 'poruka',
+  ['rate_limited'] = 'Sačekaj %s s pre slanja nove poruke.',
 }

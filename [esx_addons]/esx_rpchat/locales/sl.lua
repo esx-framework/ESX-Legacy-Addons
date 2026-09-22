@@ -11,4 +11,5 @@ Locales['sl'] = {
   ['do_prefix'] = 'naredi | %s',
   ['generic_argument_name'] = 'sporocilo',
   ['generic_argument_help'] = 'sporocilo',
+  ['rate_limited'] = 'Pocakaj %s s preden posljes novo sporocilo.',
 }

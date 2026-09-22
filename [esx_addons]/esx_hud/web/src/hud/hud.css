@@ -1,5 +1,8 @@
 .hud-root {
     --brand: #fb9b04;
+    --surface-rgb: 22, 22, 22;
+    --secondary: #191919;
+    --mid: #383838;
     --muted: #a6a6aa;
     --line: #ffffff1a;
     position: fixed;
@@ -13,7 +16,7 @@
     transform: scale(var(--hud-scale));
 }
 .glass {
-    background: rgba(22, 22, 22, var(--panel-opacity));
+    background: rgba(var(--surface-rgb), var(--panel-opacity));
     border: 1px solid var(--line);
     box-shadow:
         0 8px 26px #0003,
@@ -227,7 +230,7 @@
     position: relative;
     display: grid;
     place-items: center;
-    background: #161616d9;
+    background: rgba(var(--surface-rgb), 0.85);
     border-radius: 16px;
 }
 .status-ring {
@@ -639,7 +642,7 @@
     gap: 4px;
     align-items: center;
     padding: 6px;
-    background: #161616cf;
+    background: rgba(var(--surface-rgb), 0.81);
     border: 1px solid var(--line);
     border-radius: 12px;
     z-index: 2;
@@ -744,7 +747,7 @@
     max-height: 92vh;
     overflow: auto;
     color: #f2f2f2;
-    background: #191919;
+    background: var(--secondary);
     border: 1px solid #ffffff1b;
     border-radius: 22px;
     box-shadow: 0 24px 100px #0008;
@@ -811,7 +814,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    background: #161616;
+    background: rgb(var(--surface-rgb));
 }
 .settings-layout nav > button {
     display: flex;
@@ -857,7 +860,7 @@
     background: var(--brand);
 }
 .palette i:nth-child(2) {
-    background: #383838;
+    background: var(--mid);
 }
 .palette i:nth-child(3) {
     background: #f2f2f2;
@@ -953,7 +956,7 @@
     width: 30px;
     height: 18px;
     border-radius: 20px;
-    background: #393939;
+    background: var(--mid);
     border: 1px solid #ffffff0c;
     position: relative;
     cursor: pointer;

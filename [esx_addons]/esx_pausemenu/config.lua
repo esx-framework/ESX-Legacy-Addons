@@ -2,6 +2,8 @@
 
 Config = {}
 
+Config.Locale = GetConvar("esx:locale", "en")
+
 -- Visual copy used by the supplied concept. All text is configurable.
 Config.Brand = {
     kicker = "FIVEM ROLEPLAY",
@@ -10,12 +12,6 @@ Config.Brand = {
     city = "Los Santos",
     established = "2015",
     communityLine = "BUILT BY A COMMUNITY THAT CARES"
-}
-
-Config.Text = {
-    unemployed = "Unemployed",
-    unknownJob = "Unknown",
-    leaveReason = "Disconnected from the server via ESX Pause Menu"
 }
 
 -- External links. Leave a value empty to disable that destination.

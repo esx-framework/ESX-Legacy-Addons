@@ -11,13 +11,11 @@ shared_scripts {
     '@es_extended/imports.lua',
     '@es_extended/locale.lua',
     '@esx_lib/imports.lua',
-    'config.lua',
-    'locales/*.lua'
+    'config.lua'
 }
 
 client_scripts {
     'client/deathcam.lua',
-    'client/medal.lua',
     'client/main.lua'
 }
 
@@ -29,11 +27,11 @@ server_scripts {
 ui_page 'web/index.html'
 
 files {
+    'locales/*.lua',
     'web/index.html',
     'web/style.css',
     'web/locales.js',
     'web/app.js',
-    'web/medal.js',
     'web/brand-logo.png',
     'web/assets/DSEG7Classic-Bold.ttf'
 }

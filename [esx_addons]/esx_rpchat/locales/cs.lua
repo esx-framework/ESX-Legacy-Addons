@@ -11,4 +11,5 @@ Locales['cs'] = {
   ['do_prefix'] = 'do | %s',
   ['generic_argument_name'] = 'zpráva',
   ['generic_argument_help'] = 'zpráva',
+  ['rate_limited'] = 'Počkejte %s s před odesláním další zprávy.',
 }

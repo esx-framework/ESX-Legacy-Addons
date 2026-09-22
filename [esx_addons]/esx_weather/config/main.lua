@@ -56,9 +56,9 @@ Config = {
         },
         transitionTimeSeconds = 30,
         cycleTimeSeconds = 60 * 30, -- 30 minutes
-        dynamic = false, -- Set true to rotate weather automatically.
-        defaultType = Shared.Enum.WeatherType.CLEAR,
-        persist = true, -- Saves panel changes and restores them after resource restart.
+        dynamic = true, -- Rotates weather every cycleTimeSeconds. Set false to keep defaultType until changed from the panel.
+        defaultType = Shared.Enum.WeatherType.CLEAR, -- Used when dynamic is false.
+        persist = true, -- Restores the last weather after a restart. With dynamic, the rotation timer is kept too.
         persistKey = "esx_weather_zones",
     },
     Time        = {

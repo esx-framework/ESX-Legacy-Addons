@@ -21,6 +21,7 @@ Locales['fi'] = {
   ['spawn_veh_button'] = 'paina ~INPUT_PICKUP~ soittaaksesi kuljetus ajoneuvo',
   ['spawn_truck_button'] = 'paina ~INPUT_PICKUP~ spawnataksesi rekka.',
   ['spawn_blocked'] = 'an vehicle is blocking the spawnpoint!',
+  ['vehicle_already_out'] = 'palauta ensin nykyinen ajoneuvosi.',
   ['service_vh'] = 'huolla ajonevuo',
   ['return_vh'] = 'palauta ajoneuvo',
   ['return_vh_button'] = 'paina ~INPUT_PICKUP~ palautaaksesi ajoneuvo.',

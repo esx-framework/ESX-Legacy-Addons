@@ -107,6 +107,16 @@ local function getValidItemAmount(amount)
 	return amount
 end
 
+local function hasItem(xPlayer, itemName)
+	local item = xPlayer.getInventoryItem(itemName)
+	return item ~= nil and (tonumber(item.count) or 0) >= 1
+end
+
+local function consumeItem(xPlayer, itemName)
+	xPlayer.removeInventoryItem(itemName, 1)
+	xPlayer.showNotification(TranslateCap(itemName == 'bandage' and 'used_bandage' or 'used_medikit'))
+end
+
 -- EMS permissions and rewards stay here; the lifecycle belongs to esx_death.
 RegisterNetEvent('esx_ambulancejob:revive', function(playerId)
     local src = source
@@ -138,9 +148,14 @@ RegisterNetEvent('esx_ambulancejob:revive', function(playerId)
         deathDbg('revive:blocked-nearby-or-target-alive', { src = src, target = target, nearby = nearby, targetDead = targetDead })
         return
     end
+    if not hasItem(xPlayer, 'medikit') then
+        xPlayer.showNotification(TranslateCap('not_enough_medikit'))
+        return
+    end
     local ok = exports.esx_death:Revive(target, 'ems')
     deathDbg('revive:export-result', { src = src, target = target, ok = ok })
     if ok then
+        consumeItem(xPlayer, 'medikit')
         if Config.ReviveReward > 0 then
             xPlayer.addMoney(Config.ReviveReward, 'Revive Reward')
             xPlayer.showNotification(TranslateCap('revive_complete_award', xTarget.name, Config.ReviveReward))
@@ -188,6 +203,13 @@ AddEventHandler('esx_ambulancejob:heal', function(target, type)
 	if not isAmbulanceOnDuty(xPlayer) or not xTarget or (type ~= 'small' and type ~= 'big') or not isNearPlayer(src, xTarget.source, 8.0) then return end
 	if not actionLimiter:consume(src) then return end
 
+	local itemName = type == 'small' and 'bandage' or 'medikit'
+	if not hasItem(xPlayer, itemName) then
+		xPlayer.showNotification(TranslateCap(itemName == 'bandage' and 'not_enough_bandage' or 'not_enough_medikit'))
+		return
+	end
+
+	consumeItem(xPlayer, itemName)
 	TriggerClientEvent('esx_ambulancejob:heal', xTarget.source, type)
 end)
 
@@ -282,18 +304,6 @@ function getPriceFromHash(vehicleHash, jobGrade, type)
 
 	return 0
 end
-
-RegisterNetEvent('esx_ambulancejob:removeItem')
-AddEventHandler('esx_ambulancejob:removeItem', function(item)
-	local xPlayer = ESX.GetPlayerFromId(source)
-	xPlayer.removeInventoryItem(item, 1)
-
-	if item == 'bandage' then
-		xPlayer.showNotification(TranslateCap('used_bandage'))
-	elseif item == 'medikit' then
-		xPlayer.showNotification(TranslateCap('used_medikit'))
-	end
-end)
 
 RegisterNetEvent('esx_ambulancejob:giveItem')
 AddEventHandler('esx_ambulancejob:giveItem', function(itemName, amount)

@@ -3,7 +3,12 @@
 local RESOURCE <const> = GetCurrentResourceName()
 local isOpen = false
 local isOpening = false
+local openRequest = 0
+local closedAt = 0
 local nativePauseOpen = false
+local uiText
+local OPEN_TIMEOUT_MS <const> = 5000
+local REOPEN_GUARD_MS <const> = 300
 local NATIVE_MAP_CLOSE_CONTROLS <const> = {
     177, -- INPUT_CELLPHONE_CANCEL / Backspace
     202, -- INPUT_FRONTEND_CANCEL / ESC
@@ -29,6 +34,20 @@ local function getTheme()
     return theme
 end
 
+local function getUiText()
+    if not uiText then
+        uiText = {}
+
+        for key in pairs(Locales["en"]) do
+            if key:sub(1, 3) == "ui_" then
+                uiText[key] = Translate(key)
+            end
+        end
+    end
+
+    return uiText
+end
+
 local function getClockData()
     return {
         hour = GetClockHours(),
@@ -52,6 +71,7 @@ local function closeMenu()
 
     isOpen = false
     isOpening = false
+    closedAt = GetGameTimer()
     xLib.nui.close({ type = "close" })
     TriggerScreenblurFadeOut(Config.ScreenBlurMs + 0.0)
 end
@@ -59,7 +79,9 @@ end
 local function buildConfigForNui()
     return {
         brand = Config.Brand,
-        links = Config.Links
+        links = Config.Links,
+        language = Config.Locale,
+        locale = getUiText()
     }
 end
 
@@ -89,8 +111,20 @@ local function openMenu()
     end
 
     isOpening = true
+    openRequest = openRequest + 1
+    local request = openRequest
+
+    SetTimeout(OPEN_TIMEOUT_MS, function()
+        if isOpening and request == openRequest then
+            isOpening = false
+        end
+    end)
 
     ESX.TriggerServerCallback("esx_pausemenu:getData", function(playerData)
+        if request ~= openRequest or not isOpening then
+            return
+        end
+
         if not playerData or nativePauseOpen then
             isOpening = false
             return
@@ -173,7 +207,7 @@ xLib.nui.register("openPeople", function()
         return xLib.nui.ok()
     end
 
-    return xLib.nui.fail("esx_scoreboard is not running")
+    return xLib.nui.fail(Translate("ui_scoreboard_unavailable"))
 end)
 
 xLib.nui.register("leaveServer", function()
@@ -204,7 +238,7 @@ CreateThread(function()
                 DisableControlAction(0, 24, true)
                 DisableControlAction(0, 25, true)
                 DisableControlAction(0, 142, true)
-            elseif not isOpening and (
+            elseif not isOpening and GetGameTimer() - closedAt > REOPEN_GUARD_MS and (
                 IsDisabledControlJustReleased(0, Config.Controls.pause) or
                 IsDisabledControlJustReleased(0, Config.Controls.pauseAlt)
             ) then

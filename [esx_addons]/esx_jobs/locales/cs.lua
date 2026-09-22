@@ -21,6 +21,7 @@ Locales['cs'] = {
   ['spawn_veh_button'] = 'stiksni ~INPUT_PICKUP~ pro privolani dorucovaciho voziidla.',
   ['spawn_truck_button'] = 'stiskni ~INPUT_PICKUP~ pro spawnuti trucku.',
   ['spawn_blocked'] = 'vozidlo blokuje spawn!',
+  ['vehicle_already_out'] = 'nejprve vrat sve aktualni vozidlo.',
   ['service_vh'] = 'opravit vozidlo',
   ['return_vh'] = 'vraceni vozidla',
   ['return_vh_button'] = 'stiskni ~INPUT_PICKUP~ pro navrat vozidla.',

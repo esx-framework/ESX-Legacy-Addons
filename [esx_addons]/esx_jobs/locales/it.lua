@@ -25,6 +25,7 @@ Locales['it'] = {
   ['spawn_veh_button'] = 'premi [E] per chiamare il veicolo delle consegne.',
   ['spawn_truck_button'] = 'premi [E] per spawnare il camion.',
   ['spawn_blocked'] = 'Un veicolo sta bloccando lo spawn',
+  ['vehicle_already_out'] = 'Devi prima restituire il veicolo attuale',
   ['service_vh'] = 'veicolo di servizio',
   ['return_vh'] = 'ritorna veicolo',
   ['return_vh_button'] = 'premi [E] per restituire il veicolo.',

@@ -7,6 +7,9 @@
   const get = (id) => document.getElementById(id);
   const app = get('app');
   const search = get('searchInput');
+  const logo = get('brandLogo');
+  const defaultLogo = logo.getAttribute('src');
+  const themeColors = { primaryColor: '--brand-color', secondaryColor: '--dark-color', backgroundColor: '--darkest-color', accentColor: '--mid-color' };
   const state = {
     currency: '$', menu: null, root: [], cart: [], total: 0, stats: null,
     active: null, layout: 'list', busy: false, open: false, parents: new Map(),
@@ -80,6 +83,37 @@
     const guide = get('controlGuide');
     guide.textContent = message || t('freeCameraHelp');
     guide.classList.toggle('hidden', !visible);
+  }
+
+  function rgbChannels(color) {
+    const probe = document.createElement('i');
+    probe.style.color = color;
+    document.body.append(probe);
+    const channels = getComputedStyle(probe).color.match(/[\d.]+/g);
+    probe.remove();
+    return channels && channels.length >= 3 ? channels.slice(0, 3).join(', ') : null;
+  }
+
+  function applyTheme(theme) {
+    if (!theme || typeof theme !== 'object') return;
+    const root = document.documentElement.style;
+    for (const [key, property] of Object.entries(themeColors)) {
+      const value = typeof theme[key] === 'string' ? theme[key].trim() : '';
+      if (!value || !CSS.supports('color', value)) continue;
+      root.setProperty(property, value);
+      if (key === 'primaryColor') {
+        const rgb = rgbChannels(value);
+        if (rgb) root.setProperty('--brand-color-rgb', rgb);
+      }
+    }
+    const logoUrl = typeof theme.logoUrl === 'string' ? theme.logoUrl.trim() : '';
+    logo.classList.toggle('custom', Boolean(logoUrl));
+    logo.onerror = logoUrl ? () => {
+      logo.onerror = null;
+      logo.classList.remove('custom');
+      logo.src = defaultLogo;
+    } : null;
+    logo.src = logoUrl || defaultLogo;
   }
 
   // Serialize previews and mutations so a rapid selection cannot apply out of order.
@@ -294,6 +328,7 @@
       cart.setOpen(false, false);
       setCamera('default');
       get('vehicleName').textContent = data.subtitle || 'VEHICLE';
+      applyTheme(data.theme);
       app.classList.remove('hidden');
       setControlGuide(false);
       applyServerState(data);

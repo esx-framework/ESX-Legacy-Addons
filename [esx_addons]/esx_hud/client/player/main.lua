@@ -90,7 +90,7 @@ function HUD:FastThick()
             Wait(200)
         end
 
-        local srvLogo = Config.Default.ServerLogo
+        local srvLogo = self:GetTheme().logoUrl
         while ESX.PlayerLoaded do
             if not Config.Disable.Voice then
                 self.Data.isTalking = NetworkIsPlayerTalking(ESX.playerId)
