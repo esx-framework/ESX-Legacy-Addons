@@ -25,10 +25,10 @@ end)
 xLib.nui.register("notify", function(data)
     local state = data.state
     if state == "reset" or (type(state) == "table" and state.reset) then
-        ESX.ShowNotification(Translate("settingsResetSuccess", 5000, "info"))
+        ESX.ShowNotification(Translate("settingsResetSuccess"), "info", 5000)
         return "ok"
     end
-    ESX.ShowNotification(Translate("settingsSaveSuccess", 5000, "info"))
+    ESX.ShowNotification(Translate("settingsSaveSuccess"), "info", 5000)
     return "ok"
 end)
 

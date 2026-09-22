@@ -25,6 +25,7 @@ Locales["hu"] = {
 	["spawn_veh_button"] = "Nyomj [E] hogy lekérd a szállító autót.",
 	["spawn_truck_button"] = "Nyomj [E] hogy lekérd az autót.",
 	["spawn_blocked"] = "egy autó elzárja a lekérési pontot!",
+	["vehicle_already_out"] = "előbb add vissza a jelenlegi járművedet!",
 	["service_vh"] = "munka autó",
 	["return_vh"] = "autó visszakérés",
 	["return_vh_button"] = "Nyomj [E] gombot hogy vissza add az autót.",

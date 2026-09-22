@@ -4,6 +4,7 @@
 local Radial = { isOpen = false, ready = false, busy = false, lastAction = -10000, generation = 0 }
 Accessories.Radial = Radial
 local Wardrobe = Accessories.Wardrobe
+local themeDefaults = { backgroundColor = '#121414', secondaryColor = '#1a1c1c', accentColor = '#a28d7a' }
 
 local function canUse()
     local ped = PlayerPedId()
@@ -38,7 +39,8 @@ function Radial.Open()
     Radial.ped = PlayerPedId()
     Radial.model = GetEntityModel(Radial.ped)
     xLib.nui.open({ action = 'accessories:open', data = {
-        labels = Accessories.GetLabels(), states = Wardrobe.States(), locale = Config.Locale
+        labels = Accessories.GetLabels(), states = Wardrobe.States(), locale = Config.Locale,
+        theme = xLib.colors.getESXTheme(themeDefaults)
     } }, true, true, false)
     -- This loop exists only while the menu is visible; no idle frame polling.
     CreateThread(function()

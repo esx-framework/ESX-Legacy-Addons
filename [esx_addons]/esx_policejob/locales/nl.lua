@@ -63,6 +63,7 @@ Locales['nl'] = {
     -- Service
     ['service_max'] = 'Je kan niet in dienst gaan, maximale aantal agenten in dienst: %s/%s',
     ['service_not'] = 'Je bent niet in dienst! Kleed je eerst om.',
+    ['off_duty'] = 'Je bent buiten dienst.',
     ['service_anonunce'] = 'Dienst Informatie',
     ['service_in'] = 'Je bent nu in dienst, welkom!',
     ['service_in_announce'] = 'Agent %s is nu in dienst!',

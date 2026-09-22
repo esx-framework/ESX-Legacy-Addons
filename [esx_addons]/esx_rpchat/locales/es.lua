@@ -12,4 +12,5 @@ Locales['es'] = {
   ['do_prefix'] = 'do | %s',
   ['generic_argument_name'] = 'mensaje',
   ['generic_argument_help'] = 'el mensaje',
+  ['rate_limited'] = 'Espera %s segundos antes de enviar otro mensaje.',
 }

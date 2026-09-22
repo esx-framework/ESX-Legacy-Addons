@@ -10,6 +10,8 @@ AnimationsUI.catalog = (() => {
     return node;
   }
 
+  const typeKeys = { anim: 'typeAnim', scenario: 'typeScenario', attitude: 'typeAttitude' };
+
   function typeBadge(type) {
     return text('type-badge', type);
   }
@@ -51,7 +53,7 @@ AnimationsUI.catalog = (() => {
       icon.append(create(forItem({ type: item.type })));
 
       const name = text('item-name', item.label || t('itemLabel'));
-      const badge = typeBadge(item.type || t('unknown'));
+      const badge = typeBadge(typeKeys[item.type] ? t(typeKeys[item.type]) : item.type || t('unknown'));
 
       row.append(icon, name, badge);
       row.addEventListener('click', () => onSelect(item));
@@ -62,7 +64,7 @@ AnimationsUI.catalog = (() => {
 
     if (!rows.length) {
       const empty = text('list-empty', '');
-      empty.append(create('Search'), text('', t('noResults'), 'p'));
+      empty.append(create('Search'), text('', t(items.length ? 'noResults' : 'noAnimations'), 'p'));
       container.appendChild(empty);
     }
 

@@ -14,5 +14,14 @@ CREATE TABLE IF NOT EXISTS `banking` (
   KEY `idx_banking_time` (`time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
-ALTER TABLE `banking` ADD INDEX IF NOT EXISTS `idx_banking_time` (`time`);
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `pincode` INT NULL;
+SET @banking_migration := (SELECT IF(
+  EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'banking' AND INDEX_NAME = 'idx_banking_time'),
+  'SELECT 1',
+  'ALTER TABLE `banking` ADD INDEX `idx_banking_time` (`time`)'));
+PREPARE s FROM @banking_migration; EXECUTE s; DEALLOCATE PREPARE s;
+
+SET @banking_migration := (SELECT IF(
+  EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'pincode'),
+  'SELECT 1',
+  'ALTER TABLE `users` ADD COLUMN `pincode` INT NULL'));
+PREPARE s FROM @banking_migration; EXECUTE s; DEALLOCATE PREPARE s;

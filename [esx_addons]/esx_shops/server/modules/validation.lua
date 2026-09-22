@@ -92,7 +92,7 @@ function ValidateAndCalculateItems(items, zone, source)
 			return false, 0, {}
 		end
 
-		if quantity <= 0 then
+		if quantity < 1 or quantity ~= math.floor(quantity) then
 			DebugPrint(_U('negative_quantity', source))
 			return false, 0, {}
 		end
@@ -101,8 +101,6 @@ function ValidateAndCalculateItems(items, zone, source)
 			DebugPrint(_U('excessive_quantity', source, quantity, Config.MaxQuantityPerItem))
 			return false, 0, {}
 		end
-
-		quantity = ESX.Math.Round(quantity)
 
 		local exists, serverPrice, label = GetItemFromShop(itemName, zone)
 		if not exists then

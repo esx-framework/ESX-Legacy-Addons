@@ -19,16 +19,6 @@ Locales['en'] = {
   ['ui_type_attitude'] = 'Attitude',
   ['ui_no_animations'] = 'No animations available.',
 
-  -- Categories
-  ['category_festives'] = 'Festive',
-  ['category_greetings'] = 'Greetings',
-  ['category_work'] = 'Job',
-  ['category_humors'] = 'Fun',
-  ['category_sports'] = 'Sports',
-  ['category_misc'] = 'Divers',
-  ['category_attitudem'] = 'Walking Styles',
-  ['category_porn'] = 'NSFW',
-
   -- Notifications
   ['notification_stopped'] = 'Animation stopped.',
 }

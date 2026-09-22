@@ -188,6 +188,30 @@ local function updateCurrentLocation()
     ESX.TextUI(TranslateCap(INTERACTION_STYLES[best.action].locale))
 end
 
+local trackingLocations = false
+
+local function trackCurrentLocation()
+    if trackingLocations then
+        return
+    end
+
+    trackingLocations = true
+
+    CreateThread(function()
+        while true do
+            Wait(250)
+
+            if not next(activeLocations) then
+                break
+            end
+
+            updateCurrentLocation()
+        end
+
+        trackingLocations = false
+    end)
+end
+
 ---@param location table
 ---@param raw vector3 | table
 ---@param action GarageAction
@@ -219,6 +243,7 @@ local function addInteractionPoint(location, raw, action)
         enter = function()
             activeLocations[index] = entry
             updateCurrentLocation()
+            trackCurrentLocation()
         end,
         leave = function()
             activeLocations[index] = nil

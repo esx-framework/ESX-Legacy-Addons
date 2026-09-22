@@ -1163,7 +1163,7 @@ xLib.callback.registerCompat('esx_property:GetNearbyPlayers', function(source, c
     return cb(Players)
   end
 
-  local NearbyPlayers = xLib.onesync.getPlayersInArea(vector3(Property.Entrance.x, Property.Entrance.y, Property.Entrance.z), 5.0)
+  local NearbyPlayers = ESX.OneSync.GetPlayersInArea(vector3(Property.Entrance.x, Property.Entrance.y, Property.Entrance.z), 5.0) or {}
   Wait(100)
     for k, v in pairs(NearbyPlayers) do
       local xTarget = ESX.GetPlayerFromId(v.id)

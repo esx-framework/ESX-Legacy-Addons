@@ -16,6 +16,12 @@ const inGame = typeof window.GetParentResourceName === "function";
 const preview = !inGame && new URLSearchParams(location.search).has("preview");
 const moduleKeys = ["Status", "Vehicle", "Weapon", "Position", "Voice", "Money", "Info"];
 const emptyStatus = { healthBar: 0, armorBar: 0, foodBar: 0, drinkBar: 0, staminaBar: 0, oxygenBar: 0, underwater: false };
+const channels = (value) => {
+    const match = /^#([0-9a-f]{3}|[0-9a-f]{6})([0-9a-f]{2})?$/i.exec(String(value ?? "").trim());
+    if (!match) return undefined;
+    const hex = match[1].length === 3 ? [...match[1]].map((c) => c + c).join("") : match[1];
+    return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ");
+};
 
 export default function App() {
     const [visible, setVisible] = createSignal(preview);
@@ -44,7 +50,9 @@ export default function App() {
     const range = () => clamp(hud.voice.range || 2, 1, 3);
     const direction = () => ["N", "NW", "W", "SW", "S", "SE", "E", "NE"][Math.round(clamp(hud.heading, 0, 360) / 45) % 8];
     const moduleVisible = () => visible() && !prefs.cinematic;
-    const serverLogo = () => hud.serverLogo || defaultLogo;
+    const theme = () => config.Theme || {};
+    const brand = () => theme().primaryColor || config.Default.AccentColor || "#fb9b04";
+    const serverLogo = () => theme().logoUrl || hud.serverLogo || defaultLogo;
     const showStatus = (key) => !prefs.smartStatus || (key === "oxygenBar" ? status.underwater : key === "staminaBar" ? status.staminaBar < 99 : key === "armorBar" ? status.armorBar > 0 : true);
     const critical = (key) => key !== "armorBar" && clamp(status[key]) <= 20;
     const alert = () => (fuel() <= 15 ? "lowFuel" : vehicle.damage <= 30 ? "engineWarning" : vehicle.vehType === "LAND" && !indicators().seatbelt && vehicle.speed > 10 ? "belt" : "");
@@ -201,7 +209,7 @@ export default function App() {
         </span>
     );
     return (
-        <main classList={{ "hud-root": true, preview: preview, compact: prefs.compact, contrast: prefs.contrast, "reduced-motion": prefs.reducedMotion }} style={{ "--hud-scale": viewportScale() * prefs.scale, "--panel-opacity": prefs.opacity, "--brand": config.Default.AccentColor || "#fb9b04" }}>
+        <main classList={{ "hud-root": true, preview: preview, compact: prefs.compact, contrast: prefs.contrast, "reduced-motion": prefs.reducedMotion }} style={{ "--hud-scale": viewportScale() * prefs.scale, "--panel-opacity": prefs.opacity, "--brand": brand(), "--surface-rgb": channels(theme().backgroundColor) || "22, 22, 22", "--secondary": theme().secondaryColor || "#191919", "--mid": theme().accentColor || "#383838" }}>
             <Show when={preview}>
                 <div class="preview-scene" aria-hidden="true">
                     <div class="scene-grid" />
@@ -235,7 +243,8 @@ export default function App() {
                                     src={serverLogo()}
                                     alt={config.Default.ServerName || ""}
                                     onError={(event) => {
-                                        event.currentTarget.removeAttribute("src");
+                                        if (event.currentTarget.getAttribute("src") !== defaultLogo) event.currentTarget.src = defaultLogo;
+                                        else event.currentTarget.removeAttribute("src");
                                     }}
                                 />
                             </header>
@@ -447,7 +456,7 @@ export default function App() {
                                     </div>
                                     <strong>LEGACY ORIGINAL</strong>
                                     <p>{t("controls")}</p>
-                                    <small>#FB9B04</small>
+                                    <small>{brand().toUpperCase()}</small>
                                 </div>
                             </nav>
                             <div class="settings-content">

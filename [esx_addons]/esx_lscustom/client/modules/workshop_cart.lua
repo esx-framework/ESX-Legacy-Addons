@@ -7,10 +7,6 @@ WorkshopCart = {
 }
 
 local function getCartKey(item)
-    if item.modType == 'modFrontWheels' or item.modType == 'modBackWheels' then
-        return ('%s:%s'):format(item.modType, tostring(item.wheelType or ''))
-    end
-
     return tostring(item.modType or item.menuKey)
 end
 

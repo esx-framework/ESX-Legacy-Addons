@@ -18,4 +18,8 @@ server_scripts {
 	'server/main.lua'
 }
 
-dependency 'esx_lib'
+dependencies {
+	'esx_lib',
+	'es_extended',
+	'oxmysql'
+}

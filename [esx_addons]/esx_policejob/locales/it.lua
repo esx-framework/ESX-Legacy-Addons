@@ -63,6 +63,7 @@ Locales['it'] = {
   -- Servizio
   ['service_max'] = 'non puoi entrare in servizio, numero massimo di agenti in servizio: %s/%s',
   ['service_not'] = 'non sei in servizio! Devi cambiarti prima.',
+  ['off_duty'] = 'sei fuori servizio.',
   ['service_anonunce'] = 'informazioni servizio',
   ['service_in'] = 'sei entrato in servizio, benvenuto!',
   ['service_in_announce'] = 'l\'operatore %s è entrato in servizio!',

@@ -15,7 +15,7 @@
             <header class="topbar">
                 <div class="brand-wrap">
                     <div id="brandLogoImageWrap" class="brand-logo-image-wrap is-hidden">
-                        <img id="brandLogoImage" alt="Server logo" />
+                        <img id="brandLogoImage" alt="Server logo" data-alt="ui_server_logo" />
                     </div>
                     <div id="brandTextWrap" class="brand-text-wrap">
                         <div id="brandKicker" class="brand-kicker">FIVEM ROLEPLAY</div>
@@ -24,17 +24,17 @@
                     </div>
                 </div>
 
-                <nav class="topnav" aria-label="Pause menu navigation">
-                    <button data-top-action="resume">PLAY</button>
-                    <button data-top-action="people">PEOPLE</button>
-                    <button data-top-action="rules">RULES</button>
-                    <button data-top-action="store">STORE</button>
-                    <button class="topnav-discord" data-top-action="discord"><svg><use href="#i-discord"/></svg><span>DISCORD</span></button>
+                <nav class="topnav" aria-label="Pause menu navigation" data-label="ui_nav_label">
+                    <button data-top-action="resume" data-text="ui_play">PLAY</button>
+                    <button data-top-action="people" data-text="ui_people">PEOPLE</button>
+                    <button data-top-action="rules" data-text="ui_rules">RULES</button>
+                    <button data-top-action="store" data-text="ui_store">STORE</button>
+                    <button class="topnav-discord" data-top-action="discord"><svg><use href="#i-discord"/></svg><span data-text="ui_discord">DISCORD</span></button>
                 </nav>
 
                 <div class="top-status">
                     <div class="identity-chip">
-                        <div id="topAvatar" class="avatar-icon" aria-label="Player avatar"><svg><use href="#i-user"/></svg></div>
+                        <div id="topAvatar" class="avatar-icon" aria-label="Player avatar" data-label="ui_player_avatar"><svg><use href="#i-user"/></svg></div>
                         <div>
                             <strong id="topName">Rwixy</strong>
                             <span><svg><use href="#i-briefcase"/></svg><span id="topRole">Unemployed</span></span>
@@ -46,7 +46,7 @@
                     </div>
                     <div class="status-chip compact">
                         <svg><use href="#i-people"/></svg>
-                        <div><strong id="playersText">231 / 1024</strong><span>PLAYERS</span></div>
+                        <div><strong id="playersText">231 / 1024</strong><span data-text="ui_players">PLAYERS</span></div>
                     </div>
                     <div class="status-chip location-chip">
                         <svg><use href="#i-pin"/></svg>
@@ -58,37 +58,37 @@
             <aside class="sidebar panel">
                 <button class="side-item is-active" data-action="resume">
                     <span class="side-icon"><svg><use href="#i-home"/></svg></span>
-                    <span class="side-copy"><strong>RESUME</strong><small>Back to game</small></span>
+                    <span class="side-copy"><strong data-text="ui_resume">RESUME</strong><small data-text="ui_resume_hint">Back to game</small></span>
                     <span class="chevron">›</span>
                 </button>
                 <button class="side-item" data-action="map">
                     <span class="side-icon"><svg><use href="#i-map"/></svg></span>
-                    <span class="side-copy"><strong>MAP</strong><small></small></span>
+                    <span class="side-copy"><strong data-text="ui_map">MAP</strong><small></small></span>
                     <span class="chevron">›</span>
                 </button>
                 <button class="side-item" data-action="character">
                     <span class="side-icon"><svg><use href="#i-user"/></svg></span>
-                    <span class="side-copy"><strong>CHARACTER</strong><small></small></span>
+                    <span class="side-copy"><strong data-text="ui_character">CHARACTER</strong><small></small></span>
                     <span class="chevron">›</span>
                 </button>
                 <button class="side-item" data-action="settings">
                     <span class="side-icon"><svg><use href="#i-settings"/></svg></span>
-                    <span class="side-copy"><strong>SETTINGS</strong><small></small></span>
+                    <span class="side-copy"><strong data-text="ui_settings">SETTINGS</strong><small></small></span>
                     <span class="chevron">›</span>
                 </button>
                 <button class="side-item" data-action="server-info">
                     <span class="side-icon"><svg><use href="#i-people"/></svg></span>
-                    <span class="side-copy"><strong>SERVER INFO</strong><small>Rules, staff &amp; links</small></span>
+                    <span class="side-copy"><strong data-text="ui_server_info">SERVER INFO</strong><small data-text="ui_server_info_hint">Rules, staff &amp; links</small></span>
                     <span class="chevron">›</span>
                 </button>
                 <button class="side-item" data-action="store">
                     <span class="side-icon"><svg><use href="#i-cart"/></svg></span>
-                    <span class="side-copy"><strong>STORE</strong><small></small></span>
+                    <span class="side-copy"><strong data-text="ui_store">STORE</strong><small></small></span>
                     <span class="chevron">›</span>
                 </button>
                 <button class="side-item" data-action="leave">
                     <span class="side-icon"><svg><use href="#i-logout"/></svg></span>
-                    <span class="side-copy"><strong>LEAVE SERVER</strong><small>Disconnect &amp; exit</small></span>
+                    <span class="side-copy"><strong data-text="ui_leave_server">LEAVE SERVER</strong><small data-text="ui_leave_hint">Disconnect &amp; exit</small></span>
                     <span class="chevron"></span>
                 </button>
 
@@ -100,60 +100,60 @@
             <section class="main-content">
                 <article class="hero panel">
                     <div class="hero-copy">
-                        <span>WELCOME BACK,</span>
+                        <span data-text="ui_welcome_back">WELCOME BACK,</span>
                         <strong id="heroName">Rwixy</strong>
-                        <h1 id="heroHeadline">YOUR CHARACTER IS READY.</h1>
+                        <h1 id="heroHeadline" data-text="ui_character_ready">YOUR CHARACTER IS READY.</h1>
                     </div>
                 </article>
 
                 <div class="content-grid">
                     <article id="playerCard" class="player-card panel">
                         <div class="card-head">
-                            <div><svg><use href="#i-user"/></svg><strong>CHARACTER</strong></div>
+                            <div><svg><use href="#i-user"/></svg><strong data-text="ui_character">CHARACTER</strong></div>
                             <span id="headId">#152</span>
                         </div>
                         <div class="player-summary">
-                            <div id="playerAvatar" class="player-avatar-icon" aria-label="Player avatar"><svg><use href="#i-user"/></svg></div>
+                            <div id="playerAvatar" class="player-avatar-icon" aria-label="Player avatar" data-label="ui_player_avatar"><svg><use href="#i-user"/></svg></div>
                             <div class="player-summary-copy"><strong id="playerName">Rwixy</strong><span><span id="playerMeta">#152 · Unemployed</span></span></div>
                         </div>
                         <div class="character-stats">
-                            <div><span>BANK</span><strong id="bankValue">$ 125,460</strong></div>
-                            <div><span>CASH</span><strong id="cashValue">$ 3,250</strong></div>
-                            <div><span>PLAYTIME</span><strong id="playtimeValue">12h 36m</strong></div>
+                            <div><span data-text="ui_bank">BANK</span><strong id="bankValue">$ 125,460</strong></div>
+                            <div><span data-text="ui_cash">CASH</span><strong id="cashValue">$ 3,250</strong></div>
+                            <div><span data-text="ui_playtime">PLAYTIME</span><strong id="playtimeValue">12h 36m</strong></div>
                         </div>
                     </article>
 
                     <article class="map-card panel">
                         <div class="card-head map-head">
-                            <div><svg><use href="#i-map"/></svg><strong>LOCATION</strong></div>
-                            <button data-action="map"><span>MAP</span><b>›</b></button>
+                            <div><svg><use href="#i-map"/></svg><strong data-text="ui_location">LOCATION</strong></div>
+                            <button data-action="map"><span data-text="ui_map">MAP</span><b>›</b></button>
                         </div>
-                        <button class="location-map" data-action="map" aria-label="Open map">
+                        <button class="location-map" data-action="map" aria-label="Open map" data-label="ui_open_map">
                             <div class="map-image-wrap">
-                                <img src="assets/gtavmap.webp" alt="Complete GTA V map in black and white" />
+                                <img src="assets/gtavmap.webp" alt="Complete GTA V map in black and white" data-alt="ui_map_alt" />
                             </div>
                         </button>
                     </article>
                 </div>
 
                 <div class="quick-links">
-                    <button class="quick panel" data-action="discord"><svg><use href="#i-discord"/></svg><div><strong>DISCORD</strong><span>Join our community</span></div><b>›</b></button>
-                    <button class="quick panel" data-action="rules"><svg><use href="#i-doc"/></svg><div><strong>RULES</strong><span>Read server rules</span></div><b>›</b></button>
-                    <button class="quick panel" data-action="store"><svg><use href="#i-cart"/></svg><div><strong>STORE</strong><span>Support the server</span></div><b>›</b></button>
+                    <button class="quick panel" data-action="discord"><svg><use href="#i-discord"/></svg><div><strong data-text="ui_discord">DISCORD</strong><span data-text="ui_discord_hint">Join our community</span></div><b>›</b></button>
+                    <button class="quick panel" data-action="rules"><svg><use href="#i-doc"/></svg><div><strong data-text="ui_rules">RULES</strong><span data-text="ui_rules_hint">Read server rules</span></div><b>›</b></button>
+                    <button class="quick panel" data-action="store"><svg><use href="#i-cart"/></svg><div><strong data-text="ui_store">STORE</strong><span data-text="ui_store_hint">Support the server</span></div><b>›</b></button>
                 </div>
             </section>
 
             <footer class="footer">
-                <div class="footer-left"><i></i><span>ESX LEGACY</span><b>|</b><span>ROLEPLAY BEYOND LIMITS</span><b>|</b><span>SINCE <span id="establishedText">2015</span></span></div>
+                <div class="footer-left"><i></i><span>ESX LEGACY</span><b>|</b><span>ROLEPLAY BEYOND LIMITS</span><b>|</b><span><span data-text="ui_since">SINCE</span> <span id="establishedText">2015</span></span></div>
                 <div class="footer-right">
                     <div class="community-line"><span id="communityLine">BUILT BY A COMMUNITY THAT CARES</span><i></i></div>
-                    <div class="controls-hint"><span><kbd>Esc</kbd> Close</span><span><kbd>↑↓←→</kbd> Navigate</span><span><kbd>Enter</kbd> Select</span></div>
+                    <div class="controls-hint"><span><kbd>Esc</kbd> <span data-text="ui_close">Close</span></span><span><kbd>↑↓←→</kbd> <span data-text="ui_navigate">Navigate</span></span><span><kbd>Enter</kbd> <span data-text="ui_select">Select</span></span></div>
                 </div>
             </footer>
 
             <div id="modal" class="modal is-hidden" role="dialog" aria-modal="true">
                 <div class="modal-card panel">
-                    <button id="modalClose" class="modal-x" aria-label="Close">×</button>
+                    <button id="modalClose" class="modal-x" aria-label="Close" data-label="ui_close">×</button>
                     <div id="modalIcon" class="modal-icon"><svg><use href="#i-people"/></svg></div>
                     <h2 id="modalTitle">SERVER INFO</h2>
                     <p id="modalText"></p>

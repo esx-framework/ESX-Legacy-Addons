@@ -14,7 +14,7 @@ The menu lists existing non-whitelisted ESX jobs with grade 0. Job changes are c
 
 `Config.JobDetails[jobName]` optionally supplies `subtitle`, `description`, `image` (a local `assets/...` path), `rating` (0–5), `location = {x, y}`, `requirement` (display text) and `tasks`. A mining presentation is included. Job names, labels and salaries come from ESX; other jobs use a neutral ESX image until configured. A requirement label is informational and does not create a new license restriction.
 
-The profile uses the player's ESX name, server ID, date of birth, sex, phoneNumber variable, job, grade and salary. Unavailable personal information and statistics display `—`. The interface preserves the English copy in the supplied design. Quit Job assigns `Config.UnemployedJob` (default `unemployed`).
+The profile uses the player's ESX name, server ID, date of birth, sex, phoneNumber variable, job, grade and salary. Unavailable personal information and statistics display `—`. Interface text comes from `locales/*.lua` (selected by `esx:locale`); colors and logo follow the `esx:ui:*` theme convars. Quit Job assigns `Config.UnemployedJob` (default `unemployed`).
 
 ## Task and statistics integration
 

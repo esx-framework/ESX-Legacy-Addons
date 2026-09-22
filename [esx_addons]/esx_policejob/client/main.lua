@@ -10,6 +10,10 @@ local function vehicleExists(vehicle)
 	return vehicle and vehicle ~= 0 and DoesEntityExist(vehicle)
 end
 
+local function isOffDuty()
+	return ESX.PlayerData.job and ESX.PlayerData.job.onDuty == false
+end
+
 local function getPoliceActionVehicle()
 	local vehicle = xLib.game.getVehicleInDirection()
 
@@ -1417,13 +1421,15 @@ xLib.addKeybind({
 		return 
 	end
 
-	if not ESX.PlayerData.job or (ESX.PlayerData.job and not ESX.PlayerData.job.name == 'police') then
+	if not ESX.PlayerData.job or ESX.PlayerData.job.name ~= 'police' then
 		return
 	end
 	if CurrentAction == 'menu_cloakroom' then
 		OpenCloakroomMenu()
 	elseif CurrentAction == 'menu_armory' then
-		if not Config.EnableESXService then
+		if isOffDuty() then
+			ESX.ShowNotification(TranslateCap('off_duty'))
+		elseif not Config.EnableESXService then
 			OpenArmoryMenu(CurrentActionData.station)
 		elseif playerInService then
 			OpenArmoryMenu(CurrentActionData.station)
@@ -1431,7 +1437,9 @@ xLib.addKeybind({
 			ESX.ShowNotification(TranslateCap('service_not'))
 		end
 	elseif CurrentAction == 'menu_vehicle_spawner' then
-		if not Config.EnableESXService then
+		if isOffDuty() then
+			ESX.ShowNotification(TranslateCap('off_duty'))
+		elseif not Config.EnableESXService then
 			OpenVehicleSpawnerMenu('car', CurrentActionData.station, CurrentActionData.part, CurrentActionData.partNum)
 		elseif playerInService then
 			OpenVehicleSpawnerMenu('car', CurrentActionData.station, CurrentActionData.part, CurrentActionData.partNum)
@@ -1439,7 +1447,9 @@ xLib.addKeybind({
 			ESX.ShowNotification(TranslateCap('service_not'))
 		end
 	elseif CurrentAction == 'Helicopters' then
-		if not Config.EnableESXService then
+		if isOffDuty() then
+			ESX.ShowNotification(TranslateCap('off_duty'))
+		elseif not Config.EnableESXService then
 			OpenVehicleSpawnerMenu('helicopter', CurrentActionData.station, CurrentActionData.part, CurrentActionData.partNum)
 		elseif playerInService then
 			OpenVehicleSpawnerMenu('helicopter', CurrentActionData.station, CurrentActionData.part, CurrentActionData.partNum)
@@ -1475,7 +1485,9 @@ xLib.addKeybind({
 		return
 	end
 
-	if not Config.EnableESXService then
+	if isOffDuty() then
+		ESX.ShowNotification(TranslateCap('off_duty'))
+	elseif not Config.EnableESXService then
 		OpenPoliceActionsMenu()
 	elseif playerInService then
 		OpenPoliceActionsMenu()

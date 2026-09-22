@@ -43,8 +43,8 @@ the focused option.
 - No idle frame loop: the menu checks state every 200 ms only while visible.
 
 The white background belongs only to browser preview mode. In FiveM the background is transparent.
-The interface is English by default; `Config.Locale = 'es'` selects Spanish. Other locales
-can add the same keys in `locales/`, with English as the fallback.
+The interface follows the `esx:locale` convar; English and Spanish are included. Other locales
+can add the same keys in `locales/`, with English as the fallback. Colors follow the `esx:ui:*` theme convars.
 
 ## Appearance Integration
 

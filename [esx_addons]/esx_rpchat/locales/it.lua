@@ -11,4 +11,5 @@ Locales['it'] = {
   ['do_prefix'] = 'fa | %s',
   ['generic_argument_name'] = 'Messaggio',
   ['generic_argument_help'] = 'il messaggio',
+  ['rate_limited'] = 'Attendi %s secondi prima di inviare un altro messaggio.',
 }

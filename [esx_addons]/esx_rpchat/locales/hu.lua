@@ -11,4 +11,5 @@ Locales['hu'] = {
   ['do_prefix'] = 'do | %s',
   ['generic_argument_name'] = 'üzenet',
   ['generic_argument_help'] = 'az üzenet',
+  ['rate_limited'] = 'Várj %s másodpercet, mielőtt újabb üzenetet küldesz.',
 }

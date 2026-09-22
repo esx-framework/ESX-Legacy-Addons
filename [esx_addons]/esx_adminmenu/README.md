@@ -148,7 +148,7 @@ Helper commands:
 - `/vec3`
 - `/vec4`
 - `/heading`
-- `/coords` or `/copycoords`
+- `/copycoords`
 - `/rot` or `/rotation`
 - `/model` or `/entitymodel`
 - `/vehplate` or `/copyplate`

@@ -163,7 +163,7 @@ local function withinRate(actor)
     end
 
     local key = tostring(actor or "unknown")
-    local allowed, retryAfter = getRateLimiter(limit):consume(key)
+    local allowed = getRateLimiter(limit):consume(key)
 
     if not allowed then
         -- Announce the mute once per refill period rather than on every drop.
@@ -171,11 +171,9 @@ local function withinRate(actor)
             rateMuted[key] = true
             print(("[esx-adminmenu] Log rate limit hit for %s, muted for this minute"):format(key))
 
-            if retryAfter and retryAfter < math.huge then
-                SetTimeout(math.max(1000, retryAfter), function()
-                    rateMuted[key] = nil
-                end)
-            end
+            SetTimeout(60000, function()
+                rateMuted[key] = nil
+            end)
         end
 
         return false
@@ -217,18 +215,26 @@ function Logs.record(entry)
         return
     end
 
+    local function clip(value, maxLength)
+        if value == nil then
+            return nil
+        end
+
+        return tostring(value):sub(1, maxLength)
+    end
+
     local ok, row = pcall(function()
         local actorIdentifier, actorName = resolveActor(entry.actor)
         local targetIdentifier, targetName = resolveActor(entry.target)
 
         return {
             at = os.time(),
-            actor_identifier = actorIdentifier or "unknown",
-            actor_name = actorName or entry.actorName,
-            namespace = tostring(entry.namespace or "unknown"),
-            action = action,
-            target_identifier = targetIdentifier,
-            target_name = targetName or entry.targetName,
+            actor_identifier = clip(actorIdentifier or "unknown", 64),
+            actor_name = clip(actorName or entry.actorName, 64),
+            namespace = clip(entry.namespace or "unknown", 32),
+            action = clip(action, 64),
+            target_identifier = clip(targetIdentifier, 64),
+            target_name = clip(targetName or entry.targetName, 64),
             success = entry.success ~= false and 1 or 0,
             error = entry.err and tostring(entry.err):sub(1, 190) or nil,
             payload = encodePayload(entry.payload),
@@ -469,13 +475,15 @@ end
 function Logs.purge()
     local days = tonumber(config().RetentionDays) or 30
     if days <= 0 then
-        return 0
+        return 0, false
     end
 
     local batchSize = math.max(50, math.min(tonumber(config().PurgeBatchSize) or 250, 1000))
-    local maxBatches = math.max(1, math.min(tonumber(config().PurgeMaxBatches) or 4, 20))
+    local timeBudget = math.max(1000, math.min(tonumber(config().PurgeTimeBudget) or 5000, 60000))
     local batchDelay = math.max(0, math.min(tonumber(config().PurgeBatchDelay) or 250, 5000))
+    local deadline = GetGameTimer() + timeBudget
     local removed = 0
+    local backlog = false
     local deleteSql = ([[
         DELETE l FROM admin_logs l
         JOIN (
@@ -489,20 +497,19 @@ function Logs.purge()
         ) expired ON expired.id = l.id
     ]]):format(batchSize)
 
-    for _ = 1, maxBatches do
+    repeat
         local affected = Helpers.safeUpdate(deleteSql, { math.floor(days) })
 
         affected = tonumber(affected) or 0
         removed = removed + affected
+        backlog = affected >= batchSize
 
-        if affected < batchSize then
-            break
+        if backlog and GetGameTimer() < deadline then
+            Wait(batchDelay)
         end
+    until not backlog or GetGameTimer() >= deadline
 
-        Wait(batchDelay)
-    end
-
-    return removed
+    return removed, backlog
 end
 
 CreateThread(function()
@@ -515,9 +522,13 @@ CreateThread(function()
 end)
 
 CreateThread(function()
+    local delay = 3600000
+
     while true do
-        Wait(3600000)
-        pcall(Logs.purge)
+        Wait(delay)
+
+        local ok, _, backlog = pcall(Logs.purge)
+        delay = ok and backlog and math.max(1000, math.min(tonumber(config().PurgeBacklogDelay) or 60000, 3600000)) or 3600000
     end
 end)
 

@@ -5,11 +5,12 @@
   const inGame = typeof GetParentResourceName === 'function';
   const preview = !inGame && new URLSearchParams(location.search).has('preview');
   let state = {}, visible = false, holdStart = null, holdFrame = null, previewClock;
-  let locale = 'en';
-  const t = (key, values = {}) => (window.DeathLocales[locale][key] ?? window.DeathLocales.en[key])
+  let locale = 'en', strings = {};
+  const t = (key, values = {}) => String(strings[key] ?? window.DeathLocales.en[key] ?? '')
     .replace(/\{(\w+)\}/g, (match, name) => values[name] ?? match);
-  function setLocale(value) {
-    locale = value === 'es' ? 'es' : 'en';
+  function setLocale(value, translated) {
+    locale = typeof value === 'string' && value ? value : 'en';
+    strings = translated && typeof translated === 'object' ? translated : {};
     document.documentElement.lang = locale;
     document.title = t('pageTitle');
     for (const [id, key] of Object.entries({
@@ -23,6 +24,41 @@
     const seconds = Math.ceil(number(value));
     return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
   };
+  const timeParts = value => {
+    const seconds = Math.ceil(number(value));
+    return { time: formatTime(seconds), minutes: Math.floor(seconds / 60), seconds: seconds % 60 };
+  };
+  const formatNumber = value => {
+    try { return value.toLocaleString(t('numberLocale')); } catch { return value.toLocaleString('en-US'); }
+  };
+  const defaultLogo = $('brand-logo').getAttribute('src');
+  $('brand-logo').addEventListener('error', () => {
+    if ($('brand-logo').getAttribute('src') !== defaultLogo) $('brand-logo').src = defaultLogo;
+  });
+  const rgb = value => {
+    const match = /^#?([\da-f]{3}|[\da-f]{6})$/i.exec(String(value ?? '').trim());
+    if (!match) return null;
+    const hex = match[1].length === 3 ? [...match[1]].map(digit => digit + digit).join('') : match[1];
+    return [0, 2, 4].map(offset => parseInt(hex.slice(offset, offset + 2), 16));
+  };
+  function applyTheme(theme) {
+    if (!theme || typeof theme !== 'object') return;
+    const root = document.documentElement.style;
+    const primary = rgb(theme.primaryColor);
+    if (primary) {
+      root.setProperty('--brand', `rgb(${primary})`);
+      root.setProperty('--brand-rgb', primary.join(','));
+      root.setProperty('--brand-bright', `rgb(${primary.map(channel => Math.round(channel + (255 - channel) * 0.22))})`);
+    }
+    const background = rgb(theme.backgroundColor);
+    if (background) root.setProperty('--background-rgb', background.join(','));
+    for (const [property, value] of [['--secondary', theme.secondaryColor], ['--accent', theme.accentColor]]) {
+      const color = rgb(value);
+      if (color) root.setProperty(property, `rgb(${color})`);
+    }
+    const logoUrl = typeof theme.logoUrl === 'string' ? theme.logoUrl.trim() : '';
+    $('brand-logo').src = logoUrl || defaultLogo;
+  }
   const post = async (action, data = {}) => {
     if (!inGame) return { ok: true };
     try {
@@ -44,19 +80,8 @@
   };
   function render(data) {
     state = { ...state, ...data };
-    if (state.locale !== locale) setLocale(state.locale);
     visible = true;
     $('death-screen').hidden = false;
-    if (state.brand) {
-      for (const [property, value] of [['--brand', state.brand.color], ['--brand-bright', state.brand.bright]]) {
-        if (/^#[\da-f]{6}$/i.test(value)) document.documentElement.style.setProperty(property, value);
-      }
-      if (/^#[\da-f]{6}$/i.test(state.brand.color)) {
-        const hex = state.brand.color.slice(1);
-        const rgb = [0, 2, 4].map(offset => parseInt(hex.slice(offset, offset + 2), 16)).join(',');
-        document.documentElement.style.setProperty('--brand-rgb', rgb);
-      }
-    }
     const [minutes, seconds] = formatTime(state.remaining).split(':');
     $('countdown').replaceChildren(document.createTextNode(minutes), Object.assign(document.createElement('span'), { textContent: ':' }), document.createTextNode(seconds));
     $('countdown').setAttribute('aria-label', t('countdown', { minutes, seconds }));
@@ -73,10 +98,10 @@
     $('respawn').disabled = early > 0 || !!state.pending;
     $('respawn-title').textContent = t(state.pending ? 'respawnPreparing' : 'respawnTitle');
     const cost = number(state.fine) > 0 && number(state.remaining) > 0
-      ? `$${number(state.fine).toLocaleString(t('numberLocale'))}` : t('respawnFree');
-    $('respawn-description').textContent = early > 0 ? t('respawnAvailable', { time: formatTime(early) })
+      ? `$${formatNumber(number(state.fine))}` : t('respawnFree');
+    $('respawn-description').textContent = early > 0 ? t('respawnAvailable', timeParts(early))
       : state.pending ? t('respawnWait')
-      : `${t('respawnHold', { duration: (number(state.holdDuration || 1500) / 1000).toLocaleString(t('numberLocale')) })} · ${cost}`;
+      : `${t('respawnHold', { duration: formatNumber(number(state.holdDuration || 1500) / 1000) })} · ${cost}`;
     if ($('respawn').disabled) cancelHold();
   }
   async function distress() {
@@ -104,7 +129,20 @@
   }
   function beginHold() {
     if (!visible || $('respawn').disabled || holdStart !== null) return;
-    void respawn();
+    const duration = Math.max(1, number(state.holdDuration || 1500));
+    holdStart = performance.now();
+    const step = now => {
+      if (holdStart === null) return;
+      const progress = Math.min(1, (now - holdStart) / duration);
+      hold(progress);
+      if (progress >= 1) {
+        cancelHold();
+        void respawn();
+        return;
+      }
+      holdFrame = requestAnimationFrame(step);
+    };
+    holdFrame = requestAnimationFrame(step);
   }
   $('distress').addEventListener('click', distress);
   $('respawn').addEventListener('pointerdown', event => {
@@ -132,15 +170,20 @@
     if (!data || typeof data.action !== 'string') return;
     switch (data.action) {
       case 'state': if (data.data && typeof data.data === 'object') render(data.data); break;
+      case 'theme': applyTheme(data.data); break;
+      case 'locale':
+        if (data.data && typeof data.data === 'object') setLocale(data.data.locale, data.data.strings);
+        if (visible) render({});
+        break;
       case 'hide': visible = false; cancelHold(); $('death-screen').hidden = true; $('feedback').textContent = ''; $('death-reason').textContent = ''; state = {}; break;
       case 'hold': hold(data.data); break;
       case 'feedback': $('feedback').textContent = typeof data.data === 'string' ? data.data : ''; break;
     }
   });
-  setLocale(preview ? new URLSearchParams(location.search).get('locale') : 'en');
+  setLocale('en');
   if (preview) {
     document.body.classList.add('preview');
-    render({ locale, remaining: 584, earlyRemaining: 24, total: 660, distressRemaining: 0, playerId: 28,
+    render({ remaining: 584, earlyRemaining: 24, total: 660, distressRemaining: 0, playerId: 28,
       location: 'Vespucci Boulevard', zone: 'Pillbox Hill', holdDuration: 1500, fine: 0,
       deathReason: t('killedByPlayer') });
     previewClock = setInterval(() => render({ remaining: Math.max(0, state.remaining - 1),

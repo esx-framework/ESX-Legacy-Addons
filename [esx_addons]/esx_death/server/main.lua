@@ -4,7 +4,12 @@
 -- Server state
 local states = {}
 local locks = {}
+local published = {}
+local retries = {}
+local recoveredAt = {}
 local ready = false
+
+local deathLimiter = xLib.rateLimiter({ capacity = 3, refill = 1, interval = 5000, staleMs = 60000 })
 
 local earlySeconds = math.ceil(Config.EarlyRespawnTimer / 1000)
 local totalSeconds = earlySeconds + math.ceil(Config.BleedoutTimer / 1000)
@@ -72,7 +77,17 @@ end
 local function publish(src, state, reason)
     dbg('publish', { src = src, dead = state.dead, reason = reason, identifier = state.identifier })
 
-    Player(src).state:set('isDead', state.dead, true)
+    local bag = Player(src).state
+
+    if (bag.isDead == true) ~= state.dead then
+        bag:set('isDead', state.dead, true)
+    end
+
+    if (published[src] or false) == state.dead then
+        return
+    end
+
+    published[src] = state.dead
     TriggerEvent('esx_death:stateChanged', src, state.dead, reason)
 end
 
@@ -225,6 +240,7 @@ local function save(src, player, state, dead, reason)
     end
 
     if not dead then
+        recoveredAt[src] = GetGameTimer()
         state.deathKiller = nil
     end
 
@@ -236,16 +252,49 @@ end
 
 -- Death recording
 
+local function sanitizeDeathCause(value)
+    if type(value) == 'number' then
+        local hash = math.tointeger(value)
+
+        if hash and hash >= -2147483648 and hash <= 4294967295 then
+            return hash
+        end
+
+        return nil
+    end
+
+    if type(value) == 'string' and #value <= 64 and value:find('^[%w_]+$') then
+        return value
+    end
+
+    return nil
+end
+
+local function sanitizeDeathInfo(src, data)
+    if type(data) ~= 'table' then
+        return nil
+    end
+
+    local killedByPlayer = data.killedByPlayer == true
+    local killer = killedByPlayer and type(data.killerServerId) == 'number' and math.tointeger(data.killerServerId) or nil
+
+    if killer and (killer == src or not ESX.GetPlayerFromId(killer)) then
+        killer = nil
+    end
+
+    return {
+        killedByPlayer = killedByPlayer,
+        killerServerId = killer,
+        deathCause = sanitizeDeathCause(data.deathCause),
+    }
+end
+
 local function recordDeath(src, deathInfo)
     dbg('recordDeath:attempt', { src = src, deathInfo = deathInfo })
 
     return withPlayer(src, function(id, player, state)
         if not state.dead then
-            state.deathKiller = type(deathInfo) == 'table' and {
-                killedByPlayer = deathInfo.killedByPlayer,
-                killerServerId = deathInfo.killerServerId,
-                deathCause = deathInfo.deathCause,
-            } or nil
+            state.deathKiller = deathInfo
 
             if not save(id, player, state, true, 'death') then
                 dbg('recordDeath:save-failed', { src = id })
@@ -266,34 +315,82 @@ end
 
 -- Events
 
+local function retryDeath(src, player, deathInfo)
+    local pending = retries[src]
+
+    if pending then
+        pending.deathInfo = deathInfo
+        pending.since = GetGameTimer()
+        return
+    end
+
+    pending = { deathInfo = deathInfo, since = GetGameTimer() }
+    retries[src] = pending
+
+    dbg('event:esx:onPlayerDeath:retry-start', { src = src })
+
+    CreateThread(function()
+        for _ = 1, 30 do
+            Wait(1000)
+
+            if retries[src] ~= pending then
+                return
+            end
+
+            if not current(src, player) then
+                dbg('event:esx:onPlayerDeath:retry-abort-player-changed', { src = src })
+                break
+            end
+
+            if (recoveredAt[src] or -1) >= pending.since then
+                dbg('event:esx:onPlayerDeath:retry-abort-recovered', { src = src })
+                break
+            end
+
+            local retry = recordDeath(src, pending.deathInfo)
+            dbg('event:esx:onPlayerDeath:retry-result', { src = src, retry = retry })
+
+            if retry.ok then
+                break
+            end
+        end
+
+        if retries[src] == pending then
+            retries[src] = nil
+        end
+    end)
+end
+
 RegisterNetEvent('esx:onPlayerDeath', function(data)
     -- ESX owns detection; never accept a target id, timestamps or penalties from a client.
     local src = source
-    local player = ESX.GetPlayerFromId(source)
+    local player = ESX.GetPlayerFromId(src)
 
-    dbg('event:esx:onPlayerDeath', { src = src, hasPlayer = player ~= nil, data = data })
-    local result = recordDeath(src, data)
+    if not player then
+        dbg('event:esx:onPlayerDeath:no-player', { src = src })
+        return
+    end
 
-    if not result.ok and player then
-        dbg('event:esx:onPlayerDeath:retry-start', { src = src, result = result })
+    local allowed, retryAfter = deathLimiter:consume(src)
 
-        CreateThread(function()
-            for _ = 1, 30 do
-                Wait(1000)
+    if not allowed then
+        dbg('event:esx:onPlayerDeath:rate-limited', { src = src, retryAfter = retryAfter })
+        return
+    end
 
-                if not current(src, player) then
-                    dbg('event:esx:onPlayerDeath:retry-abort-player-changed', { src = src })
-                    return
-                end
+    local deathInfo = sanitizeDeathInfo(src, data)
+    local pending = retries[src]
 
-                local retry = recordDeath(src, data)
-                dbg('event:esx:onPlayerDeath:retry-result', { src = src, retry = retry })
+    dbg('event:esx:onPlayerDeath', { src = src, deathInfo = deathInfo, retryPending = pending ~= nil })
 
-                if retry.ok then
-                    return
-                end
-            end
-        end)
+    if pending then
+        pending.deathInfo = deathInfo
+        pending.since = GetGameTimer()
+        return
+    end
+
+    if not recordDeath(src, deathInfo).ok then
+        retryDeath(src, player, deathInfo)
     end
 end)
 
@@ -312,6 +409,10 @@ local function revive(src, reason)
 
     local result = withPlayer(src, function(id, player, state)
         local wasDead = state.dead
+
+        if not wasDead then
+            return { ok = false, wasDead = false }
+        end
 
         dbg('revive:state-before-save', { src = id, wasDead = wasDead, state = state })
 
@@ -503,15 +604,21 @@ local function respawn(src)
 
         local point = closestHospital(id)
 
-        if fine > 0 then
-            player.removeAccountMoney('bank', fine, 'Respawn Fine')
-        end
-
-        removePossessions(player)
-
         if not save(id, player, state, false, 'respawn') then
             dbg('respawn:save-failed', { src = id })
             return { ok = false, error = 'unavailable' }
+        end
+
+        local penalized, penaltyError = pcall(function()
+            if fine > 0 then
+                player.removeAccountMoney('bank', fine, 'Respawn Fine')
+            end
+
+            removePossessions(player)
+        end)
+
+        if not penalized then
+            print(('[esx_death] Respawn penalties failed for player %s: %s'):format(id, penaltyError))
         end
 
         state.recovery = {
@@ -574,23 +681,30 @@ end)
 local function forget(src)
     src = tonumber(src)
 
-    dbg('forget', { src = src, hadState = states[src] ~= nil, hadLock = locks[src] ~= nil })
+    if not src then
+        return
+    end
+
+    local wasDead = published[src] == true
+
+    dbg('forget', { src = src, hadState = states[src] ~= nil, hadLock = locks[src] ~= nil, wasDead = wasDead })
     states[src] = nil
     locks[src] = nil
+    retries[src] = nil
+    published[src] = nil
+    recoveredAt[src] = nil
 
     -- Persisted death is intentionally retained across disconnect / character changes.
-    TriggerEvent('esx_death:stateChanged', src, false, 'logout')
+    if wasDead then
+        TriggerEvent('esx_death:stateChanged', src, false, 'logout')
+    end
 
-    if GetPlayerName(src) then
+    if GetPlayerName(src) and Player(src).state.isDead then
         Player(src).state:set('isDead', false, true)
     end
 end
 
 AddEventHandler('esx:playerDropped', forget)
-AddEventHandler('esx:playerLogout', forget)
-AddEventHandler('playerDropped', function()
-    forget(source)
-end)
 
 -- Admin commands
 
@@ -632,6 +746,20 @@ ESX.RegisterCommand('reviveall', 'admin', function()
         revive(player.source, 'admin')
     end
 end, true)
+
+AddEventHandler('esx:playerLoaded', function(playerId)
+    CreateThread(function()
+        while not ready do
+            Wait(250)
+        end
+
+        withPlayer(playerId, function(id, _, state)
+            TriggerClientEvent('esx_death:sync', id, snapshot(state))
+
+            return { ok = true }
+        end)
+    end)
+end)
 
 -- Hydrate state bags after a resource restart, even before clients request their UI.
 

@@ -78,6 +78,41 @@ local function ensureOwnedVehicleSearchIndex(indexName, definition, columns)
 	end
 end
 
+local function columnExists(tableName, columnName)
+	local count = Helpers.safeScalar(
+		[[SELECT COUNT(*)
+		FROM INFORMATION_SCHEMA.COLUMNS
+		WHERE TABLE_SCHEMA = DATABASE()
+			AND TABLE_NAME = ?
+			AND COLUMN_NAME = ?]],
+		{ tableName, columnName }
+	)
+
+	return tonumber(count) and tonumber(count) > 0
+end
+
+local USER_COLUMNS = {
+	{ name = "created_at", definition = "TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP" },
+	{ name = "last_seen", definition = "TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP" },
+	{ name = "phone_number", definition = "VARCHAR(20) DEFAULT NULL" },
+}
+
+local function ensureUserColumns()
+	for i = 1, #USER_COLUMNS do
+		local column = USER_COLUMNS[i]
+
+		if not columnExists("users", column.name) then
+			print(("[esx-adminmenu] Adding users.%s column..."):format(column.name))
+
+			local result = Helpers.safeQuery(("ALTER TABLE users ADD COLUMN %s %s"):format(column.name, column.definition))
+
+			if result == nil then
+				print(("[esx-adminmenu] Failed to add users.%s"):format(column.name))
+			end
+		end
+	end
+end
+
 local function ensureUserSearchIndexes()
 	if not indexExists("users", "idx_adminmenu_first_last") then
 		print("[esx-adminmenu] Creating users firstname/lastname search index...")
@@ -282,6 +317,7 @@ local function initDB()
 			AND identifier NOT LIKE '%:%'
 	]])
 
+	ensureUserColumns()
 	ensureUserSearchIndexes()
 	ensureOwnedVehicleSearchIndexes()
 	ensureAdminLogSearchIndexes()

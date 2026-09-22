@@ -2,7 +2,7 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Config = {
-    Locale = "en", -- HUD language is independent of the ESX server locale.
+    Locale = GetConvar("esx:locale", "en"),
     Colors = {
         Info = {
             ["money-text-color"] = "#0aad20",
@@ -65,7 +65,7 @@ Config = {
         ServerLogo = "", -- Optional custom logo URL; empty uses the bundled ESX HUD logo.
         ServerName = "",
         ServerTagline = "",
-        AccentColor = "#fb9b04",
+        AccentColor = "",
         Kmh = true,
         PassengerSpeedo = false, -- if this true , you can see speedometer if you don't driver
     },

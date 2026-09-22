@@ -8,7 +8,6 @@ Config.IsMechanicJobOnly = false
 Config.Currency = '$'
 
 Config.Workshop = {
-	UseCart = true,
 	UseNui = true,
 	EnableCamera = true,
 	EnableStats = true,
@@ -20,7 +19,7 @@ Config.Workshop = {
 		-- If true, paid changes are saved to owned_vehicles when the vehicle exists there.
 		SaveOwnedVehicles = true,
 		-- Lets mechanics tune and persist customer vehicles without owning them.
-		AllowMechanicCustomerVehicles = true
+		AllowMechanicCustomerVehicles = false
 	},
 	StatGains = {
 		modEngine = { accel = 12, speed = 8 },

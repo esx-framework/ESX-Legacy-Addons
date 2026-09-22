@@ -58,3 +58,4 @@ setr esx:ui:accentColor "#383838"
 - El avatar se muestra con iniciales generadas desde el nombre del jugador. La interfaz usa fondos solidos con transparencia; el mapa se carga desde `web/assets` sin dependencias web externas en tiempo de juego.
 - El diseño usa un lienzo de referencia de 1536×1024 y se escala manteniendo proporción para conservar la maquetación del mockup.
 - Para ver el front-end fuera de FiveM abre `web/index.html?preview=1` en Chromium.
+- Los textos de la interfaz están en `locales/` (en, fr, de, es, it, nl, pl) y siguen el ConVar `esx:locale`.

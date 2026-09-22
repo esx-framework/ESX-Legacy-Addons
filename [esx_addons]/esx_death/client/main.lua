@@ -27,6 +27,35 @@ local distressId = 0
 local syncState
 local requestRespawn
 
+local NUI_STRINGS = {
+    numberLocale = 'ui_number_locale',
+    pageTitle = 'ui_page_title',
+    eyebrow = 'ui_eyebrow',
+    titleFirst = 'ui_title_first',
+    titleSecond = 'ui_title_second',
+    titleAccent = 'ui_title_accent',
+    descriptionFirst = 'ui_description_first',
+    descriptionSecond = 'ui_description_second',
+    automaticTransfer = 'ui_automatic_transfer',
+    countdown = 'ui_countdown',
+    locationPending = 'ui_location_pending',
+    distressSending = 'ui_distress_sending',
+    distressRequested = 'ui_distress_requested',
+    distressRepeat = 'ui_distress_repeat',
+    distressRequest = 'ui_distress_request',
+    distressCooldown = 'ui_distress_cooldown',
+    distressDescription = 'ui_distress_description',
+    respawnPreparing = 'ui_respawn_preparing',
+    respawnTitle = 'ui_respawn_title',
+    respawnAvailable = 'ui_respawn_available',
+    respawnWait = 'ui_respawn_wait',
+    respawnHold = 'ui_respawn_hold',
+    respawnFree = 'ui_respawn_free',
+    connectionError = 'ui_connection_error',
+    distressSent = 'distress_sent',
+    killedByPlayer = 'killed_by_player',
+}
+
 -- Debug helpers
 
 local function dbg(message, data)
@@ -190,7 +219,6 @@ local function refreshUI()
     local zone = GetLabelText(GetNameOfZone(coords.x, coords.y, coords.z))
 
     send('state', {
-        locale = Config.Locale,
         earlyRemaining = math.ceil(early),
         remaining = math.ceil(total),
         total = state.total,
@@ -203,9 +231,19 @@ local function refreshUI()
         zone = zone,
         deathReason = deathReason(),
         playerId = GetPlayerServerId(PlayerId()),
-        brand = Config.Brand,
         holdDuration = Config.HoldDuration
     })
+end
+
+local function sendSetup()
+    local strings = {}
+
+    for name, key in pairs(NUI_STRINGS) do
+        strings[name] = Translate(key)
+    end
+
+    send('theme', xLib.colors.getESXTheme())
+    send('locale', { locale = Config.Locale, strings = strings })
 end
 
 -- Lifecycle: cleanup and enter
@@ -260,7 +298,13 @@ local function enterDeath()
     end
 
     TriggerEvent('esx_death:entered')
-    TriggerMedalDeathClip()
+
+    if Config.MedalClip then
+        pcall(function()
+            xLib.medal.triggerClip()
+        end)
+    end
+
     refreshUI()
     setCursor(true)
     dbg('enterDeath:entered', { generation = generation, ped = ped, deathInfo = deathInfo, state = state })
@@ -337,10 +381,7 @@ local function enterDeath()
 
             local early = remaining()
 
-            if IsDisabledControlJustReleased(0, 38) and early <= 0 and not pending then
-                dbg('input:E-released-respawn', { early = early, pending = pending, dead = dead })
-                requestRespawn()
-            elseif IsDisabledControlPressed(0, 38) and early <= 0 and not pending then
+            if IsDisabledControlPressed(0, 38) and early <= 0 and not pending then
                 holdStarted = holdStarted or GetGameTimer()
                 local progress = math.min(1, (GetGameTimer() - holdStarted) / Config.HoldDuration)
 
@@ -353,6 +394,7 @@ local function enterDeath()
                         pending = pending,
                         dead = dead
                     })
+                    holdStarted = nil
                     requestRespawn()
                 end
             elseif holdStarted then
@@ -795,6 +837,7 @@ RegisterNUICallback('ready', function(_, cb)
     dbg('nui:ready', { dead = dead, uiReady = uiReady })
 
     uiReady = true
+    sendSetup()
     refreshUI()
 
     if dead then
@@ -846,7 +889,7 @@ CreateThread(function()
     local nextSync = 0
 
     while true do
-        if ESX.PlayerLoaded and not recovering then
+        if ESX.PlayerLoaded and not recovering and (dead or LocalPlayer.state.isDead) then
             if GetGameTimer() >= nextSync then
                 nextSync = GetGameTimer() + 5000
                 syncState()

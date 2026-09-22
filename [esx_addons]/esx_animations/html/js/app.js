@@ -19,7 +19,12 @@
       title: 'Animations',
       categoryPlaceholder: 'Select a category',
       search: 'Search animations',
+      searchPlaceholder: 'Search animations',
     noResults: 'No matching animations.',
+      noAnimations: 'No animations available.',
+      typeAnim: 'Animation',
+      typeScenario: 'Scenario',
+      typeAttitude: 'Attitude',
     close: 'Close',
     stop: 'Stop Animation',
     idle: 'Select an animation',
@@ -30,8 +35,34 @@
   };
 
   const t = (key) => state.locale[key] || key;
+  const logo = document.querySelector('.esx-logo');
+  const defaultLogo = logo.getAttribute('src');
   let toastTimer;
   let requestQueue = Promise.resolve();
+
+  function channels(value) {
+    const match = /^#([0-9a-f]{3}|[0-9a-f]{6})([0-9a-f]{2})?$/i.exec(String(value || '').trim());
+    if (!match) return null;
+    const hex = match[1].length === 3 ? [...match[1]].map((c) => c + c).join('') : match[1];
+    return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ');
+  }
+
+  function applyTheme(theme) {
+    if (!theme || typeof theme !== 'object') return;
+    const root = document.documentElement;
+    if (theme.primaryColor) root.style.setProperty('--brand-color', theme.primaryColor);
+    const brandRgb = channels(theme.primaryColor);
+    if (brandRgb) root.style.setProperty('--brand-color-rgb', brandRgb);
+    if (theme.secondaryColor) root.style.setProperty('--dark-color', theme.secondaryColor);
+    if (theme.backgroundColor) root.style.setProperty('--darkest-color', theme.backgroundColor);
+    if (theme.accentColor) root.style.setProperty('--mid-color', theme.accentColor);
+    const source = typeof theme.logoUrl === 'string' && theme.logoUrl.trim() ? theme.logoUrl.trim() : defaultLogo;
+    if (logo.getAttribute('src') !== source) logo.setAttribute('src', source);
+  }
+
+  logo.addEventListener('error', () => {
+    if (logo.getAttribute('src') !== defaultLogo) logo.setAttribute('src', defaultLogo);
+  });
 
   function showToast(message, error = false) {
     if (!message || !state.open) return;
@@ -84,7 +115,7 @@
     get('animTitle').textContent = t('title');
     get('categoryName').textContent = t('subtitle') || 'Choose an animation';
     labelButton('closeBtn', t('close'));
-    get('searchInput').placeholder = t('search');
+    get('searchInput').placeholder = t('searchPlaceholder');
     get('searchInput').setAttribute('aria-label', t('search'));
     renderStopButton();
   }
@@ -193,13 +224,7 @@
     if (data.currentCategory !== undefined) {
       state.activeCategory = data.currentCategory;
     }
-    if (data.theme) {
-      const root = document.documentElement;
-      if (data.theme.primaryColor) root.style.setProperty('--brand-color', data.theme.primaryColor);
-      if (data.theme.secondaryColor) root.style.setProperty('--dark-color', data.theme.secondaryColor);
-      if (data.theme.backgroundColor) root.style.setProperty('--darkest-color', data.theme.backgroundColor);
-      if (data.theme.accentColor) root.style.setProperty('--mid-color', data.theme.accentColor);
-    }
+    applyTheme(data.theme);
     applyLocale();
     if (state.open) {
       renderCategoryTabs();
@@ -307,6 +332,8 @@
       event.preventDefault();
       fetchNui('close');
     } else if (event.key === 'Backspace') {
+      const target = event.target;
+      if (target && (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
       event.preventDefault();
       state.activeItem = null;
       state.playing = false;
@@ -319,14 +346,7 @@
   // Theme from convars — works before UI is open
   fetchNui('ready', {})
     .then((response) => {
-      if (response.ok && response.data && response.data.theme) {
-        const root = document.documentElement;
-        const theme = response.data.theme;
-        if (theme.primaryColor) root.style.setProperty('--brand-color', theme.primaryColor);
-        if (theme.secondaryColor) root.style.setProperty('--dark-color', theme.secondaryColor);
-        if (theme.backgroundColor) root.style.setProperty('--darkest-color', theme.backgroundColor);
-        if (theme.accentColor) root.style.setProperty('--mid-color', theme.accentColor);
-      }
+      if (response.ok && response.data) applyTheme(response.data.theme);
     })
     .catch(() => {});
 

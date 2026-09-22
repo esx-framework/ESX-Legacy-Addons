@@ -7,6 +7,29 @@ local TextUIdrawing = false
 local requestId = 0
 local applying = false
 local availableJobs = {}
+local uiText
+
+local function getUiText()
+    if not uiText then
+        uiText = {}
+
+        for key in pairs(Locales['en']) do
+            if key:sub(1, 3) == 'ui_' then
+                uiText[key] = Translate(key)
+            end
+        end
+    end
+
+    return uiText
+end
+
+local function withUi(message)
+    message.locale = getUiText()
+    message.language = Config.Locale
+    message.theme = xLib.colors.getESXTheme()
+
+    return message
+end
 
 local function closeMenu()
     requestId = requestId + 1
@@ -33,7 +56,7 @@ function ShowJobListingMenu()
 
         if not ok or not result or not result.ok then
             closeMenu()
-            ESX.ShowNotification('Unable to open the Job Center. Please try again.', 'error')
+            ESX.ShowNotification(TranslateCap('open_failed'), 'error')
             return
         end
 
@@ -41,7 +64,7 @@ function ShowJobListingMenu()
         ESX.HideUI()
         TextUIdrawing = false
         SetNuiFocus(true, true)
-        SendNUIMessage({action = 'open', jobs = result.jobs, profile = result.profile})
+        SendNUIMessage(withUi({action = 'open', jobs = result.jobs, profile = result.profile}))
     end)
 end
 
@@ -65,7 +88,7 @@ local function submit(action, data, cb)
         cb(
             ok and result or {
                 ok = false,
-                message = 'The server did not respond. Please try again.'
+                message = Translate('ui_no_response')
             }
         )
 
@@ -106,7 +129,7 @@ RegisterNetEvent('esx_joblisting:profileUpdated', function(profile)
 end)
 
 exports('ShowTasks', function(tasks, grade)
-    SendNUIMessage({action = 'tasks', visible = true, tasks = tasks, grade = grade})
+    SendNUIMessage(withUi({action = 'tasks', visible = true, tasks = tasks, grade = grade}))
 end)
 
 exports('HideTasks', function()
@@ -114,7 +137,7 @@ exports('HideTasks', function()
 end)
 
 exports('ShowTaskProgress', function(task)
-    SendNUIMessage({action = 'taskProgress', task = task})
+    SendNUIMessage(withUi({action = 'taskProgress', task = task}))
 end)
 
 AddEventHandler('onResourceStop', function(resource)
@@ -159,7 +182,7 @@ for i = 1, #Config.Zones do
         coords = Config.Zones[i],
         drawDistance = Config.DrawDistance,
         interactDistance = Config.ZoneSize.x / 2,
-        exitDistance = Config.DrawDistance,
+        exitDistance = Config.ZoneSize.x / 2 + 0.5,
         marker = {
             type = Config.MarkerType,
             size = Config.ZoneSize,

@@ -964,6 +964,7 @@ AddEventHandler("playerDropped", function()
 
   removePlayer(src)
   activeClients[src] = nil
+  requestState[src] = nil
 end)
 
 AddEventHandler("esx:setJob", function(source)
@@ -1021,9 +1022,15 @@ CreateThread(function()
       local refreshed = 0
       local batchSize = getPageRefreshBatchSize()
       local batchDelay = getPageRefreshBatchDelay()
+      local clients = {}
 
       for src in pairs(activeClients) do
-        local state = requestState[src]
+        clients[#clients + 1] = src
+      end
+
+      for i = 1, #clients do
+        local src = clients[i]
+        local state = activeClients[src] and requestState[src]
         if state and state.pageRequest and (state.pageRevision ~= playersRevision or state.pingRevision ~= pingRevision) then
           ScoreboardModule.SendPage(src, state.pageRequest)
           refreshed = refreshed + 1

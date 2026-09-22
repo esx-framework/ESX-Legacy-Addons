@@ -29,8 +29,11 @@ end
 
 local getPlayerCoords = xLib.player.getCoords
 local function isNearCoords(source, coords, distance)
-	local nearby = xLib.player.isNearCoords(source, coords, distance)
-	return nearby
+	if type(coords) == 'vector4' then
+		coords = vector3(coords.x, coords.y, coords.z)
+	end
+
+	return xLib.player.isNearCoords(source, coords, distance)
 end
 
 local function isNearBoatShop(source)

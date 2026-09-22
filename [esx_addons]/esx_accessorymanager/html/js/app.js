@@ -43,10 +43,30 @@
         document.activeElement?.blur();
     }
 
+    function rgb(value) {
+        const match = /^#([0-9a-f]{3}|[0-9a-f]{6})([0-9a-f]{2})?$/i.exec(String(value ?? '').trim());
+        if (!match) return null;
+        const hex = match[1].length === 3 ? [...match[1]].map(c => c + c).join('') : match[1];
+        return [0, 2, 4].map(i => parseInt(hex.slice(i, i + 2), 16)).join(' ');
+    }
+
+    function applyTheme(theme = {}) {
+        const style = document.documentElement.style;
+        const values = {
+            '--accent': theme.primaryColor, '--surface': theme.backgroundColor, '--hub': theme.secondaryColor,
+            '--surface-rgb': rgb(theme.backgroundColor), '--trim-rgb': rgb(theme.accentColor)
+        };
+        for (const [name, value] of Object.entries(values)) {
+            if (value) style.setProperty(name, value);
+            else style.removeProperty(name);
+        }
+    }
+
     function show(data) {
         session++;
         busy = false;
         root.removeAttribute('aria-busy');
+        applyTheme(data.theme);
         labels = data.labels || {};
         root.setAttribute('aria-label', labels.title || 'Accessories');
         document.documentElement.lang = data.locale || 'en';
@@ -110,6 +130,9 @@
         else if (message.action === 'accessories:close') hide();
         else if (message.action === 'accessories:state' && !root.hidden) update(message.data?.states);
     });
-    ui.request('ready').catch(() => {});
+    const announce = (attempt = 0) => ui.request('ready')
+        .then(response => { if (!response.ok) throw new Error('NUI not ready'); })
+        .catch(() => { if (attempt < 60) setTimeout(() => announce(attempt + 1), 1000); });
+    announce();
     if (ui.preview) { document.body.classList.add('preview'); show(ui.demo); }
 })();

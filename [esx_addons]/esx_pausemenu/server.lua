@@ -31,10 +31,10 @@ ESX.RegisterServerCallback("esx_pausemenu:getData", function(source, cb)
 
     local job = xPlayer.getJob and xPlayer.getJob() or xPlayer.job or {}
     local jobName = job.name or "unknown"
-    local jobLabel = job.label or Config.Text.unknownJob
+    local jobLabel = job.label or Translate("unknown_job")
 
     if jobName == "unemployed" then
-        jobLabel = Config.Text.unemployed
+        jobLabel = Translate("unemployed")
     end
 
     local playTime = 0
@@ -67,5 +67,5 @@ RegisterNetEvent("esx_pausemenu:leaveServer", function()
         return
     end
 
-    DropPlayer(src, Config.Text.leaveReason)
+    DropPlayer(src, Translate("leave_reason"))
 end)

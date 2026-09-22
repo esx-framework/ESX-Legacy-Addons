@@ -2,6 +2,7 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 local AccountsIndex, Accounts, SharedAccounts = {}, {}, {}
+local loadConnectedAccounts
 
 AddEventHandler('onResourceStart', function(resourceName)
 	if resourceName == GetCurrentResourceName() then
@@ -55,6 +56,8 @@ AddEventHandler('onResourceStart', function(resourceName)
 			end
 			GlobalState.SharedAccounts = SharedAccounts
 		end
+
+		loadConnectedAccounts()
 	end
 end)
 
@@ -109,7 +112,7 @@ AddEventHandler('esx_addonaccount:getSharedAccount', function(name, cb)
 	cb(GetSharedAccount(name))
 end)
 
-AddEventHandler('esx:playerLoaded', function(playerId, xPlayer)
+local function loadOwnerAccounts(identifier)
 	local addonAccounts = {}
 	local existingAccounts = {}
 
@@ -119,7 +122,7 @@ AddEventHandler('esx:playerLoaded', function(playerId, xPlayer)
 			placeholders[i] = '?'
 		end
 
-		local params = { xPlayer.identifier }
+		local params = { identifier }
 		for i = 1, #AccountsIndex do
 			params[#params + 1] = AccountsIndex[i]
 		end
@@ -134,26 +137,36 @@ AddEventHandler('esx:playerLoaded', function(playerId, xPlayer)
 
 	for i = 1, #AccountsIndex, 1 do
 		local name    = AccountsIndex[i]
-		local account = GetAccount(name, xPlayer.identifier)
+		local account = GetAccount(name, identifier)
 
 		if account == nil then
 			local money = existingAccounts[name]
 
 			if money == nil then
 				MySQL.insert('INSERT INTO addon_account_data (account_name, money, owner) VALUES (?, ?, ?)',
-					{ name, 0, xPlayer.identifier })
+					{ name, 0, identifier })
 
 				money = 0
 			end
 
-			account = CreateAddonAccount(name, xPlayer.identifier, money)
+			account = CreateAddonAccount(name, identifier, money)
 			Accounts[name][#Accounts[name] + 1] = account
 		end
 
 		addonAccounts[#addonAccounts + 1] = account
 	end
 
-	xPlayer.set('addonAccounts', addonAccounts)
+	return addonAccounts
+end
+
+loadConnectedAccounts = function()
+	for _, xPlayer in pairs(ESX.GetExtendedPlayers()) do
+		xPlayer.set('addonAccounts', loadOwnerAccounts(xPlayer.identifier))
+	end
+end
+
+AddEventHandler('esx:playerLoaded', function(playerId, xPlayer)
+	xPlayer.set('addonAccounts', loadOwnerAccounts(xPlayer.identifier))
 end)
 
 AddEventHandler('esx_addonaccount:refreshAccounts', function()
@@ -182,4 +195,5 @@ AddEventHandler('esx_addonaccount:refreshAccounts', function()
 	end
 
 	GlobalState.SharedAccounts = SharedAccounts
+	loadConnectedAccounts()
 end)

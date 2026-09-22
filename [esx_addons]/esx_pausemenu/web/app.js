@@ -15,8 +15,42 @@ let state = {
     open: false,
     links: { discord: '', rules: '', store: '' },
     serverName: 'ESX LEGACY',
-    selectedIndex: 0
+    selectedIndex: 0,
+    text: {}
 };
+
+const defaultText = {
+    ui_discord: 'DISCORD',
+    ui_rules: 'RULES',
+    ui_store: 'STORE',
+    ui_server_info: 'SERVER INFO',
+    ui_leave_server: 'LEAVE SERVER',
+    ui_player: 'Player',
+    ui_unemployed: 'Unemployed',
+    ui_playtime_format: '{hours}h {minutes}m',
+    ui_months: 'JAN,FEB,MAR,APR,MAY,JUN,JUL,AUG,SEP,OCT,NOV,DEC',
+    ui_server_info_text: '{server} · Use the shortcuts below for rules, Discord and the server store.',
+    ui_leave_confirm: 'Are you sure you want to disconnect from the server?',
+    ui_cancel: 'CANCEL',
+    ui_leave: 'LEAVE',
+    ui_link_missing: '{link} link is not configured.',
+    ui_callback_failed: 'NUI callback failed.',
+    ui_scoreboard_unavailable: 'Scoreboard unavailable.'
+};
+
+function t(key, values = {}) {
+    const text = typeof state.text[key] === 'string' ? state.text[key] : defaultText[key] ?? key;
+    return text.replace(/\{(\w+)\}/g, (match, name) => values[name] ?? match);
+}
+
+function applyLocale(locale, language) {
+    if (!locale || typeof locale !== 'object') return;
+    state.text = locale;
+    document.documentElement.lang = typeof language === 'string' ? language : 'en';
+    document.querySelectorAll('[data-text]').forEach(node => { node.textContent = t(node.dataset.text); });
+    document.querySelectorAll('[data-label]').forEach(node => node.setAttribute('aria-label', t(node.dataset.label)));
+    document.querySelectorAll('[data-alt]').forEach(node => node.setAttribute('alt', t(node.dataset.alt)));
+}
 
 const sideItems = [...document.querySelectorAll('.side-item')];
 const interactiveActions = [...document.querySelectorAll('[data-action]')];
@@ -69,10 +103,10 @@ function formatPlaytime(seconds) {
     const total = Math.max(0, Number(seconds) || 0);
     const hours = Math.floor(total / 3600);
     const minutes = Math.floor((total % 3600) / 60);
-    return `${hours}h ${minutes}m`;
+    return t('ui_playtime_format', { hours, minutes });
 }
 
-function initials(name = 'Player') {
+function initials(name = t('ui_player')) {
     return String(name)
         .trim()
         .split(/\s+/)
@@ -86,8 +120,8 @@ function initials(name = 'Player') {
 function formatClock(clock = {}) {
     const hour = String(Number(clock.hour) || 0).padStart(2, '0');
     const minute = String(Number(clock.minute) || 0).padStart(2, '0');
-    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    const month = months[Math.max(0, Math.min(11, (Number(clock.month) || 1) - 1))];
+    const months = t('ui_months').split(',');
+    const month = months[Math.max(0, Math.min(11, (Number(clock.month) || 1) - 1))] ?? '';
     const day = String(Number(clock.day) || 1).padStart(2, '0');
     const year = Number(clock.year) || new Date().getFullYear();
     return { time: `${hour}:${minute}`, date: `${day} ${month} ${year}` };
@@ -113,12 +147,13 @@ function applyData(payload = {}) {
     const cfg = payload.config || {};
     const brand = cfg.brand || {};
 
+    applyLocale(cfg.locale, cfg.language);
     setTheme(payload.theme || {});
     applyBrand(brand);
     applyClock(payload.clock || {});
 
-    const name = player.name || 'Player';
-    const job = player.job || player.role || 'Unemployed';
+    const name = player.name || t('ui_player');
+    const job = player.job || player.role || t('ui_unemployed');
     const city = location.city || brand.city || 'Los Santos';
     const id = Number(player.id) || 0;
     const online = `${player.players ?? 0} / ${player.maxPlayers ?? 0}`;
@@ -173,7 +208,7 @@ async function nui(name, data = {}) {
         });
         return await response.json();
     } catch (error) {
-        showToast('NUI callback failed.');
+        showToast(t('ui_callback_failed'));
         return { ok: false, error: String(error) };
     }
 }
@@ -181,7 +216,7 @@ async function nui(name, data = {}) {
 function openUrl(key) {
     const url = state.links?.[key];
     if (!url) {
-        showToast(`${key.toUpperCase()} link is not configured.`);
+        showToast(t('ui_link_missing', { link: t(`ui_${key}`) }));
         return;
     }
 
@@ -218,21 +253,21 @@ function addModalButton(label, action, primary = false) {
 }
 
 function showServerInfo() {
-    modalTitle.textContent = 'SERVER INFO';
-    modalText.textContent = `${state.serverName} · Use the shortcuts below for rules, Discord and the server store.`;
+    modalTitle.textContent = t('ui_server_info');
+    modalText.textContent = t('ui_server_info_text', { server: state.serverName });
     modalActions.innerHTML = '';
-    addModalButton('RULES', () => openUrl('rules'));
-    addModalButton('DISCORD', () => openUrl('discord'));
-    addModalButton('STORE', () => openUrl('store'));
+    addModalButton(t('ui_rules'), () => openUrl('rules'));
+    addModalButton(t('ui_discord'), () => openUrl('discord'));
+    addModalButton(t('ui_store'), () => openUrl('store'));
     modal.classList.remove('is-hidden');
 }
 
 function showLeaveConfirm() {
-    modalTitle.textContent = 'LEAVE SERVER';
-    modalText.textContent = 'Are you sure you want to disconnect from the server?';
+    modalTitle.textContent = t('ui_leave_server');
+    modalText.textContent = t('ui_leave_confirm');
     modalActions.innerHTML = '';
-    addModalButton('CANCEL', hideModal);
-    addModalButton('LEAVE', async () => {
+    addModalButton(t('ui_cancel'), hideModal);
+    addModalButton(t('ui_leave'), async () => {
         hideModal();
         await nui('leaveServer');
     }, true);
@@ -270,7 +305,7 @@ async function action(name) {
             break;
         case 'people': {
             const response = await nui('openPeople');
-            if (response && response.ok === false) showToast(response.error || 'Scoreboard unavailable.');
+            if (response && response.ok === false) showToast(response.error || t('ui_scoreboard_unavailable'));
             break;
         }
         case 'leave':

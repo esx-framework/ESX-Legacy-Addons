@@ -20,6 +20,7 @@ Locales['nl'] = {
   ['spawn_veh_button']          = 'Druk op ~INPUT_PICKUP~ om je werkvoertuig te pakken',
   ['spawn_truck_button']        = 'Druk op ~INPUT_PICKUP~ om een vrachtwagen te pakken',
   ['spawn_blocked']             = 'Een voertuig blokkeerd het spawnpoint!',
+  ['vehicle_already_out']       = 'Breng eerst je huidige voertuig terug!',
   ['service_vh']                = 'werkvoertuig',
   ['return_vh']                 = 'Voertuig terug zetten',
   ['return_vh_button']          = 'Druk op ~INPUT_PICKUP~ om het voertuig terug te zetten',

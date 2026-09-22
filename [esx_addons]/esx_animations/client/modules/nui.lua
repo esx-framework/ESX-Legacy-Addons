@@ -3,6 +3,8 @@
 
 AnimationUI = {}
 
+Config.Locale = Config.Locale or GetConvar('esx:locale', 'en')
+
 local uiOpen = false
 local currentCategory = nil
 local activeItem = nil
@@ -91,20 +93,21 @@ function AnimationUI.Open()
         return
     end
 
-    uiOpen = true
     currentCategory = nil
     activeItem = nil
     playing = false
 
-    ESX.HideUI()
-    xLib.nui.focus(true, true)
-
-    SendNUIMessage({
+    local payload = {
         action = 'open',
         categories = AnimationUI.BuildCategories(),
         locale = AnimationUI.GetNuiLocalePayload(),
         theme = AnimationUI.GetESXThemeColors()
-    })
+    }
+
+    uiOpen = true
+    ESX.HideUI()
+    xLib.nui.focus(true, true)
+    SendNUIMessage(payload)
 end
 
 ---Closes the animations NUI

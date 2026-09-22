@@ -63,6 +63,7 @@ Locales['de'] = {
   -- Service
   ['service_max'] = 'Du kannst nicht On-Duty gehen. Es sind zuviele Officer im Dienst: %s/%s',
   ['service_not'] = 'Du bist nun On-Duty! Du musst dich zuerst umziehen!',
+  ['off_duty'] = 'Du bist nicht im Dienst.',
   ['service_anonunce'] = 'Service Informationen',
   ['service_in'] = 'Du bist nun im Dienst! Willkommen!',
   ['service_in_announce'] = 'Officer ~y~%s~s~ ist nun im Dienst!',

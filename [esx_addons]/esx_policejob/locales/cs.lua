@@ -63,6 +63,7 @@ Locales['cs'] = {
   -- Service
   ['service_max'] = 'nemuzete vstoupit do sluzby, max dustojníci v provozu: %s/%s',
   ['service_not'] = 'nezadali jste sluzbu! Nejprve se musíte zmenit.',
+  ['off_duty'] = 'nejste ve službě.',
   ['service_anonunce'] = 'informace o sluzbe',
   ['service_in'] = 'vstoupil jsi do sluzby, vitej!',
   ['service_in_announce'] = 'operator %s se pripojil do sluzby!',
