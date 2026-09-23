@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['fr'] = {
   -- Vestiaire
   ['cloakroom'] = 'vestiaire',
@@ -60,6 +63,7 @@ Locales['fr'] = {
   -- Service
   ['service_max'] = 'vous ne pouvez pas entrer en service, officiers en service: %s/%s',
   ['service_not'] = 'vous n\'êtes pas en service! Vous devez d\'abord enfiler votre tenue.',
+  ['off_duty'] = 'vous êtes hors service.',
   ['service_anonunce'] = 'prise de service',
   ['service_in'] = 'vous êtes en service, bon courage!',
   ['service_in_announce'] = 'l\'officier %s est entré en service!',

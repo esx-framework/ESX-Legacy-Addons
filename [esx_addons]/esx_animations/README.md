@@ -24,6 +24,8 @@ git clone https://github.com/esx-framework/esx_animations [esx]/esx_animations
 start esx_animations
 ```
 
+Animation labels are English by default. For another language, replace `config.lua` with the matching file from `localization/`. The interface language follows the `esx:locale` convar.
+
 # Legal
 ### License
 esx_animations - play anims!

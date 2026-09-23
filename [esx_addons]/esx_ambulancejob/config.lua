@@ -1,7 +1,11 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Config                            = {}
 
 Config.DrawDistance               = 10.0 -- How close do you need to be in order for the markers to be drawn (in GTA units).
-Config.Debug                      = ESX.GetConfig().EnableDebug
+Config.Debug                      = false
+Config.DebugDeath                 = false
 Config.Marker                     = {type = 1, x = 1.5, y = 1.5, z = 0.5, r = 102, g = 0, b = 102, a = 100, rotate = false}
 
 Config.ReviveReward               = 700  -- Revive reward, set to 0 if you don't want it enabled
@@ -9,73 +13,15 @@ Config.LoadIpl                    = true -- Disable if you're using fivem-ipl or
 
 Config.Locale = GetConvar('esx:locale', 'en')
 
--- Prevents desync on dead players by skipping ragdoll.
--- Players are revived instantly and play an animation instead.
--- Note: Natives like "IsPedFatallyInjured" will no longer work reliably.
--- Use Player(src).state.isDead for death checks.
-Config.DeathAnim = {
-    enabled = true,
-    dict = "misslamar1dead_body",
-    name = "dead_idle",
-	fadeIn = 10.0,
-	fadeOut = 10.0,
-	flags = 1|2|8,
-	playbackRate = 1.0
-}
-
 Config.DistressBlip = {
 	Sprite = 310,
 	Color = 48,
 	Scale = 2.0
 }
 
-Config.zoom = {
-	min = 1,
-	max = 6,
-	step = 0.5
-}
-
----@class MedalClipOptions
----@field duration integer
----@field captureDelayMs integer
----@field alertType 'Default'|'Disabled'|'SoundOnly'|'OverlayOnly'
-
----@class MedalConfig
----@field enabled boolean
----@field publicKey string
----@field eventName string
----@field clipOptions MedalClipOptions
-
----@type MedalConfig
-Config.Medal = {
-	enabled = true,
-	publicKey = 'pub_82qkpMKV77AkpqLSgWsxLlDyfzpPI7Vw',
-	eventName = 'Death',
-	clipOptions = {
-		duration = 30,
-		captureDelayMs = 0,
-		alertType = 'Default'
-	}
-}
-
-Config.EarlyRespawnTimer          = 60000 * 1  -- time til respawn is available
-Config.BleedoutTimer              = 60000 * 10 -- time til the player bleeds out
-
 Config.EnablePlayerManagement     = false -- Enable society managing (If you are using esx_society).
 
-Config.RemoveWeaponsAfterRPDeath  = true
-Config.RemoveCashAfterRPDeath     = true
-Config.RemoveItemsAfterRPDeath    = true
-
--- Let the player pay for respawning early, only if he can afford it.
-Config.EarlyRespawnFine           = false
-Config.EarlyRespawnFineAmount     = 5000
-
-Config.OxInventory                = ESX.GetConfig().OxInventory
-Config.RespawnPoints = {
-	{coords = vector3(341.0, -1397.3, 32.5), heading = 48.5}, -- Central Los Santos
-	{coords = vector3(1836.03, 3670.99, 34.28), heading = 296.06} -- Sandy Shores
-}
+-- Death, respawn, inventory penalties and camera settings live in esx_death/config.lua.
 
 Config.PharmacyItems = {
 	{

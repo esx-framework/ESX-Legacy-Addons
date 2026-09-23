@@ -1,8 +1,8 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 CreateThread(function()
-	while true do
-		local sleep = DrawMarkersAndCheckProximity()
-		Wait(sleep)
-	end
+	RegisterWeaponShopMarkers()
 end)
 
 AddEventHandler('onResourceStop', function(resource)

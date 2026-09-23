@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local blips = {}
 local pedSpawns = {}
 local points = {}
@@ -8,8 +11,11 @@ local impoundsById = {}
 
 ---@alias GarageAction 'garage' | 'withdraw' | 'store' | 'impound'
 
----@type { id: string, spawns: vector4[], garage: table, action: GarageAction }?
+---@type { id: string, spawns: vector4[], garage: table, action: GarageAction, coords: vector3 }?
 local currentLocation = nil
+
+---@type table<number, { id: string, spawns: vector4[], garage: table, action: GarageAction, coords: vector3 }>
+local activeLocations = {}
 
 local PED_DECOR <const> = "esx_garage_ped"
 local HUD_RESOURCE_NAME <const> = "esx_hud"
@@ -137,6 +143,7 @@ local function clearWorld()
     end
 
     blips, pedSpawns, points, markers = {}, {}, {}, {}
+    activeLocations = {}
     currentLocation = nil
 
     if ESX.HideUI then
@@ -151,6 +158,58 @@ local function isInteractionVisible(action, ped)
     return action ~= "store"
         or not Config.Settings.storeMarkerOnlyInVehicle
         or IsPedInAnyVehicle(xLib.cache.ped, false)
+end
+
+---@return nil
+local function updateCurrentLocation()
+    local coords = GetEntityCoords(xLib.cache.ped)
+    local best, bestDistance
+
+    for _, entry in pairs(activeLocations) do
+        if isInteractionVisible(entry.action, xLib.cache.ped) then
+            local distance = #(coords - entry.coords)
+
+            if not bestDistance or distance < bestDistance then
+                best, bestDistance = entry, distance
+            end
+        end
+    end
+
+    if currentLocation == best then
+        return
+    end
+
+    currentLocation = best
+
+    if not best then
+        return ESX.HideUI()
+    end
+
+    ESX.TextUI(TranslateCap(INTERACTION_STYLES[best.action].locale))
+end
+
+local trackingLocations = false
+
+local function trackCurrentLocation()
+    if trackingLocations then
+        return
+    end
+
+    trackingLocations = true
+
+    CreateThread(function()
+        while true do
+            Wait(250)
+
+            if not next(activeLocations) then
+                break
+            end
+
+            updateCurrentLocation()
+        end
+
+        trackingLocations = false
+    end)
 end
 
 ---@param location table
@@ -169,24 +228,26 @@ local function addInteractionPoint(location, raw, action)
         }
     end
 
-    points[#points + 1] = xLib.point:new({
+    local index = #points + 1
+    local entry = {
+        id = location.id,
+        spawns = location.spawns,
+        garage = location,
+        action = action,
+        coords = coords,
+    }
+
+    points[index] = xLib.point:new({
         coords = coords,
         distance = Config.Settings.interactionDistance,
         enter = function()
-            currentLocation = {
-                id = location.id,
-                spawns = location.spawns,
-                garage = location,
-                action = action,
-            }
-
-            if isInteractionVisible(action, xLib.cache.ped) then
-                ESX.TextUI(TranslateCap(style.locale))
-            end
+            activeLocations[index] = entry
+            updateCurrentLocation()
+            trackCurrentLocation()
         end,
         leave = function()
-            currentLocation = nil
-            ESX.HideUI()
+            activeLocations[index] = nil
+            updateCurrentLocation()
         end
     })
 end
@@ -333,6 +394,28 @@ local function serverCall(name, payload)
     return result
 end
 
+local STORE_ERROR_LOCALES <const> = {
+    already_stored = "store_error_already_stored",
+    model_mismatch = "store_error_model_mismatch",
+    no_location = "store_error_no_location",
+    no_vehicle = "not_in_vehicle",
+    not_allowed = "cannot_access_garage",
+    not_owned = "not_owning_veh",
+    plate_conflict = "store_error_plate_conflict",
+    plate_mismatch = "store_error_plate_mismatch",
+    too_far = "store_error_too_far",
+}
+
+---@param result table?
+local function showStoreError(result)
+    local locale = result and STORE_ERROR_LOCALES[result.error]
+    if locale then
+        return ESX.ShowNotification(TranslateCap(locale), "error")
+    end
+
+    ESX.ShowNotification(TranslateCap("cannot_store"), "error")
+end
+
 ---@param data table?
 ---@return table?, string?
 local function fetchVehiclePage(data)
@@ -405,9 +488,9 @@ local function openMenu()
 
     local garage = loc.garage
 
-    SendNUIMessage({ type = "setLocale", payload = Config.Locale })
+    xLib.nui.send({ type = "setLocale", payload = Config.Locale })
 
-    SendNUIMessage({
+    xLib.nui.send({
         type = "openGarage",
         payload = {
             garage = {
@@ -425,7 +508,7 @@ local function openMenu()
         }
     })
 
-    SetNuiFocus(true, true)
+    xLib.nui.focus(true, true)
 end
 
 local function syncHudMileage(plate)
@@ -472,7 +555,7 @@ local function storeCurrentVehicle()
     if result and result.success then
         ESX.ShowNotification(TranslateCap("veh_stored"), "success")
     else
-        ESX.ShowNotification(TranslateCap("cannot_store"), "error")
+        showStoreError(result)
     end
 end
 
@@ -522,28 +605,27 @@ local function pickClearSpawn(spawns)
 end
 
 local function closeMenu()
-    SetNuiFocus(false, false)
-    SendNUIMessage({ type = "closeGarage", payload = {} })
+    xLib.nui.close({ type = "closeGarage", payload = {} })
 end
 
-RegisterNUICallback("garage:getVehicles", function(data, cb)
+xLib.nui.register("garage:getVehicles", function(data)
     local page, err = fetchVehiclePage(data)
     if not page then
-        return cb({ success = false, error = err or "no_location" })
+        return { success = false, error = err or "no_location" }
     end
 
-    cb({ success = true, data = page })
+    return { success = true, data = page }
 end)
 
-RegisterNUICallback("garage:retrieveVehicle", function(data, cb)
+xLib.nui.register("garage:retrieveVehicle", function(data)
     if not currentLocation then
-        return cb({ success = false, error = "no_location" })
+        return { success = false, error = "no_location" }
     end
 
     local spawn = pickClearSpawn(currentLocation.spawns)
 
     if not spawn then
-        return cb({ success = false, error = "blocked" })
+        return { success = false, error = "blocked" }
     end
 
     local result = serverCall("esx_garage:retrieveVehicle", {
@@ -569,38 +651,40 @@ RegisterNUICallback("garage:retrieveVehicle", function(data, cb)
         closeMenu()
     end
 
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:toggleFavorite", function(data, cb)
+xLib.nui.register("garage:toggleFavorite", function(data)
     local result = serverCall("esx_garage:toggleFavorite", { plate = data.vehicleId, isFavorite = data.isFavorite })
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:renameVehicle", function(data, cb)
+xLib.nui.register("garage:renameVehicle", function(data)
     local result = serverCall("esx_garage:renameVehicle", { plate = data.vehicleId, name = data.newName or data.name })
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:transferVehicle", function(data, cb)
+xLib.nui.register("garage:transferVehicle", function(data)
     local result = serverCall("esx_garage:transferVehicle", { plate = data.vehicleId, targetId = data.targetId })
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:giveKeys", function(data, cb)
+xLib.nui.register("garage:giveKeys", function(data)
     local result = serverCall("esx_garage:giveKeys", { plate = data.vehicleId })
-    cb(result or { success = false })
+    return result or { success = false }
 end)
 
-RegisterNUICallback("garage:closeUI", function(_, cb)
+xLib.nui.register("garage:closeUI", function()
     closeMenu()
-    cb({ success = true })
+    return { success = true }
 end)
 
-RegisterNUICallback("SetNuiFocus", function(data, cb)
-    SetNuiFocus(data.hasFocus, data.hasCursor)
-    cb({ success = true })
+xLib.nui.register("SetNuiFocus", function(data)
+    xLib.nui.focus(data.hasFocus, data.hasCursor)
+    return { success = true }
 end)
+
+AddEventHandler("xLib:cache:vehicle", updateCurrentLocation)
 
 RegisterNetEvent("esx_garage:refresh", refresh)
 RegisterNetEvent("esx:playerLoaded", refresh)

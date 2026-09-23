@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['sr'] = {
 		-- Cloakroom
 		['cloakroom'] = 'Svlačionica',
@@ -56,6 +59,7 @@ Locales['sr'] = {
 		-- Service
 		['service_max'] = 'Ne možete pristupiti službi, najviše pripadnika u službi: %s/%s',
 		['service_not'] = 'Niste pristupili službi! Prvo se morate presvući.',
+		['off_duty'] = 'Niste na dužnosti.',
 		['service_anonunce'] = 'Informacije službe',
 		['service_in'] = 'Pristupili ste službi, dobrodošli!',
 		['service_in_announce'] = 'Operator %s je pristupio službi!',

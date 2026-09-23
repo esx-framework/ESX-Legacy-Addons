@@ -1,4 +1,12 @@
-local BillingCooldowns = {}
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+local billingLimiter = xLib.rateLimiter({
+	capacity = 1,
+	refill = 1,
+	interval = math.max(1, tonumber(Config.BillingCooldown) or 3000),
+	staleMs = 60000
+})
 local BillingDailyTotals = {}
 local BillingLocks = {}
 local PendingBillConfirmations = {}
@@ -41,15 +49,8 @@ local function getSocietyJob(sharedAccountName)
 end
 
 local function isNearPlayer(source, target, distance)
-	local sourcePed = GetPlayerPed(source)
-	local targetPed = GetPlayerPed(target)
-
-	if sourcePed <= 0 or targetPed <= 0 then return false end
-
-	local sourceCoords = GetEntityCoords(sourcePed)
-	local targetCoords = GetEntityCoords(targetPed)
-
-	return #(sourceCoords - targetCoords) <= (distance or Config.BillingDistance or 10.0)
+	local nearby = xLib.player.isNearPlayer(source, target, distance or Config.BillingDistance or 10.0)
+	return nearby
 end
 
 local function canIssueSocietyBill(xPlayer, sharedAccountName)
@@ -155,9 +156,7 @@ RegisterNetEvent('esx_billing:sendBill', function(targetId, sharedAccountName, l
 	end
 
 	local now = GetGameTimer()
-	local cooldown = tonumber(Config.BillingCooldown) or 3000
-	if BillingCooldowns[src] and now - BillingCooldowns[src] < cooldown then return end
-	BillingCooldowns[src] = now
+	if not billingLimiter:consume(src) then return end
 
 	if not isNearPlayer(src, xTarget.src) then return end
 	if not hasDailyQuota(xPlayer.getIdentifier(), amount) then return end

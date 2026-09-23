@@ -1,17 +1,11 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local EVENT_COOLDOWNS <const> = {
     ["esx_weather:server:setZoneWeather"] = 1000,
 }
 
----@type table<integer, table<string, integer>>
-local eventCooldowns = {}
-
----@return integer
-local function currentTimeMs()
-    if type(GetGameTimer) == "function" then
-        return GetGameTimer()
-    end
-    return math.floor(os.clock() * 1000)
-end
+local eventLimiters = {}
 
 ---@param src integer
 ---@param eventName string
@@ -22,25 +16,24 @@ local function isRateLimited(src, eventName)
         return false
     end
 
-    local now = currentTimeMs()
-    local playerCooldowns = eventCooldowns[src]
-    if not playerCooldowns then
-        playerCooldowns = {}
-        eventCooldowns[src] = playerCooldowns
+    local limiter = eventLimiters[eventName]
+    if not limiter then
+        limiter = xLib.rateLimiter({
+            capacity = 1,
+            refill = 1,
+            interval = cooldown,
+            staleMs = math.max(60000, cooldown * 4)
+        })
+        eventLimiters[eventName] = limiter
     end
 
-    if (playerCooldowns[eventName] or 0) > now then
+    if not limiter:consume(src) then
         Shared.Modules.Debug.print(("Rate limited player %s on event %s"):format(tostring(src), eventName))
         return true
     end
 
-    playerCooldowns[eventName] = now + cooldown
     return false
 end
-
-AddEventHandler("playerDropped", function()
-    eventCooldowns[source] = nil
-end)
 
 ---@param zone Zone
 ---@param weatherType WeatherType
@@ -62,15 +55,7 @@ RegisterNetEvent("esx_weather:server:setZoneWeather", function(zone, weatherType
         return
     end
 
-    local isValidWeather = false
-    for _, validType in ipairs(Config.Weather.ValidTypes) do
-        if validType == weatherType then
-            isValidWeather = true
-            break
-        end
-    end
-
-    if not isValidWeather then
+    if not Modules.Weather.isValidType(weatherType) then
         Shared.Modules.Debug.print(("Invalid weather type rejected from player %s: %s"):format(tostring(src), tostring(weatherType)))
         return
     end

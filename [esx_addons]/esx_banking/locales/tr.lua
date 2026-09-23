@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['tr'] = {
     ['invalid_amount'] = 'Bu geçersiz bir miktar para',
     ['deposit_money']  = 'Para yatırdınız: $%s',

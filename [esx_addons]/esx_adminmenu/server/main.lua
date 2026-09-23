@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Helpers.registerCallback("esx-adminmenu:server:getInitData", function(source)
 	if not Helpers.hasPermission(source) then
 		return { err = "Insufficient Permissions." }
@@ -158,7 +161,12 @@ local OFFLINE_SEARCH_COOLDOWN_MS = math.max(
 	math.floor(tonumber(Config.AdminLimits and Config.AdminLimits.OfflineSearchCooldownMs) or 1000)
 )
 
-local offlineSearchCooldowns = {}
+local offlineSearchLimiter = xLib.rateLimiter({
+	capacity = 1,
+	refill = 1,
+	interval = math.max(1, OFFLINE_SEARCH_COOLDOWN_MS > 0 and OFFLINE_SEARCH_COOLDOWN_MS or 1),
+	staleMs = 60000
+})
 
 local SEARCH_COLUMNS = [[
 	SELECT
@@ -226,34 +234,14 @@ local function getUnderlyingIdentifier(identifier)
 	return identifier
 end
 
-local function getNowMs()
-	if type(GetGameTimer) == "function" then
-		return GetGameTimer()
-	end
-
-	return math.floor(os.clock() * 1000)
-end
-
 local function isOfflineSearchRateLimited(src)
 	if OFFLINE_SEARCH_COOLDOWN_MS <= 0 then
 		return false
 	end
 
-	local now = getNowMs()
-	local last = offlineSearchCooldowns[src] or 0
-
-	if last > 0 and now >= last and now - last < OFFLINE_SEARCH_COOLDOWN_MS then
-		return true
-	end
-
-	offlineSearchCooldowns[src] = now
-
-	return false
+	local allowed = offlineSearchLimiter:consume(src)
+	return not allowed
 end
-
-AddEventHandler("playerDropped", function()
-	offlineSearchCooldowns[source] = nil
-end)
 
 local function buildOfflineEntry(row, canSeeSensitive)
 	local accounts = decodeJson(row.accounts)

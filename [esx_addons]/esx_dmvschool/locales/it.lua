@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['it'] = {
   ['you_paid'] = 'hai pagato $%s alla scuola guida',
   ['go_next_point'] = 'vai al punto successivo!',

@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import PlayersIcon from "../components/icons/PlayersIcon.svelte";
 import ServerIcon from "../components/icons/ServerIcon.svelte";
 import CarIcon from "../components/icons/CarIcon.svelte";

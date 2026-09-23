@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales ['it'] = {
     ["license_shop_title"] = "Vendita Porto D\' Armi",
     ["weapon_shop_menu_title"] = "Armeria",

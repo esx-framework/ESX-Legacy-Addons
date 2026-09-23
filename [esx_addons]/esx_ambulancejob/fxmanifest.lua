@@ -1,8 +1,11 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 fx_version 'adamant'
 game 'gta5'
 description 'Provides a way for players to RP as paramedics (heal/revive players)'
 version '1.0.2'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 lua54 'yes'
 
 shared_scripts {
@@ -22,14 +25,9 @@ client_scripts {
 	'client/*.lua'
 }
 
-ui_page 'html/medal.html'
-
-files {
-	'html/medal.html',
-	'html/medal.js'
-}
-
 dependencies {
+	'esx_lib',
+	'esx_death',
 	'es_extended',
 	'esx_skin',
 	'esx_vehicleshop'

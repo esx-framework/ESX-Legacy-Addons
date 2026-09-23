@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 /**
  * Generates the image path for a vehicle based on its model name.
  * Uses relative paths for FiveM NUI compatibility.

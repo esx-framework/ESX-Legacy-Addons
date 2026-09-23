@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 --- @module client.module.enum
 --- Enum definitions for the scoreboard client module
 

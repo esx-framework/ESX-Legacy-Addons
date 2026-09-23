@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 fx_version "cerulean"
 game "gta5"
 author "ESX-Framework"
@@ -8,6 +11,7 @@ lua54 "yes"
 use_fxv2_oal "yes"
 
 shared_scripts {
+    "@esx_lib/imports.lua",
     "@es_extended/imports.lua",
     "/shared/**",
     "config/main.lua",
@@ -41,5 +45,6 @@ server_scripts {
 }
 
 dependencies {
+    "esx_lib",
     "es_extended",
 }

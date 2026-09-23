@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 return {
     ["parking_blip_name"] = 'Garage',
     ["Impound_blip_name"] = 'Impound',
@@ -25,6 +28,12 @@ return {
     ['not_in_vehicle'] = 'you are not in a vehicle.',
     ['cannot_store'] = 'unable to store this vehicle.',
     ['cannot_access_garage'] = 'you cannot access this garage.',
+    ['store_error_already_stored'] = 'This vehicle is already stored.',
+    ['store_error_model_mismatch'] = 'This vehicle model does not match the owned vehicle record.',
+    ['store_error_no_location'] = 'You are not at a valid garage.',
+    ['store_error_plate_conflict'] = 'Another active vehicle is using this plate.',
+    ['store_error_plate_mismatch'] = 'The vehicle plate does not match this owned vehicle.',
+    ['store_error_too_far'] = 'You are too far from the garage.',
     ['received_vehicle'] = 'you received a vehicle (plate: %s).',
     ['open_garage'] = 'Open garage'
 }

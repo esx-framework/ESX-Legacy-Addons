@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local shopBlips = {}
 
 ---Creates blips for all weaponshop locations
@@ -14,17 +17,15 @@ function CreateShopBlips()
 
 			for i = 1, posCount do
 				local location = locations[i]
-				local blip = AddBlipForCoord(location.x, location.y, location.z)
-
-				SetBlipSprite(blip, blipSettings.Sprite)
-				SetBlipDisplay(blip, blipSettings.Display)
-				SetBlipScale(blip, blipSettings.Scale)
-				SetBlipColour(blip, blipSettings.Color)
-				SetBlipAsShortRange(blip, blipSettings.ShortRange)
-
-				BeginTextCommandSetBlipName('STRING')
-				AddTextComponentSubstringPlayerName(TranslateCap('map_blip'))
-				EndTextCommandSetBlipName(blip)
+				local blip = xLib.blips.create({
+					coords = location,
+					sprite = blipSettings.Sprite,
+					display = blipSettings.Display,
+					scale = blipSettings.Scale,
+					color = blipSettings.Color,
+					shortRange = blipSettings.ShortRange,
+					label = TranslateCap('map_blip')
+				})
 
 				shopBlips[#shopBlips + 1] = blip
 			end
@@ -35,7 +36,7 @@ end
 ---Removes all weaponshop blips
 function RemoveShopBlips()
 	for i = 1, #shopBlips do
-		RemoveBlip(shopBlips[i])
+		xLib.blips.remove(shopBlips[i])
 	end
 	shopBlips = {}
 end

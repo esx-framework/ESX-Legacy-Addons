@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESX Job Center</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+  <script src="preview.js" defer></script>
+</head>
+<body>
+  <main id="center" class="center" role="dialog" aria-modal="true" aria-label="Job Center" data-label="ui_center" tabindex="-1" hidden>
+    <header>
+      <button id="home-button" class="brand" aria-label="Job Center home" data-label="ui_home">Job <em>Center</em></button>
+      <div class="welcome-bar"><span id="greeting" class="greeting"><em>Job center</em> welcomes you <em></em></span><span class="date"><img src="assets/calendar.svg" alt=""><time id="date"></time></span><span class="clock"><img src="assets/clock.svg" alt=""><time id="clock"></time></span></div>
+      <button id="profile-button" class="profile-button"><img src="assets/profile.svg" alt=""><span data-text="ui_your_profile">Your Profile</span></button>
+      <button id="close-button" class="close-button" aria-label="Close Job Center" data-label="ui_close"><img src="assets/close.svg" alt=""></button>
+    </header>
+    <nav id="jobs" class="jobs" aria-label="Available jobs" data-label="ui_jobs_list"></nav>
+    <section id="content" class="content" aria-label="Job details" data-label="ui_job_details"></section>
+    <p id="message" role="status" hidden></p>
+  </main>
+  <aside id="task-toast" class="task-toast" aria-live="polite" hidden></aside>
+  <aside id="task-hud" class="task-hud" aria-label="Current tasks" data-label="ui_current_tasks" hidden></aside>
+</body>
+</html>

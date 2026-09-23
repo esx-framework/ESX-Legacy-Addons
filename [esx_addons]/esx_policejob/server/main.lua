@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 if Config.EnableESXService then
 	if Config.MaxInService ~= -1 then
 		TriggerEvent('esx_service:activateService', 'police', Config.MaxInService)
@@ -8,67 +11,36 @@ TriggerEvent('esx_phone:registerNumber', 'police', TranslateCap('alert_police'),
 TriggerEvent('esx_society:registerSociety', 'police', TranslateCap('society_police'), 'society_police', 'society_police', 'society_police', {type = 'public'})
 
 local cuffedPlayers = {}
-local JobVehicleNumberCharset, JobVehicleCharset = {}, {}
-
-for i = 48, 57 do JobVehicleNumberCharset[#JobVehicleNumberCharset + 1] = string.char(i) end
-for i = 65, 90 do JobVehicleCharset[#JobVehicleCharset + 1] = string.char(i) end
-
-local function getValidCount(count)
-	count = tonumber(count)
-	if not count then
-		return nil
-	end
-
-	count = ESX.Math.Round(count)
-	if count <= 0 then
-		return nil
-	end
-
-	return count
-end
-
-local function isPolice(xPlayer)
-	return xPlayer and xPlayer.getJob().name == 'police'
-end
+local getValidCount = xLib.validation.count
 
 local function isPoliceOnDuty(xPlayer)
 	local job = xPlayer and xPlayer.getJob()
 	return job and job.name == 'police' and job.onDuty ~= false
 end
 
-local function getRandomPlateChunk(charset, length)
-	local value = ''
-
-	for i = 1, length do
-		value = value .. charset[math.random(1, #charset)]
+local function notifyOffDuty(xPlayer)
+	local job = xPlayer and xPlayer.getJob()
+	if not job or job.name ~= 'police' or job.onDuty ~= false then
+		return false
 	end
 
-	return value
+	xPlayer.showNotification(TranslateCap('off_duty'))
+	return true
 end
 
 local function generateJobVehiclePlate()
-	for i = 1, 30 do
-		local plate = ('POL%s%s'):format(getRandomPlateChunk(JobVehicleCharset, 2), getRandomPlateChunk(JobVehicleNumberCharset, 3))
-		local exists = MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE plate = ?', {plate})
-		if not exists then return plate end
-	end
-
-	return nil
+	return xLib.vehiclePlate.generateUnique({
+		prefix = 'POL',
+		letters = 2,
+		numbers = 3
+	}, function(plate)
+		return MySQL.scalar.await('SELECT plate FROM owned_vehicles WHERE plate = ?', {plate}) ~= nil
+	end)
 end
 
 local function isNearPlayer(source, target, distance)
-	target = tonumber(target)
-	if not target or source == target then
-		return false
-	end
-
-	local sourcePed = GetPlayerPed(source)
-	local targetPed = GetPlayerPed(target)
-	if not sourcePed or sourcePed == 0 or not targetPed or targetPed == 0 then
-		return false
-	end
-
-	return #(GetEntityCoords(sourcePed) - GetEntityCoords(targetPed)) <= distance
+	local nearby = xLib.player.isNearPlayer(source, target, distance)
+	return nearby
 end
 
 local function isNearPoliceArmory(source)
@@ -195,8 +167,10 @@ AddEventHandler('esx_policejob:confiscatePlayerItem', function(target, itemType,
 	local source = source
 	local sourceXPlayer = ESX.Player(source)
 	local targetXPlayer = ESX.Player(target)
-	if not isPolice(sourceXPlayer) or not targetXPlayer or not isNearPlayer(source, target, 5.0) or not cuffedPlayers[tonumber(target)] then
-		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit The Confuscation System!'):format(source))
+	if not isPoliceOnDuty(sourceXPlayer) or not targetXPlayer or not isNearPlayer(source, target, 5.0) or not cuffedPlayers[tonumber(target)] then
+		if not notifyOffDuty(sourceXPlayer) then
+			print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit The Confuscation System!'):format(source))
+		end
 		return
 	end
 
@@ -261,7 +235,7 @@ RegisterNetEvent('esx_policejob:handcuff')
 AddEventHandler('esx_policejob:handcuff', function(target)
 	local xPlayer = ESX.Player(source)
 
-	if isPolice(xPlayer) and isNearPlayer(source, target, 5.0) then
+	if isPoliceOnDuty(xPlayer) and isNearPlayer(source, target, 5.0) then
 		target = tonumber(target)
 		cuffedPlayers[target] = not cuffedPlayers[target]
 		Player(target).state:set('isHandcuffed', cuffedPlayers[target], true)
@@ -274,7 +248,7 @@ AddEventHandler('esx_policejob:handcuff', function(target)
 			end)
 		end
 		TriggerClientEvent('esx_policejob:handcuff', target)
-	else
+	elseif not notifyOffDuty(xPlayer) then
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Handcuffs!'):format(source))
 	end
 end)
@@ -283,9 +257,9 @@ RegisterNetEvent('esx_policejob:drag')
 AddEventHandler('esx_policejob:drag', function(target)
 	local xPlayer = ESX.Player(source)
 
-	if isPolice(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
+	if isPoliceOnDuty(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
 		TriggerClientEvent('esx_policejob:drag', target, source)
-	else
+	elseif not notifyOffDuty(xPlayer) then
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging!'):format(source))
 	end
 end)
@@ -294,9 +268,9 @@ RegisterNetEvent('esx_policejob:putInVehicle')
 AddEventHandler('esx_policejob:putInVehicle', function(target)
 	local xPlayer = ESX.Player(source)
 
-	if isPolice(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
+	if isPoliceOnDuty(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 5.0) then
 		TriggerClientEvent('esx_policejob:putInVehicle', target)
-	else
+	elseif not notifyOffDuty(xPlayer) then
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Garage!'):format(source))
 	end
 end)
@@ -305,9 +279,9 @@ RegisterNetEvent('esx_policejob:OutVehicle')
 AddEventHandler('esx_policejob:OutVehicle', function(target)
 	local xPlayer = ESX.Player(source)
 
-	if isPolice(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 8.0) then
+	if isPoliceOnDuty(xPlayer) and cuffedPlayers[tonumber(target)] and isNearPlayer(source, target, 8.0) then
 		TriggerClientEvent('esx_policejob:OutVehicle', target)
-	else
+	elseif not notifyOffDuty(xPlayer) then
 		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Dragging Out Of Vehicle!'):format(source))
 	end
 end)
@@ -322,8 +296,10 @@ AddEventHandler('esx_policejob:getStockItem', function(itemName, count)
 	local xPlayer = ESX.Player(source)
 	count = getValidCount(count)
 
-	if not count or not isPolice(xPlayer) or not isNearPoliceArmory(source) then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock withdrawal!'):format(source))
+	if not count or not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
+		if not notifyOffDuty(xPlayer) then
+			print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock withdrawal!'):format(source))
+		end
 		return
 	end
 
@@ -354,8 +330,10 @@ AddEventHandler('esx_policejob:putStockItems', function(itemName, count)
 	local sourceItem = xPlayer.getInventoryItem(itemName)
 	count = getValidCount(count)
 
-	if not count or not isPolice(xPlayer) or not isNearPoliceArmory(source) then
-		print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock deposit!'):format(source))
+	if not count or not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
+		if not notifyOffDuty(xPlayer) then
+			print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock deposit!'):format(source))
+		end
 		return
 	end
 
@@ -376,7 +354,7 @@ end)
 xLib.callback.registerCompat('esx_policejob:getOtherPlayerData', function(source, cb, target, notify)
 	local sourceXPlayer = ESX.Player(source)
 	local xPlayer = ESX.Player(target)
-	if not isPolice(sourceXPlayer) or not xPlayer or not isNearPlayer(source, target, 5.0) or not cuffedPlayers[tonumber(target)] then
+	if not isPoliceOnDuty(sourceXPlayer) or not xPlayer or not isNearPlayer(source, target, 5.0) or not cuffedPlayers[tonumber(target)] then
 		return cb({})
 	end
 
@@ -467,7 +445,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:getArmoryWeapons', function(source, cb)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb({})
 	end
 
@@ -484,7 +462,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:addArmoryWeapon', function(source, cb, weaponName, removeWeapon)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) or not xPlayer.hasWeapon(weaponName) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) or not xPlayer.hasWeapon(weaponName) then
 		return cb(false)
 	end
 
@@ -518,7 +496,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:removeArmoryWeapon', function(source, cb, weaponName)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb(false)
 	end
 
@@ -547,7 +525,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:buyWeapon', function(source, cb, weaponName, type, componentNum)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb(false)
 	end
 
@@ -610,7 +588,9 @@ xLib.callback.registerCompat('esx_policejob:buyJobVehicle', function(source, cb,
 
 	-- vehicle model not found
 	if not isPoliceOnDuty(xPlayer) or price == 0 or not isNearPoliceVehicleShop(source, type) then
-		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Buy Invalid Vehicle - ^5%s^7!'):format(source, tostring(model)))
+		if not notifyOffDuty(xPlayer) then
+			print(('[^3WARNING^7] Player ^5%s^7 Attempted To Buy Invalid Vehicle - ^5%s^7!'):format(source, tostring(model)))
+		end
 		return cb(false)
 	end
 
@@ -676,7 +656,7 @@ end
 
 xLib.callback.registerCompat('esx_policejob:getStockItems', function(source, cb)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb({})
 	end
 
@@ -687,7 +667,7 @@ end)
 
 xLib.callback.registerCompat('esx_policejob:getPlayerInventory', function(source, cb)
 	local xPlayer = ESX.Player(source)
-	if not isPolice(xPlayer) or not isNearPoliceArmory(source) then
+	if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
 		return cb({items = {}})
 	end
 

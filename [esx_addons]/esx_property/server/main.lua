@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 --[[
       ESX Property - Properties Made Right!
     Copyright (C) 2025 ESX-Framework
@@ -30,11 +33,16 @@ local PM = Config.PlayerManagement
 local Properties = {}
 local PropertyLocks = {}
 local PendingPropertySales = {}
-local PropertyRaidCooldowns = {}
 
 local PropertyActionDistance = 6.0
 local PropertySaleOfferDuration = 30000
 local PropertyRaidCooldown = 30000
+local propertyRaidLimiter = xLib.rateLimiter({
+  capacity = 1,
+  refill = 1,
+  interval = PropertyRaidCooldown,
+  staleMs = math.max(60000, PropertyRaidCooldown * 4)
+})
 
 local function SavePropertiesToDisk(Reason)
   if Properties and #Properties > 0 then
@@ -76,29 +84,15 @@ local function normalizePropertyId(propertyId)
 end
 
 local function normalizePlate(plate)
-  if type(plate) ~= "string" then
-    return nil
-  end
-
-  plate = plate:gsub("^%s+", ""):gsub("%s+$", "")
-  if plate == "" or #plate > 12 then
-    return nil
-  end
-
-  return plate
+  return xLib.vehiclePlate.normalize(plate, {
+    maxLength = 12,
+    uppercase = false
+  })
 end
 
 local function isNearCoords(source, coords, maxDistance)
-  if not coords or not coords.x or not coords.y or not coords.z then
-    return false
-  end
-
-  local ped = GetPlayerPed(source)
-  if not ped or ped == 0 then
-    return false
-  end
-
-  return #(GetEntityCoords(ped) - vector3(coords.x, coords.y, coords.z)) <= maxDistance
+  local nearby = xLib.player.isNearCoords(source, coords, maxDistance)
+  return nearby
 end
 
 local function hasPropertyAccess(xPlayer, Property)
@@ -1001,8 +995,7 @@ xLib.callback.registerCompat("esx_property:CanRaid", function(source, cb, Proper
     return cb(false)
   end
 
-  local now = GetGameTimer()
-  if PropertyRaidCooldowns[source] and PropertyRaidCooldowns[source] > now then
+  if propertyRaidLimiter:retryAfter(source) > 0 then
     return cb(false)
   end
 
@@ -1027,7 +1020,7 @@ xLib.callback.registerCompat("esx_property:CanRaid", function(source, cb, Proper
   end
 
   PropertyLocks[PropertyId] = true
-  PropertyRaidCooldowns[source] = now + PropertyRaidCooldown
+  propertyRaidLimiter:consume(source)
   cb(true)
 
   CreateThread(function()
@@ -1170,7 +1163,7 @@ xLib.callback.registerCompat('esx_property:GetNearbyPlayers', function(source, c
     return cb(Players)
   end
 
-  local NearbyPlayers = xLib.onesync.getPlayersInArea(vector3(Property.Entrance.x, Property.Entrance.y, Property.Entrance.z), 5.0)
+  local NearbyPlayers = ESX.OneSync.GetPlayersInArea(vector3(Property.Entrance.x, Property.Entrance.y, Property.Entrance.z), 5.0) or {}
   Wait(100)
     for k, v in pairs(NearbyPlayers) do
       local xTarget = ESX.GetPlayerFromId(v.id)
@@ -1539,7 +1532,6 @@ end)
 
 AddEventHandler('playerDropped', function()
   local source = source
-  PropertyRaidCooldowns[source] = nil
   for token, offer in pairs(PendingPropertySales) do
     if offer.seller == source or offer.target == source then
       PendingPropertySales[token] = nil

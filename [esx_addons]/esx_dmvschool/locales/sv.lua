@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['sv'] = {
     ['you_paid'] = 'Du betalade %skr till körskolan!',
     ['go_next_point'] = 'Åk till nästa punkt!',

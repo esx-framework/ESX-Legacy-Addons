@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 --- @module server.module.main
 --- Main server module for the scoreboard resource
 
@@ -38,6 +41,8 @@ local activeClients = {}
 --- @type table<number, table> Per-client request state and selected page.
 local requestState = {}
 
+local requestLimiters = {}
+
 --- @type table<number, table> Public player records keyed by source.
 local playersById = {}
 
@@ -66,6 +71,12 @@ local pageCache = {}
 
 --- @type string[] Page cache insertion order for bounded memory.
 local pageCacheOrder = {}
+
+--- @type table<string, table> Cached filtered/sorted player references, shared by all pages of a query.
+local playerQueryCache = {}
+
+--- @type string[] Player query cache insertion order for bounded memory.
+local playerQueryCacheOrder = {}
 
 --- @type boolean Prevents stacked activity broadcasts.
 local activityBroadcastPending = false
@@ -109,6 +120,14 @@ local function getPageRefreshInterval()
   return cfgNumber("PageRefreshInterval", 15000, 5000, 60000)
 end
 
+local function getPageRefreshBatchSize()
+  return cfgNumber("PageRefreshBatchSize", 25, 1, 250)
+end
+
+local function getPageRefreshBatchDelay()
+  return cfgNumber("PageRefreshBatchDelay", 50, 0, 1000)
+end
+
 local function getFullReconcileInterval()
   return cfgNumber("FullReconcileInterval", 60000, 30000, 300000)
 end
@@ -145,9 +164,15 @@ local function getMaxPageCacheEntries()
   return cfgNumber("MaxPageCacheEntries", 256, 32, 1024)
 end
 
+local function getMaxPlayerQueryCacheEntries()
+  return cfgNumber("MaxPlayerQueryCacheEntries", 64, 8, 256)
+end
+
 local function clearPageCache()
   pageCache = {}
   pageCacheOrder = {}
+  playerQueryCache = {}
+  playerQueryCacheOrder = {}
 end
 
 local function sanitizeString(value, maxLen, fallback)
@@ -208,20 +233,24 @@ local function isRateLimited(src, key, cooldownMs)
     return true
   end
 
-  local state = requestState[src]
-  if not state then
-    state = {}
-    requestState[src] = state
+  cooldownMs = math.max(1, math.floor(tonumber(cooldownMs) or 1))
+
+  local limiterState = requestLimiters[key]
+  if not limiterState or limiterState.cooldownMs ~= cooldownMs then
+    limiterState = {
+      cooldownMs = cooldownMs,
+      limiter = xLib.rateLimiter({
+        capacity = 1,
+        refill = 1,
+        interval = cooldownMs,
+        staleMs = math.max(60000, cooldownMs * 4)
+      })
+    }
+    requestLimiters[key] = limiterState
   end
 
-  local now = nowMs()
-  local previous = state[key] or 0
-  if previous > 0 and now - previous < cooldownMs then
-    return true
-  end
-
-  state[key] = now
-  return false
+  local allowed = limiterState.limiter:consume(src)
+  return not allowed
 end
 
 local function getPlayer(src)
@@ -448,10 +477,20 @@ local function refreshPings()
   end
 
   lastPingUpdate = now
+  local changed = false
+
   for src, record in pairs(playersById) do
     if GetPlayerName(src) then
-      record.ping = GetPlayerPing(src) or 0
+      local ping = GetPlayerPing(src) or 0
+      if record.ping ~= ping then
+        record.ping = ping
+        changed = true
+      end
     end
+  end
+
+  if not changed then
+    return
   end
 
   pingRevision = pingRevision + 1
@@ -701,12 +740,9 @@ local function sortPlayers(players, sortBy, sortAsc)
   end)
 end
 
-function ScoreboardModule.BuildPlayerPage(data)
-  refreshPings()
-
-  local page, pageSize, search, sortBy, sortAsc = normalizePageRequest(data)
-  local cacheKey = ("%s:%s:%s:%s:%s:%s:%s"):format(playersRevision, pingRevision, #search, search, page, pageSize, sortBy .. tostring(sortAsc))
-  local cached = pageCache[cacheKey]
+local function buildPlayerQuery(search, sortBy, sortAsc)
+  local queryKey = ("%s:%s:%s:%s:%s"):format(playersRevision, pingRevision, #search, search, sortBy .. tostring(sortAsc))
+  local cached = playerQueryCache[queryKey]
   if cached then
     return cached
   end
@@ -720,7 +756,34 @@ function ScoreboardModule.BuildPlayerPage(data)
 
   sortPlayers(filtered, sortBy, sortAsc)
 
-  local total = #filtered
+  cached = {
+    players = filtered,
+    total = #filtered
+  }
+
+  playerQueryCache[queryKey] = cached
+  playerQueryCacheOrder[#playerQueryCacheOrder + 1] = queryKey
+
+  while #playerQueryCacheOrder > getMaxPlayerQueryCacheEntries() do
+    playerQueryCache[table.remove(playerQueryCacheOrder, 1)] = nil
+  end
+
+  return cached
+end
+
+function ScoreboardModule.BuildPlayerPage(data)
+  refreshPings()
+
+  local page, pageSize, search, sortBy, sortAsc = normalizePageRequest(data)
+  local cacheKey = ("%s:%s:%s:%s:%s:%s:%s"):format(playersRevision, pingRevision, #search, search, page, pageSize, sortBy .. tostring(sortAsc))
+  local cached = pageCache[cacheKey]
+  if cached then
+    return cached
+  end
+
+  local query = buildPlayerQuery(search, sortBy, sortAsc)
+  local filtered = query.players
+  local total = query.total
   local totalPages = math.max(1, math.ceil(total / pageSize))
   if page > totalPages then
     page = totalPages
@@ -955,10 +1018,26 @@ CreateThread(function()
     Wait(getPageRefreshInterval())
     if next(activeClients) then
       refreshPings()
+
+      local refreshed = 0
+      local batchSize = getPageRefreshBatchSize()
+      local batchDelay = getPageRefreshBatchDelay()
+      local clients = {}
+
       for src in pairs(activeClients) do
-        local state = requestState[src]
+        clients[#clients + 1] = src
+      end
+
+      for i = 1, #clients do
+        local src = clients[i]
+        local state = activeClients[src] and requestState[src]
         if state and state.pageRequest and (state.pageRevision ~= playersRevision or state.pingRevision ~= pingRevision) then
           ScoreboardModule.SendPage(src, state.pageRequest)
+          refreshed = refreshed + 1
+
+          if refreshed % batchSize == 0 and batchDelay > 0 then
+            Wait(batchDelay)
+          end
         end
       end
     end

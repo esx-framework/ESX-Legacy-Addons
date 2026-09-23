@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 if ESX.GetConfig().OxInventory then
 	AddEventHandler('onServerResourceStart', function(resourceName)
 		if resourceName == 'ox_inventory' or resourceName == GetCurrentResourceName() then

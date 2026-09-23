@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---@param source number Player source
 ---@param purchaseData table Purchase data from client
 ---@param zone string Shop zone
@@ -13,6 +16,11 @@ function ProcessPurchase(source, purchaseData, zone, cb)
 	local xPlayer = ValidatePlayer(source)
 	if not xPlayer then
 		cb(false, _U('invalid_player', source))
+		return
+	end
+
+	if not Verify(purchaseData, 'table') then
+		cb(false, _U('invalid_items'))
 		return
 	end
 

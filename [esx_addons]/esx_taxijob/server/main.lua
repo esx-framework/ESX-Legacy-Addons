@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local lastPlayerSuccess = {}
 local activeMissions = {}
 
@@ -19,12 +22,8 @@ local function toVector3(coords)
 end
 
 local function isNear(source, coords, distance)
-    local ped = GetPlayerPed(source)
-    if not ped or ped == 0 then
-        return false
-    end
-
-    return #(GetEntityCoords(ped) - coords) <= distance
+    local nearby = xLib.player.isNearCoords(source, coords, distance)
+    return nearby
 end
 
 local function getDrivenVehicle(source)
@@ -62,6 +61,92 @@ local function isAuthorizedTaxiVehicle(source, xPlayer)
     return false
 end
 
+local function getAuthorizedTaxiModel(model)
+    local modelHash
+
+    if type(model) == 'number' then
+        modelHash = model
+    elseif type(model) == 'string' and model ~= '' then
+        modelHash = joaat(model)
+    else
+        return nil
+    end
+
+    for i = 1, #Config.AuthorizedVehicles do
+        if modelHash == joaat(Config.AuthorizedVehicles[i].model) then
+            return modelHash
+        end
+    end
+
+    return nil
+end
+
+local function normalizeSocietyPlate(plate)
+    return xLib.vehiclePlate.normalize(plate, {
+        maxLength = 12
+    })
+end
+
+local function getSocietyVehicleModel(vehicle)
+    local model = vehicle.model
+
+    if type(model) == 'number' and model ~= 0 then
+        return model
+    elseif type(model) == 'string' and model ~= '' then
+        return tonumber(model) or joaat(model)
+    end
+
+    return nil
+end
+
+local function takeSocietyVehicle(plate)
+    plate = normalizeSocietyPlate(plate)
+    if not plate then
+        return nil
+    end
+
+    local societyVehicle
+
+    TriggerEvent('esx_datastore:getSharedDataStore', 'society_taxi', function(store)
+        if not store then
+            return
+        end
+
+        local garage = store.get('garage') or {}
+
+        for i = 1, #garage do
+            if type(garage[i]) == 'table' and normalizeSocietyPlate(garage[i].plate) == plate then
+                societyVehicle = table.remove(garage, i)
+                store.set('garage', garage)
+                break
+            end
+        end
+    end)
+
+    return societyVehicle
+end
+
+local function returnSocietyVehicle(vehicle)
+    local plate = normalizeSocietyPlate(vehicle.plate)
+
+    TriggerEvent('esx_datastore:getSharedDataStore', 'society_taxi', function(store)
+        if not store then
+            return
+        end
+
+        local garage = store.get('garage') or {}
+
+        for i = 1, #garage do
+            if type(garage[i]) == 'table' and normalizeSocietyPlate(garage[i].plate) == plate then
+                return
+            end
+        end
+
+        garage[#garage + 1] = vehicle
+        store.set('garage', garage)
+    end)
+end
+
 local function isConfiguredDropoff(coords)
     for i = 1, #Config.JobLocations do
         if #(coords - Config.JobLocations[i]) <= 5.0 then
@@ -72,19 +157,7 @@ local function isConfiguredDropoff(coords)
     return false
 end
 
-local function getValidCount(count)
-    count = tonumber(count)
-    if not count then
-        return nil
-    end
-
-    count = ESX.Math.Round(count)
-    if count <= 0 then
-        return nil
-    end
-
-    return count
-end
+local getValidCount = xLib.validation.count
 
 local function isNearTaxiActions(source)
     return isNear(source, vector3(Config.Zones.TaxiActions.Pos.x, Config.Zones.TaxiActions.Pos.y, Config.Zones.TaxiActions.Pos.z), 8.0)
@@ -172,28 +245,42 @@ xLib.callback.registerCompat("esx_taxijob:SpawnVehicle", function(source, cb, mo
         return cb(false)
     end
 
-    local modelHash = type(model) == 'number' and model or joaat(model)
-    local allowed = false
-    if Config.EnableSocietyOwnedVehicles then
-        allowed = props and props.plate and true or false
-    else
-        for i = 1, #Config.AuthorizedVehicles do
-            if modelHash == joaat(Config.AuthorizedVehicles[i].model) then
-                allowed = true
-                break
-            end
-        end
+    local SpawnPoint = vector3(Config.Zones.VehicleSpawnPoint.Pos.x, Config.Zones.VehicleSpawnPoint.Pos.y, Config.Zones.VehicleSpawnPoint.Pos.z)
+    if #ESX.OneSync.GetVehiclesInArea(SpawnPoint, 5.0) > 0 then
+        xPlayer.showNotification(TranslateCap('spawnpoint_blocked'))
+        return cb(false)
     end
 
-    if not allowed then
+    local modelHash, societyVehicle
+
+    if Config.EnableSocietyOwnedVehicles then
+        societyVehicle = takeSocietyVehicle(type(props) == 'table' and props.plate)
+        modelHash = societyVehicle and getSocietyVehicleModel(societyVehicle)
+        props = societyVehicle
+    else
+        modelHash = getAuthorizedTaxiModel(model)
+        props = { plate = 'TAXI JOB' }
+    end
+
+    if not modelHash then
+        if societyVehicle then
+            returnSocietyVehicle(societyVehicle)
+        end
+
         print(('[^3WARNING^7] Player ^5%s^7 attempted to spawn invalid taxi model ^5%s^7!'):format(source, tostring(model)))
         return cb(false)
     end
 
-    local SpawnPoint = vector3(Config.Zones.VehicleSpawnPoint.Pos.x, Config.Zones.VehicleSpawnPoint.Pos.y, Config.Zones.VehicleSpawnPoint.Pos.z)
     ESX.OneSync.SpawnVehicle(modelHash, SpawnPoint, Config.Zones.VehicleSpawnPoint.Heading, props, function(vehicle)
-        local vehicle = NetworkGetEntityFromNetworkId(vehicle)
-        while props and props.plate and GetVehicleNumberPlateText(vehicle) ~= props.plate do
+        local vehicle = vehicle and NetworkGetEntityFromNetworkId(vehicle)
+        if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then
+            if societyVehicle then
+                returnSocietyVehicle(societyVehicle)
+            end
+            return
+        end
+        local deadline = GetGameTimer() + 3000
+        while props and props.plate and GetVehicleNumberPlateText(vehicle) ~= props.plate and GetGameTimer() < deadline do
             Wait(0)
         end
         TaskWarpPedIntoVehicle(GetPlayerPed(source), vehicle, -1)

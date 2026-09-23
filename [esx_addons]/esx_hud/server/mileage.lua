@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 if not Config.Disable.Vehicle then
     HUD.Mileage = {
         Data = {},
@@ -149,8 +152,10 @@ if not Config.Disable.Vehicle then
     -- Create column in sql if not exist
     -- CREDIT: Overextended (https://github.com/overextended)
     CreateThread(function()
-        local success, result = pcall(MySQL.query.await, "SELECT mileage FROM owned_vehicles")
-        if not success then
+        local columnExists = MySQL.scalar.await(
+            "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'owned_vehicles' AND COLUMN_NAME = 'mileage' LIMIT 1")
+
+        if not columnExists then
             MySQL.query("ALTER TABLE owned_vehicles ADD COLUMN `mileage` DECIMAL(10,2) NOT NULL DEFAULT 0.00; ")
         end
     end)

@@ -1,50 +1,286 @@
-function getJobs()
-  local jobs = ESX.GetJobs()
-  local availableJobs = {}
-  for k, v in pairs(jobs) do
-    if v.whitelisted == false then
-      availableJobs[#availableJobs + 1] = {label = v.label, name = k}
-    end
-  end
-  return availableJobs
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+local lastChange = {}
+local openLimiter = xLib.rateLimiter({
+    capacity = 3,
+    refill = 1,
+    interval = 1000
+})
+local listLimiter = xLib.rateLimiter({
+    capacity = 3,
+    refill = 1,
+    interval = 1000
+})
+
+local function progressFor(player, job)
+    local metadata = player.getMeta() or {}
+    local data = metadata.joblisting or {}
+
+    return type(data[job]) == 'table' and data[job] or {}
 end
 
-xLib.callback.registerCompat('esx_joblisting:getJobsList', function(source, cb)
-  cb(getJobs())
-end)
+function getJobs(player)
+    local available = {}
 
-function IsJobAvailable(job)
-  local jobs = ESX.GetJobs()
-  local JobToCheck = jobs[job]
-  return not JobToCheck.whitelisted
+    for name, job in pairs(ESX.GetJobs()) do
+        if job.whitelisted == false and ESX.DoesJobExist(name, 0) then
+            local details = Config.JobDetails[name] or {}
+            local grade = job.grades['0'] or job.grades[0] or {}
+            local progress = player and progressFor(player, name) or {}
+
+            available[#available + 1] = {
+                name = name,
+                label = job.label,
+                salary = tonumber(grade.salary) or 0,
+                subtitle = details.subtitle,
+                description = details.description,
+                image = details.image,
+                rating = details.rating,
+                requirement = details.requirement,
+                location = details.location,
+                tasks = progress.tasks or details.tasks or {}
+            }
+        end
+    end
+
+    table.sort(available, function(a, b)
+        if a.label == b.label then
+            return a.name < b.name
+        end
+
+        return a.label < b.label
+    end)
+
+    return available
+end
+
+function IsJobAvailable(name)
+    if type(name) ~= 'string' then
+        return false
+    end
+
+    local job = ESX.GetJobs()[name]
+
+    return job ~= nil and job.whitelisted == false and ESX.DoesJobExist(name, 0)
 end
 
 function IsNearCentre(player)
-    local Ped = GetPlayerPed(player)
-    local PedCoords = GetEntityCoords(Ped)
-
-    for i = 1, #Config.Zones, 1 do
-        local distance = #(PedCoords - Config.Zones[i])
-
-        if distance < Config.DrawDistance then
-            return true
-        end
-    end
-    return false
+    return xLib.player.isNearAnyCoords(player, Config.Zones, Config.DrawDistance)
 end
 
-RegisterServerEvent('esx_joblisting:setJob')
-AddEventHandler('esx_joblisting:setJob', function(job)
-    local source = source
-    local xPlayer = ESX.Player(source)
-    local jobs = getJobs()
-    if not ESX.DoesJobExist(job, 0) then
-        print("[^1ERROR^7] Tried Setting User ^5" .. source .. "^7 To Invalid Job - ^5" .. job .. "^7!")
+local function ageFromBirth(value)
+    if type(value) ~= 'string' then
+        return nil
+    end
+
+    local year, month, day = value:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)$')
+
+    if not year then
+        day, month, year = value:match('^(%d%d)[/-](%d%d)[/-](%d%d%d%d)$')
+    end
+
+    year, month, day = tonumber(year), tonumber(month), tonumber(day)
+
+    if not year or not month or not day then
+        return nil
+    end
+
+    local now = os.date('*t')
+    local age = now.year - year
+
+    if now.month < month or (now.month == month and now.day < day) then
+        age = age - 1
+    end
+
+    return age >= 0 and age <= 120 and age or nil
+end
+
+local function profileFor(player)
+    local job = player.getJob()
+    local progress = progressFor(player, job.name)
+    local sex = player.get('sex')
+
+    return {
+        name = player.getName(),
+        id = player.getSource(),
+        age = ageFromBirth(player.get('dateofbirth')),
+        gender = sex == 'm' and TranslateCap('gender_male') or sex == 'f' and TranslateCap('gender_female') or nil,
+        phone = player.get('phoneNumber'),
+        job = {
+            name = job.name,
+            label = job.label,
+            gradeLabel = job.grade_label,
+            salary = job.grade_salary,
+            unemployed = job.name == Config.UnemployedJob
+        },
+        stats = progress.stats or {},
+        tasks = progress.tasks or {}
+    }
+end
+
+xLib.callback.registerCompat('esx_joblisting:getJobsList', function(source, cb)
+    if not listLimiter:consume(source) then
+        cb({})
         return
     end
-    if xPlayer and IsJobAvailable(job) and IsNearCentre(source) then
-        xPlayer.setJob(job, 0)
-    else
-        print("[^3WARNING^7] User ^5" .. source .. "^7 Attempted to Exploit ^5`esx_joblisting:setJob`^7!")
+
+    cb(getJobs(ESX.Player(source)))
+end)
+
+xLib.callback.register('esx_joblisting:open', function(source)
+    local player = ESX.Player(source)
+
+    if not player then
+        return {ok = false}
     end
+
+    if not openLimiter:consume(source) then
+        return {ok = false}
+    end
+
+    if not IsNearCentre(source) then
+        return {ok = false}
+    end
+
+    return {ok = true, jobs = getJobs(player), profile = profileFor(player)}
+end)
+
+local function changeJob(source, name)
+    local player = ESX.Player(source)
+
+    if not player or type(name) ~= 'string' or not IsNearCentre(source) then
+        return {ok = false, message = TranslateCap('visit_center')}
+    end
+
+    if not IsJobAvailable(name) then
+        return {ok = false, message = TranslateCap('job_unavailable')}
+    end
+
+    if player.getJob().name == name then
+        return {ok = false, message = TranslateCap('already_job')}
+    end
+
+    local now = GetGameTimer()
+
+    if lastChange[source] and now - lastChange[source] < 1500 then
+        return {ok = false, message = TranslateCap('change_cooldown')}
+    end
+
+    lastChange[source] = now
+    player.setJob(name, 0)
+
+    return {ok = true, profile = profileFor(player)}
+end
+
+xLib.callback.register('esx_joblisting:apply', function(source, name)
+    return changeJob(source, name)
+end)
+
+xLib.callback.register('esx_joblisting:quit', function(source)
+    return changeJob(source, Config.UnemployedJob)
+end)
+
+RegisterNetEvent('esx_joblisting:setJob', function(name)
+    changeJob(source, name)
+end)
+
+exports('UpdateJobProgress', function(playerId, name, data)
+    local player = ESX.Player(playerId)
+
+    if not player or type(name) ~= 'string' or type(data) ~= 'table' then
+        return false
+    end
+
+    local progress = {
+        stats = {},
+        tasks = {}
+    }
+
+    if type(data.stats) == 'table' then
+        local count = 0
+
+        for key, value in pairs(data.stats) do
+            if count >= 64 then
+                break
+            end
+
+            if type(key) ~= 'string' then
+                key = tostring(key)
+            end
+
+            local valid = type(value) == 'number' and math.abs(value) < 1e15 or type(value) == 'string' and #value <= 64
+
+            if key ~= 'extra' and valid then
+                progress.stats[key] = value
+                count = count + 1
+            end
+        end
+
+        if type(data.stats.extra) == 'table' then
+            local extra = {}
+
+            for i = 1, #data.stats.extra do
+                if #extra >= 3 then
+                    break
+                end
+
+                local entry = data.stats.extra[i]
+
+                if type(entry) == 'table' then
+                    local label = xLib.validation.string(entry.label, {maxLength = 64})
+                    local value = xLib.validation.string(type(entry.value) == 'number' and tostring(entry.value) or entry.value, {maxLength = 64})
+
+                    if label and value then
+                        extra[#extra + 1] = {
+                            label = label,
+                            value = value
+                        }
+                    end
+                end
+            end
+
+            if #extra > 0 then
+                progress.stats.extra = extra
+            end
+        end
+    end
+
+    if type(data.tasks) == 'table' then
+        for i = 1, #data.tasks do
+            if #progress.tasks >= 64 then
+                break
+            end
+
+            local task = data.tasks[i]
+
+            if type(task) == 'table' then
+                local title = xLib.validation.string(task.title, {maxLength = 64})
+                local description = xLib.validation.string(task.description, {maxLength = 128})
+                local current = xLib.validation.integer(task.current, 0, 100000, 'floor')
+                local target = xLib.validation.integer(task.target, 0, 100000, 'floor')
+
+                if title and current and target then
+                    progress.tasks[#progress.tasks + 1] = {
+                        title = title,
+                        description = description,
+                        current = current,
+                        target = target
+                    }
+                end
+            end
+        end
+    end
+
+    local all = (player.getMeta() or {}).joblisting or {}
+    all[name] = progress
+    player.setMeta('joblisting', all)
+
+    TriggerClientEvent('esx_joblisting:profileUpdated', playerId, profileFor(player))
+
+    return true
+end)
+
+AddEventHandler('playerDropped', function()
+    lastChange[source] = nil
 end)

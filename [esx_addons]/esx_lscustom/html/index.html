@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LS Customs</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script defer src="vendor/lucide.min.js"></script>
+    <script defer src="js/icons.js"></script>
+    <script defer src="js/catalog.js"></script>
+    <script defer src="js/cart.js"></script>
+    <script defer src="js/app.js"></script>
+  </head>
+  <body>
+    <main id="app" class="workshop hidden">
+      <section class="lsc-shell" aria-labelledby="workshopTitle">
+        <header class="brand-header">
+          <img id="brandLogo" class="esx-logo" src="assets/esx-logo.png" width="50" height="19" alt="ESX" />
+          <div class="brand-heading"><h1 id="workshopTitle">LS CUSTOMS</h1><span id="vehicleName">VEHICLE</span></div>
+          <button id="closeBtn" class="icon-button" type="button" data-icon="X" aria-label="Close" data-tooltip="Close"></button>
+        </header>
+        <nav id="rail" class="category-tabs" aria-label="Customization"></nav>
+        <div class="selection-heading">
+          <button id="backBtn" class="icon-button" data-icon="ArrowLeft" type="button" aria-label="Back" data-tooltip="Back"></button>
+          <span id="headingIcon" class="heading-icon" aria-hidden="true"></span>
+          <h2 id="menuTitle">Customization</h2><span id="optionCount" class="count-badge">0</span>
+        </div>
+        <div class="catalog-toolbar">
+          <label class="search-field"><span data-icon="Search" aria-hidden="true"></span><input id="searchInput" type="search" placeholder="Search options" aria-label="Search options" autocomplete="off" spellcheck="false" /></label>
+          <div class="view-switch">
+            <button id="listViewBtn" class="icon-button" data-icon="List" type="button" aria-label="List" data-tooltip="List" aria-pressed="true"></button>
+            <button id="gridViewBtn" class="icon-button" data-icon="LayoutGrid" type="button" aria-label="Grid" data-tooltip="Grid" aria-pressed="false"></button>
+          </div>
+        </div>
+        <div id="optionList" class="option-list"></div>
+        <section id="statsPanel" class="stats-panel" aria-label="Vehicle stats">
+          <div class="stats-heading"><span data-icon="Gauge" aria-hidden="true"></span><h3 id="statsTitle">Vehicle stats</h3></div>
+          <div class="stats-grid">
+            <div class="stat-row"><span id="labelSpeed">Speed</span><b id="statSpeedValue">0</b><div class="stat-bar"><i id="statSpeed"></i></div></div>
+            <div class="stat-row"><span id="labelAccel">Acceleration</span><b id="statAccelValue">0</b><div class="stat-bar"><i id="statAccel"></i></div></div>
+            <div class="stat-row"><span id="labelBrake">Braking</span><b id="statBrakeValue">0</b><div class="stat-bar"><i id="statBrake"></i></div></div>
+            <div class="stat-row"><span id="labelHandling">Handling</span><b id="statHandlingValue">0</b><div class="stat-bar"><i id="statHandling"></i></div></div>
+          </div>
+        </section>
+        <footer class="panel-footer">
+          <div class="selection-summary"><span id="selectionLabel">Selection</span><strong id="selectionName">--</strong><b id="selectionPrice">--</b></div>
+          <button id="addBtn" class="action-button primary" type="button" disabled><span data-icon="Plus" aria-hidden="true"></span><span data-label>Add to cart</span></button>
+        </footer>
+      </section>
+      <div id="rightDock" class="right-dock">
+        <aside id="cartPanel" class="cart-panel" aria-labelledby="cartTitle" hidden>
+          <header class="cart-header">
+            <span class="cart-title-icon" data-icon="ShoppingCart" aria-hidden="true"></span><h2 id="cartTitle">Cart</h2><span id="cartCount" class="count-badge">0</span>
+            <button id="clearBtn" class="icon-button" data-icon="Trash2" type="button" aria-label="Clear" data-tooltip="Clear"></button>
+            <button id="cartCloseBtn" class="icon-button" data-icon="ChevronDown" type="button" aria-label="Close" data-tooltip="Close"></button>
+          </header>
+          <div id="cartList" class="cart-list"></div>
+          <footer class="cart-footer">
+            <div class="cart-total"><span id="cartTotalLabel">Total</span><strong id="cartTotal">$0</strong></div>
+            <button id="payBtn" class="action-button primary" type="button" disabled><span data-icon="CreditCard" aria-hidden="true"></span><span data-label>Pay</span><span data-icon="ArrowRight" aria-hidden="true"></span></button>
+          </footer>
+        </aside>
+        <div class="dock-controls">
+          <div id="cameraDock" class="camera-dock" role="group" aria-label="Camera">
+            <div class="camera-views">
+              <button data-camera="default" data-icon="View" type="button" aria-label="View" data-tooltip="View" aria-pressed="true"></button>
+              <button data-camera="front" data-icon="CarFront" type="button" aria-label="Front" data-tooltip="Front" aria-pressed="false"></button>
+              <button data-camera="back" data-icon="FlipVertical2" type="button" aria-label="Rear" data-tooltip="Rear" aria-pressed="false"></button>
+              <button data-camera="left" data-icon="PanelLeft" type="button" aria-label="Left side" data-tooltip="Left side" aria-pressed="false"></button>
+              <button data-camera="right" data-icon="PanelRight" type="button" aria-label="Right side" data-tooltip="Right side" aria-pressed="false"></button>
+              <button data-camera="top" data-icon="Scan" type="button" aria-label="Top" data-tooltip="Top" aria-pressed="false"></button>
+            </div>
+            <div class="camera-tools">
+              <button data-camera="rotateLeft" data-icon="RotateCcw" type="button" aria-label="Rotate left" data-tooltip="Rotate left"></button>
+              <button data-camera="rotateRight" data-icon="RotateCw" type="button" aria-label="Rotate right" data-tooltip="Rotate right"></button>
+              <button data-camera="zoomIn" data-icon="ZoomIn" type="button" aria-label="Zoom in" data-tooltip="Zoom in"></button>
+              <button data-camera="zoomOut" data-icon="ZoomOut" type="button" aria-label="Zoom out" data-tooltip="Zoom out"></button>
+              <button data-camera="free" data-icon="Move" type="button" aria-label="Free" data-tooltip="Free" aria-pressed="false"></button>
+            </div>
+          </div>
+          <button id="cartToggle" class="cart-toggle" type="button" aria-controls="cartPanel" aria-expanded="false" aria-label="Cart" data-tooltip="Cart"><span data-icon="ShoppingCart" aria-hidden="true"></span><span id="cartBadge" class="cart-badge" hidden>0</span></button>
+        </div>
+      </div>
+      <div id="controlGuide" class="control-guide hidden" role="status" aria-live="polite"></div>
+      <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+    </main>
+  </body>
+</html>

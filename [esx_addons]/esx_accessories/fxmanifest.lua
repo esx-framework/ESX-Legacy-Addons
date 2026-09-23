@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 fx_version 'adamant'
 
 game 'gta5'
@@ -6,7 +9,7 @@ description 'Provides a way for players to customise their appearence with acces
 lua54 'yes'
 
 version '1.1'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
     '@esx_lib/imports.lua',
@@ -25,7 +28,8 @@ client_scripts {
 }
 
 dependencies {
-    'es_extended',
+	'esx_lib',
+	'es_extended',
     'esx_skin',
     'esx_datastore'
 }

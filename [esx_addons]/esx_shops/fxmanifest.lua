@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 fx_version 'cerulean'
 game 'gta5'
 
@@ -5,7 +8,7 @@ description 'ESX Shops - Modern modular shop system with NUI for ESX Legacy'
 lua54 'yes'
 use_fxv2_oal 'yes'
 version '2.0.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
 	'@esx_lib/imports.lua',
@@ -40,4 +43,7 @@ files {
 	'web/images/**/'
 }
 
-dependency 'es_extended'
+dependencies {
+	'esx_lib',
+	'es_extended'
+}

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 --[[
       ESX Property - Properties Made Right!
     Copyright (C) 2025 ESX-Framework
@@ -231,7 +234,7 @@ function CCTV(PropertyID)
                   exports['screenshot-basic']:requestScreenshotUpload(hook, "files[]", function(data)
                     local image = json.decode(data)
                     ESX.ShowNotification(TranslateCap("picture_taken"), "success")
-                    SendNUIMessage({link = image.attachments[1].proxy_url})
+                    xLib.nui.send({link = image.attachments[1].proxy_url})
                     ESX.ShowNotification(TranslateCap("clipboard"), "success")
                     ShowButtons = true
                     CamTakePic = false

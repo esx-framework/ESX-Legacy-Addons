@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 --[[
       ESX Property - Properties Made Right!
     Copyright (C) 2025 ESX-Framework
@@ -37,57 +40,57 @@ local IsControlPressed = IsControlPressed
 local DoScreenFadeOut = DoScreenFadeOut
 function RefreshBlips()
   for i = 1, #Blips, 1 do
-    RemoveBlip(Blips[i])
+    xLib.blips.remove(Blips[i])
     Blips[i] = nil
   end
 
   for k, v in pairs(Properties) do
     if v.Owned and Config.OwnedBlips then
       if v.Owner == ESX.PlayerData.identifier then
-        local Blip = AddBlipForCoord(v.Entrance.x, v.Entrance.y, v.Entrance.z)
-        SetBlipSprite(Blip, 40)
-        SetBlipAsShortRange(Blip, true)
-        SetBlipScale(Blip, 0.8)
-        SetBlipColour(Blip, 0)
-        BeginTextCommandSetBlipName("STRING")
-        AddTextComponentString(v.Name)
-        EndTextCommandSetBlipName(Blip)
-        SetBlipCategory(Blip, 11)
+        local Blip = xLib.blips.create({
+          coords = v.Entrance,
+          sprite = 40,
+          shortRange = true,
+          scale = 0.8,
+          color = 0,
+          label = v.Name,
+          category = 11
+        })
         Blips[#Blips + 1] = Blip
       elseif PlayerKeys[k] then
-        local Blip = AddBlipForCoord(v.Entrance.x, v.Entrance.y, v.Entrance.z)
-        SetBlipSprite(Blip, GameBuild >= 2699 and 811 or 134)
-        SetBlipAsShortRange(Blip, true)
-        SetBlipScale(Blip, 0.9)
-        SetBlipColour(Blip, 26)
-        BeginTextCommandSetBlipName("STRING")
-        AddTextComponentString(v.Name)
-        EndTextCommandSetBlipName(Blip)
-        SetBlipCategory(Blip, 11)
+        local Blip = xLib.blips.create({
+          coords = v.Entrance,
+          sprite = GameBuild >= 2699 and 811 or 134,
+          shortRange = true,
+          scale = 0.9,
+          color = 26,
+          label = v.Name,
+          category = 11
+        })
         Blips[#Blips + 1] = Blip
       end
     elseif not v.Owned and Config.ForSaleBlips then
-      local Blip = AddBlipForCoord(v.Entrance.x, v.Entrance.y, v.Entrance.z)
-      SetBlipSprite(Blip, 350)
-      SetBlipAsShortRange(Blip, true)
-      SetBlipScale(Blip, 0.7)
-      BeginTextCommandSetBlipName("STRING")
-      AddTextComponentString(v.Name)
-      EndTextCommandSetBlipName(Blip)
-      SetBlipCategory(Blip, 10)
+      local Blip = xLib.blips.create({
+        coords = v.Entrance,
+        sprite = 350,
+        shortRange = true,
+        scale = 0.7,
+        label = v.Name,
+        category = 10
+      })
       Blips[#Blips + 1] = Blip
     end
   end
 
   if PM.Enabled then
-    local Blip = AddBlipForCoord(PM.Locations.Entrance)
-    SetBlipSprite(Blip, 374)
-    SetBlipColour(Blip, 45)
-    SetBlipAsShortRange(Blip, true)
-    SetBlipScale(Blip, 0.7)
-    BeginTextCommandSetBlipName("STRING")
-    AddTextComponentString(TranslateCap("office_blip",PM.joblabel))
-    EndTextCommandSetBlipName(Blip)
+    local Blip = xLib.blips.create({
+      coords = PM.Locations.Entrance,
+      sprite = 374,
+      color = 45,
+      shortRange = true,
+      scale = 0.7,
+      label = TranslateCap("office_blip", PM.joblabel)
+    })
     Blips[#Blips + 1] = Blip
   end
 end
@@ -542,7 +545,7 @@ RegisterCommand("getoffset", function(source)
     local Property = Properties[CurrentId]
     local Interior = GetInteriorValues(Property.Interior)
     print(vector3(Property.Entrance.x, Property.Entrance.y, 2000) - Pcoords)
-    SendNUIMessage({
+    xLib.nui.send({
       link = tostring(vector3(Property.Entrance.x, Property.Entrance.y, 2000) - Pcoords)
     })
   end

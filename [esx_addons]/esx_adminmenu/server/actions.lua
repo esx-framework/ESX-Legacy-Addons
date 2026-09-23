@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Actions = Actions or {}
 
 ---@class AdminActionResult
@@ -74,13 +77,10 @@ local function isValidCharacterIdentifier(identifier)
 end
 
 local function normalizePlate(plate)
-	plate = trimString(plate):upper()
-
-	if plate == "" or #plate > 12 or not plate:match("^[%w%s%-]+$") then
-		return nil
-	end
-
-	return plate
+	return xLib.vehiclePlate.normalize(plate, {
+		maxLength = 12,
+		pattern = "^[%w%s%-]+$"
+	})
 end
 
 local function addUniquePlateValue(values, value)
@@ -294,6 +294,16 @@ local function getOnlineCharacterIdentifier(target, targetId)
 end
 
 local function revivePlayer(targetId)
+    if GetResourceState('esx_death') == 'started' then
+        if targetId == -1 then
+            for _, player in pairs(ESX.GetExtendedPlayers()) do
+                exports.esx_death:Revive(player.source, 'admin')
+            end
+        else
+            exports.esx_death:Revive(targetId, 'admin')
+        end
+        return
+    end
 	local reviveConfig = Config.Revive or {}
 	local events = reviveConfig.Events or {}
 	local triggeredEvent = false

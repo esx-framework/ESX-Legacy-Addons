@@ -1,4 +1,12 @@
-local playerPurchaseCooldowns = {}
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+local purchaseLimiter = xLib.rateLimiter({
+	capacity = Config.PurchaseRateLimitCapacity or 3,
+	refill = Config.PurchaseRateLimitRefill or 1,
+	interval = Config.PurchaseRateLimitIntervalMs or Config.PurchaseCooldownMs or 500,
+	staleMs = Config.CooldownExpiryMs,
+})
 
 ---Checks if player is rate limited and auto-expires old entries
 ---@param source number Player source
@@ -9,32 +17,13 @@ function IsPlayerRateLimited(source)
 		return false, 0
 	end
 
-	local currentTime = GetGameTimer()
-	local lastPurchase = playerPurchaseCooldowns[source]
-
-	if not lastPurchase then
-		return false, 0
-	end
-
-	local timeSinceLastPurchase = currentTime - lastPurchase
-
-	if timeSinceLastPurchase > Config.CooldownExpiryMs then
-		playerPurchaseCooldowns[source] = nil
-		return false, 0
-	end
-
-	if timeSinceLastPurchase < Config.PurchaseCooldownMs then
-		return true, Config.PurchaseCooldownMs - timeSinceLastPurchase
-	end
-
-	return false, 0
+	local allowed, retryAfter = purchaseLimiter:consume(source)
+	return not allowed, retryAfter
 end
 
----Updates player's last purchase time
+---Kept for compatibility; the token bucket consumes at request entry.
 ---@param source number Player source
 function UpdatePurchaseTimestamp(source)
-	if not Verify(source, {'number', 'string'}) then return end
-	playerPurchaseCooldowns[source] = GetGameTimer()
 end
 
 ---Finds item in shop zone and returns its data
@@ -77,6 +66,13 @@ function ValidateAndCalculateItems(items, zone, source)
 	end
 
 	local itemCount = #items
+	local maxCartLines = Config.MaxCartLines or 25
+
+	if itemCount < 1 or itemCount > maxCartLines then
+		DebugPrint(('[^3WARNING^7] Player ^5%s^7 sent invalid cart size ^5%s^7'):format(source, itemCount))
+		return false, 0, {}
+	end
+
 	local serverTotal = 0
 	local validatedItems = {}
 
@@ -96,7 +92,7 @@ function ValidateAndCalculateItems(items, zone, source)
 			return false, 0, {}
 		end
 
-		if quantity <= 0 then
+		if quantity < 1 or quantity ~= math.floor(quantity) then
 			DebugPrint(_U('negative_quantity', source))
 			return false, 0, {}
 		end
@@ -105,8 +101,6 @@ function ValidateAndCalculateItems(items, zone, source)
 			DebugPrint(_U('excessive_quantity', source, quantity, Config.MaxQuantityPerItem))
 			return false, 0, {}
 		end
-
-		quantity = ESX.Math.Round(quantity)
 
 		local exists, serverPrice, label = GetItemFromShop(itemName, zone)
 		if not exists then

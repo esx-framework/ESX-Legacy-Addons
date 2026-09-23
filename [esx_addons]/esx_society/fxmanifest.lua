@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 fx_version 'adamant'
 
 game 'gta5'
@@ -5,7 +8,7 @@ game 'gta5'
 description 'Provides a way for Jobs to have a society system. (boss menu, salaries, funding etc)'
 lua54 'yes'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_script '@es_extended/imports.lua'
 
@@ -26,7 +29,8 @@ client_scripts {
 }
 
 dependencies {
-    'es_extended',
+	'esx_lib',
+	'es_extended',
     'cron',
     'esx_addonaccount'
 }

@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 /**
  * Maps the snake_case error codes returned by the Lua callbacks to text a
  * player can actually read. Anything unknown falls back to a generic line so a

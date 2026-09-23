@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 fx_version 'adamant'
 
 game 'gta5'
@@ -5,7 +8,7 @@ game 'gta5'
 description 'Handles for logic for player licenses, such as: Driving License, gun license and more'
 lua54 'yes'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_script '@esx_lib/imports.lua'
 server_scripts {
@@ -13,4 +16,10 @@ server_scripts {
 	'@oxmysql/lib/MySQL.lua',
 	'config.lua',
 	'server/main.lua'
+}
+
+dependencies {
+	'esx_lib',
+	'es_extended',
+	'oxmysql'
 }

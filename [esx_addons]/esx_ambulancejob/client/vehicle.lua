@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local spawnedVehicles = {}
 
 function OpenVehicleSpawnerMenu(type, hospital, part, partNum)
@@ -295,20 +298,5 @@ function DeleteSpawnedVehicles()
 end
 
 function WaitForVehicleToLoad(modelHash)
-	modelHash = (type(modelHash) == 'number' and modelHash or joaat(modelHash))
-
-	if not HasModelLoaded(modelHash) then
-		RequestModel(modelHash)
-
-		BeginTextCommandBusyspinnerOn('STRING')
-		AddTextComponentSubstringPlayerName(TranslateCap('vehicleshop_awaiting_model'))
-		EndTextCommandBusyspinnerOn(4)
-
-		while not HasModelLoaded(modelHash) do
-			Wait(0)
-			DisableAllControlActions(0)
-		end
-
-		BusyspinnerOff()
-	end
+	xLib.streaming.requestModelWithSpinner(modelHash, TranslateCap('vehicleshop_awaiting_model'))
 end

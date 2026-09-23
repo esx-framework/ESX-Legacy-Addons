@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local MAX_PROPS_BYTES <const> = 16384
 local MAX_PROPS_DEPTH <const> = 4
 local MAX_PAGE <const> = 100
@@ -29,6 +32,48 @@ end
 ---@return boolean
 local function isFiniteNumber(value)
     return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+end
+
+---@param value any
+---@return number?
+local function vehicleModelHash(value)
+    if type(value) == "number" and isFiniteNumber(value) then
+        return math.floor(value)
+    end
+
+    if type(value) ~= "string" then
+        return nil
+    end
+
+    value = value:gsub("^%s+", ""):gsub("%s+$", "")
+    if value == "" then
+        return nil
+    end
+
+    local numeric = tonumber(value)
+    if numeric and isFiniteNumber(numeric) then
+        return math.floor(numeric)
+    end
+
+    local ok, hash = pcall(GetHashKey, value)
+    if ok and type(hash) == "number" and hash ~= 0 then
+        return hash
+    end
+
+    return nil
+end
+
+---@param value number
+---@return number
+local function unsignedModelHash(value)
+    return value < 0 and value + 4294967296 or value
+end
+
+---@param left number
+---@param right number
+---@return boolean
+local function sameVehicleModel(left, right)
+    return left == right or unsignedModelHash(left) == unsignedModelHash(right)
 end
 
 ---@param value any
@@ -272,28 +317,24 @@ local function storedVehicleModel(row)
         return nil
     end
 
-    return tonumber(storedProps.model)
+    return vehicleModelHash(storedProps.model)
 end
 
 ---@param row OwnedVehicleRow
 ---@param entity integer
 ---@return boolean, number?
 local function validateStoredModel(row, entity)
-    local storedModel = storedVehicleModel(row)
-    if not storedModel then
-        return false, nil
-    end
-
-    local entityModel = GetEntityModel(entity)
+    local entityModel = vehicleModelHash(GetEntityModel(entity))
     if not entityModel then
         return false, nil
     end
 
-    if entityModel ~= storedModel then
+    local storedModel = storedVehicleModel(row)
+    if not storedModel or not sameVehicleModel(entityModel, storedModel) then
         return false, nil
     end
 
-    return true, storedModel
+    return true, entityModel
 end
 
 ---@param xVehicle table
@@ -628,7 +669,7 @@ local function hasUnmanagedWorldVehicle(plateKey, expectedModel, managedEntity)
     for i = 1, #vehicles do
         local veh = vehicles[i]
         if veh ~= managedEntity
-            and GetEntityModel(veh) == expectedModel
+            and sameVehicleModel(GetEntityModel(veh), expectedModel)
             and normPlate(GetVehicleNumberPlateText(veh) or "") == plateKey then
             return true
         end
@@ -1441,7 +1482,7 @@ local function queueDeletedVehicleImpound(plate, model)
 
         local condition, plateParams = plateCondition(plate)
         local ok, row = pcall(MySQL.single.await,
-            ("SELECT `stored`, `pound`, `vehicle` FROM `owned_vehicles` WHERE %s AND `stored` = 0 AND (`pound` IS NULL OR `pound` = '') LIMIT 1")
+            ("SELECT `stored`, `pound`, `vehicle` FROM `owned_vehicles` WHERE %s AND `stored` = 0 AND `pound` IS NULL LIMIT 1")
             :format(condition),
             plateParams)
 
@@ -1450,7 +1491,7 @@ local function queueDeletedVehicleImpound(plate, model)
         end
 
         local storedModel = storedVehicleModel(row)
-        if type(model) == "number" and model ~= 0 and storedModel and storedModel ~= model then
+        if type(model) == "number" and model ~= 0 and storedModel and not sameVehicleModel(storedModel, model) then
             return
         end
 

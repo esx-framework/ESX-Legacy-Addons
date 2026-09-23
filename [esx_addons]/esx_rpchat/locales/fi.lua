@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['fi'] = {
   ['ooc_prefix'] = 'OOC | %s',
   ['twt_help'] = 'lähetä twiitti',
@@ -8,4 +11,5 @@ Locales['fi'] = {
   ['do_prefix'] = 'do | %s',
   ['generic_argument_name'] = 'viesti',
   ['generic_argument_help'] = 'viestin sisältö',
+  ['rate_limited'] = 'Odota %s sekuntia ennen kuin lähetät uuden viestin.',
 }

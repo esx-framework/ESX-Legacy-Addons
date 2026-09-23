@@ -9,54 +9,54 @@ const initialState = {
     status:[
         {
             name: "healthBar",
-            progressLevel: 50,
+            progressLevel: 0,
             color: "red",
             icon: HealthIcon
         },
         {
             name: "armorBar",
-            progressLevel: 100,
+            progressLevel: 0,
             color: "blue",
             icon: ArmorIcon
         },
         {
             name: "drinkBar",
-            progressLevel: 100,
+            progressLevel: 0,
             color: "lightblue",
             icon: DrinkIcon
         },
         {
             name: "foodBar",
-            progressLevel: 100,
+            progressLevel: 0,
             color: "yellow",
             icon: FoodIcon
         },
         {
             name: "oxygenBar",
-            progressLevel: 100,
+            progressLevel: 0,
             color: "pink",
             icon: OxygenIcon
         },
         {
             name: "staminaBar",
-            progressLevel: 100,
+            progressLevel: 0,
             color: "green",
             icon: StaminaIcon
         }
     ],
     speedo:{
         show: false,
-        fuel: {level: 50, maxLevel: 100},
-        mileage: 5000,
+        fuel: {level: 0, maxLevel: 100},
+        mileage: 0,
         kmh: false,
         speed: 0,
-        rpm: 100,
+        rpm: 0,
         damage: 100,
         vehType: "LAND",
         driver: false,
         defaultIndicators: {
             seatbelt: false,
-            tempomat: true,
+            tempomat: false,
             door: false,
             light: false,
             engine: false,
@@ -65,12 +65,12 @@ const initialState = {
         }
     },
     hud:{
-        playerId: 1,
-        onlinePlayers:150,
-        serverLogo: "https://esx.s3.fr-par.scw.cloud/blanc-800x800.png",
-        moneys: { bank: 75000, money: 100000 },
+        playerId: "",
+        onlinePlayers: 0,
+        serverLogo: "",
+        moneys: { bank: 0, money: 0 },
         job: "",
-        weaponData: { use: true ,image: "pistol", name: "WEAPON NAME" , currentAmmo: 32, maxAmmo: 128 , isWeaponMelee: true},
+        weaponData: { use: false, image: "", name: "", currentAmmo: 0, maxAmmo: 0, isWeaponMelee: true},
         streetName: "",
         voice: {mic:false, radio:false, range: 2}
     },

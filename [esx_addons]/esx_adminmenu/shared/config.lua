@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Config = {}
 
 -- Enables extra debug prints
@@ -397,6 +400,12 @@ Config.Logs = {
 	-- Rows older than this are deleted by the hourly maintenance pass.
 	-- Set to 0 to keep everything (the table then grows without bound).
 	RetentionDays = 30,
+	-- Keep purge work small so a large backlog is cleared gradually instead of
+	-- creating a burst of slow DELETE warnings.
+	PurgeBatchSize = 250,
+	PurgeBatchDelay = 250,
+	PurgeTimeBudget = 5000,
+	PurgeBacklogDelay = 60000,
 
 	-- Entries are queued in memory and written in batches, so an admin action
 	-- never waits on the database.

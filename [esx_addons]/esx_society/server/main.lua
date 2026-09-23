@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 
 local Jobs = setmetatable({}, {__index = function(_, key)
 	return ESX.GetJobs()[key]
@@ -5,7 +8,7 @@ end
 })
 local RegisteredSocieties = {}
 local SocietiesByName = {}
-local gradeUpdateLastAt = {}
+local gradeUpdateLimiters = {}
 
 local function getValidAmount(amount)
 	amount = tonumber(amount)
@@ -72,15 +75,19 @@ local function isGradeUpdateLimited(source, job, action)
 		return false
 	end
 
-	local key = ('%s:%s:%s'):format(source, job, action)
-	local now = GetGameTimer()
-
-	if now - (gradeUpdateLastAt[key] or 0) < cooldown then
-		return true
+	local limiter = gradeUpdateLimiters[action]
+	if not limiter then
+		limiter = xLib.rateLimiter({
+			capacity = 1,
+			refill = 1,
+			interval = cooldown,
+			staleMs = math.max(60000, cooldown * 4)
+		})
+		gradeUpdateLimiters[action] = limiter
 	end
 
-	gradeUpdateLastAt[key] = now
-	return false
+	local allowed = limiter:consume(('%s:%s'):format(source, job))
+	return not allowed
 end
 
 local function refreshJobOrFallback(job)
@@ -108,20 +115,12 @@ local function hasSocietyBossAccess(xPlayer, society)
 end
 
 local function normalizePlate(plate)
-	if type(plate) ~= 'string' then return nil end
-
-	plate = ESX.Math.Trim(plate):upper()
-	if plate == '' or #plate > 12 then return nil end
-
-	return plate
+	return xLib.vehiclePlate.normalize(plate, {
+		maxLength = 12
+	})
 end
 
-local function getPlayerCoords(source)
-	local ped = GetPlayerPed(source)
-	if ped <= 0 then return nil end
-
-	return GetEntityCoords(ped)
-end
+local getPlayerCoords = xLib.player.getCoords
 
 local function toVector3(coords)
 	if not coords then return nil end
@@ -170,6 +169,25 @@ local function validateGarageVehicle(vehicle)
 
 	vehicle.plate = plate
 	return true
+end
+
+local function getGarageVehicleEntity(source, vehicle)
+	local ped = GetPlayerPed(source)
+	if not ped or ped == 0 then return nil end
+
+	local entity = GetVehiclePedIsIn(ped, false)
+	if not entity or entity == 0 then
+		entity = GetVehiclePedIsIn(ped, true)
+	end
+
+	if not entity or entity == 0 or not DoesEntityExist(entity) then return nil end
+	if #(GetEntityCoords(ped) - GetEntityCoords(entity)) > 10.0 then return nil end
+	if normalizePlate(GetVehicleNumberPlateText(entity)) ~= vehicle.plate then return nil end
+
+	local model = type(vehicle.model) == 'string' and (tonumber(vehicle.model) or joaat(vehicle.model)) or vehicle.model
+	if model ~= nil and GetEntityModel(entity) ~= model then return nil end
+
+	return entity
 end
 
 local function getValidJobGrade(job, grade)
@@ -346,6 +364,15 @@ AddEventHandler('esx_society:putVehicleInGarage', function(societyName, vehicle)
 		print(('[^3WARNING^7] Player ^5%s^7 attempted to put vehicle in non-existing society garage - ^5%s^7!'):format(source, societyName))
 		return
 	end
+
+	local entity = getGarageVehicleEntity(source, vehicle)
+	if not entity then
+		print(('[^3WARNING^7] Player ^5%s^7 attempted to store a vehicle they are not using in society garage - ^5%s^7!'):format(source, societyName))
+		return
+	end
+
+	vehicle.model = GetEntityModel(entity)
+
 	TriggerEvent('esx_datastore:getSharedDataStore', society.datastore, function(store)
 		local garage = store.get('garage') or {}
 
@@ -357,6 +384,7 @@ AddEventHandler('esx_society:putVehicleInGarage', function(societyName, vehicle)
 
 		table.insert(garage, vehicle)
 		store.set('garage', garage)
+		DeleteEntity(entity)
 	end)
 end)
 
@@ -638,7 +666,12 @@ local UNIFORM_PROP_DRAWABLES <const> = {
 	ears_1 = true
 }
 
-local lastUniformSaveAt = {}
+local uniformSaveLimiter = xLib.rateLimiter({
+	capacity = 1,
+	refill = 1,
+	interval = math.max(1, Config.UniformSaveCooldown or 30000),
+	staleMs = math.max(60000, (Config.UniformSaveCooldown or 30000) * 4)
+})
 local uniformSaveInFlight = {}
 
 local function getUniformComponentBounds(component)
@@ -724,8 +757,7 @@ xLib.callback.registerCompat('esx_society:setJobUniform', function(source, cb, j
 		return cb(false)
 	end
 
-	local now = GetGameTimer()
-	local cooldownLeft = Config.UniformSaveCooldown - (now - (lastUniformSaveAt[job] or 0))
+	local cooldownLeft = uniformSaveLimiter:retryAfter(job)
 
 	if uniformSaveInFlight[job] or cooldownLeft > 0 then
 		xPlayer.showNotification(TranslateCap('uniform_cooldown', math.max(1, math.ceil(math.max(cooldownLeft, 0) / 1000))))
@@ -796,21 +828,23 @@ xLib.callback.registerCompat('esx_society:setJobUniform', function(source, cb, j
 	end
 
 	uniformSaveInFlight[job] = true
+	uniformSaveLimiter:consume(job)
 
 	MySQL.update(query, parameters, function(affectedRows)
 		uniformSaveInFlight[job] = nil
 
 		if not affectedRows or affectedRows == 0 then
+			uniformSaveLimiter:reset(job)
 			xPlayer.showNotification(TranslateCap('uniform_failed'))
 			return cb(false)
 		end
 
 		if not refreshJobOrFallback(job) then
+			uniformSaveLimiter:reset(job)
 			xPlayer.showNotification(TranslateCap('uniform_failed'))
 			return cb(false)
 		end
 
-		lastUniformSaveAt[job] = GetGameTimer()
 		xPlayer.showNotification(TranslateCap('uniform_saved', gradeLabel))
 		cb(true)
 	end)

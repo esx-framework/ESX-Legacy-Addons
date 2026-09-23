@@ -1,10 +1,13 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 fx_version 'cerulean'
 game 'gta5'
 
 description 'ESX Weapon Shop - Modern modular weapon shop with NUI for ESX Legacy'
 lua54 'yes'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_scripts {
 	'@esx_lib/imports.lua',
@@ -42,6 +45,7 @@ files {
 }
 
 dependencies {
+	'esx_lib',
 	'es_extended',
 	'esx_license',
 	'/onesync'

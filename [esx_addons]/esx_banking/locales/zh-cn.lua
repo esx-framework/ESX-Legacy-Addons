@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['zh-cn'] = {
   ['invalid_amount'] = '无效的金额输入!',
   ['deposit_money']  = '您已存入-$%s',

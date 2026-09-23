@@ -1,10 +1,13 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 fx_version 'cerulean'
 game 'gta5'
 
 description 'CruiseControl / Seatbelt System for ESX Legacy'
 
 version '1.2'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 lua54 'yes'
 
@@ -21,5 +24,6 @@ client_scripts {
 }
 
 dependencies {
-  'es_extended'
+	'esx_lib',
+	'es_extended'
 }

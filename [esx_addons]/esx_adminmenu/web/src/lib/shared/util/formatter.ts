@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import { t } from "$lib/shared/util/util";
 import type { Vector3 } from "../../tabs/players/types/player";
 import type { PlayTime } from "../../tabs/players/types/player";

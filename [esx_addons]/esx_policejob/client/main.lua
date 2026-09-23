@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local CurrentActionData, handcuffTimer, dragStatus, blipsCops, currentTask = {}, {}, {}, {}, {}
 local HasAlreadyEnteredMarker, isDead, isHandcuffed, hasAlreadyJoined, playerInService = false, false, false, false, false
 local LastStation, LastPart, LastPartNum, LastEntity, CurrentAction, CurrentActionMsg
@@ -5,6 +8,10 @@ dragStatus.isDragged, isInShopMenu = false, false
 
 local function vehicleExists(vehicle)
 	return vehicle and vehicle ~= 0 and DoesEntityExist(vehicle)
+end
+
+local function isOffDuty()
+	return ESX.PlayerData.job and ESX.PlayerData.job.onDuty == false
 end
 
 local function getPoliceActionVehicle()
@@ -1235,17 +1242,15 @@ end)
 -- Create blips
 CreateThread(function()
 	for k,v in pairs(Config.PoliceStations) do
-		local blip = AddBlipForCoord(v.Blip.Coords)
-
-		SetBlipSprite (blip, v.Blip.Sprite)
-		SetBlipDisplay(blip, v.Blip.Display)
-		SetBlipScale  (blip, v.Blip.Scale)
-		SetBlipColour (blip, v.Blip.Colour)
-		SetBlipAsShortRange(blip, true)
-
-		BeginTextCommandSetBlipName('STRING')
-		AddTextComponentSubstringPlayerName(TranslateCap('map_blip'))
-		EndTextCommandSetBlipName(blip)
+		xLib.blips.create({
+			coords = v.Blip.Coords,
+			sprite = v.Blip.Sprite,
+			display = v.Blip.Display,
+			scale = v.Blip.Scale,
+			color = v.Blip.Colour,
+			shortRange = true,
+			label = TranslateCap('map_blip')
+		})
 	end
 end)
 
@@ -1416,13 +1421,15 @@ xLib.addKeybind({
 		return 
 	end
 
-	if not ESX.PlayerData.job or (ESX.PlayerData.job and not ESX.PlayerData.job.name == 'police') then
+	if not ESX.PlayerData.job or ESX.PlayerData.job.name ~= 'police' then
 		return
 	end
 	if CurrentAction == 'menu_cloakroom' then
 		OpenCloakroomMenu()
 	elseif CurrentAction == 'menu_armory' then
-		if not Config.EnableESXService then
+		if isOffDuty() then
+			ESX.ShowNotification(TranslateCap('off_duty'))
+		elseif not Config.EnableESXService then
 			OpenArmoryMenu(CurrentActionData.station)
 		elseif playerInService then
 			OpenArmoryMenu(CurrentActionData.station)
@@ -1430,7 +1437,9 @@ xLib.addKeybind({
 			ESX.ShowNotification(TranslateCap('service_not'))
 		end
 	elseif CurrentAction == 'menu_vehicle_spawner' then
-		if not Config.EnableESXService then
+		if isOffDuty() then
+			ESX.ShowNotification(TranslateCap('off_duty'))
+		elseif not Config.EnableESXService then
 			OpenVehicleSpawnerMenu('car', CurrentActionData.station, CurrentActionData.part, CurrentActionData.partNum)
 		elseif playerInService then
 			OpenVehicleSpawnerMenu('car', CurrentActionData.station, CurrentActionData.part, CurrentActionData.partNum)
@@ -1438,7 +1447,9 @@ xLib.addKeybind({
 			ESX.ShowNotification(TranslateCap('service_not'))
 		end
 	elseif CurrentAction == 'Helicopters' then
-		if not Config.EnableESXService then
+		if isOffDuty() then
+			ESX.ShowNotification(TranslateCap('off_duty'))
+		elseif not Config.EnableESXService then
 			OpenVehicleSpawnerMenu('helicopter', CurrentActionData.station, CurrentActionData.part, CurrentActionData.partNum)
 		elseif playerInService then
 			OpenVehicleSpawnerMenu('helicopter', CurrentActionData.station, CurrentActionData.part, CurrentActionData.partNum)
@@ -1474,7 +1485,9 @@ xLib.addKeybind({
 		return
 	end
 
-	if not Config.EnableESXService then
+	if isOffDuty() then
+		ESX.ShowNotification(TranslateCap('off_duty'))
+	elseif not Config.EnableESXService then
 		OpenPoliceActionsMenu()
 	elseif playerInService then
 		OpenPoliceActionsMenu()
@@ -1513,13 +1526,15 @@ function createBlip(id)
 	local blip = GetBlipFromEntity(ped)
 
 	if not DoesBlipExist(blip) then -- Add blip and create head display on player
-		blip = AddBlipForEntity(ped)
-		SetBlipSprite(blip, 1)
-		ShowHeadingIndicatorOnBlip(blip, true) -- Player Blip indicator
-		SetBlipRotation(blip, math.ceil(GetEntityHeading(ped))) -- update rotation
-		SetBlipNameToPlayerName(blip, id) -- update blip name
-		SetBlipScale(blip, 0.85) -- set scale
-		SetBlipAsShortRange(blip, true)
+		blip = xLib.blips.create({
+			entity = ped,
+			sprite = 1,
+			headingIndicator = true,
+			rotation = math.ceil(GetEntityHeading(ped)),
+			playerName = id,
+			scale = 0.85,
+			shortRange = true
+		})
 
 		table.insert(blipsCops, blip) -- add blip to array so we can remove it later
 	end

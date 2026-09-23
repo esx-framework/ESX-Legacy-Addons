@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['sr'] = {
 		-- Global menus
 		['cloakroom'] = 'Svlačionica',
@@ -22,6 +25,7 @@ Locales['sr'] = {
 		['spawn_veh_button'] = 'pritisni [E] da pozoveš vozilo dostave.',
 		['spawn_truck_button'] = 'pritisni [E] da izvadiš kamion.',
 		['spawn_blocked'] = 'neko vozilo blokira parking mesto!',
+		['vehicle_already_out'] = 'prvo morate vratiti trenutno vozilo!',
 		['service_vh'] = 'servisiraj vozilo',
 		['return_vh'] = 'vrati vozilo',
 		['return_vh_button'] = 'pritisni [E] da vratiš vozilo.',

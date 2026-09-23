@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local CurrentAction, CurrentActionMsg, CurrentActionData = nil, '', {}
 local HasAlreadyEnteredMarker, LastHospital, LastPart, LastPartNum
 local isBusy, deadPlayers, deadPlayerBlips, isOnDuty = false, {}, {}, false
@@ -78,7 +81,6 @@ function OpenMobileAmbulanceActionsMenu()
 									Wait(10000)
 									ClearPedTasks(playerPed)
 
-									TriggerServerEvent('esx_ambulancejob:removeItem', 'bandage')
 									TriggerServerEvent('esx_ambulancejob:heal', GetPlayerServerId(closestPlayer), 'small')
 									ESX.ShowNotification(TranslateCap('heal_complete', GetPlayerName(closestPlayer)))
 									isBusy = false
@@ -105,7 +107,6 @@ function OpenMobileAmbulanceActionsMenu()
 									Wait(10000)
 									ClearPedTasks(playerPed)
 
-									TriggerServerEvent('esx_ambulancejob:removeItem', 'medikit')
 									TriggerServerEvent('esx_ambulancejob:heal', GetPlayerServerId(closestPlayer), 'big')
 									ESX.ShowNotification(TranslateCap('heal_complete', GetPlayerName(closestPlayer)))
 									isBusy = false
@@ -147,7 +148,6 @@ function revivePlayer(closestPlayer)
 					end)
 				end
 
-				TriggerServerEvent('esx_ambulancejob:removeItem', 'medikit')
 				TriggerServerEvent('esx_ambulancejob:revive', GetPlayerServerId(closestPlayer))
 			else
 				ESX.ShowNotification(TranslateCap('player_not_unconscious'))
@@ -439,8 +439,8 @@ function OpenCloakroomMenu()
 				end
 
 				isOnDuty = true
-				xLib.callback('esx_ambulancejob:getDeadPlayers', false, function(_deadPlayers)
-					TriggerEvent('esx_ambulancejob:setDeadPlayers', _deadPlayers)
+				xLib.callback('esx_ambulancejob:getDeadPlayers', false, function(_deadPlayers, locations)
+					TriggerEvent('esx_ambulancejob:setDeadPlayers', _deadPlayers, locations)
 				end)
 				if Config.Debug then
 					print("[^2INFO^7] Player Sex |^5" .. tostring(skin.sex) .. "^7")
@@ -541,7 +541,7 @@ AddEventHandler('esx_ambulancejob:PlayerNotDead', function(Player)
 end)
 
 RegisterNetEvent('esx_ambulancejob:setDeadPlayers')
-AddEventHandler('esx_ambulancejob:setDeadPlayers', function(_deadPlayers)
+AddEventHandler('esx_ambulancejob:setDeadPlayers', function(_deadPlayers, locations)
 	deadPlayers = _deadPlayers
 
 	if isOnDuty then
@@ -558,20 +558,19 @@ AddEventHandler('esx_ambulancejob:setDeadPlayers', function(_deadPlayers)
 				if Config.Debug then
 					print("[^2INFO^7] Creating Distress Blip for Player - ^5" .. tostring(playerId) .. "^7")
 				end
-				local player = GetPlayerFromServerId(playerId)
-				local playerPed = GetPlayerPed(player)
-				local blip = AddBlipForEntity(playerPed)
-
-				SetBlipSprite(blip, 303)
-				SetBlipColour(blip, 1)
-				SetBlipFlashes(blip, true)
-				SetBlipCategory(blip, 7)
-
-				BeginTextCommandSetBlipName('STRING')
-				AddTextComponentSubstringPlayerName(TranslateCap('blip_dead'))
-				EndTextCommandSetBlipName(blip)
+				local coords = locations and (locations[playerId] or locations[tostring(playerId)])
+				if not coords then goto continueDeadPlayer end
+				local blip = xLib.blips.create({
+					coords = coords,
+					sprite = 303,
+					color = 1,
+					flashes = true,
+					category = 7,
+					label = TranslateCap('blip_dead')
+				})
 
 				deadPlayerBlips[playerId] = blip
+				::continueDeadPlayer::
 			end
 		end
 	end
@@ -587,17 +586,17 @@ AddEventHandler('esx_ambulancejob:PlayerDistressed', function(playerId, playerCo
 			print("[^2INFO^7] Player Distress Recived - ID:^5" .. tostring(playerId) .. "^7")
 		end
 		ESX.ShowNotification(TranslateCap('unconscious_found'), "error", 10000)
+		if deadPlayerBlips[playerId] then RemoveBlip(deadPlayerBlips[playerId]) end
 		deadPlayerBlips[playerId] = nil
 
-		local blip = AddBlipForCoord(playerCoords.x, playerCoords.y, playerCoords.z)
-		SetBlipSprite(blip, Config.DistressBlip.Sprite)
-		SetBlipColour(blip, Config.DistressBlip.Color)
-		SetBlipScale(blip, Config.DistressBlip.Scale)
-		SetBlipFlashes(blip, true)
-
-		BeginTextCommandSetBlipName('STRING')
-		AddTextComponentSubstringPlayerName(TranslateCap('blip_dead'))
-		EndTextCommandSetBlipName(blip)
+		local blip = xLib.blips.create({
+			coords = playerCoords,
+			sprite = Config.DistressBlip.Sprite,
+			color = Config.DistressBlip.Color,
+			scale = Config.DistressBlip.Scale,
+			flashes = true,
+			label = TranslateCap('blip_dead')
+		})
 
 		deadPlayerBlips[playerId] = blip
 	end

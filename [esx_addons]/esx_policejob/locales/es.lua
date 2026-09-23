@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['es'] = {
   -- Cloakroom
   ['cloakroom'] = 'Taquilla',
@@ -60,6 +63,7 @@ Locales['es'] = {
   -- Service
   ['service_max'] = 'No puedes entrar de servicio porque se ha alcanzado el número máximo: %s/%s',
   ['service_not'] = '¡No has entrado de servicio! Debes hacerlo primeramente.',
+  ['off_duty'] = 'Estás fuera de servicio.',
   ['service_anonunce'] = 'Información de servicio',
   ['service_in'] = 'Has entrado de servicio. ¡Bienvenido!',
   ['service_in_announce'] = '¡El agente %s ha entrado de servicio!',

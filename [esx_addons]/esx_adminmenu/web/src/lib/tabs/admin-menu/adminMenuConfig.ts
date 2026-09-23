@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import type { VehicleSpawnerConfig } from "$lib/shared/stores/user.svelte";
 import type { AdminMenuValueKey, AdminMenuValuesState } from "./adminMenuValues.svelte";
 

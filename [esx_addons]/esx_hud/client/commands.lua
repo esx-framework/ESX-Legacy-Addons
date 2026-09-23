@@ -1,17 +1,19 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 HUD.Data.hudHidden = false
 RegisterCommand("hud", function()
-    HUD:Toggle(HUD.Data.hudHidden)
     HUD.Data.hudHidden = not HUD.Data.hudHidden
+    HUD:Toggle(not HUD.Data.hudHidden)
 end, false)
 
 RegisterCommand("togglehud", function()
-    HUD:Toggle(HUD.Data.hudHidden)
     HUD.Data.hudHidden = not HUD.Data.hudHidden
+    HUD:Toggle(not HUD.Data.hudHidden)
 end, false)
 
 RegisterCommand("hudsettings", function()
-    SendNUIMessage({ type = "OPEN_SETTINGS" })
-    SetNuiFocus(true, true)
+    xLib.nui.open({ type = "OPEN_SETTINGS" })
 end, false)
 
 if not Config.Disable.VehicleHandlers and not Config.Disable.Vehicle then

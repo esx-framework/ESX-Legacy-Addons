@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 HUD = HUD or {}
 
 HUD.VersionCheckBaseURL = "https://raw.githubusercontent.com/esx-framework/ESX-Legacy-Addons/main/%5Besx_addons%5D/"

@@ -1,0 +1,277 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+
+local RESOURCE <const> = GetCurrentResourceName()
+local isOpen = false
+local isOpening = false
+local openRequest = 0
+local closedAt = 0
+local nativePauseOpen = false
+local uiText
+local OPEN_TIMEOUT_MS <const> = 5000
+local REOPEN_GUARD_MS <const> = 300
+local NATIVE_MAP_CLOSE_CONTROLS <const> = {
+    177, -- INPUT_CELLPHONE_CANCEL / Backspace
+    202, -- INPUT_FRONTEND_CANCEL / ESC
+    322 -- INPUT_REPLAY_EXIT / ESC
+}
+
+local function debugPrint(message)
+    if Config.Debug then
+        print(("[%s] %s"):format(RESOURCE, message))
+    end
+end
+
+local function getTheme()
+    local theme = xLib.colors.getESXTheme()
+
+    theme.brandColor = xLib.colors.brand
+    theme.darkestColor = xLib.colors.darkest
+    theme.darkColor = xLib.colors.dark
+    theme.midColor = xLib.colors.mid
+    theme.lightColor = xLib.colors.light
+    theme.lightestColor = xLib.colors.lightest
+
+    return theme
+end
+
+local function getUiText()
+    if not uiText then
+        uiText = {}
+
+        for key in pairs(Locales["en"]) do
+            if key:sub(1, 3) == "ui_" then
+                uiText[key] = Translate(key)
+            end
+        end
+    end
+
+    return uiText
+end
+
+local function getClockData()
+    return {
+        hour = GetClockHours(),
+        minute = GetClockMinutes(),
+        day = GetClockDayOfMonth(),
+        month = GetClockMonth() + 1,
+        year = GetClockYear()
+    }
+end
+
+local function getLocationData()
+    return {
+        city = Config.Brand.city
+    }
+end
+
+local function closeMenu()
+    if not isOpen and not isOpening then
+        return
+    end
+
+    isOpen = false
+    isOpening = false
+    closedAt = GetGameTimer()
+    xLib.nui.close({ type = "close" })
+    TriggerScreenblurFadeOut(Config.ScreenBlurMs + 0.0)
+end
+
+local function buildConfigForNui()
+    return {
+        brand = Config.Brand,
+        links = Config.Links,
+        language = Config.Locale,
+        locale = getUiText()
+    }
+end
+
+local function shouldCloseNativeMap()
+    DisableControlAction(0, Config.Controls.pause, true)
+    DisableControlAction(0, Config.Controls.pauseAlt, true)
+
+    if IsDisabledControlJustReleased(0, Config.Controls.pause) or IsDisabledControlJustReleased(0, Config.Controls.pauseAlt) then
+        return true
+    end
+
+    for i = 1, #NATIVE_MAP_CLOSE_CONTROLS do
+        local control = NATIVE_MAP_CLOSE_CONTROLS[i]
+        DisableControlAction(0, control, true)
+
+        if IsDisabledControlJustReleased(0, control) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function openMenu()
+    if isOpen or isOpening or nativePauseOpen or IsPauseMenuActive() or not ESX.PlayerLoaded then
+        return
+    end
+
+    isOpening = true
+    openRequest = openRequest + 1
+    local request = openRequest
+
+    SetTimeout(OPEN_TIMEOUT_MS, function()
+        if isOpening and request == openRequest then
+            isOpening = false
+        end
+    end)
+
+    ESX.TriggerServerCallback("esx_pausemenu:getData", function(playerData)
+        if request ~= openRequest or not isOpening then
+            return
+        end
+
+        if not playerData or nativePauseOpen then
+            isOpening = false
+            return
+        end
+
+        SetPauseMenuActive(false)
+        TriggerScreenblurFadeIn(Config.ScreenBlurMs + 0.0)
+
+        isOpen = true
+        isOpening = false
+
+        xLib.nui.open({
+            type = "open",
+            data = {
+                player = playerData,
+                location = getLocationData(),
+                clock = getClockData(),
+                theme = getTheme(),
+                config = buildConfigForNui()
+            }
+        }, true, true, false)
+    end)
+end
+
+local function openNativePause(openMap)
+    closeMenu()
+    nativePauseOpen = true
+
+    CreateThread(function()
+        Wait(120)
+        ActivateFrontendMenu(GetHashKey("FE_MENU_VERSION_MP_PAUSE"), true, -1)
+
+        local timeout = GetGameTimer() + 3000
+        while (not IsPauseMenuActive() or IsPauseMenuRestarting()) and GetGameTimer() < timeout do
+            Wait(0)
+        end
+
+        if openMap and IsPauseMenuActive() then
+            PauseMenuceptionGoDeeper(0)
+        end
+
+        while IsPauseMenuActive() do
+            if openMap and shouldCloseNativeMap() then
+                SetFrontendActive(false)
+                break
+            end
+
+            Wait(openMap and 0 or 250)
+        end
+
+        nativePauseOpen = false
+    end)
+end
+
+xLib.nui.register("close", function()
+    closeMenu()
+    return xLib.nui.ok()
+end)
+
+xLib.nui.register("resume", function()
+    closeMenu()
+    return xLib.nui.ok()
+end)
+
+xLib.nui.register("openMap", function()
+    openNativePause(true)
+    return xLib.nui.ok()
+end)
+
+xLib.nui.register("openSettings", function()
+    openNativePause(false)
+    return xLib.nui.ok()
+end)
+
+xLib.nui.register("openPeople", function()
+    closeMenu()
+
+    if GetResourceState("esx_scoreboard") == "started" and Config.PeopleCommand ~= "" then
+        ExecuteCommand(Config.PeopleCommand)
+        return xLib.nui.ok()
+    end
+
+    return xLib.nui.fail(Translate("ui_scoreboard_unavailable"))
+end)
+
+xLib.nui.register("leaveServer", function()
+    TriggerServerEvent("esx_pausemenu:leaveServer")
+    return xLib.nui.ok()
+end)
+
+RegisterCommand("esx_pausemenu", function()
+    if isOpen then
+        closeMenu()
+    else
+        openMenu()
+    end
+end, false)
+
+CreateThread(function()
+    while true do
+        if ESX.PlayerLoaded and not nativePauseOpen then
+            Wait(0)
+
+            DisableControlAction(0, Config.Controls.pause, true)
+            DisableControlAction(0, Config.Controls.pauseAlt, true)
+
+            if isOpen then
+                HideHudAndRadarThisFrame()
+                DisableControlAction(0, 1, true)
+                DisableControlAction(0, 2, true)
+                DisableControlAction(0, 24, true)
+                DisableControlAction(0, 25, true)
+                DisableControlAction(0, 142, true)
+            elseif not isOpening and GetGameTimer() - closedAt > REOPEN_GUARD_MS and (
+                IsDisabledControlJustReleased(0, Config.Controls.pause) or
+                IsDisabledControlJustReleased(0, Config.Controls.pauseAlt)
+            ) then
+                openMenu()
+            end
+        else
+            Wait(250)
+        end
+    end
+end)
+
+CreateThread(function()
+    while true do
+        if isOpen then
+            xLib.nui.send({ type = "clock", data = getClockData() })
+            Wait(1000)
+        else
+            Wait(500)
+        end
+    end
+end)
+
+AddEventHandler("esx:onPlayerLogout", function()
+    closeMenu()
+end)
+
+AddEventHandler("onResourceStop", function(resourceName)
+    if resourceName ~= RESOURCE then
+        return
+    end
+
+    xLib.nui.focus(false, false, false)
+    TriggerScreenblurFadeOut(0.0)
+end)
+
+debugPrint("loaded")

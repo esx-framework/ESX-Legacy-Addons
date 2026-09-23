@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---Opens the nearby weaponshop, including license gating when enabled
 local function OpenNearbyShop()
 	local zoneName = GetNearbyZone()

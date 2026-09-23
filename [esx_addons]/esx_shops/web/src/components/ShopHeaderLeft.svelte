@@ -1,4 +1,9 @@
 <!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
+<!--
   @component ShopHeaderLeft
   Displays shop name and icon in the left header section
 -->

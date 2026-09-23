@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 fx_version 'adamant'
 
 game 'gta5'
@@ -5,7 +8,7 @@ game 'gta5'
 description "A DMV School for players to get their drivers license"
 
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 lua54 'yes'
 
@@ -38,6 +41,7 @@ files {
 }
 
 dependencies {
+	'esx_lib',
 	'es_extended',
 	'esx_license'
 }

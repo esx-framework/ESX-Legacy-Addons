@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['sv'] = {
     ['invalid_amount'] = 'Detta är en ogiltig summa pengar',
     ['deposit_money']  = 'Du har suttit in %skr',

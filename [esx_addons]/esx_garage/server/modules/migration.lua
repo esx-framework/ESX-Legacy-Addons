@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 GarageReady = false
 
 local TABLE <const> = "owned_vehicles"
@@ -6,6 +9,7 @@ local MIGRATION_NAME <const> = "schema"
 local INDEX_MIGRATION_NAME <const> = "performance_indexes"
 local FILTER_INDEX_MIGRATION_NAME <const> = "filter_indexes"
 local MILEAGE_PRECISION_MIGRATION_NAME <const> = "mileage_precision"
+local POUND_NORMALIZATION_MIGRATION_NAME <const> = "pound_normalization"
 local LEGACY_MIGRATION_VERSION <const> = "1"
 local MIGRATION_VERSION <const> = "1.14.2"
 
@@ -79,6 +83,16 @@ local function hasIndex(index)
 end
 
 ---@param column string
+---@return boolean
+local function hasLeadingIndex(column)
+    local count = MySQL.scalar.await(
+        "SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? AND SEQ_IN_INDEX = 1",
+        { TABLE, column })
+
+    return (count or 0) > 0
+end
+
+---@param column string
 ---@param definition string
 ---@return boolean
 local function ensureColumn(column, definition)
@@ -122,6 +136,20 @@ local function ensureIndex(index, definition)
     return true
 end
 
+---@param index string
+---@param column string
+---@param definition string
+---@return boolean
+local function ensureLeadingIndex(index, column, definition)
+    if hasLeadingIndex(column) then
+        return false
+    end
+
+    MySQL.query.await(("ALTER TABLE `%s` ADD INDEX `%s` %s"):format(TABLE, index, definition))
+
+    return true
+end
+
 ---@type string[][]
 local SCHEMA <const> = {
     { "parking", "VARCHAR(60) NULL DEFAULT NULL" },
@@ -138,6 +166,7 @@ local INDEXES <const> = {
     { "idx_owned_vehicles_owner_custom_name", "(`owner`, `custom_name`)" },
     { "idx_owned_vehicles_owner_stored_pound_plate", "(`owner`, `stored`, `pound`, `plate`)" },
     { "idx_owned_vehicles_owner_pound_plate_stored", "(`owner`, `pound`, `plate`, `stored`)" },
+    { "idx_owned_vehicles_plate_stored_pound", "(`plate`, `stored`, `pound`)" },
     { "idx_owned_vehicles_owner_favorite_plate", "(`owner`, `is_favorite`, `plate`)" },
 }
 
@@ -173,6 +202,10 @@ CreateThread(function()
                 end
             end
 
+            if ensureLeadingIndex("idx_owned_vehicles_plate", "plate", "(`plate`)") then
+                indexed = indexed + 1
+            end
+
             legacy = MySQL.scalar.await(("SELECT COUNT(*) FROM `%s` WHERE `stored` = 2"):format(TABLE)) or 0
 
             if legacy > 0 then
@@ -203,6 +236,10 @@ CreateThread(function()
                 end
             end
 
+            if ensureLeadingIndex("idx_owned_vehicles_plate", "plate", "(`plate`)") then
+                indexed = indexed + 1
+            end
+
             markMigrationApplied(INDEX_MIGRATION_NAME)
         end
 
@@ -222,6 +259,21 @@ CreateThread(function()
             end
 
             markMigrationApplied(FILTER_INDEX_MIGRATION_NAME)
+        end
+
+        if not migrationApplied(appliedMigrationVersion(POUND_NORMALIZATION_MIGRATION_NAME)) then
+            ensureMigrationTable()
+
+            if ensureColumn("pound", "VARCHAR(60) NULL DEFAULT NULL") then
+                added = added + 1
+            end
+
+            if ensureIndex("idx_owned_vehicles_plate_stored_pound", "(`plate`, `stored`, `pound`)") then
+                indexed = indexed + 1
+            end
+
+            MySQL.update.await(("UPDATE `%s` SET `pound` = NULL WHERE `pound` = ''"):format(TABLE))
+            markMigrationApplied(POUND_NORMALIZATION_MIGRATION_NAME)
         end
 
         if not migrationApplied(appliedMigrationVersion(MILEAGE_PRECISION_MIGRATION_NAME)) then

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['es'] = {
   -- Global menus
   ['cloakroom'] = 'guardarropas',
@@ -20,6 +23,7 @@ Locales['es'] = {
   ['spawn_veh_button'] = 'presiona ~INPUT_PICKUP~ para pedir el vehiculo de entrega.',
   ['spawn_truck_button'] = 'presiona ~INPUT_PICKUP~ para spawnear un camion.',
   ['spawn_blocked'] = 'el punto de spawn esta bloqueado!',
+  ['vehicle_already_out'] = 'primero debes devolver tu vehiculo actual.',
   ['service_vh'] = 'vehiculo de servicio',
   ['return_vh'] = 'devolver vehiculo',
   ['return_vh_button'] = 'presiona ~INPUT_PICKUP~ para devolver vehiculo.',

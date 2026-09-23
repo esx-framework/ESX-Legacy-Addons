@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESX Legacy Pause Menu</title>
+    <link rel="stylesheet" href="styles.css?v=39" />
+</head>
+<body>
+    <div class="preview-background" aria-hidden="true"></div>
+
+    <main id="app" class="app is-hidden" aria-hidden="true">
+        <div class="screen-shade" aria-hidden="true"></div>
+        <div id="frame" class="frame">
+            <header class="topbar">
+                <div class="brand-wrap">
+                    <div id="brandLogoImageWrap" class="brand-logo-image-wrap is-hidden">
+                        <img id="brandLogoImage" alt="Server logo" data-alt="ui_server_logo" />
+                    </div>
+                    <div id="brandTextWrap" class="brand-text-wrap">
+                        <div id="brandKicker" class="brand-kicker">FIVEM ROLEPLAY</div>
+                        <div class="brand-title"><span>ESX</span> <strong>LEGACY</strong></div>
+                        <div id="brandTagline" class="brand-tagline">ROLEPLAY BEYOND LIMITS</div>
+                    </div>
+                </div>
+
+                <nav class="topnav" aria-label="Pause menu navigation" data-label="ui_nav_label">
+                    <button data-top-action="resume" data-text="ui_play">PLAY</button>
+                    <button data-top-action="people" data-text="ui_people">PEOPLE</button>
+                    <button data-top-action="rules" data-text="ui_rules">RULES</button>
+                    <button data-top-action="store" data-text="ui_store">STORE</button>
+                    <button class="topnav-discord" data-top-action="discord"><svg><use href="#i-discord"/></svg><span data-text="ui_discord">DISCORD</span></button>
+                </nav>
+
+                <div class="top-status">
+                    <div class="identity-chip">
+                        <div id="topAvatar" class="avatar-icon" aria-label="Player avatar" data-label="ui_player_avatar"><svg><use href="#i-user"/></svg></div>
+                        <div>
+                            <strong id="topName">Rwixy</strong>
+                            <span><svg><use href="#i-briefcase"/></svg><span id="topRole">Unemployed</span></span>
+                        </div>
+                    </div>
+                    <div class="status-chip compact">
+                        <svg><use href="#i-clock"/></svg>
+                        <div><strong id="timeText">18:42</strong><span id="dateText">19 SEP 2026</span></div>
+                    </div>
+                    <div class="status-chip compact">
+                        <svg><use href="#i-people"/></svg>
+                        <div><strong id="playersText">231 / 1024</strong><span data-text="ui_players">PLAYERS</span></div>
+                    </div>
+                    <div class="status-chip location-chip">
+                        <svg><use href="#i-pin"/></svg>
+                        <div><strong id="cityTop">Los Santos</strong><span id="serverTop">ESX LEGACY</span></div>
+                    </div>
+                </div>
+            </header>
+
+            <aside class="sidebar panel">
+                <button class="side-item is-active" data-action="resume">
+                    <span class="side-icon"><svg><use href="#i-home"/></svg></span>
+                    <span class="side-copy"><strong data-text="ui_resume">RESUME</strong><small data-text="ui_resume_hint">Back to game</small></span>
+                    <span class="chevron">›</span>
+                </button>
+                <button class="side-item" data-action="map">
+                    <span class="side-icon"><svg><use href="#i-map"/></svg></span>
+                    <span class="side-copy"><strong data-text="ui_map">MAP</strong><small></small></span>
+                    <span class="chevron">›</span>
+                </button>
+                <button class="side-item" data-action="character">
+                    <span class="side-icon"><svg><use href="#i-user"/></svg></span>
+                    <span class="side-copy"><strong data-text="ui_character">CHARACTER</strong><small></small></span>
+                    <span class="chevron">›</span>
+                </button>
+                <button class="side-item" data-action="settings">
+                    <span class="side-icon"><svg><use href="#i-settings"/></svg></span>
+                    <span class="side-copy"><strong data-text="ui_settings">SETTINGS</strong><small></small></span>
+                    <span class="chevron">›</span>
+                </button>
+                <button class="side-item" data-action="server-info">
+                    <span class="side-icon"><svg><use href="#i-people"/></svg></span>
+                    <span class="side-copy"><strong data-text="ui_server_info">SERVER INFO</strong><small data-text="ui_server_info_hint">Rules, staff &amp; links</small></span>
+                    <span class="chevron">›</span>
+                </button>
+                <button class="side-item" data-action="store">
+                    <span class="side-icon"><svg><use href="#i-cart"/></svg></span>
+                    <span class="side-copy"><strong data-text="ui_store">STORE</strong><small></small></span>
+                    <span class="chevron">›</span>
+                </button>
+                <button class="side-item" data-action="leave">
+                    <span class="side-icon"><svg><use href="#i-logout"/></svg></span>
+                    <span class="side-copy"><strong data-text="ui_leave_server">LEAVE SERVER</strong><small data-text="ui_leave_hint">Disconnect &amp; exit</small></span>
+                    <span class="chevron"></span>
+                </button>
+
+                <div class="signature" aria-hidden="true">
+                    <img src="assets/esx-logo.png" alt="" />
+                </div>
+            </aside>
+
+            <section class="main-content">
+                <article class="hero panel">
+                    <div class="hero-copy">
+                        <span data-text="ui_welcome_back">WELCOME BACK,</span>
+                        <strong id="heroName">Rwixy</strong>
+                        <h1 id="heroHeadline" data-text="ui_character_ready">YOUR CHARACTER IS READY.</h1>
+                    </div>
+                </article>
+
+                <div class="content-grid">
+                    <article id="playerCard" class="player-card panel">
+                        <div class="card-head">
+                            <div><svg><use href="#i-user"/></svg><strong data-text="ui_character">CHARACTER</strong></div>
+                            <span id="headId">#152</span>
+                        </div>
+                        <div class="player-summary">
+                            <div id="playerAvatar" class="player-avatar-icon" aria-label="Player avatar" data-label="ui_player_avatar"><svg><use href="#i-user"/></svg></div>
+                            <div class="player-summary-copy"><strong id="playerName">Rwixy</strong><span><span id="playerMeta">#152 · Unemployed</span></span></div>
+                        </div>
+                        <div class="character-stats">
+                            <div><span data-text="ui_bank">BANK</span><strong id="bankValue">$ 125,460</strong></div>
+                            <div><span data-text="ui_cash">CASH</span><strong id="cashValue">$ 3,250</strong></div>
+                            <div><span data-text="ui_playtime">PLAYTIME</span><strong id="playtimeValue">12h 36m</strong></div>
+                        </div>
+                    </article>
+
+                    <article class="map-card panel">
+                        <div class="card-head map-head">
+                            <div><svg><use href="#i-map"/></svg><strong data-text="ui_location">LOCATION</strong></div>
+                            <button data-action="map"><span data-text="ui_map">MAP</span><b>›</b></button>
+                        </div>
+                        <button class="location-map" data-action="map" aria-label="Open map" data-label="ui_open_map">
+                            <div class="map-image-wrap">
+                                <img src="assets/gtavmap.webp" alt="Complete GTA V map in black and white" data-alt="ui_map_alt" />
+                            </div>
+                        </button>
+                    </article>
+                </div>
+
+                <div class="quick-links">
+                    <button class="quick panel" data-action="discord"><svg><use href="#i-discord"/></svg><div><strong data-text="ui_discord">DISCORD</strong><span data-text="ui_discord_hint">Join our community</span></div><b>›</b></button>
+                    <button class="quick panel" data-action="rules"><svg><use href="#i-doc"/></svg><div><strong data-text="ui_rules">RULES</strong><span data-text="ui_rules_hint">Read server rules</span></div><b>›</b></button>
+                    <button class="quick panel" data-action="store"><svg><use href="#i-cart"/></svg><div><strong data-text="ui_store">STORE</strong><span data-text="ui_store_hint">Support the server</span></div><b>›</b></button>
+                </div>
+            </section>
+
+            <footer class="footer">
+                <div class="footer-left"><i></i><span>ESX LEGACY</span><b>|</b><span>ROLEPLAY BEYOND LIMITS</span><b>|</b><span><span data-text="ui_since">SINCE</span> <span id="establishedText">2015</span></span></div>
+                <div class="footer-right">
+                    <div class="community-line"><span id="communityLine">BUILT BY A COMMUNITY THAT CARES</span><i></i></div>
+                    <div class="controls-hint"><span><kbd>Esc</kbd> <span data-text="ui_close">Close</span></span><span><kbd>↑↓←→</kbd> <span data-text="ui_navigate">Navigate</span></span><span><kbd>Enter</kbd> <span data-text="ui_select">Select</span></span></div>
+                </div>
+            </footer>
+
+            <div id="modal" class="modal is-hidden" role="dialog" aria-modal="true">
+                <div class="modal-card panel">
+                    <button id="modalClose" class="modal-x" aria-label="Close" data-label="ui_close">×</button>
+                    <div id="modalIcon" class="modal-icon"><svg><use href="#i-people"/></svg></div>
+                    <h2 id="modalTitle">SERVER INFO</h2>
+                    <p id="modalText"></p>
+                    <div id="modalActions" class="modal-actions"></div>
+                </div>
+            </div>
+
+            <div id="toast" class="toast"></div>
+        </div>
+    </main>
+
+    <svg class="svg-defs" aria-hidden="true">
+        <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5H15v-7H9v7H4.5A1.5 1.5 0 0 1 3 19.5z"/></symbol>
+        <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 5 5-2 8 2 5-2v16l-5 2-8-2-5 2zm5-2v16m8-14v16"/></symbol>
+        <symbol id="i-user" viewBox="0 0 24 24"><path d="M12 12a4.6 4.6 0 1 0 0-9.2A4.6 4.6 0 0 0 12 12Z"/><path d="M4.4 21.2c.7-5 3.4-7.3 7.6-7.3s6.9 2.3 7.6 7.3H4.4Z"/></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2.2 2.2M16.8 16.8 19 19M19 5l-2.2 2.2M7.2 16.8 5 19"/></symbol>
+        <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M2.5 20c.5-4.2 2.7-6.2 6.5-6.2s6 2 6.5 6.2M14 14.6c3.9-.7 6.6 1 7.2 5.4"/></symbol>
+        <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.2 10.2h9.8l2-7.2H6"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></symbol>
+        <symbol id="i-logout" viewBox="0 0 24 24"><path d="M13 4H5v16h8M10 12h11m-4-4 4 4-4 4"/></symbol>
+        <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5h8v2m-13 5h18M10 12v2h4v-2"/></symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 22s7-7.2 7-13A7 7 0 1 0 5 9c0 5.8 7 13 7 13z"/><circle cx="12" cy="9" r="2.3"/></symbol>
+        <symbol id="i-bank" viewBox="0 0 24 24"><path d="m3 8 9-5 9 5zM5 10v7m4-7v7m6-7v7m4-7v7M3 19h18v2H3z"/></symbol>
+        <symbol id="i-cash" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/></symbol>
+        <symbol id="i-id" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5.5 16c.4-2 1.2-3 2.5-3s2.1 1 2.5 3M13 10h5m-5 4h5"/></symbol>
+        <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><circle cx="9" cy="10.5" r="1"/><circle cx="12" cy="10.5" r="1"/><circle cx="15" cy="10.5" r="1"/></symbol>
+        <symbol id="i-discord" viewBox="0 0 24 24"><path d="M19.5 5.2A16.5 16.5 0 0 0 15.4 4l-.5 1a15.1 15.1 0 0 0-5.8 0l-.5-1a16.5 16.5 0 0 0-4.1 1.2C2 8.8 1.4 12.2 1.7 15.6A16.6 16.6 0 0 0 6.8 18.2l1.1-1.7c-.6-.2-1.1-.5-1.6-.8l.4-.3a11.8 11.8 0 0 0 10.6 0l.4.3c-.5.3-1 .6-1.6.8l1.1 1.7a16.6 16.6 0 0 0 5.1-2.6c.4-3.9-.7-7.3-2.8-10.4zM8.6 13.6c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm6.8 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></symbol>
+        <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 12h6m-6 4h6"/></symbol>
+    </svg>
+
+    <script src="app.js?v=35"></script>
+</body>
+</html>

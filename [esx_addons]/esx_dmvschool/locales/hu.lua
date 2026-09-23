@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['hu'] = {
   ['you_paid'] = 'Fizettél $%s az autósiskolának iskolának!',
   ['go_next_point'] = 'Menj a kövtkező ponthoz!',

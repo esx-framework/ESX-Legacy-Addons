@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local HasAlreadyEnteredMarker, IsInShopMenu = false, false
 local CurrentAction, CurrentActionMsg, LastZone, currentDisplayVehicle, CurrentVehicleData
 local CurrentActionData, Vehicles, Categories = {}, {}, {}
@@ -266,22 +269,7 @@ function OpenShopMenu()
 end
 
 function WaitForVehicleToLoad(modelHash)
-	modelHash = (type(modelHash) == 'number' and modelHash or joaat(modelHash))
-
-	if not HasModelLoaded(modelHash) then
-		RequestModel(modelHash)
-
-		BeginTextCommandBusyspinnerOn('STRING')
-		AddTextComponentSubstringPlayerName(TranslateCap('shop_awaiting_model'))
-		EndTextCommandBusyspinnerOn(4)
-
-		while not HasModelLoaded(modelHash) do
-			Wait(0)
-			DisableAllControlActions(0)
-		end
-
-		BusyspinnerOff()
-	end
+	xLib.streaming.requestModelWithSpinner(modelHash, TranslateCap('shop_awaiting_model'))
 end
 
 function OpenResellerMenu()
@@ -717,56 +705,43 @@ end
 -- Create Blips
 if Config.Blip.show then
 	CreateThread(function()
-		local blip = AddBlipForCoord(Config.Zones.ShopEntering.Pos)
-
-		SetBlipSprite(blip, Config.Blip.Sprite)
-		SetBlipDisplay(blip, Config.Blip.Display)
-		SetBlipScale(blip, Config.Blip.Scale)
-		SetBlipAsShortRange(blip, true)
-
-		BeginTextCommandSetBlipName('STRING')
-		AddTextComponentSubstringPlayerName(TranslateCap('car_dealer'))
-		EndTextCommandSetBlipName(blip)
+		xLib.blips.create({
+			coords = Config.Zones.ShopEntering.Pos,
+			sprite = Config.Blip.Sprite,
+			display = Config.Blip.Display,
+			scale = Config.Blip.Scale,
+			shortRange = true,
+			label = TranslateCap('car_dealer')
+		})
 	end)
 end
 
 -- Enter / Exit marker events & Draw Markers
 CreateThread(function()
-	while true do
-		Wait(0)
-		local playerCoords = GetEntityCoords(PlayerPedId())
-		local isInMarker, letSleep, currentZone = false, true
-
-		for k, v in pairs(Config.Zones) do
-			local distance = #(playerCoords - v.Pos)
-
-			if distance < Config.DrawDistance then
-				letSleep = false
-
-				if v.Type ~= -1 then
-					DrawMarker(v.Type, v.Pos, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, v.Size.x, v.Size.y, v.Size.z, Config.MarkerColor.r, Config.MarkerColor.g, Config.MarkerColor.b, 100, false, true, 2, false, nil, nil, false)
-				end
-
-				if distance < v.Size.x then
-					isInMarker, currentZone = true, k
-				end
+	for zoneName, zone in pairs(Config.Zones) do
+		xLib.markerZone.create({
+			coords = zone.Pos,
+			drawDistance = Config.DrawDistance,
+			interactDistance = zone.Size.x,
+			marker = zone.Type ~= -1 and {
+				type = zone.Type,
+				size = zone.Size,
+				color = {
+					r = Config.MarkerColor.r,
+					g = Config.MarkerColor.g,
+					b = Config.MarkerColor.b,
+					a = 100
+				}
+			} or false,
+			onEnter = function()
+				HasAlreadyEnteredMarker, LastZone = true, zoneName
+				hasEnteredMarker(zoneName)
+			end,
+			onExit = function()
+				HasAlreadyEnteredMarker = false
+				hasExitedMarker(zoneName)
 			end
-		end
-
-		if (isInMarker and not HasAlreadyEnteredMarker) or (isInMarker and LastZone ~= currentZone) then
-			HasAlreadyEnteredMarker, LastZone = true, currentZone
-			LastZone = currentZone
-			hasEnteredMarker(currentZone)
-		end
-
-		if not isInMarker and HasAlreadyEnteredMarker then
-			HasAlreadyEnteredMarker = false
-			hasExitedMarker(LastZone)
-		end
-
-		if letSleep then
-			Wait(500)
-		end
+		})
 	end
 end)
 

@@ -1,7 +1,14 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---@class WeatherConfig
 ---@field ValidTypes WeatherType[]
 ---@field transitionTimeSeconds integer
 ---@field cycleTimeSeconds integer
+---@field dynamic boolean
+---@field defaultType WeatherType
+---@field persist boolean
+---@field persistKey string?
 
 ---@class TimeConfig
 ---@field secondsPerGameMinute integer
@@ -48,7 +55,11 @@ Config = {
             Shared.Enum.WeatherType.SNOW_HALLOWEEN,
         },
         transitionTimeSeconds = 30,
-        cycleTimeSeconds = 60 * 30 -- 30 minutes
+        cycleTimeSeconds = 60 * 30, -- 30 minutes
+        dynamic = true, -- Rotates weather every cycleTimeSeconds. Set false to keep defaultType until changed from the panel.
+        defaultType = Shared.Enum.WeatherType.CLEAR, -- Used when dynamic is false.
+        persist = true, -- Restores the last weather after a restart. With dynamic, the rotation timer is kept too.
+        persistKey = "esx_weather_zones",
     },
     Time        = {
         secondsPerGameMinute = 15,

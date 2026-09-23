@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales ['hu'] = {
   -- weed
   ['weed_pickupprompt'] = 'Nyomd meg a [E] gombot a betakarításhoz Kannabisz',

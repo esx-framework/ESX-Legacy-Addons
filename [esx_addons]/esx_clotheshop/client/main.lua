@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local hasAlreadyEnteredMarker, hasPaid, currentActionData = false, false, {}
 local lastZone, currentAction, currentActionMsg
 local oldSkin, newSkin
@@ -125,50 +128,42 @@ end)
 -- Create Blips
 CreateThread(function()
 	for k,v in ipairs(Config.Shops) do
-		local blip = AddBlipForCoord(v)
-
-		SetBlipSprite (blip, 73)
-		SetBlipColour (blip, 47)
-		SetBlipAsShortRange(blip, true)
-
-		BeginTextCommandSetBlipName('STRING')
-		AddTextComponentSubstringPlayerName(TranslateCap('clothes'))
-		EndTextCommandSetBlipName(blip)
+		xLib.blips.create({
+			coords = v,
+			sprite = 73,
+			color = 47,
+			shortRange = true,
+			label = TranslateCap('clothes')
+		})
 	end
 end)
 
 -- Enter / Exit marker events & draw markers
 CreateThread(function()
-	while true do
-		Wait(0)
-		local playerCoords, isInMarker, currentZone, letSleep = GetEntityCoords(PlayerPedId()), false, nil, true
-
-		for k,v in pairs(Config.Shops) do
-			local distance = #(playerCoords - v)
-
-			if distance < Config.DrawDistance then
-				letSleep = false
-				DrawMarker(Config.MarkerType, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Config.MarkerSize.x, Config.MarkerSize.y, Config.MarkerSize.z, Config.MarkerColor.r, Config.MarkerColor.g, Config.MarkerColor.b, 100, false, true, 2, false, nil, nil, false)
-
-				if distance < Config.MarkerSize.x then
-					isInMarker, currentZone = true, k
-				end
+	for k, v in pairs(Config.Shops) do
+		xLib.markerZone.create({
+			coords = v,
+			drawDistance = Config.DrawDistance,
+			interactDistance = Config.MarkerSize.x,
+			marker = {
+				type = Config.MarkerType,
+				size = Config.MarkerSize,
+				color = {
+					r = Config.MarkerColor.r,
+					g = Config.MarkerColor.g,
+					b = Config.MarkerColor.b,
+					a = 100
+				}
+			},
+			onEnter = function()
+				hasAlreadyEnteredMarker, lastZone = true, k
+				TriggerEvent('esx_clotheshop:hasEnteredMarker', k)
+			end,
+			onExit = function()
+				hasAlreadyEnteredMarker = false
+				TriggerEvent('esx_clotheshop:hasExitedMarker', k)
 			end
-		end
-
-		if (isInMarker and not hasAlreadyEnteredMarker) or (isInMarker and lastZone ~= currentZone) then
-			hasAlreadyEnteredMarker, lastZone = true, currentZone
-			TriggerEvent('esx_clotheshop:hasEnteredMarker', currentZone)
-		end
-
-		if not isInMarker and hasAlreadyEnteredMarker then
-			hasAlreadyEnteredMarker = false
-			TriggerEvent('esx_clotheshop:hasExitedMarker', lastZone)
-		end
-
-		if letSleep then
-			Wait(500)
-		end
+		})
 	end
 end)
 

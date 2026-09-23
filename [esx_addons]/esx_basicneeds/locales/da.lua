@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['da'] = {
   ['used_food'] = 'Du har spist 1x %s',
   ['used_drink'] = 'Du har drukket 1x %s',

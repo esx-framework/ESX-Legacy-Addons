@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---@type table<string, ShopZone>
 Config.Zones = Config.Zones or {}
 
@@ -10,12 +13,12 @@ Config.Zones = Config.Zones or {}
 
 Config.Zones.TwentyFourSeven = {
 	Items = {
-		{name = "burger", label = "Burger", price = 15, category = "food"},
-		{name = "water", label = "Water", price = 10, category = "drinks"},
-		{name = "pizza_ham", label = "Pizza Ham", price = 25, category = "food"},
-		{name = "sprunk", label = "Sprunk", price = 12, category = "drinks"},
-		{name = "phone", label = "Phone", price = 250, category = "electronics"},
-		{name = "lockpick", label = "Lockpick", price = 150, category = "tools"}
+		{name = "burger", label = "Burger", price = 15, category = "food", weight = 1},
+		{name = "water", label = "Water", price = 10, category = "drinks", weight = 1},
+		{name = "pizza_ham", label = "Pizza Ham", price = 25, category = "food", weight = 1},
+		{name = "sprunk", label = "Sprunk", price = 12, category = "drinks", weight = 1},
+		{name = "phone", label = "Phone", price = 250, category = "electronics", weight = 1},
+		{name = "lockpick", label = "Lockpick", price = 150, category = "tools", weight = 1}
 	},
 	Categories = {
 		{id = "food", label = "Food", icon = "fa-solid fa-burger"},
@@ -42,12 +45,12 @@ Config.Zones.TwentyFourSeven = {
 
 Config.Zones.RobsLiquor = {
 	Items = {
-		{name = "burger", label = "Burger", price = 15, category = "food"},
-		{name = "water", label = "Water", price = 10, category = "drinks"},
-		{name = "meth", label = "Meth", price = 18, category = "alcohol"},
-		{name = "wine", label = "Wine", price = 35, category = "alcohol"},
-		{name = "beer", label = "Beer", price = 50, category = "alcohol"},
-		{name = "blackberry_ale", label = "Blackberry Ale", price = 65, category = "alcohol"}
+		{name = "burger", label = "Burger", price = 15, category = "food", weight = 1},
+		{name = "water", label = "Water", price = 10, category = "drinks", weight = 1},
+		{name = "meth", label = "Meth", price = 18, category = "alcohol", weight = 1},
+		{name = "wine", label = "Wine", price = 35, category = "alcohol", weight = 1},
+		{name = "beer", label = "Beer", price = 50, category = "alcohol", weight = 1},
+		{name = "blackberry_ale", label = "Blackberry Ale", price = 65, category = "alcohol", weight = 1}
 	},
 	Categories = {
 		{id = "food", label = "Food", icon = "fa-solid fa-burger"},
@@ -74,12 +77,12 @@ Config.Zones.RobsLiquor = {
 
 Config.Zones.LTDgasoline = {
 	Items = {
-		{name = "taco_chicken", label = "Chicken Taco", price = 15, category = "food"},
-		{name = "water", label = "Water", price = 10, category = "drinks"},
-		{name = "sandwich", label = "Sandwich", price = 20, category = "food"},
-		{name = "coffee", label = "Coffee", price = 8, category = "drinks"},
-		{name = "repairkit", label = "Repair Kit", price = 350, category = "tools"},
-		{name = "bandage", label = "Bandage", price = 45, category = "medical"}
+		{name = "taco_chicken", label = "Chicken Taco", price = 15, category = "food", weight = 1},
+		{name = "water", label = "Water", price = 10, category = "drinks", weight = 1},
+		{name = "sandwich", label = "Sandwich", price = 20, category = "food", weight = 1},
+		{name = "coffee", label = "Coffee", price = 8, category = "drinks", weight = 1},
+		{name = "repairkit", label = "Repair Kit", price = 350, category = "tools", weight = 3},
+		{name = "bandage", label = "Bandage", price = 45, category = "medical", weight = 2}
 	},
 	Categories = {
 		{id = "food", label = "Food", icon = "fa-solid fa-burger"},

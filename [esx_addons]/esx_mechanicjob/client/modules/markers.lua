@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local Mechanic = ESXMechanicJob
 local State = Mechanic.State
 
@@ -82,21 +85,15 @@ AddEventHandler('esx_mechanicjob:hasExitedEntityZone', function()
 end)
 
 CreateThread(function()
-	local blip = AddBlipForCoord(
-		Config.Zones.MechanicActions.Pos.x,
-		Config.Zones.MechanicActions.Pos.y,
-		Config.Zones.MechanicActions.Pos.z
-	)
-
-	SetBlipSprite(blip, 446)
-	SetBlipDisplay(blip, 4)
-	SetBlipScale(blip, 1.0)
-	SetBlipColour(blip, 5)
-	SetBlipAsShortRange(blip, true)
-
-	BeginTextCommandSetBlipName('STRING')
-	AddTextComponentSubstringPlayerName(TranslateCap('mechanic'))
-	EndTextCommandSetBlipName(blip)
+	xLib.blips.create({
+		coords = Config.Zones.MechanicActions.Pos,
+		sprite = 446,
+		display = 4,
+		scale = 1.0,
+		color = 5,
+		shortRange = true,
+		label = TranslateCap('mechanic')
+	})
 end)
 
 CreateThread(function()

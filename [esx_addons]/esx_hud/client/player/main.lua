@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local bool, ammoInClip = false, 0
 local WeaponList = {}
 function HUD:GetJobLabel()
@@ -39,6 +42,8 @@ function HUD:GetWeapons()
 end
 
 function HUD:SlowThick()
+    if self.slowThreadRunning then return end
+    self.slowThreadRunning = true
     CreateThread(function()
         while not ESX.PlayerLoaded do
             Wait(200)
@@ -55,6 +60,8 @@ function HUD:SlowThick()
                 if self.Data.Weapon.CurrentWeapon == 0 then
                     self.Data.Weapon.Active = false
                 end
+                self.Data.Weapon.Name = nil
+                self.Data.Weapon.Image = nil
                 if self.Data.Weapon.Active and WeaponList[self.Data.Weapon.CurrentWeapon] then
                     self.Data.Weapon.MaxAmmo = (GetAmmoInPedWeapon(ESX.PlayerData.ped, self.Data.Weapon.CurrentWeapon) - ammoInClip)
                     self.Data.Weapon.Name = WeaponList[self.Data.Weapon.CurrentWeapon].label and WeaponList[self.Data.Weapon.CurrentWeapon].label or false
@@ -71,16 +78,19 @@ function HUD:SlowThick()
 
             Wait(1000)
         end
+        self.slowThreadRunning = false
     end)
 end
 
 function HUD:FastThick()
+    if self.fastThreadRunning then return end
+    self.fastThreadRunning = true
     CreateThread(function()
         while not ESX.PlayerLoaded do
             Wait(200)
         end
 
-        local srvLogo = Config.Default.ServerLogo
+        local srvLogo = self:GetTheme().logoUrl
         while ESX.PlayerLoaded do
             if not Config.Disable.Voice then
                 self.Data.isTalking = NetworkIsPlayerTalking(ESX.playerId)
@@ -104,7 +114,10 @@ function HUD:FastThick()
                     currentAmmo = self.Data.Weapon.CurrentAmmo or 0,
                     maxAmmo = self.Data.Weapon.MaxAmmo or 0,
                 },
-                streetName = self.Data.Location or "Unknown street",
+                streetName = self.Data.Location or "",
+                zoneName = GetLabelText(GetNameOfZone(self.Data.Position.x, self.Data.Position.y, self.Data.Position.z)),
+                heading = GetEntityHeading(ESX.PlayerData.ped),
+                gameTime = string.format("%02d:%02d", GetClockHours(), GetClockMinutes()),
                 voice = {
                     mic = self.Data.isTalking or false,
                     radio = self.Data.isTalkingOnRadio,
@@ -113,9 +126,10 @@ function HUD:FastThick()
                 job = HUD:GetJobLabel(),
             }
 
-            SendNUIMessage({ type = "HUD_DATA", value = values })
+            xLib.nui.send({ type = "HUD_DATA", value = values })
             Wait(500)
         end
+        self.fastThreadRunning = false
     end)
 end
 

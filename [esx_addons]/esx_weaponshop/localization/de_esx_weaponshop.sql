@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 CREATE TABLE `weashops` (
 	`id` int(11) NOT NULL AUTO_INCREMENT,
 	`zone` varchar(255) NOT NULL,

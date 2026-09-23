@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 -- esx_garage schema additions for `owned_vehicles`.
 -- Existing servers: the resource auto-migrates on start (server/modules/migration.lua); this file is optional.
 -- Fresh installs / manual setup: run it once, or as many times as you like.
@@ -76,6 +79,12 @@ SET @add_owner_plate_index := (SELECT IF(
     'SELECT 1',
     'ALTER TABLE `owned_vehicles` ADD INDEX `idx_owned_vehicles_owner_plate` (`owner`, `plate`)'));
 PREPARE s FROM @add_owner_plate_index; EXECUTE s; DEALLOCATE PREPARE s;
+
+SET @add_plate_lookup_index := (SELECT IF(
+    EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'owned_vehicles' AND COLUMN_NAME = 'plate' AND SEQ_IN_INDEX = 1),
+    'SELECT 1',
+    'ALTER TABLE `owned_vehicles` ADD INDEX `idx_owned_vehicles_plate` (`plate`)'));
+PREPARE s FROM @add_plate_lookup_index; EXECUTE s; DEALLOCATE PREPARE s;
 
 SET @add_owner_custom_name_index := (SELECT IF(
     EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'owned_vehicles' AND INDEX_NAME = 'idx_owned_vehicles_owner_custom_name'),
