@@ -547,8 +547,16 @@ xLib.callback.registerCompat('esx_policejob:buyWeapon', function(source, cb, wea
 	else
 		-- Weapon
 		if type == 1 then
-			if xPlayer.getMoney() >= selectedWeapon.price then
-				xPlayer.removeMoney(selectedWeapon.price, "Weapon Bought")
+			local price = tonumber(selectedWeapon.price)
+			if not price or price < 0 then
+				return cb(false)
+			end
+
+			if xPlayer.getMoney() >= price then
+				if price > 0 then
+					xPlayer.removeMoney(price, "Weapon Bought")
+				end
+
 				xPlayer.addWeapon(weaponName, 100)
 
 				cb(true)
@@ -558,13 +566,16 @@ xLib.callback.registerCompat('esx_policejob:buyWeapon', function(source, cb, wea
 
 		-- Weapon Component
 		elseif type == 2 then
-			local price = selectedWeapon.components[componentNum]
+			local price = selectedWeapon.components and tonumber(selectedWeapon.components[componentNum])
 			local weaponNum, weapon = ESX.GetWeapon(weaponName)
-			local component = weapon.components[componentNum]
+			local component = weapon and weapon.components and weapon.components[componentNum]
 
-			if component then
+			if component and price and price >= 0 then
 				if xPlayer.getMoney() >= price then
-					xPlayer.removeMoney(price, "Weapon Component Bought")
+					if price > 0 then
+						xPlayer.removeMoney(price, "Weapon Component Bought")
+					end
+
 					xPlayer.addWeaponComponent(weaponName, component.name)
 
 					cb(true)
