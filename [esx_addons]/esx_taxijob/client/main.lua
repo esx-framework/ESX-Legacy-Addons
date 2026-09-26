@@ -5,6 +5,14 @@ local HasAlreadyEnteredMarker, OnJob, IsNearCustomer, CustomerIsEnteringVehicle,
     CurrentActionData = false, false, false, false, false, {}
 local CurrentCustomer, CurrentCustomerBlip, DestinationBlip, targetCoords, LastZone, CurrentAction, CurrentActionMsg, lastSelectedNPC
 
+function OpenTaxiMenu(menuType, name, title, elements, submit, cancel, change, close)
+    return ESX.UI.Menu.Open(menuType, GetCurrentResourceName(), name, {
+        title = title,
+        align = 'top-left',
+        elements = elements
+    }, submit, cancel, change, close)
+end
+
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(xPlayer)
     ESX.PlayerData = xPlayer
@@ -107,17 +115,16 @@ end
 
 function OpenCloakroom()
     local elements = {
-        {unselectable = true, icon = "fas fa-shirt", title = TranslateCap('cloakroom_menu')},
-        {icon = "fas fa-shirt", title = TranslateCap('wear_citizen'), value = "wear_citizen"},
-        {icon = "fas fa-shirt", title = TranslateCap('wear_work'), value = "wear_work"},
+        {label = TranslateCap('wear_citizen'), value = "wear_citizen"},
+        {label = TranslateCap('wear_work'), value = "wear_work"}
     }
 
-    ESX.OpenContext("right", elements, function(menu,element)
-        if element.value == "wear_citizen" then
+    OpenTaxiMenu('default', 'cloakroom', TranslateCap('cloakroom_menu'), elements, function(data, menu)
+        if data.current.value == "wear_citizen" then
             xLib.callback('esx_skin:getPlayerSkin', false, function(skin)
                 TriggerEvent('skinchanger:loadSkin', skin)
             end)
-        elseif element.value == "wear_work" then
+        elseif data.current.value == "wear_work" then
             xLib.callback('esx_skin:getPlayerSkin', false, function(skin, jobSkin)
                 if skin.sex == 0 then
                     TriggerEvent('skinchanger:loadClothes', skin, jobSkin.skin_male)
@@ -126,7 +133,8 @@ function OpenCloakroom()
                 end
             end)
         end
-    end, function(menu)
+    end, function(data, menu)
+        menu.close()
         CurrentAction = 'cloakroom'
         CurrentActionMsg = TranslateCap('cloakroom_prompt')
         CurrentActionData = {}
@@ -134,33 +142,30 @@ function OpenCloakroom()
 end
 
 function OpenVehicleSpawnerMenu()
-    local elements = {
-        {unselectable = true, icon = "fas fa-car", title = TranslateCap('spawn_veh')}
-    }
-
     if Config.EnableSocietyOwnedVehicles then
         xLib.callback('esx_society:getVehiclesInGarage', false, function(vehicles)
+            local elements = {}
 
             for i = 1, #vehicles, 1 do
                 elements[#elements+1] = {
-                    icon = "fas fa-car",
-                    title = GetDisplayNameFromVehicleModel(vehicles[i].model) .. ' [' .. vehicles[i].plate .. ']',
+                    label = GetDisplayNameFromVehicleModel(vehicles[i].model) .. ' [' .. vehicles[i].plate .. ']',
                     value = vehicles[i]
                 }
             end
 
-            ESX.OpenContext("right", elements, function(menu,element)
+            OpenTaxiMenu('default', 'vehicle_spawner', TranslateCap('spawn_veh'), elements, function(data, menu)
                 if not xLib.game.isSpawnPointClear(Config.Zones.VehicleSpawnPoint.Pos, 5.0) then
                     ESX.ShowNotification(TranslateCap('spawnpoint_blocked'))
                     return
                 end
 
-                local vehicleProps = element.value
+                local vehicleProps = data.current.value
                 xLib.callback("esx_taxijob:SpawnVehicle", false, function()
                     return
                 end, vehicleProps.model, vehicleProps)
-                ESX.CloseContext()
-            end, function(menu)
+                menu.close()
+            end, function(data, menu)
+                menu.close()
                 CurrentAction = 'vehicle_spawner'
                 CurrentActionMsg = TranslateCap('spawner_prompt')
                 CurrentActionData = {}
@@ -171,8 +176,17 @@ function OpenVehicleSpawnerMenu()
             ESX.ShowNotification(TranslateCap('empty_authorized_vehicles_table'), "error")
             return
         end
-        ESX.OpenContext("right", Config.AuthorizedVehicles, function(menu,element)
-            if not element.model or string.len(element.model) == 0 then
+
+        local elements = {}
+        for i = 1, #Config.AuthorizedVehicles do
+            elements[#elements+1] = {
+                label = Config.AuthorizedVehicles[i].title or Config.AuthorizedVehicles[i].label or Config.AuthorizedVehicles[i].model,
+                model = Config.AuthorizedVehicles[i].model
+            }
+        end
+
+        OpenTaxiMenu('default', 'vehicle_spawner', TranslateCap('spawn_veh'), elements, function(data, menu)
+            if not data.current.model or string.len(data.current.model) == 0 then
                 ESX.ShowNotification(TranslateCap('unknow_model'), "error")
                 return
             end
@@ -181,10 +195,11 @@ function OpenVehicleSpawnerMenu()
                 return
             end
             xLib.callback("esx_taxijob:SpawnVehicle", false, function()
-                ESX.ShowNotification(TranslateCap('vehicle_spawned', element.title), "success")
-            end, element.model, {plate = "TAXI JOB"})
-            ESX.CloseContext()
-        end, function(menu)
+                ESX.ShowNotification(TranslateCap('vehicle_spawned', data.current.label), "success")
+            end, data.current.model, {plate = "TAXI JOB"})
+            menu.close()
+        end, function(data, menu)
+            menu.close()
             CurrentAction = 'vehicle_spawner'
             CurrentActionMsg = TranslateCap('spawner_prompt')
             CurrentActionData = {}
@@ -212,33 +227,33 @@ end
 
 function OpenTaxiActionsMenu()
     local elements = {
-        {unselectable = true, icon = "fas fa-taxi", title = TranslateCap('taxi')},
-        {icon = "fas fa-box",title = TranslateCap('deposit_stock'),value = 'put_stock'}, 
-        {icon = "fas fa-box", title = TranslateCap('take_stock'), value = 'get_stock'}
+        {label = TranslateCap('deposit_stock'), value = 'put_stock'}, 
+        {label = TranslateCap('take_stock'), value = 'get_stock'}
     }
 
     if Config.EnablePlayerManagement and ESX.PlayerData.job ~= nil and ESX.PlayerData.job.grade_name == 'boss' then
         elements[#elements+1] = {
-            icon = "fas fa-wallet",
-            title = TranslateCap('boss_actions'),
+            label = TranslateCap('boss_actions'),
             value = "boss_actions"
         }
     end
 
-    ESX.OpenContext("right", elements, function(menu,element)
-        if Config.OxInventory and (element.value == 'put_stock' or element.value == 'get_stock') then
+    OpenTaxiMenu('default', 'taxi_actions', TranslateCap('taxi'), elements, function(data, menu)
+        if Config.OxInventory and (data.current.value == 'put_stock' or data.current.value == 'get_stock') then
             exports.ox_inventory:openInventory('stash', 'society_taxi')
-            return ESX.CloseContext()
-        elseif element.value == 'put_stock' then
+            menu.close()
+            return
+        elseif data.current.value == 'put_stock' then
             OpenPutStocksMenu()
-        elseif element.value == 'get_stock' then
+        elseif data.current.value == 'get_stock' then
             OpenGetStocksMenu()
-        elseif element.value == 'boss_actions' then
-            TriggerEvent('esx_society:openBossMenu', 'taxi', function(data, menu)
-                menu.close()
+        elseif data.current.value == 'boss_actions' then
+            TriggerEvent('esx_society:openBossMenu', 'taxi', function(data2, menu2)
+                menu2.close()
             end, { uniforms = true })
         end
-    end, function(menu)
+    end, function(data, menu)
+        menu.close()
         CurrentAction = 'taxi_actions_menu'
         CurrentActionMsg = TranslateCap('press_to_open')
         CurrentActionData = {}
@@ -247,25 +262,18 @@ end
 
 function OpenMobileTaxiActionsMenu()
     local elements = {
-        {unselectable = true, icon = "fas fa-taxi", title = TranslateCap('taxi')},
-        {icon = "fas fa-scroll", title = TranslateCap('billing'), value = "billing"},
-        {icon = "fas fa-taxi", title = TranslateCap('start_job'), value = "start_job"},
+        {label = TranslateCap('billing'), value = "billing"},
+        {label = TranslateCap('start_job'), value = "start_job"}
     }
 
-    ESX.OpenContext("right", elements, function(menu,element)
-        if element.value == "billing" then
-            local elements2 = {
-                {unselectable = true, icon = "fas fa-taxi", title = element.title},
-                {title = TranslateCap('amount'), input = true, inputType = "number", inputMin = 1, inputMax = 250000, inputPlaceholder = TranslateCap('bill_amount')},
-                {icon = "fas fa-check-double", title = TranslateCap('confirm'), value = "confirm"}
-            }
-
-            ESX.OpenContext("right", elements2, function(menu2,element2)
-                local amount = tonumber(menu2.eles[2].inputValue)
-                if amount == nil then
+    OpenTaxiMenu('default', 'mobile_taxi_actions', TranslateCap('taxi'), elements, function(data, menu)
+        if data.current.value == "billing" then
+			OpenTaxiMenu('dialog', 'taxi_billing', TranslateCap('bill_amount'), nil, function(data2, menu2)
+                local amount = tonumber(data2.value)
+                if amount == nil or amount <= 0 then
                     ESX.ShowNotification(TranslateCap('amount_invalid'))
                 else
-                    ESX.CloseContext()
+                    menu2.close()
                     local closestPlayer, closestDistance = xLib.game.getClosestPlayer()
                     if closestPlayer == -1 or closestDistance > 3.0 then
                         ESX.ShowNotification(TranslateCap('no_players_near'))
@@ -275,10 +283,12 @@ function OpenMobileTaxiActionsMenu()
                         ESX.ShowNotification(TranslateCap('billing_sent'))
                     end
                 end
+            end, function(data2, menu2)
+                menu2.close()
             end)
-        elseif element.value == "start_job" then
+        elseif data.current.value == "start_job" then
             if OnJob then
-                ESX.CloseContext()
+                menu.close()
                 StopTaxiJob()
             else
                 if ESX.PlayerData.job ~= nil and ESX.PlayerData.job.name == 'taxi' then
@@ -287,11 +297,11 @@ function OpenMobileTaxiActionsMenu()
 
                     if IsPedInAnyVehicle(playerPed, false) and GetPedInVehicleSeat(vehicle, -1) == playerPed then
                         if tonumber(ESX.PlayerData.job.grade) >= 3 then
-                            ESX.CloseContext()
+                            menu.close()
                             StartTaxiJob()
                         else
                             if IsInAuthorizedVehicle() then
-                                ESX.CloseContext()
+                                menu.close()
                                 StartTaxiJob()
                             else
                                 ESX.ShowNotification(TranslateCap('must_in_taxi'))
@@ -307,6 +317,8 @@ function OpenMobileTaxiActionsMenu()
                 end
             end
         end
+    end, function(data, menu)
+        menu.close()
     end)
 end
 
@@ -325,39 +337,36 @@ end
 
 function OpenGetStocksMenu()
     xLib.callback('esx_taxijob:getStockItems', false, function(items)
-        local elements = {
-            {unselectable = true, icon = "fas fa-box", title = TranslateCap('taxi_stock')}
-        }
+        local elements = {}
 
         for i = 1, #items, 1 do
             elements[#elements+1] = {
-                icon = "fas fa-box",
-                title = 'x' .. items[i].count .. ' ' .. items[i].label,
+                label = 'x' .. items[i].count .. ' ' .. items[i].label,
                 value = items[i].name
             }
         end
 
-        ESX.OpenContext("right", elements, function(menu,element)
-            local itemName = element.value
-            local elements2 = {
-                {unselectable = true, icon = "fas fa-box", title = element.title},
-                {title = TranslateCap('amount'), input = true, inputType = "number", inputMin = 1, inputMax = 100, inputPlaceholder = TranslateCap('withdraw_amount')},
-                {icon = "fas fa-check-double", title = TranslateCap('confirm'), value = "confirm"}
-            }
+        OpenTaxiMenu('default', 'stocks_menu', TranslateCap('taxi_stock'), elements, function(data, menu)
+            local itemName = data.current.value
 
-            ESX.OpenContext("right", elements2, function(menu2,element2)
-                local count = tonumber(menu2.eles[2].inputValue)
+            OpenTaxiMenu('dialog', 'stocks_menu_get_item_count', TranslateCap('quantity'), nil, function(data2, menu2)
+                local count = tonumber(data2.value)
 
                 if count == nil then
                     ESX.ShowNotification(TranslateCap('quantity_invalid'))
                 else
-                    ESX.CloseContext()
+                    menu2.close()
+                    menu.close()
                     TriggerServerEvent('esx_taxijob:getStockItem', itemName, count)
 
-                    Wait(1000)
+                    Wait(300)
                     OpenGetStocksMenu()
                 end
+            end, function(data2, menu2)
+                menu2.close()
             end)
+        end, function(data, menu)
+            menu.close()
         end)
     end, function(menu)
         CurrentAction = 'taxi_actions_menu'
@@ -368,44 +377,39 @@ end
 
 function OpenPutStocksMenu()
     xLib.callback('esx_taxijob:getPlayerInventory', false, function(inventory)
-        local elements = {
-            {unselectable = true, icon = "fas fa-box", title = TranslateCap('inventory')}
-        }
+        local elements = {}
 
         for i = 1, #inventory.items, 1 do
             local item = inventory.items[i]
             if item.count > 0 then
                 elements[#elements+1] = {
-                    icon = "fas fa-box",
-                    title = item.label .. ' x' .. item.count,
-                    type = 'item_standard',
+                    label = item.label .. ' x' .. item.count,
+                    type  = 'item_standard',
                     value = item.name
                 }
             end
         end
 
-        ESX.OpenContext("right", elements, function(menu,element)
-            local itemName = element.value
+        OpenTaxiMenu('default', 'stocks_menu', TranslateCap('inventory'), elements, function(data, menu)
+            local itemName = data.current.value
 
-            local elements2 = {
-                {unselectable = true, icon = "fas fa-box", title = element.title},
-                {title = TranslateCap('amount'), input = true, inputType = "number", inputMin = 1, inputMax = 100, inputPlaceholder = TranslateCap('deposit_amount')},
-                {icon = "fas fa-check-double", title = "Confirm", value = "confirm"}
-            }
-
-            ESX.OpenContext("right", elements2, function(menu2,element2)
-                local count = tonumber(menu2.eles[2].inputValue)
+            OpenTaxiMenu('dialog', 'stocks_menu_put_item_count', TranslateCap('quantity'), nil, function(data2, menu2)
+                local count = tonumber(data2.value)
 
                 if count == nil then
                     ESX.ShowNotification(TranslateCap('quantity_invalid'))
                 else                    
-                    ESX.CloseContext()
-                    -- todo: refresh on callback
+                    menu2.close()
+                    menu.close()
                     TriggerServerEvent('esx_taxijob:putStockItems', itemName, count)
-                    Wait(1000)
+                    Wait(300)
                     OpenPutStocksMenu()
                 end
+            end, function(data2, menu2)
+                menu2.close()
             end)
+        end, function(data, menu)
+            menu.close()
         end)
     end, function(menu)
         CurrentAction = 'taxi_actions_menu'
@@ -443,7 +447,7 @@ AddEventHandler('esx_taxijob:hasEnteredMarker', function(zone)
 end)
 
 AddEventHandler('esx_taxijob:hasExitedMarker', function(zone)
-    ESX.CloseContext()
+    ESX.UI.Menu.CloseAll()
     CurrentAction = nil
 end)
 

@@ -6,6 +6,14 @@ local HasAlreadyEnteredMarker, LastHospital, LastPart, LastPartNum
 local isBusy, deadPlayers, deadPlayerBlips, isOnDuty = false, {}, {}, false
 isInShopMenu = false
 
+function OpenAmbulanceMenu(menuType, name, title, elements, submit, cancel, change, close)
+	return ESX.UI.Menu.Open(menuType, GetCurrentResourceName(), name, {
+		title = title,
+		align = 'top-left',
+		elements = elements
+	}, submit, cancel, change, close)
+end
+
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(xPlayer)
 	ESX.PlayerData = xPlayer
@@ -15,58 +23,56 @@ end)
 
 function OpenAmbulanceActionsMenu()
 	local elements = {
-		{ unselectable = true, icon = "fas fa-shirt", title = TranslateCap('ambulance') },
-		{ icon = "fas fa-shirt", title = TranslateCap('cloakroom'), value = 'cloakroom' }
+		{ label = TranslateCap('cloakroom'), value = 'cloakroom' }
 	}
 
 	if Config.EnablePlayerManagement and ESX.PlayerData.job.grade_name == 'boss' then
 		elements[#elements + 1] = {
-			icon = "fas fa-ambulance",
-			title = TranslateCap('boss_actions'),
+			label = TranslateCap('boss_actions'),
 			value = 'boss_actions'
 		}
 	end
 
-	ESX.OpenContext("right", elements, function(menu, element)
-		if element.value == 'cloakroom' then
+	OpenAmbulanceMenu('default', 'ambulance_actions', TranslateCap('ambulance'), elements, function(data, menu)
+		if data.current.value == 'cloakroom' then
 			OpenCloakroomMenu()
-		elseif element.value == 'boss_actions' then
-			TriggerEvent('esx_society:openBossMenu', 'ambulance', function(data, menu)
-				menu.close()
+		elseif data.current.value == 'boss_actions' then
+			TriggerEvent('esx_society:openBossMenu', 'ambulance', function(data2, menu2)
+				menu2.close()
 			end, { wash = false, uniforms = true })
 		end
+	end, function(data, menu)
+		menu.close()
 	end)
 end
 
 function OpenMobileAmbulanceActionsMenu()
 	local elements = {
-		{ unselectable = true, icon = "fas fa-ambulance", title = TranslateCap('ambulance') },
-		{ icon = "fas fa-ambulance", title = TranslateCap('ems_menu'), value = "citizen_interaction" }
+		{ label = TranslateCap('ems_menu'), value = "citizen_interaction" }
 	}
 
-	ESX.OpenContext("right", elements, function(menu, element)
-		if element.value == "citizen_interaction" then
+	OpenAmbulanceMenu('default', 'mobile_ambulance_actions', TranslateCap('ambulance'), elements, function(data, menu)
+		if data.current.value == "citizen_interaction" then
 			local elements2 = {
-				{ unselectable = true, icon = "fas fa-ambulance", title = element.title },
-				{ icon = "fas fa-syringe", title = TranslateCap('ems_menu_revive'), value = "revive" },
-				{ icon = "fas fa-bandage", title = TranslateCap('ems_menu_small'), value = "small" },
-				{ icon = "fas fa-bandage", title = TranslateCap('ems_menu_big'), value = "big" },
-				{ icon = "fas fa-car", title = TranslateCap('ems_menu_putincar'), value = "put_in_vehicle" },
-				{ icon = "fas fa-syringe", title = TranslateCap('ems_menu_search'), value = "search" },
+				{ label = TranslateCap('ems_menu_revive'), value = "revive" },
+				{ label = TranslateCap('ems_menu_small'), value = "small" },
+				{ label = TranslateCap('ems_menu_big'), value = "big" },
+				{ label = TranslateCap('ems_menu_putincar'), value = "put_in_vehicle" },
+				{ label = TranslateCap('ems_menu_search'), value = "search" },
 			}
 
-			ESX.OpenContext("right", elements2, function(menu2, element2)
+			OpenAmbulanceMenu('default', 'citizen_interaction', TranslateCap('ems_menu'), elements2, function(data2, menu2)
 				if isBusy then return end
 				local closestPlayer, closestDistance = xLib.game.getClosestPlayer()
 
-				if element2.value == 'search' then
+				if data2.current.value == 'search' then
 					TriggerServerEvent('esx_ambulancejob:svsearch')
 				elseif closestPlayer == -1 or closestDistance > 1.0 then
 					ESX.ShowNotification(TranslateCap('no_players'))
 				else
-					if element2.value == 'revive' then
+					if data2.current.value == 'revive' then
 						revivePlayer(closestPlayer)
-					elseif element2.value == 'small' then
+					elseif data2.current.value == 'small' then
 						xLib.callback('esx_ambulancejob:getItemAmount', false, function(quantity)
 							if quantity > 0 then
 								local closestPlayerPed = GetPlayerPed(closestPlayer)
@@ -92,7 +98,7 @@ function OpenMobileAmbulanceActionsMenu()
 							end
 						end, 'bandage')
 
-					elseif element2.value == 'big' then
+					elseif data2.current.value == 'big' then
 						xLib.callback('esx_ambulancejob:getItemAmount', false, function(quantity)
 							if quantity > 0 then
 								local closestPlayerPed = GetPlayerPed(closestPlayer)
@@ -117,12 +123,16 @@ function OpenMobileAmbulanceActionsMenu()
 								ESX.ShowNotification(TranslateCap('not_enough_medikit'))
 							end
 						end, 'medikit')
-					elseif element2.value == 'put_in_vehicle' then
+					elseif data2.current.value == 'put_in_vehicle' then
 						TriggerServerEvent('esx_ambulancejob:putInVehicle', GetPlayerServerId(closestPlayer))
 					end
 				end
+			end, function(data2, menu2)
+				menu2.close()
 			end)
 		end
+	end, function(data, menu)
+		menu.close()
 	end)
 end
 
@@ -325,7 +335,7 @@ end)
 
 AddEventHandler('esx_ambulancejob:hasExitedMarker', function(hospital, part, partNum)
 	if not isInShopMenu then
-		ESX.CloseContext()
+		ESX.UI.Menu.CloseAll()
 	end
 	ESX.HideUI()
 	CurrentAction = nil
@@ -410,13 +420,12 @@ end)
 
 function OpenCloakroomMenu()
 	local elements = {
-		{ unselectable = true, icon = "fas fa-shirt", title = TranslateCap('cloakroom') },
-		{ icon = "fas fa-shirt", title = TranslateCap('ems_clothes_civil'), value = "citizen_wear" },
-		{ icon = "fas fa-shirt", title = TranslateCap('ems_clothes_ems'), value = "ambulance_wear" },
+		{ label = TranslateCap('ems_clothes_civil'), value = "citizen_wear" },
+		{ label = TranslateCap('ems_clothes_ems'), value = "ambulance_wear" },
 	}
 
-	ESX.OpenContext("right", elements, function(menu, element)
-		if element.value == "citizen_wear" then
+	OpenAmbulanceMenu('default', 'cloakroom', TranslateCap('cloakroom'), elements, function(data, menu)
+		if data.current.value == "citizen_wear" then
 			xLib.callback('esx_skin:getPlayerSkin', false, function(skin, jobSkin)
 				TriggerEvent('skinchanger:loadSkin', skin)
 				isOnDuty = false
@@ -430,7 +439,7 @@ function OpenCloakroomMenu()
 					print("[^2INFO^7] Off Duty")
 				end
 			end)
-		elseif element.value == "ambulance_wear" then
+		elseif data.current.value == "ambulance_wear" then
 			xLib.callback('esx_skin:getPlayerSkin', false, function(skin, jobSkin)
 				if skin.sex == 0 then
 					TriggerEvent('skinchanger:loadClothes', skin, jobSkin.skin_male)
@@ -448,39 +457,40 @@ function OpenCloakroomMenu()
 				end
 			end)
 		end
+		menu.close()
+	end, function(data, menu)
+		menu.close()
 	end)
 end
 
 function OpenPharmacyMenu()
-	local elements = {
-		{ unselectable = true, icon = "fas fa-pills", title = TranslateCap('pharmacy_menu_title') }
-	}
+	local elements = {}
 
 	for k, v in pairs(Config.PharmacyItems) do
 		elements[#elements + 1] = {
-			icon = "fas fa-pills",
-			title = v.title,
+			label = v.title,
 			item = v.item
 		}
 	end
 
-	ESX.OpenContext("right", elements, function(menu, element)
-		local elements2 = {
-			{ unselectable = true, icon = "fas fa-pills", title = element.title },
-			{ title = "Amount", input = true, inputType = "number", inputMin = 1, inputMax = 100,
-				inputPlaceholder = "Amount to buy.." },
-			{ icon = "fas fa-check-double", title = "Confirm", val = "confirm" }
-		}
-
-		ESX.OpenContext("right", elements2, function(menu2, element2)
-			local amount = menu2.eles[2].inputValue
-			if Config.Debug then
-				print("[^2INFO^7] Attempting to Give Item - ^5" .. tostring(element.item) .. "^7")
+	OpenAmbulanceMenu('default', 'pharmacy', TranslateCap('pharmacy_menu_title'), elements, function(data, menu)
+		local selectedItem = data.current.item
+		OpenAmbulanceMenu('dialog', 'pharmacy_amount', 'Amount', nil, function(data2, menu2)
+			local amount = tonumber(data2.value)
+			if not amount or amount <= 0 then
+				ESX.ShowNotification('Invalid quantity')
+			else
+				menu2.close()
+				if Config.Debug then
+					print("[^2INFO^7] Attempting to Give Item - ^5" .. tostring(selectedItem) .. "^7")
+				end
+				TriggerServerEvent('esx_ambulancejob:giveItem', selectedItem, amount)
 			end
-			TriggerServerEvent('esx_ambulancejob:giveItem', element.item, amount)
-		end, function(menu)
-			OpenPharmacyMenu()
+		end, function(data2, menu2)
+			menu2.close()
 		end)
+	end, function(data, menu)
+		menu.close()
 	end)
 end
 
