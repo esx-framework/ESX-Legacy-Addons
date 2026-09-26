@@ -5,6 +5,7 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
+author 'ESX-Framework'
 description 'Allows Players to play animations'
 version '1.1'
 legacyversion '1.16.0'

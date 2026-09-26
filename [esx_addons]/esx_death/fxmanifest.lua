@@ -3,6 +3,8 @@
 
 fx_version 'cerulean'
 game 'gta5'
+
+author 'ESX-Framework'
 description 'Global ESX death lifecycle, persistence, respawn and branded NUI'
 version '1.0.0'
 lua54 'yes'
