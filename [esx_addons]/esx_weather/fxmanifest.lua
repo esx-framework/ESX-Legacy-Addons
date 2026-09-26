@@ -6,7 +6,7 @@ game "gta5"
 author "ESX-Framework"
 description "Weather sync for your ESX server"
 version "1.0.0"
-legacyversion "1.15.0"
+legacyversion "1.16.0"
 lua54 "yes"
 use_fxv2_oal "yes"
 

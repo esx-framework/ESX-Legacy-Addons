@@ -5,6 +5,7 @@ fx_version 'cerulean'
 
 game 'gta5'
 
+author 'ESX-Framework'
 description 'A banking system that adds interactable banks and ATMs'
 lua54 'yes'
 version '1.0.1'

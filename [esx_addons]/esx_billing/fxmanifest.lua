@@ -5,6 +5,7 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
+author 'ESX-Framework'
 description 'Allows Players to recieve and Send Bills'
 version '1.0'
 legacyversion '1.16.0'

@@ -1,10 +1,11 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-fx_version 'adamant'
+fx_version 'cerulean'
 
 game 'gta5'
 
+author 'ESX-Framework'
 description 'Allows Players to use LS Customs to customise their cars'
 lua54 'yes'
 version '1.0'

@@ -4,6 +4,7 @@
 fx_version 'cerulean'
 game 'gta5'
 
+author 'ESX-Framework'
 description 'ESX Weapon Shop - Modern modular weapon shop with NUI for ESX Legacy'
 lua54 'yes'
 version '1.0'

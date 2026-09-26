@@ -1,11 +1,12 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-fx_version 'adamant'
+fx_version 'cerulean'
 
 game 'gta5'
 
-description 'Handles for logic for player licenses, such as: Driving License, gun license and more'
+author 'ESX-Framework'
+description 'Handles logic for player licenses, such as: Driving License, gun license and more'
 lua54 'yes'
 version '1.0'
 legacyversion '1.16.0'
