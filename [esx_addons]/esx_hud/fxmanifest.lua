@@ -5,6 +5,7 @@ fx_version "cerulean"
 game "gta5"
 lua54 "yes"
 
+author "ESX-Framework"
 description "The default HUD resource for ESX-Legacy."
 version "1.10.2"
 legacyversion '1.16.0'

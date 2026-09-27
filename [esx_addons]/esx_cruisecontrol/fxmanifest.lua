@@ -4,8 +4,8 @@
 fx_version 'cerulean'
 game 'gta5'
 
+author 'ESX-Framework'
 description 'CruiseControl / Seatbelt System for ESX Legacy'
-
 version '1.2'
 legacyversion '1.16.0'
 

@@ -4,6 +4,7 @@
 fx_version 'cerulean'
 game 'gta5'
 
+author 'ESX-Framework'
 description 'ESX Shops - Modern modular shop system with NUI for ESX Legacy'
 lua54 'yes'
 use_fxv2_oal 'yes'

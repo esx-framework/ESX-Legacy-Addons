@@ -5,10 +5,10 @@ fx_version("cerulean")
 game("gta5")
 lua54("yes")
 
-author("ESX (Zox)")
+author("ESX Framework")
 description("ESX Admin Menu")
-version("0.3.2")
-legacyversion("1.15.0")
+version("1.0.0")
+legacyversion("1.16.0")
 
 shared_scripts({
 	"@esx_lib/imports.lua",

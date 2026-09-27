@@ -18,7 +18,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ]]
-fx_version 'adamant'
+fx_version 'cerulean'
 
 game 'gta5'
 lua54 'yes'

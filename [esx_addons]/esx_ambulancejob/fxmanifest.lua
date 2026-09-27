@@ -1,8 +1,9 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-fx_version 'adamant'
+fx_version 'cerulean'
 game 'gta5'
+author 'ESX-Framework'
 description 'Provides a way for players to RP as paramedics (heal/revive players)'
 version '1.0.2'
 legacyversion '1.16.0'

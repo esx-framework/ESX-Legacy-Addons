@@ -1,9 +1,10 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-fx_version 'bodacious'
+fx_version 'cerulean'
 game 'gta5'
 
+author 'ESX-Framework'
 description 'Provides a way for players to select a job'
 lua54 'yes'
 version '1.0'
