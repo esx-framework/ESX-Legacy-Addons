@@ -17,7 +17,7 @@ end)
 
 RegisterNetEvent('esx_ambulancejob:useItem')
 AddEventHandler('esx_ambulancejob:useItem', function(itemName)
-  ESX.CloseContext()
+  ESX.UI.Menu.CloseAll()
 
   if itemName == 'medikit' then
     local lib, anim = 'anim@heists@narcotics@funding@gang_idle', 'gang_chatting_idle01' -- TODO better animations

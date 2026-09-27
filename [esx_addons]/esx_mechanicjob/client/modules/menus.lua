@@ -3,6 +3,33 @@
 
 local Mechanic = ESXMechanicJob
 local State = Mechanic.State
+local MenuNamespace = GetCurrentResourceName()
+
+local function openMenu(name, title, elements, submit, cancel)
+	return ESX.UI.Menu.Open('default', MenuNamespace, name, {
+		title = title,
+		align = 'top-left',
+		elements = elements
+	}, submit, cancel or function(data, menu)
+		menu.close()
+	end)
+end
+
+local function openAmountMenu(name, title, maxAmount, callback)
+	ESX.UI.Menu.Open('dialog', MenuNamespace, name, { title = title }, function(data, menu)
+		local amount = tonumber(data.value)
+
+		if not amount or amount < 1 or amount > maxAmount then
+			ESX.ShowNotification(TranslateCap('invalid_quantity'))
+			return
+		end
+
+		menu.close()
+		callback(amount)
+	end, function(data, menu)
+		menu.close()
+	end)
+end
 
 local function spawnServiceVehicle(model, heading, vehicleProps)
 	xLib.game.spawnVehicle(model, Config.Zones.VehicleSpawnPoint.Pos, heading or 90.0, function(vehicle)
@@ -16,35 +43,33 @@ end
 
 local function openSocietyVehicleMenu()
 	local elements = {
-		{ unselectable = true, icon = "fas fa-car", title = TranslateCap('service_vehicle') }
 	}
 
 	xLib.callback('esx_society:getVehiclesInGarage', false, function(vehicles)
 		for i = 1, #vehicles do
 			elements[#elements + 1] = {
 				icon = 'fas fa-car',
-				title = GetDisplayNameFromVehicleModel(vehicles[i].model) .. ' [' .. vehicles[i].plate .. ']',
+				label = GetDisplayNameFromVehicleModel(vehicles[i].model) .. ' [' .. vehicles[i].plate .. ']',
 				value = vehicles[i]
 			}
 		end
 
-		ESX.OpenContext("right", elements, function(menu, element)
-			if not element.value then
+		openMenu('society_vehicles', TranslateCap('service_vehicle'), elements, function(data, menu)
+			if not data.current.value then
 				return
 			end
 
-			ESX.CloseContext()
-			spawnServiceVehicle(element.value.model, 270.0, element.value)
-			TriggerServerEvent('esx_society:removeVehicleFromGarage', 'mechanic', element.value)
+			menu.close()
+			spawnServiceVehicle(data.current.value.model, 270.0, data.current.value)
+			TriggerServerEvent('esx_society:removeVehicleFromGarage', 'mechanic', data.current.value)
 		end)
 	end, 'mechanic')
 end
 
 local function openStaticVehicleMenu()
 	local elements = {
-		{ unselectable = true,   icon = "fas fa-car",   title = TranslateCap('service_vehicle') },
-		{ icon = "fas fa-truck", title = TranslateCap('flat_bed'),  value = 'flatbed' },
-		{ icon = "fas fa-truck", title = TranslateCap('tow_truck'), value = 'towtruck2' }
+		{ icon = "fas fa-truck", label = TranslateCap('flat_bed'),  value = 'flatbed' },
+		{ icon = "fas fa-truck", label = TranslateCap('tow_truck'), value = 'towtruck2' }
 	}
 
 	if Config.EnablePlayerManagement and ESX.PlayerData.job
@@ -53,26 +78,26 @@ local function openStaticVehicleMenu()
 			or ESX.PlayerData.job.grade_name == 'experimente') then
 		elements[#elements + 1] = {
 			icon = 'fas fa-truck',
-			title = 'Slamvan',
+			label = 'Slamvan',
 			value = 'slamvan3'
 		}
 	end
 
-	ESX.OpenContext("right", elements, function(menu, element)
-		if not element.value then
+	openMenu('static_vehicles', TranslateCap('service_vehicle'), elements, function(data, menu)
+		if not data.current.value then
 			return
 		end
 
 		if Config.MaxInService == -1 then
-			ESX.CloseContext()
-			spawnServiceVehicle(element.value, 90.0)
+			menu.close()
+			spawnServiceVehicle(data.current.value, 90.0)
 			return
 		end
 
 		xLib.callback('esx_service:enableService', false, function(canTakeService, maxInService, inServiceCount)
 			if canTakeService then
-				ESX.CloseContext()
-				spawnServiceVehicle(element.value, 90.0)
+				menu.close()
+				spawnServiceVehicle(data.current.value, 90.0)
 			else
 				ESX.ShowNotification(TranslateCap('service_full') .. inServiceCount .. '/' .. maxInService)
 			end
@@ -100,31 +125,31 @@ end
 
 function Mechanic.openActionsMenu()
 	local elements = {
-		{ unselectable = true,   icon = "fas fa-gear",  title = TranslateCap('mechanic') },
-		{ icon = "fas fa-car",   title = TranslateCap('vehicle_list'),   value = 'vehicle_list' },
-		{ icon = "fas fa-shirt", title = TranslateCap('work_wear'),      value = 'cloakroom' },
-		{ icon = "fas fa-shirt", title = TranslateCap('civ_wear'),       value = 'cloakroom2' },
-		{ icon = "fas fa-box",   title = TranslateCap('deposit_stock'),  value = 'put_stock' },
-		{ icon = "fas fa-box",   title = TranslateCap('withdraw_stock'), value = 'get_stock' }
+		{ icon = "fas fa-car",   label = TranslateCap('vehicle_list'),   value = 'vehicle_list' },
+		{ icon = "fas fa-shirt", label = TranslateCap('work_wear'),      value = 'cloakroom' },
+		{ icon = "fas fa-shirt", label = TranslateCap('civ_wear'),       value = 'cloakroom2' },
+		{ icon = "fas fa-box",   label = TranslateCap('deposit_stock'),  value = 'put_stock' },
+		{ icon = "fas fa-box",   label = TranslateCap('withdraw_stock'), value = 'get_stock' }
 	}
 
 	if Config.EnablePlayerManagement and ESX.PlayerData.job and ESX.PlayerData.job.grade_name == 'boss' then
 		elements[#elements + 1] = {
 			icon = 'fas fa-boss',
-			title = TranslateCap('boss_actions'),
+			label = TranslateCap('boss_actions'),
 			value = 'boss_actions'
 		}
 	end
 
-	ESX.OpenContext("right", elements, function(menu, element)
-		if element.value == 'vehicle_list' then
+	openMenu('mechanic_actions', TranslateCap('mechanic'), elements, function(data, menu)
+		if data.current.value == 'vehicle_list' then
+			menu.close()
 			if Config.EnableSocietyOwnedVehicles then
 				openSocietyVehicleMenu()
 			else
 				openStaticVehicleMenu()
 			end
-		elseif element.value == 'cloakroom' then
-			ESX.CloseContext()
+		elseif data.current.value == 'cloakroom' then
+			menu.close()
 			xLib.callback('esx_skin:getPlayerSkin', false, function(skin, jobSkin)
 				local uniform = getWorkWear(skin, jobSkin)
 
@@ -135,24 +160,27 @@ function Mechanic.openActionsMenu()
 
 				TriggerEvent('skinchanger:loadClothes', skin, uniform)
 			end)
-		elseif element.value == 'cloakroom2' then
-			ESX.CloseContext()
+		elseif data.current.value == 'cloakroom2' then
+			menu.close()
 			xLib.callback('esx_skin:getPlayerSkin', false, function(skin)
 				TriggerEvent('skinchanger:loadSkin', skin)
 			end)
-		elseif Config.OxInventory and (element.value == 'put_stock' or element.value == 'get_stock') then
+		elseif Config.OxInventory and (data.current.value == 'put_stock' or data.current.value == 'get_stock') then
 			exports.ox_inventory:openInventory('stash', 'society_mechanic')
-			ESX.CloseContext()
-		elseif element.value == 'put_stock' then
+			menu.close()
+		elseif data.current.value == 'put_stock' then
+			menu.close()
 			Mechanic.openPutStocksMenu()
-		elseif element.value == 'get_stock' then
+		elseif data.current.value == 'get_stock' then
+			menu.close()
 			Mechanic.openGetStocksMenu()
-		elseif element.value == 'boss_actions' then
+		elseif data.current.value == 'boss_actions' then
 			TriggerEvent('esx_society:openBossMenu', 'mechanic', function()
-				ESX.CloseContext()
+				menu.close()
 			end, { uniforms = true })
 		end
-	end, function()
+	end, function(data, menu)
+		menu.close()
 		Mechanic.setCurrentAction('mechanic_actions_menu', TranslateCap('open_actions'), {})
 	end)
 end
@@ -164,21 +192,21 @@ function Mechanic.openHarvestMenu()
 	end
 
 	local elements = {
-		{ unselectable = true,  icon = "fas fa-gear", title = "Mechanic Harvest Menu" },
-		{ icon = "fas fa-gear", title = TranslateCap('gas_can'),         value = 'gaz_bottle' },
-		{ icon = "fas fa-gear", title = TranslateCap('repair_tools'),    value = 'fix_tool' },
-		{ icon = "fas fa-gear", title = TranslateCap('body_work_tools'), value = 'caro_tool' }
+		{ icon = "fas fa-gear", label = TranslateCap('gas_can'),         value = 'gaz_bottle' },
+		{ icon = "fas fa-gear", label = TranslateCap('repair_tools'),    value = 'fix_tool' },
+		{ icon = "fas fa-gear", label = TranslateCap('body_work_tools'), value = 'caro_tool' }
 	}
 
-	ESX.OpenContext("right", elements, function(menu, element)
-		if element.value == 'gaz_bottle' then
+	openMenu('mechanic_harvest', 'Mechanic Harvest Menu', elements, function(data, menu)
+		if data.current.value == 'gaz_bottle' then
 			TriggerServerEvent('esx_mechanicjob:startHarvest')
-		elseif element.value == 'fix_tool' then
+		elseif data.current.value == 'fix_tool' then
 			TriggerServerEvent('esx_mechanicjob:startHarvest2')
-		elseif element.value == 'caro_tool' then
+		elseif data.current.value == 'caro_tool' then
 			TriggerServerEvent('esx_mechanicjob:startHarvest3')
 		end
-	end, function()
+	end, function(data, menu)
+		menu.close()
 		Mechanic.setCurrentAction('mechanic_harvest_menu', TranslateCap('harvest_menu'), {})
 	end)
 end
@@ -190,21 +218,21 @@ function Mechanic.openCraftMenu()
 	end
 
 	local elements = {
-		{ unselectable = true,  icon = "fas fa-gear", title = "Mechanic Craft Menu" },
-		{ icon = "fas fa-gear", title = TranslateCap('blowtorch'),  value = 'blow_pipe' },
-		{ icon = "fas fa-gear", title = TranslateCap('repair_kit'), value = 'fix_kit' },
-		{ icon = "fas fa-gear", title = TranslateCap('body_kit'),   value = 'caro_kit' }
+		{ icon = "fas fa-gear", label = TranslateCap('blowtorch'),  value = 'blow_pipe' },
+		{ icon = "fas fa-gear", label = TranslateCap('repair_kit'), value = 'fix_kit' },
+		{ icon = "fas fa-gear", label = TranslateCap('body_kit'),   value = 'caro_kit' }
 	}
 
-	ESX.OpenContext("right", elements, function(menu, element)
-		if element.value == 'blow_pipe' then
+	openMenu('mechanic_craft', 'Mechanic Craft Menu', elements, function(data, menu)
+		if data.current.value == 'blow_pipe' then
 			TriggerServerEvent('esx_mechanicjob:startCraft')
-		elseif element.value == 'fix_kit' then
+		elseif data.current.value == 'fix_kit' then
 			TriggerServerEvent('esx_mechanicjob:startCraft2')
-		elseif element.value == 'caro_kit' then
+		elseif data.current.value == 'caro_kit' then
 			TriggerServerEvent('esx_mechanicjob:startCraft3')
 		end
-	end, function()
+	end, function(data, menu)
+		menu.close()
 		Mechanic.setCurrentAction('mechanic_craft_menu', TranslateCap('craft_menu'), {})
 	end)
 end
@@ -212,38 +240,24 @@ end
 function Mechanic.openGetStocksMenu()
 	xLib.callback('esx_mechanicjob:getStockItems', false, function(items)
 		local elements = {
-			{ unselectable = true, icon = "fas fa-box", title = TranslateCap('mechanic_stock') }
 		}
 
 		for i = 1, #(items or {}) do
 			elements[#elements + 1] = {
 				icon = 'fas fa-box',
-				title = 'x' .. items[i].count .. ' ' .. items[i].label,
+				label = 'x' .. items[i].count .. ' ' .. items[i].label,
 				value = items[i].name
 			}
 		end
 
-		ESX.OpenContext("right", elements, function(menu, element)
-			if not element.value then
+		openMenu('mechanic_get_stock', TranslateCap('mechanic_stock'), elements, function(data, menu)
+			if not data.current.value then
 				return
 			end
 
-			local elements2 = {
-				{ unselectable = true,          icon = "fas fa-box", title = element.title },
-				{ title = "Amount",             input = true,        inputType = "number", inputMin = 1, inputMax = 100, inputPlaceholder = "Amount to withdraw.." },
-				{ icon = "fas fa-check-double", title = "Confirm",   value = "confirm" }
-			}
-
-			ESX.OpenContext("right", elements2, function(menu2)
-				local count = tonumber(menu2.eles[2].inputValue)
-
-				if not count then
-					ESX.ShowNotification(TranslateCap('invalid_quantity'))
-					return
-				end
-
-				ESX.CloseContext()
-				TriggerServerEvent('esx_mechanicjob:getStockItem', element.value, count)
+			menu.close()
+			openAmountMenu('mechanic_get_amount', data.current.label, 100, function(count)
+				TriggerServerEvent('esx_mechanicjob:getStockItem', data.current.value, count)
 
 				Wait(1000)
 				Mechanic.openGetStocksMenu()
@@ -256,7 +270,6 @@ function Mechanic.openPutStocksMenu()
 	xLib.callback('esx_mechanicjob:getPlayerInventory', false, function(inventory)
 		local items = (inventory and inventory.items) or {}
 		local elements = {
-			{ unselectable = true, icon = "fas fa-box", title = TranslateCap('inventory') }
 		}
 
 		for i = 1, #items do
@@ -265,34 +278,21 @@ function Mechanic.openPutStocksMenu()
 			if item.count > 0 then
 				elements[#elements + 1] = {
 					icon = 'fas fa-box',
-					title = item.label .. ' x' .. item.count,
+					label = item.label .. ' x' .. item.count,
 					type = 'item_standard',
 					value = item.name
 				}
 			end
 		end
 
-		ESX.OpenContext("right", elements, function(menu, element)
-			if not element.value then
+		openMenu('mechanic_put_stock', TranslateCap('inventory'), elements, function(data, menu)
+			if not data.current.value then
 				return
 			end
 
-			local elements2 = {
-				{ unselectable = true,          icon = "fas fa-box", title = element.title },
-				{ title = "Amount",             input = true,        inputType = "number", inputMin = 1, inputMax = 100, inputPlaceholder = "Amount to deposit.." },
-				{ icon = "fas fa-check-double", title = "Confirm",   value = "confirm" }
-			}
-
-			ESX.OpenContext("right", elements2, function(menu2)
-				local count = tonumber(menu2.eles[2].inputValue)
-
-				if not count then
-					ESX.ShowNotification(TranslateCap('invalid_quantity'))
-					return
-				end
-
-				ESX.CloseContext()
-				TriggerServerEvent('esx_mechanicjob:putStockItems', element.value, count)
+			menu.close()
+			openAmountMenu('mechanic_put_amount', data.current.label, 100, function(count)
+				TriggerServerEvent('esx_mechanicjob:putStockItems', data.current.value, count)
 
 				Wait(1000)
 				Mechanic.openPutStocksMenu()
@@ -302,16 +302,16 @@ function Mechanic.openPutStocksMenu()
 end
 
 local function openBillingMenu(title)
-	local elements = {
-		{ unselectable = true,          icon = "fas fa-scroll", title = title },
-		{ title = "Amount",             input = true,           inputType = "number", inputMin = 1, inputMax = 250000, inputPlaceholder = "Amount to bill.." },
-		{ icon = "fas fa-check-double", title = "Confirm",      value = "confirm" }
-	}
+	local closestPlayer, closestDistance = xLib.game.getClosestPlayer()
+	if closestPlayer == -1 or closestDistance > 3.0 then
+		ESX.ShowNotification(TranslateCap('no_players_nearby'), "error")
+		return
+	end
 
-	ESX.OpenContext("right", elements, function(menu)
-		local amount = tonumber(menu.eles[2].inputValue)
+	ESX.UI.Menu.Open('dialog', MenuNamespace, 'mechanic_billing_amount', { title = title }, function(data, menu)
+		local amount = tonumber(data.value)
 
-		if not amount or amount < 0 then
+		if not amount or amount < 0 or amount > 250000 then
 			ESX.ShowNotification(TranslateCap('amount_invalid'), "error")
 			return
 		end
@@ -322,9 +322,11 @@ local function openBillingMenu(title)
 			return
 		end
 
-		ESX.CloseContext()
+		menu.close()
 		TriggerServerEvent('esx_billing:sendBill', GetPlayerServerId(closestPlayer), 'society_mechanic',
 			TranslateCap('mechanic'), amount)
+	end, function(data, menu)
+		menu.close()
 	end)
 end
 
@@ -392,7 +394,7 @@ local function handleRepairVehicle()
 		SetVehicleFixed(targetVehicle)
 		SetVehicleDeformationFixed(targetVehicle)
 		SetVehicleUndriveable(targetVehicle, false)
-		SetVehicleEngineOn(targetVehicle, true, true)
+		SetVehicleEngineOn(targetVehicle, true, true, false)
 	end)
 end
 
@@ -536,48 +538,54 @@ local function openObjectSpawnerMenu()
 	end
 
 	local elements = {
-		{ unselectable = true,    icon = "fas fa-object", title = TranslateCap('objects') },
-		{ icon = "fas fa-object", title = TranslateCap('roadcone'), value = 'prop_roadcone02a' },
-		{ icon = "fas fa-object", title = TranslateCap('toolbox'),  value = 'prop_toolchest_01' }
+		{ icon = "fas fa-object", label = TranslateCap('roadcone'), value = 'prop_roadcone02a' },
+		{ icon = "fas fa-object", label = TranslateCap('toolbox'),  value = 'prop_toolchest_01' }
 	}
 
-	ESX.OpenContext("right", elements, function(menu, element)
-		if element.value then
-			Mechanic.spawnObject(element.value)
+	openMenu('mechanic_objects', TranslateCap('objects'), elements, function(data, menu)
+		if data.current.value then
+			menu.close()
+			Mechanic.spawnObject(data.current.value)
 		end
 	end)
 end
 
 function Mechanic.openMobileActionsMenu()
 	local elements = {
-		{ unselectable = true,  icon = "fas fa-gear", title = TranslateCap('mechanic') },
-		{ icon = "fas fa-gear", title = TranslateCap('billing'), value = 'billing' },
-		{ icon = "fas fa-gear", title = TranslateCap('hijack'), value = 'hijack_vehicle' },
-		{ icon = "fas fa-gear", title = TranslateCap('repair'), value = 'fix_vehicle' },
-		{ icon = "fas fa-gear", title = TranslateCap('clean'), value = 'clean_vehicle' },
-		{ icon = "fas fa-gear", title = TranslateCap('imp_veh'), value = 'del_vehicle' },
-		{ icon = "fas fa-gear", title = TranslateCap('flat_bed'), value = 'dep_vehicle' },
-		{ icon = "fas fa-gear", title = TranslateCap('place_objects'), value = 'object_spawner' }
+		{ icon = "fas fa-gear", label = TranslateCap('billing'), value = 'billing' },
+		{ icon = "fas fa-gear", label = TranslateCap('hijack'), value = 'hijack_vehicle' },
+		{ icon = "fas fa-gear", label = TranslateCap('repair'), value = 'fix_vehicle' },
+		{ icon = "fas fa-gear", label = TranslateCap('clean'), value = 'clean_vehicle' },
+		{ icon = "fas fa-gear", label = TranslateCap('imp_veh'), value = 'del_vehicle' },
+		{ icon = "fas fa-gear", label = TranslateCap('flat_bed'), value = 'dep_vehicle' },
+		{ icon = "fas fa-gear", label = TranslateCap('place_objects'), value = 'object_spawner' }
 	}
 
-	ESX.OpenContext("right", elements, function(menu, element)
+	openMenu('mechanic_mobile_actions', TranslateCap('mechanic'), elements, function(data, menu)
 		if State.isBusy then
 			return
 		end
 
-		if element.value == 'billing' then
-			openBillingMenu(element.title)
-		elseif element.value == 'hijack_vehicle' then
+		if data.current.value == 'billing' then
+			menu.close()
+			openBillingMenu(data.current.label)
+		elseif data.current.value == 'hijack_vehicle' then
+			menu.close()
 			handleHijackVehicle()
-		elseif element.value == 'fix_vehicle' then
+		elseif data.current.value == 'fix_vehicle' then
+			menu.close()
 			handleRepairVehicle()
-		elseif element.value == 'clean_vehicle' then
+		elseif data.current.value == 'clean_vehicle' then
+			menu.close()
 			handleCleanVehicle()
-		elseif element.value == 'del_vehicle' then
+		elseif data.current.value == 'del_vehicle' then
+			menu.close()
 			handleImpoundVehicle()
-		elseif element.value == 'dep_vehicle' then
+		elseif data.current.value == 'dep_vehicle' then
+			menu.close()
 			handleTowVehicle()
-		elseif element.value == 'object_spawner' then
+		elseif data.current.value == 'object_spawner' then
+			menu.close()
 			openObjectSpawnerMenu()
 		end
 	end)

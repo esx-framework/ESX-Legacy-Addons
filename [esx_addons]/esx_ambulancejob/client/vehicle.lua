@@ -6,14 +6,13 @@ local spawnedVehicles = {}
 function OpenVehicleSpawnerMenu(type, hospital, part, partNum)
 	local playerCoords = GetEntityCoords(PlayerPedId())
 	local elements = {
-		{unselectable = true, icon = "fas fa-car", title = TranslateCap('garage_title')},
-		{icon = "fas fa-car", title = TranslateCap('garage_storeditem'), action = 'garage'},
-		{icon = "fas fa-car", title = TranslateCap('garage_storeitem'), action = 'store_garage'},
-		{icon = "fas fa-car", title = TranslateCap('garage_buyitem'), action = 'buy_vehicle'}
+		{label = TranslateCap('garage_storeditem'), action = 'garage'},
+		{label = TranslateCap('garage_storeitem'), action = 'store_garage'},
+		{label = TranslateCap('garage_buyitem'), action = 'buy_vehicle'}
 	}
 
-	ESX.OpenContext("right", elements, function(menu,element)
-		if element.action == "buy_vehicle" then
+	OpenAmbulanceMenu('default', 'vehicle_spawner', TranslateCap('garage_title'), elements, function(data, menu)
+		if data.current.action == "buy_vehicle" then
 			local shopElements = {}
 			local authorizedVehicles = Config.AuthorizedVehicles[type][ESX.PlayerData.job.grade_name] 	
 			local shopCoords = Config.Hospitals[hospital][part][partNum].InsideShop
@@ -24,8 +23,7 @@ function OpenVehicleSpawnerMenu(type, hospital, part, partNum)
 						local vehicleLabel = GetLabelText(GetDisplayNameFromVehicleModel(vehicle.model))
 
 						shopElements[#shopElements+1] = {
-							icon = 'fas fa-car',
-							title = ('%s - <span style="color:green;">%s</span>'):format(vehicleLabel, TranslateCap('shop_item', ESX.Math.GroupDigits(vehicle.price))),
+							label = ('%s - <span style="color:green;">%s</span>'):format(vehicleLabel, TranslateCap('shop_item', ESX.Math.GroupDigits(vehicle.price))),
 							name  = vehicleLabel,
 							model = vehicle.model,
 							price = vehicle.price,
@@ -43,10 +41,8 @@ function OpenVehicleSpawnerMenu(type, hospital, part, partNum)
 			else
 				ESX.ShowNotification(TranslateCap('garage_notauthorized'))
 			end
-		elseif element.action == "garage" then
-			local garage = {
-				{unselectable = true, icon = "fas fa-car", title = "Garage"}
-			}
+		elseif data.current.action == "garage" then
+			local garage = {}
 
 			xLib.callback('esx_vehicleshop:retrieveJobVehicles', false, function(jobVehicles)
 				if #jobVehicles > 0 then
@@ -66,8 +62,7 @@ function OpenVehicleSpawnerMenu(type, hospital, part, partNum)
 							end
 
 							garage[#garage+1] = {
-								icon = 'fas fa-car',
-								title = label,
+								label = label,
 								stored = v.stored,
 								model = props.model,
 								plate = props.plate
@@ -78,24 +73,27 @@ function OpenVehicleSpawnerMenu(type, hospital, part, partNum)
 					end
 
 					if #garage > 0 then
-						ESX.OpenContext("right", garage, function(menuG,elementG)
-							if elementG.stored == 1 then
+						OpenAmbulanceMenu('default', 'vehicle_garage', 'Garage', garage, function(dataG, menuG)
+							if dataG.current.stored == 1 then
 								local foundSpawn, spawnPoint = GetAvailableVehicleSpawnPoint(hospital, part, partNum)
 
 								if foundSpawn then
-									ESX.CloseContext()
+									menuG.close()
+									menu.close()
 
-									xLib.game.spawnVehicle(elementG.model, spawnPoint.coords, spawnPoint.heading, function(vehicle)
-										local vehicleProps = allVehicleProps[elementG.plate]
+									xLib.game.spawnVehicle(dataG.current.model, spawnPoint.coords, spawnPoint.heading, function(vehicle)
+										local vehicleProps = allVehicleProps[dataG.current.plate]
 										xLib.game.setVehicleProperties(vehicle, vehicleProps)
 
-										TriggerServerEvent('esx_vehicleshop:setJobVehicleState', elementG.plate, false)
+										TriggerServerEvent('esx_vehicleshop:setJobVehicleState', dataG.current.plate, false)
 										ESX.ShowNotification(TranslateCap('garage_released'))
 									end)
 								end
 							else
 								ESX.ShowNotification(TranslateCap('garage_notavailable'))
 							end
+						end, function(dataG, menuG)
+							menuG.close()
 						end)
 					else
 						ESX.ShowNotification(TranslateCap('garage_empty'))
@@ -104,9 +102,11 @@ function OpenVehicleSpawnerMenu(type, hospital, part, partNum)
 					ESX.ShowNotification(TranslateCap('garage_empty'))
 				end
 			end, type)
-		elseif element.action == "store_garage" then
+		elseif data.current.action == "store_garage" then
 			StoreNearbyVehicle(playerCoords)
 		end
+	end, function(data, menu)
+		menu.close()
 	end)
 end
 
@@ -200,45 +200,40 @@ end
 function OpenShopMenu(elements, restoreCoords, shopCoords)
 	local playerPed = PlayerPedId()
 	isInShopMenu = true
-	ESX.OpenContext("right", elements, function(menu,element)
-		local elements2 = {
-			{unselectable = true, icon = "fas fa-car", title = element.title},
-			{icon = "fas fa-eye", title = "View", value = "view"}
-		}
 
-		ESX.OpenContext("right", elements2, function(menu2,element2)
-			if element2.value == "view" then
+	OpenAmbulanceMenu('default', 'vehicle_shop', TranslateCap('vehicleshop_title'), elements, function(data, menu)
+		OpenAmbulanceMenu('default', 'vehicle_shop_confirm', data.current.name, {
+			{label = 'View', value = 'view'}
+		}, function(data2, menu2)
+			if data2.current.value == 'view' then
 				DeleteSpawnedVehicles()
-				WaitForVehicleToLoad(element.model)
+				WaitForVehicleToLoad(data.current.model)
 
-				xLib.game.spawnLocalVehicle(element.model, shopCoords.xyz, shopCoords.w, function(vehicle)
+				xLib.game.spawnLocalVehicle(data.current.model, shopCoords.xyz, shopCoords.w, function(vehicle)
 					table.insert(spawnedVehicles, vehicle)
 					TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
 					FreezeEntityPosition(vehicle, true)
-					SetModelAsNoLongerNeeded(element.model)
+					SetModelAsNoLongerNeeded(data.current.model)
 
-					if element.props then
-						xLib.game.setVehicleProperties(vehicle, element.props)
+					if data.current.props then
+						xLib.game.setVehicleProperties(vehicle, data.current.props)
 					end
 				end)
 
-				local elements3 = {
-					{unselectable = true, icon = "fas fa-car", title = element.title},
-					{icon = "fas fa-check-double", title = "Buy", value = "buy"},
-					{icon = "fas fa-eye", title = "Stop Viewing", value = "stop"}
-				}
-
-				ESX.OpenContext("right", elements3, function(menu3,element3)
-					if element3.value == 'stop' then
+				OpenAmbulanceMenu('default', 'vehicle_shop_buy', data.current.name, {
+					{label = 'Buy', value = 'buy'},
+					{label = 'Stop Viewing', value = 'stop'}
+				}, function(data3, menu3)
+					if data3.current.value == 'stop' then
 						isInShopMenu = false
-						ESX.CloseContext()
+						menu3.close()
 
 						DeleteSpawnedVehicles()
 						FreezeEntityPosition(playerPed, false)
 						SetEntityVisible(playerPed, true)
 
 						xLib.entity.Teleport(playerPed, restoreCoords)
-					elseif element3.value == "buy" then
+					elseif data3.current.value == 'buy' then
 						local newPlate = exports['esx_vehicleshop']:GeneratePlate()
 						local vehicle  = GetVehiclePedIsIn(playerPed, false)
 						local props    = xLib.game.getVehicleProperties(vehicle)
@@ -246,10 +241,12 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 
 						xLib.callback('esx_ambulancejob:buyJobVehicle', false, function (bought)
 							if bought then
-								ESX.ShowNotification(TranslateCap('vehicleshop_bought', element.name, ESX.Math.GroupDigits(element.price)))
+								ESX.ShowNotification(TranslateCap('vehicleshop_bought', data.current.name, ESX.Math.GroupDigits(data.current.price)))
 
 								isInShopMenu = false
-								ESX.CloseContext()
+								menu3.close()
+								menu2.close()
+								menu.close()
 								DeleteSpawnedVehicles()
 								FreezeEntityPosition(playerPed, false)
 								SetEntityVisible(playerPed, true)
@@ -257,13 +254,13 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 								xLib.entity.Teleport(playerPed, restoreCoords)
 							else
 								ESX.ShowNotification(TranslateCap('vehicleshop_money'))
-								ESX.CloseContext()
+								menu3.close()
 							end
-						end, props, element.type)
+						end, props, data.current.type)
 					end
-				end,function ()
+				end, function(data3, menu3)
 					isInShopMenu = false
-					ESX.CloseContext()
+					menu3.close()
 
 					DeleteSpawnedVehicles()
 					FreezeEntityPosition(playerPed, false)
@@ -272,7 +269,12 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 					xLib.entity.Teleport(playerPed, restoreCoords)
 				end)
 			end
+		end, function(data2, menu2)
+			menu2.close()
 		end)
+	end, function(data, menu)
+		isInShopMenu = false
+		menu.close()
 	end)
 end
 
