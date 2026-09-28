@@ -6,7 +6,7 @@ Job Center NUI based on the [Figma design](https://www.figma.com/design/bXbaHpIV
 
 Restart `esx_joblisting` after copying the resource. Requires the existing `es_extended` and `esx_lib` resources. No npm build, database migration or internet connection is needed by the interface.
 
-Open `web/index.html?preview=1` through a local web server for the Figma sample data. Add `&hud=1` for both task overlays. Preview data is disabled inside FiveM, even if a preview parameter is present. Without the parameter, the interface starts hidden.
+Open `web/index.html?preview=1` through a local web server for sample data. Add `&list=1` for the full example job list and `&hud=1` for both task overlays. Preview data is disabled inside FiveM, even if a preview parameter is present. Without the parameter, the interface starts hidden.
 
 ## Jobs and player data
 
@@ -57,6 +57,8 @@ lua -e "dofile('tests/server.lua'); dofile('server/main.lua'); verifyJobListing(
 Browser validation covers all three views, local asset loading, 720p/1080p/1440p and ultrawide scaling, apply/quit, Escape, empty jobs, text escaping, failed requests and closing while an application is pending. An in-game check is still required for the actual FiveM focus, marker and ESX deployment.
 
 ## Legal
+
+Job icons (`web/assets/job-icon-*.svg`) use [Material Design Icons v7.4.47](https://github.com/Templarian/MaterialDesign-SVG/tree/v7.4.47) by Pictogrammers, under Apache 2.0. Their SVG fill is set to the interface's dark icon color. The original collection license and Apache 2.0 text are included in `web/assets/job-icons-LICENSE.txt` and `web/assets/job-icons-APACHE-2.0.txt`. Icons are selected by the ESX job name, so translated labels keep the same symbol. Unrecognized jobs use a briefcase icon.
 
 esx_joblisting - virtual Job Center!
 
