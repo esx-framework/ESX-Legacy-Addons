@@ -274,7 +274,7 @@ CreateThread(function()
     end
 end)
 
-AddEventHandler("esx:onPlayerLogout", function()
+ESX.SecureNetEvent("esx:onPlayerLogout", function()
     closeMenu()
 end)
 
