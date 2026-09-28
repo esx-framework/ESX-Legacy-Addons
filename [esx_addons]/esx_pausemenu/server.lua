@@ -48,6 +48,9 @@ ESX.RegisterServerCallback("esx_pausemenu:getData", function(source, cb)
     cb({
         id = source,
         name = stripFormatting(GetPlayerName(source) or xPlayer.name or (xPlayer.getName and xPlayer.getName()) or "Player"),
+        characterName = stripFormatting((xPlayer.getName and xPlayer.getName()) or xPlayer.name or GetPlayerName(source) or "Player"),
+        sex = xPlayer.get and xPlayer.get("sex") or nil,
+        ping = math.max(0, GetPlayerPing(source)),
         role = jobLabel,
         bank = getAccountMoney(xPlayer, "bank"),
         cash = getAccountMoney(xPlayer, "money"),

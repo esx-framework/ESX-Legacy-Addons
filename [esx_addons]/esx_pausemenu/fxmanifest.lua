@@ -29,8 +29,12 @@ files {
     "web/index.html",
     "web/styles.css",
     "web/app.js",
+    "web/locales.json",
     "web/assets/gtavmap.webp",
-    "web/assets/esx-logo.png"
+    "web/assets/esx-logo.png",
+    "web/assets/city-skyline.jpg",
+    "web/assets/icons/*.svg",
+    "web/assets/fonts/*.ttf"
 }
 
 dependencies {
