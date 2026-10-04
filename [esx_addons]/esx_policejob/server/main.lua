@@ -216,15 +216,17 @@ AddEventHandler('esx_policejob:confiscatePlayerItem', function(target, itemType,
 		end
 
 	elseif itemType == 'item_weapon' then
-		if amount == nil then amount = 0 end
-
 		-- does the target player have weapon?
 		if targetXPlayer.hasWeapon(itemName) then
-			targetXPlayer.removeWeapon(itemName)
-			sourceXPlayer.addWeapon   (itemName, amount)
+			-- ammo is read from the target's weapon on the server, not trusted from the client
+			local _, weapon = targetXPlayer.getWeapon(itemName)
+			local ammo = weapon and weapon.ammo or 0
 
-			sourceXPlayer.showNotification(TranslateCap('you_confiscated_weapon', ESX.GetWeaponLabel(itemName), targetXPlayerName, amount))
-			targetXPlayer.showNotification(TranslateCap('got_confiscated_weapon', ESX.GetWeaponLabel(itemName), amount, sourceXPlayerName))
+			targetXPlayer.removeWeapon(itemName)
+			sourceXPlayer.addWeapon   (itemName, ammo)
+
+			sourceXPlayer.showNotification(TranslateCap('you_confiscated_weapon', ESX.GetWeaponLabel(itemName), targetXPlayerName, ammo))
+			targetXPlayer.showNotification(TranslateCap('got_confiscated_weapon', ESX.GetWeaponLabel(itemName), ammo, sourceXPlayerName))
 		else
 			sourceXPlayer.showNotification(TranslateCap('quantity_invalid'))
 		end
