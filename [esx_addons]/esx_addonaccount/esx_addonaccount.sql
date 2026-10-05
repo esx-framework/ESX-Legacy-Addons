@@ -14,8 +14,10 @@ CREATE TABLE IF NOT EXISTS `addon_account_data` (
 	`account_name` VARCHAR(100) DEFAULT NULL,
 	`money` INT NOT NULL,
 	`owner` VARCHAR(60) DEFAULT NULL,
+	`owner_key` VARCHAR(60) GENERATED ALWAYS AS (COALESCE(`owner`, '')) STORED,
 
 	PRIMARY KEY (`id`),
+	UNIQUE KEY `uq_addon_account_owner_key` (`account_name`, `owner_key`),
 	UNIQUE INDEX `index_addon_account_data_account_name_owner` (`account_name`, `owner`),
 	INDEX `index_addon_account_data_account_name` (`account_name`),
 	INDEX `index_addon_account_data_owner_account_name` (`owner`, `account_name`)

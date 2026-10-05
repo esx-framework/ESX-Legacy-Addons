@@ -13,17 +13,18 @@ shared_scripts {
     '@es_extended/imports.lua',
     '@es_extended/locale.lua',
     '@esx_lib/imports.lua',
-    'config.lua'
+    'config.lua',
 }
 
 client_scripts {
     'client/deathcam.lua',
-    'client/main.lua'
+    'client/main.lua',
 }
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/main.lua'
+    '@esx_lib/imports/catalog/bootstrap.lua',
+    'server/main.lua',
 }
 
 ui_page 'web/index.html'
@@ -35,12 +36,12 @@ files {
     'web/locales.js',
     'web/app.js',
     'web/brand-logo.png',
-    'web/assets/DSEG7Classic-Bold.ttf'
+    'web/assets/DSEG7Classic-Bold.ttf',
 }
 
 dependencies {
     'es_extended',
     'esx_lib',
     'oxmysql',
-    '/onesync'
+    '/onesync',
 }

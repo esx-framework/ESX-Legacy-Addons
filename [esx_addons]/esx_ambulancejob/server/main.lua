@@ -1,6 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
+ESXCatalog.awaitReady()
+
 local playersHealing = {}
 local reviveLimiter = xLib.rateLimiter({ capacity = 1, refill = 1, interval = 8000, staleMs = 60000 })
 local actionLimiter = xLib.rateLimiter({ capacity = 1, refill = 1, interval = 3000, staleMs = 60000 })

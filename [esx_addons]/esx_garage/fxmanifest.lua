@@ -30,16 +30,17 @@ shared_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/modules/*.lua'
+    '@esx_lib/imports/catalog/bootstrap.lua',
+    'server/modules/*.lua',
 }
 
 client_scripts {
     'client/modules/**/*',
-    'client/init.lua'
+    'client/init.lua',
 }
 
 dependencies {
-	'esx_lib',
-	'es_extended',
-    'oxmysql'
+    'esx_lib',
+    'es_extended',
+    'oxmysql',
 }

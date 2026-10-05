@@ -1,6 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
+ESXCatalog.awaitReady()
+
 local lastChange = {}
 local openLimiter = xLib.rateLimiter({
     capacity = 3,

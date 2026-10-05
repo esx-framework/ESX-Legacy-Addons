@@ -1,19 +1,24 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-local BANK = {}
+ESXCatalog.awaitReady()
 
-local spawnedPeds, netIdTable = {}, {}
-local playerSessions, playerLocks = {}, {}
+local BANK = {}
+local bankDatabaseReady = false
+
+local spawnedPeds = {}
+local netIdTable = {}
+local playerSessions = {}
+local playerLocks = {}
 local atmModelLookup = {}
 local rateLimiters = {}
 
 local TRANSACTION_TYPES = {
-    deposit = "DEPOSIT",
-    withdraw = "WITHDRAW",
-    transfer = "TRANSFER",
-    transferReceive = "TRANSFER_RECEIVE",
-    pincode = "PINCODE"
+    deposit = 'DEPOSIT',
+    withdraw = 'WITHDRAW',
+    transfer = 'TRANSFER',
+    transferReceive = 'TRANSFER_RECEIVE',
+    pincode = 'PINCODE',
 }
 
 for i = 1, #(Config.AtmModels or {}) do
@@ -22,12 +27,17 @@ end
 
 local function DebugLog(message)
     if Config.Debug then
-        print(("[esx_banking] %s"):format(message))
+        print(('[esx_banking] %s'):format(message))
     end
 end
 
 local function Notify(playerId, localeKey, notificationType, ...)
-    TriggerClientEvent("esx:showNotification", playerId, TranslateCap(localeKey, ...), notificationType or "info")
+    TriggerClientEvent(
+        'esx:showNotification',
+        playerId,
+        TranslateCap(localeKey, ...),
+        notificationType or 'info'
+    )
 end
 
 local function GetConfigNumber(key, default)
@@ -45,7 +55,7 @@ local function GetXPlayer(playerId)
     end)
 
     if not ok then
-        DebugLog(("Failed to get xPlayer for %s: %s"):format(playerId, xPlayer))
+        DebugLog(('Failed to get xPlayer for %s: %s'):format(playerId, xPlayer))
         return nil
     end
 
@@ -73,11 +83,11 @@ local function GetPlayerDisplayName(xPlayer)
         return name
     end
 
-    return "Unknown"
+    return 'Unknown'
 end
 
 local function GetAccountMoney(xPlayer, accountName)
-    if not xPlayer or type(xPlayer.getAccount) ~= "function" then
+    if not xPlayer or type(xPlayer.getAccount) ~= 'function' then
         return nil
     end
 
@@ -85,7 +95,7 @@ local function GetAccountMoney(xPlayer, accountName)
         return xPlayer.getAccount(accountName)
     end)
 
-    if not ok or type(account) ~= "table" or type(account.money) ~= "number" then
+    if not ok or type(account) ~= 'table' or type(account.money) ~= 'number' then
         return nil
     end
 
@@ -93,7 +103,7 @@ local function GetAccountMoney(xPlayer, accountName)
 end
 
 local function AddAccountMoney(xPlayer, accountName, amount, reason)
-    if not xPlayer or type(xPlayer.addAccountMoney) ~= "function" then
+    if not xPlayer or type(xPlayer.addAccountMoney) ~= 'function' then
         return false
     end
 
@@ -105,7 +115,7 @@ local function AddAccountMoney(xPlayer, accountName, amount, reason)
 end
 
 local function RemoveAccountMoney(xPlayer, accountName, amount, reason)
-    if not xPlayer or type(xPlayer.removeAccountMoney) ~= "function" then
+    if not xPlayer or type(xPlayer.removeAccountMoney) ~= 'function' then
         return false
     end
 
@@ -123,7 +133,7 @@ local function NormalizeAmount(value)
     end
 
     amount = ESX.Math.Round(amount)
-    local maxAmount = GetConfigNumber("MaxTransactionAmount", 100000000)
+    local maxAmount = GetConfigNumber('MaxTransactionAmount', 100000000)
 
     if amount < 1 or amount > maxAmount then
         return nil
@@ -133,8 +143,8 @@ local function NormalizeAmount(value)
 end
 
 local function NormalizePin(value)
-    local pinText = tostring(value or ""):gsub("%s+", "")
-    if not pinText:match("^%d%d%d%d$") then
+    local pinText = tostring(value or ''):gsub('%s+', '')
+    if not pinText:match('^%d%d%d%d$') then
         return nil, nil
     end
 
@@ -142,11 +152,11 @@ local function NormalizePin(value)
 end
 
 local function FormatLogValue(value)
-    local text = tostring(value or ""):gsub("[%c\r\n]", " ")
-    local maxLength = GetConfigNumber("LogValueMaxLength", 80)
+    local text = tostring(value or ''):gsub('[%c\r\n]', ' ')
+    local maxLength = GetConfigNumber('LogValueMaxLength', 80)
 
     if #text > maxLength then
-        return text:sub(1, maxLength) .. "..."
+        return text:sub(1, maxLength) .. '...'
     end
 
     return text
@@ -166,8 +176,8 @@ local function IsRateLimited(playerId, key, cooldownMs)
                 capacity = 1,
                 refill = 1,
                 interval = cooldownMs,
-                staleMs = math.max(60000, cooldownMs * 4)
-            })
+                staleMs = math.max(60000, cooldownMs * 4),
+            }),
         }
         rateLimiters[key] = limiterState
     end
@@ -212,7 +222,7 @@ local function IsPlayerNearBank(playerId)
         return false
     end
 
-    local distance = GetConfigNumber("InteractionDistance", 1.5)
+    local distance = GetConfigNumber('InteractionDistance', 1.5)
 
     for i = 1, #(Config.Banks or {}) do
         local position = Config.Banks[i].Position
@@ -232,7 +242,7 @@ local function IsPlayerNearConfiguredAtm(playerId)
         return false
     end
 
-    local distance = GetConfigNumber("AtmInteractionDistance", 2.0)
+    local distance = GetConfigNumber('AtmInteractionDistance', 2.0)
 
     for i = 1, #(Config.AtmLocations or {}) do
         if #(coords - Config.AtmLocations[i]) <= distance then
@@ -260,7 +270,7 @@ end
 
 local function NormalizeAtmCoords(coords)
     local coordsType = type(coords)
-    if coordsType ~= "table" and coordsType ~= "vector3" then
+    if coordsType ~= 'table' and coordsType ~= 'vector3' then
         return nil
     end
 
@@ -273,7 +283,7 @@ local function NormalizeAtmCoords(coords)
 end
 
 local function NormalizeClientAtmData(atmData)
-    if Config.ClientAtmFallback == false or type(atmData) ~= "table" then
+    if Config.ClientAtmFallback == false or type(atmData) ~= 'table' then
         return nil
     end
 
@@ -289,7 +299,7 @@ local function NormalizeClientAtmData(atmData)
 
     return {
         model = model,
-        coords = coords
+        coords = coords,
     }
 end
 
@@ -304,7 +314,8 @@ local function IsPlayerNearClientAtm(playerId, atmData)
         return false
     end
 
-    local distance = GetConfigNumber("ClientAtmFallbackDistance", GetConfigNumber("AtmInteractionDistance", 2.0))
+    local distance =
+        GetConfigNumber('ClientAtmFallbackDistance', GetConfigNumber('AtmInteractionDistance', 2.0))
     local configuredAtmCoords = FindConfiguredAtmNearCoords(atm.coords, distance)
     if not configuredAtmCoords then
         return false
@@ -319,7 +330,7 @@ local function IsPlayerNearClientAtm(playerId, atmData)
 end
 
 local function IsPlayerNearNetworkedAtm(playerId)
-    if type(GetAllObjects) ~= "function" then
+    if type(GetAllObjects) ~= 'function' then
         return false
     end
 
@@ -329,11 +340,11 @@ local function IsPlayerNearNetworkedAtm(playerId)
     end
 
     local ok, objects = pcall(GetAllObjects)
-    if not ok or type(objects) ~= "table" then
+    if not ok or type(objects) ~= 'table' then
         return false
     end
 
-    local distance = GetConfigNumber("AtmInteractionDistance", 2.0)
+    local distance = GetConfigNumber('AtmInteractionDistance', 2.0)
 
     for i = 1, #objects do
         local object = objects[i]
@@ -356,22 +367,24 @@ local function IsPlayerNearAtm(playerId, atmData)
 end
 
 local function ValidateAccess(playerId, requestedType, accessData)
-    if requestedType == "bank" then
-        return IsPlayerNearBank(playerId), "bank"
+    if requestedType == 'bank' then
+        return IsPlayerNearBank(playerId), 'bank'
     end
 
-    if requestedType == "atm" then
-        local isNear, atm = IsPlayerNearAtm(playerId, type(accessData) == "table" and accessData.atm or nil)
-        return isNear, "atm", atm
+    if requestedType == 'atm' then
+        local isNear, atm =
+            IsPlayerNearAtm(playerId, type(accessData) == 'table' and accessData.atm or nil)
+        return isNear, 'atm', atm
     end
 
     if IsPlayerNearBank(playerId) then
-        return true, "bank"
+        return true, 'bank'
     end
 
-    local isNearAtm, atm = IsPlayerNearAtm(playerId, type(accessData) == "table" and accessData.atm or nil)
+    local isNearAtm, atm =
+        IsPlayerNearAtm(playerId, type(accessData) == 'table' and accessData.atm or nil)
     if isNearAtm then
-        return true, "atm", atm
+        return true, 'atm', atm
     end
 
     return false, nil
@@ -385,9 +398,9 @@ local function StartSession(playerId, requestedType, accessData)
 
     playerSessions[playerId] = {
         accessType = accessType,
-        expiresAt = os.time() + GetConfigNumber("SessionDuration", 90),
+        expiresAt = os.time() + GetConfigNumber('SessionDuration', 90),
         atm = atm,
-        pinUnlocked = accessType ~= "atm" or Config.RequireAtmPin == false
+        pinUnlocked = accessType ~= 'atm' or Config.RequireAtmPin == false,
     }
 
     return accessType
@@ -400,46 +413,54 @@ local function ValidateSession(playerId, action, skipPinCheck)
         return false
     end
 
-    if (action == "transfer" or action == "pincode") and session.accessType ~= "bank" then
+    if (action == 'transfer' or action == 'pincode') and session.accessType ~= 'bank' then
         return false
     end
 
-    if not skipPinCheck and session.accessType == "atm" and Config.RequireAtmPin ~= false and not session.pinUnlocked then
+    if
+        not skipPinCheck
+        and session.accessType == 'atm'
+        and Config.RequireAtmPin ~= false
+        and not session.pinUnlocked
+    then
         return false
     end
 
-    local isValid = ValidateAccess(playerId, session.accessType, {atm = session.atm})
+    local isValid = ValidateAccess(playerId, session.accessType, { atm = session.atm })
     if not isValid then
         playerSessions[playerId] = nil
         return false
     end
 
-    session.expiresAt = os.time() + GetConfigNumber("SessionDuration", 90)
+    session.expiresAt = os.time() + GetConfigNumber('SessionDuration', 90)
     return true, session.accessType
 end
 
 local function HasPincode(identifier)
     local ok, pincode = pcall(function()
-        return MySQL.scalar.await("SELECT pincode FROM users WHERE identifier = ? LIMIT 1", {identifier})
+        return MySQL.scalar.await(
+            'SELECT pincode FROM users WHERE identifier = ? LIMIT 1',
+            { identifier }
+        )
     end)
 
     return ok and pincode ~= nil
 end
 
 local function FetchTransactionHistory(identifier)
-    local historyDays = math.max(1, GetConfigNumber("HistoryDays", 30))
-    local historyLimit = math.max(1, math.min(GetConfigNumber("HistoryLimit", 20), 100))
+    local historyDays = math.max(1, GetConfigNumber('HistoryDays', 30))
+    local historyLimit = math.max(1, math.min(GetConfigNumber('HistoryLimit', 20), 100))
     local since = (os.time() - (historyDays * 86400)) * 1000
 
     local ok, rows = pcall(function()
         return MySQL.query.await(
-            "SELECT label, type, amount, time, balance FROM banking WHERE identifier = ? AND time > ? ORDER BY time DESC LIMIT ?",
-            {identifier, since, historyLimit}
+            'SELECT label, type, amount, time, balance FROM banking WHERE identifier = ? AND time > ? ORDER BY time DESC LIMIT ?',
+            { identifier, since, historyLimit }
         )
     end)
 
-    if not ok or type(rows) ~= "table" then
-        DebugLog(("Failed to fetch transaction history for %s"):format(identifier))
+    if not ok or type(rows) ~= 'table' then
+        DebugLog(('Failed to fetch transaction history for %s'):format(identifier))
         return {}
     end
 
@@ -456,10 +477,10 @@ local function BuildPlayerData(playerId, xPlayer, accessType)
         success = true,
         accessType = accessType,
         playerName = GetPlayerDisplayName(xPlayer),
-        money = GetAccountMoney(xPlayer, "money") or 0,
-        bankMoney = GetAccountMoney(xPlayer, "bank") or 0,
+        money = GetAccountMoney(xPlayer, 'money') or 0,
+        bankMoney = GetAccountMoney(xPlayer, 'bank') or 0,
         hasPin = HasPincode(identifier),
-        transactionHistory = FetchTransactionHistory(identifier)
+        transactionHistory = FetchTransactionHistory(identifier),
     }
 end
 
@@ -476,13 +497,13 @@ local function SendAccountUpdate(playerId, actionType)
     end
 
     data.actionType = actionType
-    TriggerClientEvent("esx_banking:updateMoneyInUI", playerId, data)
+    TriggerClientEvent('esx_banking:updateMoneyInUI', playerId, data)
 end
 
 local function DeductAccountMoney(xPlayer, accountName, amount, reason)
     local before = GetAccountMoney(xPlayer, accountName)
     if not before or before < amount then
-        return false, "not_enough_money"
+        return false, 'not_enough_money'
     end
 
     local removed = RemoveAccountMoney(xPlayer, accountName, amount, reason)
@@ -493,11 +514,11 @@ local function DeductAccountMoney(xPlayer, accountName, amount, reason)
             return true, after
         end
 
-        return false, "transaction_failed"
+        return false, 'transaction_failed'
     end
 
     if not removed then
-        return false, "transaction_failed"
+        return false, 'transaction_failed'
     end
 
     return true, before - amount
@@ -524,21 +545,21 @@ local function CreditAccountMoney(xPlayer, accountName, amount, reason)
 end
 
 local function ParsePayload(payload)
-    if type(payload) ~= "table" then
+    if type(payload) ~= 'table' then
         return nil
     end
 
     local action = payload.action
 
-    if action == "deposit" then
+    if action == 'deposit' then
         return action, NormalizeAmount(payload.amount)
     end
 
-    if action == "withdraw" then
+    if action == 'withdraw' then
         return action, NormalizeAmount(payload.amount)
     end
 
-    if action == "transfer" then
+    if action == 'transfer' then
         local targetId = tonumber(payload.target)
         if not targetId or targetId <= 0 or targetId % 1 ~= 0 then
             return nil
@@ -547,68 +568,59 @@ local function ParsePayload(payload)
         return action, NormalizeAmount(payload.amount), targetId
     end
 
-    if action == "pincode" then
+    if action == 'pincode' then
         local pinNumber, pinText = NormalizePin(payload.pin)
         return action, pinNumber, pinText
     end
 
     if payload.deposit then
-        return "deposit", NormalizeAmount(payload.deposit)
+        return 'deposit', NormalizeAmount(payload.deposit)
     end
 
     if payload.withdraw then
-        return "withdraw", NormalizeAmount(payload.withdraw)
+        return 'withdraw', NormalizeAmount(payload.withdraw)
     end
 
-    if payload.transfer and type(payload.transfer) == "table" then
+    if payload.transfer and type(payload.transfer) == 'table' then
         local targetId = tonumber(payload.transfer.playerId)
         if not targetId or targetId <= 0 or targetId % 1 ~= 0 then
             return nil
         end
 
-        return "transfer", NormalizeAmount(payload.transfer.moneyAmount), targetId
+        return 'transfer', NormalizeAmount(payload.transfer.moneyAmount), targetId
     end
 
     if payload.pincode then
         local pinNumber, pinText = NormalizePin(payload.pincode)
-        return "pincode", pinNumber, pinText
+        return 'pincode', pinNumber, pinText
     end
 
     return nil
 end
 
-local function EnsureBankingIndexes()
-    local ok, hasIndex = pcall(function()
-        return MySQL.scalar.await(
-            "SELECT COUNT(1) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'banking' AND INDEX_NAME = 'idx_banking_identifier_time'"
-        )
-    end)
-
-    if not ok then
-        DebugLog("Could not inspect banking indexes")
-        return
-    end
-
-    if tonumber(hasIndex) == 0 then
-        local created = pcall(function()
-            MySQL.query.await("CREATE INDEX idx_banking_identifier_time ON banking (identifier, time)")
-        end)
-
-        if created then
-            DebugLog("Created banking history index")
-        end
-    end
-end
-
 local function PruneOldTransactions()
-    local retentionDays = GetConfigNumber("LogRetentionDays", 60)
+    local retentionDays = GetConfigNumber('LogRetentionDays', 60)
     if retentionDays <= 0 then
         return
     end
 
     local cutoff = (os.time() - (retentionDays * 86400)) * 1000
     pcall(function()
-        MySQL.update.await("DELETE FROM banking WHERE time < ?", {cutoff})
+        local batchSize =
+            math.max(1, math.min(5000, math.floor(GetConfigNumber('PruneBatchSize', 1000))))
+
+        for _ = 1, 10 do
+            local deleted = MySQL.update.await(
+                'DELETE FROM banking WHERE time < ? ORDER BY time LIMIT ?',
+                { cutoff, batchSize }
+            )
+
+            if type(deleted) ~= 'number' or deleted < batchSize then
+                break
+            end
+
+            Wait(100)
+        end
     end)
 end
 
@@ -625,7 +637,7 @@ function BANK.CreatePeds()
     end
 
     Wait(100)
-    TriggerClientEvent("esx_banking:pedHandler", -1, netIdTable)
+    TriggerClientEvent('esx_banking:pedHandler', -1, netIdTable)
 end
 
 function BANK.DeletePeds()
@@ -639,75 +651,114 @@ function BANK.DeletePeds()
 end
 
 function BANK.Deposit(playerId, xPlayer, amount)
-    local deducted, reason = DeductAccountMoney(xPlayer, "money", amount, "Bank deposit")
+    local deducted, reason = DeductAccountMoney(xPlayer, 'money', amount, 'Bank deposit')
     if not deducted then
-        Notify(playerId, reason == "not_enough_money" and "not_enough_money" or "cant_do_it", "error", amount)
+        Notify(
+            playerId,
+            reason == 'not_enough_money' and 'not_enough_money' or 'cant_do_it',
+            'error',
+            amount
+        )
         return false
     end
 
-    local credited, bankBalance = CreditAccountMoney(xPlayer, "bank", amount, "Bank deposit")
+    local credited, bankBalance = CreditAccountMoney(xPlayer, 'bank', amount, 'Bank deposit')
     if not credited then
-        AddAccountMoney(xPlayer, "money", amount, "Bank deposit rollback")
-        Notify(playerId, "cant_do_it", "error")
+        AddAccountMoney(xPlayer, 'money', amount, 'Bank deposit rollback')
+        Notify(playerId, 'cant_do_it', 'error')
         return false
     end
 
-    BANK.LogTransaction(playerId, TRANSACTION_TYPES.deposit, TRANSACTION_TYPES.deposit, amount, bankBalance)
-    Notify(playerId, "deposit_money", "success", amount)
+    BANK.LogTransaction(
+        playerId,
+        TRANSACTION_TYPES.deposit,
+        TRANSACTION_TYPES.deposit,
+        amount,
+        bankBalance
+    )
+    Notify(playerId, 'deposit_money', 'success', amount)
     return true
 end
 
 function BANK.Withdraw(playerId, xPlayer, amount)
-    local deducted, reason = DeductAccountMoney(xPlayer, "bank", amount, "Bank withdraw")
+    local deducted, reason = DeductAccountMoney(xPlayer, 'bank', amount, 'Bank withdraw')
     if not deducted then
-        Notify(playerId, reason == "not_enough_money" and "not_enough_money" or "cant_do_it", "error", amount)
+        Notify(
+            playerId,
+            reason == 'not_enough_money' and 'not_enough_money' or 'cant_do_it',
+            'error',
+            amount
+        )
         return false
     end
 
-    local credited = CreditAccountMoney(xPlayer, "money", amount, "Bank withdraw")
+    local credited = CreditAccountMoney(xPlayer, 'money', amount, 'Bank withdraw')
     if not credited then
-        AddAccountMoney(xPlayer, "bank", amount, "Bank withdraw rollback")
-        Notify(playerId, "cant_do_it", "error")
+        AddAccountMoney(xPlayer, 'bank', amount, 'Bank withdraw rollback')
+        Notify(playerId, 'cant_do_it', 'error')
         return false
     end
 
-    local bankBalance = GetAccountMoney(xPlayer, "bank") or 0
-    BANK.LogTransaction(playerId, TRANSACTION_TYPES.withdraw, TRANSACTION_TYPES.withdraw, amount, bankBalance)
-    Notify(playerId, "withdraw_money", "success", amount)
+    local bankBalance = GetAccountMoney(xPlayer, 'bank') or 0
+    BANK.LogTransaction(
+        playerId,
+        TRANSACTION_TYPES.withdraw,
+        TRANSACTION_TYPES.withdraw,
+        amount,
+        bankBalance
+    )
+    Notify(playerId, 'withdraw_money', 'success', amount)
     return true
 end
 
 function BANK.Transfer(playerId, xPlayer, targetId, amount)
     if playerId == targetId then
-        Notify(playerId, "cant_do_it", "error")
+        Notify(playerId, 'cant_do_it', 'error')
         return false
     end
 
     local xTarget = GetXPlayer(targetId)
     if not xTarget then
-        Notify(playerId, "cant_do_it", "error")
+        Notify(playerId, 'cant_do_it', 'error')
         return false
     end
 
-    local deducted, reason = DeductAccountMoney(xPlayer, "bank", amount, "Bank transfer")
+    local deducted, reason = DeductAccountMoney(xPlayer, 'bank', amount, 'Bank transfer')
     if not deducted then
-        Notify(playerId, reason == "not_enough_money" and "not_enough_money" or "cant_do_it", "error", amount)
+        Notify(
+            playerId,
+            reason == 'not_enough_money' and 'not_enough_money' or 'cant_do_it',
+            'error',
+            amount
+        )
         return false
     end
 
-    local credited, targetBankBalance = CreditAccountMoney(xTarget, "bank", amount, "Bank transfer")
+    local credited, targetBankBalance = CreditAccountMoney(xTarget, 'bank', amount, 'Bank transfer')
     if not credited then
-        AddAccountMoney(xPlayer, "bank", amount, "Bank transfer rollback")
-        Notify(playerId, "cant_do_it", "error")
+        AddAccountMoney(xPlayer, 'bank', amount, 'Bank transfer rollback')
+        Notify(playerId, 'cant_do_it', 'error')
         return false
     end
 
-    local bankBalance = GetAccountMoney(xPlayer, "bank") or 0
-    BANK.LogTransaction(playerId, TRANSACTION_TYPES.transfer, TRANSACTION_TYPES.transfer, amount, bankBalance)
-    BANK.LogTransaction(targetId, TRANSACTION_TYPES.transferReceive, TRANSACTION_TYPES.transferReceive, amount, targetBankBalance)
+    local bankBalance = GetAccountMoney(xPlayer, 'bank') or 0
+    BANK.LogTransaction(
+        playerId,
+        TRANSACTION_TYPES.transfer,
+        TRANSACTION_TYPES.transfer,
+        amount,
+        bankBalance
+    )
+    BANK.LogTransaction(
+        targetId,
+        TRANSACTION_TYPES.transferReceive,
+        TRANSACTION_TYPES.transferReceive,
+        amount,
+        targetBankBalance
+    )
 
-    Notify(playerId, "transfer_money", "success", amount, targetId)
-    Notify(targetId, "receive_transfer", "success", amount, playerId)
+    Notify(playerId, 'transfer_money', 'success', amount, targetId)
+    Notify(targetId, 'receive_transfer', 'success', amount, playerId)
     SendAccountUpdate(targetId, TRANSACTION_TYPES.transferReceive)
     return true
 end
@@ -715,24 +766,30 @@ end
 function BANK.Pincode(playerId, xPlayer, pinNumber)
     local identifier = GetIdentifier(xPlayer)
     if not identifier then
-        Notify(playerId, "cant_do_it", "error")
+        Notify(playerId, 'cant_do_it', 'error')
         return false
     end
 
     local updated = pcall(function()
-        MySQL.update.await("UPDATE users SET pincode = ? WHERE identifier = ?", {pinNumber, identifier})
+        MySQL.update.await(
+            'UPDATE users SET pincode = ? WHERE identifier = ?',
+            { pinNumber, identifier }
+        )
     end)
 
     if not updated then
-        Notify(playerId, "cant_do_it", "error")
+        Notify(playerId, 'cant_do_it', 'error')
         return false
     end
 
-    Notify(playerId, "pincode_money", "success", "****")
+    Notify(playerId, 'pincode_money', 'success', '****')
     return true
 end
 
 function BANK.LogTransaction(playerId, label, logType, amount, bankMoney)
+    if not bankDatabaseReady then
+        return
+    end
     if not playerId then
         return
     end
@@ -754,17 +811,28 @@ function BANK.LogTransaction(playerId, label, logType, amount, bankMoney)
 
     local safeLogType = FormatLogValue(logType or label):upper()
     local safeLabel = FormatLogValue(label or safeLogType)
-    local balance = tonumber(bankMoney) or GetAccountMoney(xPlayer, "bank") or 0
+    local balance = tonumber(bankMoney) or GetAccountMoney(xPlayer, 'bank') or 0
 
     pcall(function()
         MySQL.insert.await(
-            "INSERT INTO banking (identifier, label, type, amount, time, balance) VALUES (?, ?, ?, ?, ?, ?)",
-            {identifier, safeLabel, safeLogType, normalizedAmount, os.time() * 1000, balance}
+            'INSERT INTO banking (identifier, label, type, amount, time, balance) VALUES (?, ?, ?, ?, ?, ?)',
+            { identifier, safeLabel, safeLogType, normalizedAmount, os.time() * 1000, balance }
         )
     end)
 end
 
-AddEventHandler("onResourceStart", function(resourceName)
+MySQL.ready(function()
+    local ok, err = pcall(MigrateBankingSchema)
+    bankDatabaseReady = ok
+    if not ok then
+        print(('[esx_banking] Schema migration failed; banking disabled: %s'):format(tostring(err)))
+        return
+    end
+    print('[esx_banking] Database schema ready.')
+    PruneOldTransactions()
+end)
+
+AddEventHandler('onResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then
         return
     end
@@ -773,13 +841,10 @@ AddEventHandler("onResourceStart", function(resourceName)
         if Config.EnablePeds then
             BANK.CreatePeds()
         end
-
-        EnsureBankingIndexes()
-        PruneOldTransactions()
     end)
 end)
 
-AddEventHandler("onResourceStop", function(resourceName)
+AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then
         return
     end
@@ -789,39 +854,42 @@ AddEventHandler("onResourceStop", function(resourceName)
     end
 end)
 
-AddEventHandler("playerDropped", function()
+AddEventHandler('playerDropped', function()
     local playerId = source
     playerSessions[playerId] = nil
     playerLocks[playerId] = nil
 end)
 
 if Config.EnablePeds then
-    AddEventHandler("esx:playerLoaded", function(playerId)
-        TriggerClientEvent("esx_banking:pedHandler", playerId, netIdTable)
+    AddEventHandler('esx:playerLoaded', function(playerId)
+        TriggerClientEvent('esx_banking:pedHandler', playerId, netIdTable)
     end)
 end
 
-RegisterNetEvent("esx_banking:doingType", function(typeData)
+RegisterNetEvent('esx_banking:doingType', function(typeData)
+    if not bankDatabaseReady then
+        return
+    end
     local playerId = source
 
-    if IsRateLimited(playerId, "transaction", GetConfigNumber("TransactionCooldown", 1250)) then
+    if IsRateLimited(playerId, 'transaction', GetConfigNumber('TransactionCooldown', 1250)) then
         return
     end
 
     local action, amount, targetOrPinText = ParsePayload(typeData)
     if not action or not amount then
-        Notify(playerId, "invalid_amount", "error")
+        Notify(playerId, 'invalid_amount', 'error')
         return
     end
 
     local validSession = ValidateSession(playerId, action)
     if not validSession then
-        Notify(playerId, "cant_do_it", "error")
+        Notify(playerId, 'cant_do_it', 'error')
         return
     end
 
     if not AcquirePlayerLock(playerId) then
-        Notify(playerId, "cant_do_it", "error")
+        Notify(playerId, 'cant_do_it', 'error')
         return
     end
 
@@ -829,13 +897,13 @@ RegisterNetEvent("esx_banking:doingType", function(typeData)
     local xPlayer = GetXPlayer(playerId)
 
     if xPlayer then
-        if action == "deposit" then
+        if action == 'deposit' then
             success = BANK.Deposit(playerId, xPlayer, amount)
-        elseif action == "withdraw" then
+        elseif action == 'withdraw' then
             success = BANK.Withdraw(playerId, xPlayer, amount)
-        elseif action == "transfer" then
+        elseif action == 'transfer' then
             success = BANK.Transfer(playerId, xPlayer, targetOrPinText, amount)
-        elseif action == "pincode" then
+        elseif action == 'pincode' then
             success = BANK.Pincode(playerId, xPlayer, amount, targetOrPinText)
         end
     end
@@ -847,40 +915,50 @@ RegisterNetEvent("esx_banking:doingType", function(typeData)
     end
 end)
 
-xLib.callback.registerCompat("esx_banking:getPlayerData", function(source, cb, accessData)
+xLib.callback.registerCompat('esx_banking:getPlayerData', function(source, cb, accessData)
+    if not bankDatabaseReady then
+        return cb({ success = false })
+    end
     local playerId = source
-    local requestedType = type(accessData) == "table" and accessData.accessType or accessData
+    local requestedType = type(accessData) == 'table' and accessData.accessType or accessData
 
-    if IsRateLimited(playerId, "open", 750) then
-        cb({success = false})
+    if IsRateLimited(playerId, 'open', 750) then
+        cb({ success = false })
         return
     end
 
-    local accessType = StartSession(playerId, requestedType == "atm" and "atm" or "bank", type(accessData) == "table" and accessData or nil)
+    local accessType = StartSession(
+        playerId,
+        requestedType == 'atm' and 'atm' or 'bank',
+        type(accessData) == 'table' and accessData or nil
+    )
     if not accessType then
-        cb({success = false})
+        cb({ success = false })
         return
     end
 
     local xPlayer = GetXPlayer(playerId)
     if not xPlayer then
-        cb({success = false})
+        cb({ success = false })
         return
     end
 
-    cb(BuildPlayerData(playerId, xPlayer, accessType) or {success = false})
+    cb(BuildPlayerData(playerId, xPlayer, accessType) or { success = false })
 end)
 
-xLib.callback.registerCompat("esx_banking:checkPincode", function(source, cb, inputPincode)
+xLib.callback.registerCompat('esx_banking:checkPincode', function(source, cb, inputPincode)
+    if not bankDatabaseReady then
+        return cb(false)
+    end
     local playerId = source
 
-    if IsRateLimited(playerId, "pin", GetConfigNumber("PinAttemptCooldown", 1500)) then
+    if IsRateLimited(playerId, 'pin', GetConfigNumber('PinAttemptCooldown', 1500)) then
         cb(false)
         return
     end
 
-    local validSession, accessType = ValidateSession(playerId, "withdraw", true)
-    if not validSession or accessType ~= "atm" then
+    local validSession, accessType = ValidateSession(playerId, 'withdraw', true)
+    if not validSession or accessType ~= 'atm' then
         cb(false)
         return
     end
@@ -899,7 +977,10 @@ xLib.callback.registerCompat("esx_banking:checkPincode", function(source, cb, in
     end
 
     local ok, pincode = pcall(function()
-        return MySQL.scalar.await("SELECT COUNT(1) FROM users WHERE identifier = ? AND pincode = ?", {identifier, pinNumber})
+        return MySQL.scalar.await(
+            'SELECT COUNT(1) FROM users WHERE identifier = ? AND pincode = ?',
+            { identifier, pinNumber }
+        )
     end)
 
     local validPin = ok and (tonumber(pincode) or 0) > 0
@@ -915,11 +996,11 @@ local function logTransaction(targetSource, label, key, amount)
         return
     end
 
-    if type(key) ~= "string" or key == "" then
+    if type(key) ~= 'string' or key == '' then
         return
     end
 
     BANK.LogTransaction(targetSource, label, key, amount)
 end
 
-exports("logTransaction", logTransaction)
+exports('logTransaction', logTransaction)

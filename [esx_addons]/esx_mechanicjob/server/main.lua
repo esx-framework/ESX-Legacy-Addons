@@ -1,6 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
+ESXCatalog.awaitReady()
+
 if Config.MaxInService ~= -1 then
 	TriggerEvent('esx_service:activateService', 'mechanic', Config.MaxInService)
 end

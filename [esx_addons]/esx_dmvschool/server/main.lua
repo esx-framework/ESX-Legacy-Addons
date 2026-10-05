@@ -1,6 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
+ESXCatalog.awaitReady()
+
 local PaidTests = {}
 local PaidTestDuration = 15 * 60 * 1000
 

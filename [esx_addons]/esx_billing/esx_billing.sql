@@ -12,6 +12,7 @@ CREATE TABLE `billing` (
 	`label` varchar(255) NOT NULL,
 	`amount` int NOT NULL,
 
-	PRIMARY KEY (`id`)
+	PRIMARY KEY (`id`),
+	KEY `idx_billing_identifier` (`identifier`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

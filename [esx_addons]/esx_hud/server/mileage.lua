@@ -6,6 +6,7 @@ if not Config.Disable.Vehicle then
         Data = {},
     }
 
+    local mileageReady = false
     local Mileage = HUD.Mileage
     local MAX_STORED_MILEAGE <const> = 99999999.99
     local MILES_TO_KILOMETERS <const> = 1.61
@@ -55,12 +56,12 @@ if not Config.Disable.Vehicle then
     end
 
     local function plateKey(plate)
-        if type(plate) ~= "string" then
+        if type(plate) ~= 'string' then
             return nil
         end
 
-        local key = plate:gsub("^%s+", ""):gsub("%s+$", ""):upper()
-        if key == "" then
+        local key = plate:gsub('^%s+', ''):gsub('%s+$', ''):upper()
+        if key == '' then
             return nil
         end
 
@@ -68,7 +69,7 @@ if not Config.Disable.Vehicle then
     end
 
     local function addUniquePlateValue(values, value)
-        if type(value) ~= "string" or value == "" then
+        if type(value) ~= 'string' or value == '' then
             return
         end
 
@@ -93,15 +94,15 @@ if not Config.Disable.Vehicle then
 
     local function plateCondition(values)
         if #values <= 1 then
-            return "`plate` = ?"
+            return '`plate` = ?'
         end
 
         local placeholders = {}
         for i = 1, #values do
-            placeholders[i] = "?"
+            placeholders[i] = '?'
         end
 
-        return ("`plate` IN (%s)"):format(table.concat(placeholders, ", "))
+        return ('`plate` IN (%s)'):format(table.concat(placeholders, ', '))
     end
 
     local function mileageData(plate)
@@ -128,17 +129,17 @@ if not Config.Disable.Vehicle then
         return nil
     end
 
-    exports("GetMileage", cachedMileage)
+    exports('GetMileage', cachedMileage)
 
-    exports("GetMileages", function(plates)
+    exports('GetMileages', function(plates)
         local mileages = {}
-        if type(plates) ~= "table" then
+        if type(plates) ~= 'table' then
             return mileages
         end
 
         for i = 1, #plates do
             local plate = plates[i]
-            if type(plate) == "string" then
+            if type(plate) == 'string' then
                 local mileage = cachedMileage(plate)
                 if mileage then
                     mileages[plate] = mileage
@@ -149,42 +150,57 @@ if not Config.Disable.Vehicle then
         return mileages
     end)
 
-    -- Create column in sql if not exist
-    -- CREDIT: Overextended (https://github.com/overextended)
-    CreateThread(function()
-        local columnExists = MySQL.scalar.await(
-            "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'owned_vehicles' AND COLUMN_NAME = 'mileage' LIMIT 1")
-
-        if not columnExists then
-            MySQL.query("ALTER TABLE owned_vehicles ADD COLUMN `mileage` DECIMAL(10,2) NOT NULL DEFAULT 0.00; ")
+    MySQL.ready(function()
+        local ok, err = pcall(xLib.schema.ensureMileage)
+        mileageReady = ok
+        if not ok then
+            print(
+                ('[esx_hud] 1.16.0 mileage migration failed; mileage is disabled: %s'):format(
+                    tostring(err)
+                )
+            )
+            return
         end
+        print('[esx_hud] 1.16.0 mileage schema ready')
     end)
 
     function Mileage:Load(plate, playerId, kmh)
+        if not mileageReady then
+            return
+        end
         local values, key = plateValues(plate)
         if not key or #values == 0 then
             return self:UpdateClient(0, playerId)
         end
 
-        MySQL.single(("SELECT plate, mileage FROM owned_vehicles WHERE %s LIMIT 1"):format(plateCondition(values)), values, function(data)
-            local mileage, owned
-            if data then
-                mileage, owned = tonumber(data.mileage) or 0, true
-                if kmh then
-                    mileage = mileage * MILES_TO_KILOMETERS
+        MySQL.single(
+            ('SELECT plate, mileage FROM owned_vehicles WHERE %s LIMIT 1'):format(
+                plateCondition(values)
+            ),
+            values,
+            function(data)
+                local mileage, owned
+                if data then
+                    mileage, owned = tonumber(data.mileage) or 0, true
+                    if kmh then
+                        mileage = mileage * MILES_TO_KILOMETERS
+                    end
+                else
+                    mileage, owned = math.random(100, 10000), false
                 end
-            else
-                mileage, owned = math.random(100, 10000), false
+                self:Create(data and data.plate or plate, mileage, owned, playerId, kmh, key)
             end
-            self:Create(data and data.plate or plate, mileage, owned, playerId, kmh, key)
-        end)
+        )
     end
 
     function Mileage:Save()
+        if not mileageReady then
+            return
+        end
         if next(Mileage.Data) then
             local parameters = {}
             for _, data in pairs(Mileage.Data) do
-                if data.owned and type(data.plate) == "string" then
+                if data.owned and type(data.plate) == 'string' then
                     local mileage = tonumber(data.mileage) or 0
                     if data.kmh then
                         mileage = mileage / MILES_TO_KILOMETERS
@@ -196,7 +212,10 @@ if not Config.Disable.Vehicle then
             end
 
             if next(parameters) then
-                MySQL.prepare("UPDATE `owned_vehicles` SET `mileage` = ? WHERE `plate` = ?", parameters)
+                MySQL.prepare(
+                    'UPDATE `owned_vehicles` SET `mileage` = ? WHERE `plate` = ?',
+                    parameters
+                )
             end
         end
     end
@@ -224,7 +243,8 @@ if not Config.Disable.Vehicle then
 
         local storedMileage = kmh and clientMileage / MILES_TO_KILOMETERS or clientMileage
         storedMileage = storedMileageValue(storedMileage)
-        clientMileage = kmh and clientMileageValue(storedMileage * MILES_TO_KILOMETERS, true) or storedMileage
+        clientMileage = kmh and clientMileageValue(storedMileage * MILES_TO_KILOMETERS, true)
+            or storedMileage
 
         data.mileage = storedMileage
         data.kmh = false
@@ -248,19 +268,19 @@ if not Config.Disable.Vehicle then
 
     -- Send date to client
     function Mileage:UpdateClient(mileage, playerId)
-        TriggerClientEvent("esx_hud:UpdateMileage", playerId, mileage)
+        TriggerClientEvent('esx_hud:UpdateMileage', playerId, mileage)
     end
 
-    RegisterNetEvent("esx_hud:EnteredVehicle", function(plate, kmh)
+    RegisterNetEvent('esx_hud:EnteredVehicle', function(plate, kmh)
         local playerId = source
         Mileage:Exist(plate, playerId, kmh)
     end)
 
-    RegisterNetEvent("esx_hud:ExitedVehicle", function(plate, mileage, kmh)
+    RegisterNetEvent('esx_hud:ExitedVehicle', function(plate, mileage, kmh)
         Mileage:Update(plate, mileage, source, kmh)
     end)
 
-    RegisterNetEvent("esx_hud:UpdateVehicleMileage", function(plate, mileage, kmh)
+    RegisterNetEvent('esx_hud:UpdateVehicleMileage', function(plate, mileage, kmh)
         Mileage:Update(plate, mileage, source, kmh)
     end)
 
@@ -273,7 +293,7 @@ if not Config.Disable.Vehicle then
     end)
 
     -- Auto save on resource stop
-    AddEventHandler("onResourceStop", function(resourceName)
+    AddEventHandler('onResourceStop', function(resourceName)
         if GetCurrentResourceName() ~= resourceName then
             return
         end
@@ -281,7 +301,7 @@ if not Config.Disable.Vehicle then
     end)
 
     -- Auto save 10 sec before scheduled restart
-    AddEventHandler("txAdmin:events:scheduledRestart", function(eventData)
+    AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)
         if eventData.secondsRemaining == 60 then
             CreateThread(function()
                 Wait(50000)
@@ -291,7 +311,7 @@ if not Config.Disable.Vehicle then
     end)
 
     -- Auto save on txAdmin server stop
-    AddEventHandler("txAdmin:events:serverShuttingDown", function()
+    AddEventHandler('txAdmin:events:serverShuttingDown', function()
         Mileage:Save()
     end)
 end

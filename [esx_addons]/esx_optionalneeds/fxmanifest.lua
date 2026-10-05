@@ -13,21 +13,23 @@ legacyversion '1.16.0'
 
 shared_scripts {
     '@esx_lib/imports.lua',
-    '@es_extended/imports.lua'
+    '@es_extended/imports.lua',
 }
 
 server_scripts {
+    '@oxmysql/lib/MySQL.lua',
+    '@esx_lib/imports/catalog/bootstrap.lua',
     '@es_extended/locale.lua',
     'locales/*.lua',
     'config.lua',
-    'server/main.lua'
+    'server/main.lua',
 }
 
 client_scripts {
-    'client/main.lua'
+    'client/main.lua',
 }
 
 dependencies {
     'esx_lib',
-    'es_extended'
+    'es_extended',
 }

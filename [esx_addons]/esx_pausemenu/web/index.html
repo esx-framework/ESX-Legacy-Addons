@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ESX Legacy · Pause</title>
-    <link rel="stylesheet" href="styles.css?v=46" />
+    <link rel="stylesheet" href="styles.css?v=48" />
 </head>
 <body>
     <main id="app" class="app is-hidden" aria-hidden="true" inert>
@@ -87,7 +87,15 @@ is waiting.</h1>
                     <div class="right-column">
                         <button class="map-card panel" data-action="map" aria-label="Open map" data-label="ui_open_map">
                             <div class="card-head"><span class="eyebrow" data-text="ui_map">City map</span><span class="icon i-external-link" aria-hidden="true"></span></div>
-                            <div class="map-image-wrap"><img src="assets/gtavmap.webp" alt="GTA V map" data-alt="ui_map_alt" /></div>
+                            <div class="map-image-wrap">
+                                <img
+                                    src="assets/gtavmap.webp"
+                                    width="2500"
+                                    height="3000"
+                                    alt="GTA V map"
+                                    data-alt="ui_map_alt"
+                                />
+                            </div>
                             <div class="map-bottom"><div><span class="icon i-map-pin" aria-hidden="true"></span><strong id="locationText">Los Santos</strong></div><span class="text-link"><span data-text="ui_explore_map">Explore the map</span><span class="icon i-chevron-right" aria-hidden="true"></span></span></div>
                         </button>
                         <button class="discord-card" data-action="discord">

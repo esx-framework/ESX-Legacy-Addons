@@ -1,6 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
+ESXCatalog.awaitReady()
+
 ---@param src number
 ---@param xPlayer table
 AddEventHandler('esx:playerLoaded', function(src, xPlayer)

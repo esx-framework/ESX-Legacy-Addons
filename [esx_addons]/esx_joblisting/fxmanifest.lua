@@ -15,10 +15,14 @@ shared_scripts {
     '@es_extended/imports.lua',
     '@es_extended/locale.lua',
     'locales/*.lua',
-    'config.lua'
+    'config.lua',
 }
 
-server_script 'server/main.lua'
+server_scripts {
+    '@oxmysql/lib/MySQL.lua',
+    '@esx_lib/imports/catalog/bootstrap.lua',
+    'server/main.lua',
+}
 
 client_script 'client/main.lua'
 
@@ -29,10 +33,10 @@ files {
     'web/style.css',
     'web/app.js',
     'web/preview.js',
-    'web/assets/*'
+    'web/assets/*',
 }
 
 dependencies {
-	'esx_lib',
-	'es_extended'
+    'esx_lib',
+    'es_extended',
 }
