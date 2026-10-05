@@ -18,7 +18,17 @@ local function storedData(value)
         return {}
     end
 
-    return json.decode(value)
+    if type(value) == 'table' then
+        return value
+    end
+
+    if type(value) ~= 'string' then
+        return {}
+    end
+
+    local ok, decoded = pcall(json.decode, value)
+
+    return ok and type(decoded) == 'table' and decoded or {}
 end
 
 local function addDataStore(name, owner, data)
@@ -211,5 +221,21 @@ end
 AddEventHandler('esx:sqlCatalogReady', function(tables)
     if tables.datastore then
         refreshCatalogs()
+    end
+end)
+
+AddEventHandler('onResourceStop', function(resource)
+    if resource ~= GetCurrentResourceName() then
+        return
+    end
+
+    for _, store in pairs(SharedDataStores) do
+        store.flush()
+    end
+
+    for _, stores in pairs(DataStores) do
+        for i = 1, #stores do
+            stores[i].flush()
+        end
     end
 end)

@@ -68,30 +68,159 @@ AddEventHandler('esx_basicneeds:isEating', function(callback)
     callback(IsAnimated)
 end)
 
-local function handleAnimation(itemType, propName, anim, pos, rot)
-    if IsAnimated then return end
+local OFFSET_AXES <const> = { 'x', 'y', 'z' }
 
-    IsAnimated = true
-    local playerPed = PlayerPedId()
-    local x, y, z = table.unpack(GetEntityCoords(playerPed))
-    local prop = CreateObject(joaat(propName), x, y, z + 0.2, true, true, true)
-    local boneIndex = GetPedBoneIndex(playerPed, 18905)
+local function isValidOffset(offset)
+    if type(offset) ~= 'vector3' and type(offset) ~= 'table' then
+        return false
+    end
+
+    for i = 1, #OFFSET_AXES do
+        local value = offset[OFFSET_AXES[i]]
+
+        if
+            type(value) ~= 'number'
+            or value ~= value
+            or value == math.huge
+            or value == -math.huge
+        then
+            return false
+        end
+    end
+
+    return true
+end
+
+local function handleAnimation(itemType, propName, anim, pos, rot)
+    if IsAnimated then
+        return
+    end
+
+    if itemType ~= 'food' and itemType ~= 'drink' then
+        return
+    end
+
+    if type(propName) ~= 'string' or propName == '' then
+        return
+    end
+
+    if anim == nil then
+        anim = {
+            dict = itemType == 'food' and 'mp_player_inteat@burger' or 'mp_player_intdrink',
+            name = itemType == 'food' and 'mp_player_int_eat_burger_fp' or 'loop_bottle',
+            settings = {
+                8.0,
+                -8.0,
+                -1,
+                49,
+                0.0,
+                false,
+                false,
+                false,
+            },
+        }
+    end
+
+    if
+        type(anim) ~= 'table'
+        or type(anim.dict) ~= 'string'
+        or anim.dict == ''
+        or type(anim.name) ~= 'string'
+        or anim.name == ''
+        or type(anim.settings) ~= 'table'
+    then
+        return
+    end
+
+    for i = 1, 8 do
+        local value = anim.settings[i]
+
+        if i <= 5 or type(value) ~= 'boolean' then
+            if
+                type(value) ~= 'number'
+                or value ~= value
+                or value == math.huge
+                or value == -math.huge
+            then
+                return
+            end
+        end
+    end
 
     pos = pos or vector3(0.12, 0.028, 0.001)
     rot = rot or vector3(10.0, 175.0, 0.0)
 
-    AttachEntityToEntity(prop, playerPed, boneIndex, pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, true, true, false, true, 1, true)
+    if not isValidOffset(pos) or not isValidOffset(rot) then
+        return
+    end
+
+    IsAnimated = true
 
     CreateThread(function()
-        xLib.streaming.requestAnimDict(anim.dict, function()
-            TaskPlayAnim(playerPed, anim.dict, anim.name, table.unpack(anim.settings))
+        local playerPed = PlayerPedId()
+        local prop
+        local model
+        local animationLoaded = false
+
+        local ok, err = pcall(function()
+            model = xLib.streaming.requestModel(propName)
+
+            if not model then
+                return
+            end
+
+            animationLoaded = xLib.streaming.requestAnimDict(anim.dict) ~= nil
+
+            if not animationLoaded or not DoesEntityExist(playerPed) then
+                return
+            end
+
+            local coords = GetEntityCoords(playerPed)
+            prop = CreateObject(model, coords.x, coords.y, coords.z + 0.2, true, true, true)
+            SetModelAsNoLongerNeeded(model)
+            model = nil
+
+            if prop == 0 then
+                return
+            end
+
+            local boneIndex = GetPedBoneIndex(playerPed, 18905)
+
+            AttachEntityToEntity(
+                prop, playerPed, boneIndex,
+                pos.x, pos.y, pos.z,
+                rot.x, rot.y, rot.z,
+                true, true, false, true, 1, true
+            )
+
+            TaskPlayAnim(playerPed, anim.dict, anim.name, table.unpack(anim.settings, 1, 8))
             RemoveAnimDict(anim.dict)
+            animationLoaded = false
 
             Wait(3000)
-            IsAnimated = false
-            ClearPedSecondaryTask(playerPed)
-            DeleteObject(prop)
         end)
+
+        if model then
+            SetModelAsNoLongerNeeded(model)
+        end
+
+        if animationLoaded then
+            RemoveAnimDict(anim.dict)
+        end
+
+        if prop and prop ~= 0 then
+            if DoesEntityExist(playerPed) then
+                ClearPedSecondaryTask(playerPed)
+            end
+
+            DeleteObject(prop)
+        end
+
+        IsAnimated = false
+
+        if not ok then
+            print(('[esx_basicneeds] Animation failed: %s'):format(tostring(err)))
+        end
     end)
 end
 

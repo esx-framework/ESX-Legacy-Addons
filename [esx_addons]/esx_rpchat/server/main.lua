@@ -29,6 +29,7 @@ local chatLimiters = {
 	anontwt = createChatLimiter('AnonTwtCooldown', 15000),
 	me = createChatLimiter('MeCooldown', 1000),
 	['do'] = createChatLimiter('DoCooldown', 1000),
+	msg = createChatLimiter('MsgCooldown', 1000),
 }
 
 local function sendRateLimitMessage(playerId, remainingMs)
@@ -185,18 +186,49 @@ RegisterCommand('do', function(playerId, args, rawCommand)
 end, false)
 
 RegisterCommand('msg', function(source, args, user)
-
-	if GetPlayerName(tonumber(args[1])) then
-		local player = tonumber(args[1])
-		table.remove(args, 1)
-
-		TriggerClientEvent('chat:addMessage', player, {args = {"^1PM from "..GetPlayerName(source).. "[" .. source .. "]: ^7" ..table.concat(args, " ")}, color = {255, 153, 0}})
-		TriggerClientEvent('chat:addMessage', source, {args = {"^1PM SEND TO "..GetPlayerName(player).. "[" .. player .. "]: ^7" ..table.concat(args, " ")}, color = {255, 153, 0}})
-	else
-		TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Specified Player Does Not Exist!")
+	if source <= 0 or type(args) ~= 'table' then
+		return
 	end
 
-end,false)
+	local player = tonumber(args[1])
+
+	if
+		not player
+		or player ~= player
+		or player <= 0
+		or player == math.huge
+		or player % 1 ~= 0
+	then
+		return
+	end
+
+	local playerName = GetPlayerName(player)
+	local senderName = GetPlayerName(source)
+
+	if not playerName then
+		TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Specified Player Does Not Exist!")
+		return
+	end
+
+	if player == source or not senderName then
+		return
+	end
+
+	local message = clampProximityMessage(table.concat(args, ' ', 2))
+
+	if not message:find('%S') or isRateLimited(source, 'msg') then
+		return
+	end
+
+	TriggerClientEvent('chat:addMessage', player, {
+		args = { "^1PM from " .. senderName .. "[" .. source .. "]: ^7" .. message },
+		color = { 255, 153, 0 },
+	})
+	TriggerClientEvent('chat:addMessage', source, {
+		args = { "^1PM SEND TO " .. playerName .. "[" .. player .. "]: ^7" .. message },
+		color = { 255, 153, 0 },
+	})
+end, false)
 
 function GetRealPlayerName(playerId)
 	local xPlayer = ESX.GetPlayerFromId(playerId)
