@@ -9,6 +9,48 @@ local uiOpen = false
 local currentCategory = nil
 local activeItem = nil
 local playing = false
+local playbackId = 0
+
+local function resetPlayback()
+    playbackId = playbackId + 1
+    playing = false
+    activeItem = nil
+
+    if uiOpen then
+        SendNUIMessage({ action = 'state', playing = false, activeItem = false })
+    end
+end
+
+local function monitorPlayback(item, ped, requestId)
+    -- Walking styles persist until changed; they are not finite animation tasks.
+    if item.type == 'attitude' then
+        return
+    end
+
+    CreateThread(function()
+        local started = false
+        local startDeadline = GetGameTimer() + 1000
+
+        while playing and playbackId == requestId do
+            local running
+            if item.type == 'scenario' then
+                running = IsPedUsingScenario(ped, item.anim)
+            else
+                running = IsEntityPlayingAnim(ped, item.lib, item.anim, 3)
+            end
+
+            if running then
+                started = true
+            elseif started or GetGameTimer() >= startDeadline then
+                -- Let a newly issued task start, then reset on completion or interruption.
+                resetPlayback()
+                return
+            end
+
+            Wait(100)
+        end
+    end)
+end
 
 -- Type-to-icon mapping, mirrors html/js/icons.js
 local typeIcons = {
@@ -96,6 +138,7 @@ function AnimationUI.Open()
     currentCategory = nil
     activeItem = nil
     playing = false
+    playbackId = playbackId + 1
 
     local payload = {
         action = 'open',
@@ -120,6 +163,7 @@ function AnimationUI.Close()
     currentCategory = nil
     activeItem = nil
     playing = false
+    playbackId = playbackId + 1
 
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
@@ -131,17 +175,8 @@ function AnimationUI.Stop()
         return
     end
 
-    playing = false
-    activeItem = nil
+    resetPlayback()
     ClearPedTasks(ESX.PlayerData.ped)
-
-    if uiOpen then
-        SendNUIMessage({
-            action = 'state',
-            playing = false,
-            activeItem = nil
-        })
-    end
 end
 
 -- NUI Ready callback — returns theme colors from convars
@@ -165,31 +200,55 @@ xLib.nui.register('play', function(data)
     local lib = data.lib
     local anim = data.anim
 
+    if animType ~= 'anim' and animType ~= 'scenario' and animType ~= 'attitude' then
+        return xLib.nui.fail('Unknown animation type: ' .. tostring(animType))
+    end
+    if type(anim) ~= 'string' or anim == '' or
+        (animType ~= 'scenario' and (type(lib) ~= 'string' or lib == '')) then
+        return xLib.nui.fail('Invalid animation data')
+    end
+
+    playbackId = playbackId + 1
+    local requestId = playbackId
+    activeItem = data
+    playing = true
+    local ped = ESX.PlayerData.ped
+    local started = false
+
     if animType == 'scenario' then
-        TaskStartScenarioInPlace(ESX.PlayerData.ped, anim, 0, false)
+        TaskStartScenarioInPlace(ped, anim, 0, false)
+        started = true
     elseif animType == 'attitude' then
         xLib.streaming.requestAnimSet(lib, function()
-            SetPedMovementClipset(ESX.PlayerData.ped, anim, 1.0)
+            if playbackId ~= requestId then return end
+            SetPedMovementClipset(ped, anim, 1.0)
+            started = true
         end)
     elseif animType == 'anim' then
         xLib.streaming.requestAnimDict(lib, function()
-            TaskPlayAnim(ESX.PlayerData.ped, lib, anim, 8.0, -8.0, -1, 0, 0.0, false, false, false)
+            if playbackId ~= requestId then return end
+            TaskPlayAnim(ped, lib, anim, 8.0, -8.0, -1, 0, 0.0, false, false, false)
             RemoveAnimDict(lib)
+            started = true
         end)
-    else
-        return xLib.nui.fail('Unknown animation type: ' .. tostring(animType))
     end
 
-    activeItem = data
-    playing = true
+    if playbackId ~= requestId then
+        return xLib.nui.fail('Animation cancelled')
+    end
+    if not started then
+        resetPlayback()
+        return xLib.nui.fail('Unable to load animation')
+    end
+
+    monitorPlayback(data, ped, requestId)
 
     return xLib.nui.ok()
 end)
 
 -- NUI Stop callback
 xLib.nui.register('stop', function()
-    playing = false
-    activeItem = nil
+    resetPlayback()
     ClearPedTasks(ESX.PlayerData.ped)
     return xLib.nui.ok()
 end)
@@ -203,8 +262,7 @@ xLib.nui.register('category', function(data)
     currentCategory = data.name
 
     if playing then
-        playing = false
-        activeItem = nil
+        resetPlayback()
         ClearPedTasks(ESX.PlayerData.ped)
     end
 

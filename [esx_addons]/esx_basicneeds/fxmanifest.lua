@@ -15,21 +15,23 @@ shared_script '@es_extended/imports.lua'
 
 shared_script '@esx_lib/imports.lua'
 server_scripts {
+    '@oxmysql/lib/MySQL.lua',
+    '@esx_lib/imports/catalog/bootstrap.lua',
     '@es_extended/locale.lua',
     'locales/*.lua',
     'config.lua',
-    'server/main.lua'
+    'server/main.lua',
 }
 
 client_scripts {
     '@es_extended/locale.lua',
     'locales/*.lua',
     'config.lua',
-    'client/main.lua'
+    'client/main.lua',
 }
 
 dependencies {
-	'esx_lib',
-	'es_extended',
-    'esx_status'
+    'esx_lib',
+    'es_extended',
+    'esx_status',
 }

@@ -6,7 +6,8 @@ const modalTitle = document.getElementById('modalTitle');
 const modalText = document.getElementById('modalText');
 const modalActions = document.getElementById('modalActions');
 const toast = document.getElementById('toast');
-const playerCard = document.getElementById('playerCard');
+const newsList = document.getElementById('newsList');
+let previousFocus = null;
 
 const previewMode = new URLSearchParams(location.search).has('preview');
 if (previewMode) document.body.classList.add('preview');
@@ -20,6 +21,23 @@ let state = {
 };
 
 const defaultText = {
+    ui_play: 'Play', ui_settings: 'Settings', ui_news: 'News', ui_exit: 'Exit',
+    ui_menu: 'Pause menu', ui_overview: 'Server overview', ui_online: 'Players online', ui_ping: 'Connection',
+    ui_resume_hint: 'Back to the city', ui_nav_label: 'Pause menu navigation',
+    ui_welcome_back: 'Welcome back,', ui_hero_title: 'Los Santos\nis waiting.',
+    ui_hero_subtitle: 'Take a breath. The city will be here.', ui_city_photo: 'Los Santos skyline at sunset in GTA V',
+    ui_your_character: 'Your character', ui_citizen: 'Character details', ui_bank: 'Bank balance', ui_cash: 'Cash',
+    ui_gender: 'Gender', ui_gender_male: 'Male', ui_gender_female: 'Female', ui_not_available: 'Not available',
+    ui_playtime: 'Time played', ui_job: 'Occupation', ui_map: 'City map', ui_open_map: 'Open map',
+    ui_map_alt: 'GTA V map in black and white', ui_explore_map: 'Explore the map',
+    ui_community: 'Community', ui_discord_join: 'Join the community', ui_discord_action: 'Join',
+    ui_discord_description: 'News, events and support on Discord.',
+    ui_rules_title: 'Good stories start with respect.',
+    ui_rules_description: 'Take a moment to read the rules. Make the city better for everyone.',
+    ui_rules_hint: 'Read the rules', ui_since: 'SINCE', ui_close: 'Close', ui_navigate: 'Navigate', ui_select: 'Select',
+    ui_news_intro: 'The latest from your community, in one place.',
+    ui_news_empty: 'No news has been published yet. Visit Discord to see what the community is up to.',
+    ui_server_logo: 'Server logo', ui_people: 'Players',
     ui_discord: 'DISCORD',
     ui_rules: 'RULES',
     ui_store: 'STORE',
@@ -44,20 +62,32 @@ function t(key, values = {}) {
 }
 
 function applyLocale(locale, language) {
-    if (!locale || typeof locale !== 'object') return;
-    state.text = locale;
+    state.text = locale && typeof locale === 'object' ? locale : {};
     document.documentElement.lang = typeof language === 'string' ? language : 'en';
-    document.querySelectorAll('[data-text]').forEach(node => { node.textContent = t(node.dataset.text); });
+    document.querySelectorAll('[data-text]').forEach(node => {
+        const text = t(node.dataset.text);
+        if (node.dataset.text === 'ui_hero_title') {
+            const lines = text.split('\n');
+            node.replaceChildren(document.createTextNode(lines.shift()));
+            lines.forEach(line => {
+                const emphasis = document.createElement('span');
+                emphasis.className = 'hero-title-end';
+                emphasis.textContent = line;
+                node.append(document.createElement('br'), emphasis);
+            });
+        } else {
+            node.textContent = text;
+        }
+    });
     document.querySelectorAll('[data-label]').forEach(node => node.setAttribute('aria-label', t(node.dataset.label)));
     document.querySelectorAll('[data-alt]').forEach(node => node.setAttribute('alt', t(node.dataset.alt)));
 }
 
 const sideItems = [...document.querySelectorAll('.side-item')];
 const interactiveActions = [...document.querySelectorAll('[data-action]')];
-const topActions = [...document.querySelectorAll('[data-top-action]')];
 
 function resizeFrame() {
-    const scale = Math.min(window.innerWidth / 1536, window.innerHeight / 1024);
+    const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
     document.documentElement.style.setProperty('--scale', String(scale));
 }
 window.addEventListener('resize', resizeFrame);
@@ -66,6 +96,13 @@ resizeFrame();
 function setText(id, value) {
     const node = document.getElementById(id);
     if (node) node.textContent = value ?? '';
+}
+
+function setMetric(id, value, unit) {
+    const node = document.getElementById(id);
+    const detail = document.createElement('small');
+    detail.textContent = unit;
+    node.replaceChildren(document.createTextNode(String(value)), detail);
 }
 
 function setTheme(theme = {}) {
@@ -77,26 +114,13 @@ function setTheme(theme = {}) {
     root.setProperty('--light', theme.lightColor || '#969696');
     root.setProperty('--lightest', theme.lightestColor || '#F2F2F2');
 
-    const logoWrap = document.getElementById('brandLogoImageWrap');
     const logo = document.getElementById('brandLogoImage');
-    const textWrap = document.getElementById('brandTextWrap');
-
-    if (theme.logoUrl) {
-        logo.src = theme.logoUrl;
-        logoWrap.classList.remove('is-hidden');
-        textWrap.classList.add('is-hidden');
-        logo.onerror = () => {
-            logoWrap.classList.add('is-hidden');
-            textWrap.classList.remove('is-hidden');
-        };
-    } else {
-        logoWrap.classList.add('is-hidden');
-        textWrap.classList.remove('is-hidden');
-    }
+    logo.onerror = () => { logo.onerror = null; logo.src = 'assets/esx-logo.png'; };
+    logo.src = theme.logoUrl || 'assets/esx-logo.png';
 }
 
 function money(value) {
-    return '$ ' + new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(value) || 0);
+    return '$' + new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(value) || 0);
 }
 
 function formatPlaytime(seconds) {
@@ -156,20 +180,30 @@ function applyData(payload = {}) {
     const job = player.job || player.role || t('ui_unemployed');
     const city = location.city || brand.city || 'Los Santos';
     const id = Number(player.id) || 0;
-    const online = `${player.players ?? 0} / ${player.maxPlayers ?? 0}`;
 
     state.links = cfg.links || {};
     state.serverName = player.serverName || 'ESX LEGACY';
+    state.news = Array.isArray(cfg.news) ? cfg.news.slice(0, 20) : [];
 
     setText('topName', name);
-    setText('topRole', job);
-    setText('playersText', online);
+    setText('topId', `#${id}`);
+    setText('topAvatar', initials(name));
+    setMetric('playersText', player.players ?? 0, `/ ${player.maxPlayers ?? 0}`);
+    if (Number.isFinite(Number(player.ping))) {
+        setMetric('pingText', Math.max(0, Math.round(Number(player.ping))), 'ms');
+    } else {
+        setText('pingText', '—');
+    }
     setText('cityTop', city);
     setText('serverTop', String(brand.title || 'ESX LEGACY').toUpperCase());
     setText('heroName', name);
-    setText('playerName', name);
-    setText('playerMeta', `#${id} · ${job}`);
-    setText('headId', `#${id}`);
+    const characterName = player.characterName || name;
+    setText('playerName', characterName);
+    document.getElementById('playerName').title = characterName;
+    setText('jobValue', job);
+    document.getElementById('jobValue').title = job;
+    setText('genderValue', player.sex === 'm' ? t('ui_gender_male') : player.sex === 'f' ? t('ui_gender_female') : t('ui_not_available'));
+    setText('locationText', location.street || location.zone || city);
     setText('bankValue', money(player.bank));
     setText('cashValue', money(player.cash));
     setText('playtimeValue', formatPlaytime(player.playTime));
@@ -180,6 +214,7 @@ function showMenu(payload) {
     state.open = true;
     app.classList.remove('is-hidden');
     app.setAttribute('aria-hidden', 'false');
+    app.inert = false;
     selectSide(0);
 }
 
@@ -188,6 +223,7 @@ function hideMenu() {
     hideModal();
     app.classList.add('is-hidden');
     app.setAttribute('aria-hidden', 'true');
+    app.inert = true;
 }
 
 async function nui(name, data = {}) {
@@ -242,6 +278,41 @@ function showToast(message) {
 function hideModal() {
     modal.classList.add('is-hidden');
     modalActions.innerHTML = '';
+    newsList.replaceChildren();
+    [...frame.children].filter(node => node !== modal && node !== toast).forEach(node => { node.inert = false; });
+    if (state.open && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+    previousFocus = null;
+}
+
+function openModal(icon = 'i-rules') {
+    previousFocus = document.activeElement;
+    document.getElementById('modalIcon').className = `modal-icon icon ${icon}`;
+    [...frame.children].filter(node => node !== modal && node !== toast).forEach(node => { node.inert = true; });
+    modal.classList.remove('is-hidden');
+    modalClose.focus({ preventScroll: true });
+}
+
+function showNews() {
+    modalTitle.textContent = t('ui_news');
+    modalText.textContent = t(state.news.length ? 'ui_news_intro' : 'ui_news_empty');
+    modalActions.replaceChildren();
+    newsList.replaceChildren();
+    state.news.forEach(entry => {
+        if (!entry || typeof entry.title !== 'string') return;
+        const article = document.createElement('article');
+        article.className = 'news-entry';
+        const date = document.createElement('time');
+        date.textContent = typeof entry.date === 'string' ? entry.date : '';
+        const title = document.createElement('h3');
+        title.textContent = entry.title;
+        const body = document.createElement('p');
+        body.textContent = typeof entry.body === 'string' ? entry.body : '';
+        article.append(date, title, body);
+        newsList.appendChild(article);
+    });
+    addModalButton(t('ui_discord'), () => openUrl('discord'), true);
+    if (state.links.store) addModalButton(t('ui_store'), () => openUrl('store'));
+    openModal();
 }
 
 function addModalButton(label, action, primary = false) {
@@ -252,32 +323,17 @@ function addModalButton(label, action, primary = false) {
     modalActions.appendChild(btn);
 }
 
-function showServerInfo() {
-    modalTitle.textContent = t('ui_server_info');
-    modalText.textContent = t('ui_server_info_text', { server: state.serverName });
-    modalActions.innerHTML = '';
-    addModalButton(t('ui_rules'), () => openUrl('rules'));
-    addModalButton(t('ui_discord'), () => openUrl('discord'));
-    addModalButton(t('ui_store'), () => openUrl('store'));
-    modal.classList.remove('is-hidden');
-}
-
 function showLeaveConfirm() {
     modalTitle.textContent = t('ui_leave_server');
     modalText.textContent = t('ui_leave_confirm');
     modalActions.innerHTML = '';
+    newsList.replaceChildren();
     addModalButton(t('ui_cancel'), hideModal);
     addModalButton(t('ui_leave'), async () => {
         hideModal();
         await nui('leaveServer');
     }, true);
-    modal.classList.remove('is-hidden');
-}
-
-function focusCharacter() {
-    playerCard.classList.remove('flash');
-    void playerCard.offsetWidth;
-    playerCard.classList.add('flash');
+    openModal('i-logout');
 }
 
 async function action(name) {
@@ -289,14 +345,11 @@ async function action(name) {
         case 'map':
             await nui('openMap');
             break;
-        case 'character':
-            focusCharacter();
-            break;
         case 'settings':
             await nui('openSettings');
             break;
-        case 'server-info':
-            showServerInfo();
+        case 'news':
+            showNews();
             break;
         case 'store':
         case 'rules':
@@ -321,10 +374,10 @@ function selectSide(index) {
 
 sideItems.forEach((item, index) => {
     item.addEventListener('mouseenter', () => selectSide(index));
+    item.addEventListener('focus', () => selectSide(index));
     item.addEventListener('click', () => action(item.dataset.action));
 });
 interactiveActions.filter(el => !el.classList.contains('side-item')).forEach(el => el.addEventListener('click', () => action(el.dataset.action)));
-topActions.forEach(el => el.addEventListener('click', () => action(el.dataset.topAction)));
 modalClose.addEventListener('click', hideModal);
 modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
 
@@ -332,7 +385,13 @@ window.addEventListener('keydown', async (event) => {
     if (!state.open) return;
 
     if (!modal.classList.contains('is-hidden')) {
-        if (event.key === 'Escape') hideModal();
+        if (event.key === 'Escape') { event.preventDefault(); hideModal(); }
+        if (event.key === 'Tab') {
+            const buttons = [...modal.querySelectorAll('button')];
+            const index = buttons.indexOf(document.activeElement);
+            event.preventDefault();
+            buttons[(index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length]?.focus();
+        }
         return;
     }
 
@@ -343,13 +402,21 @@ window.addEventListener('keydown', async (event) => {
         return;
     }
 
-    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    if (['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft'].includes(event.key)) {
         event.preventDefault();
-        selectSide(state.selectedIndex + 1);
-    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-        event.preventDefault();
-        selectSide(state.selectedIndex - 1);
-    } else if (event.key === 'Enter') {
+        const current = interactiveActions.includes(document.activeElement) ? document.activeElement : sideItems[state.selectedIndex];
+        const box = current.getBoundingClientRect();
+        const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+        const horizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+        const sign = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : -1;
+        const candidates = interactiveActions.filter(node => node !== current).map(node => {
+            const rect = node.getBoundingClientRect();
+            const dx = rect.x + rect.width / 2 - cx, dy = rect.y + rect.height / 2 - cy;
+            return { node, distance: horizontal ? dx : dy, offset: Math.abs(horizontal ? dy : dx) };
+        }).filter(candidate => candidate.distance * sign > 1);
+        candidates.sort((a, b) => (Math.abs(a.distance) + a.offset * 3) - (Math.abs(b.distance) + b.offset * 3));
+        candidates[0]?.node.focus({ preventScroll: true });
+    } else if (event.key === 'Enter' && !document.activeElement?.matches('button')) {
         event.preventDefault();
         sideItems[state.selectedIndex]?.click();
     }
@@ -369,11 +436,32 @@ const demoData = {
     },
     config: {
         brand: { kicker: 'FIVEM ROLEPLAY', tagline: 'ROLEPLAY BEYOND LIMITS', city: 'Los Santos', established: '2015', communityLine: 'BUILT BY A COMMUNITY THAT CARES' },
-        links: { discord: 'https://discord.gg/esx-framework', rules: 'https://esx-framework.org/', store: 'https://store.example.com' }
+        links: { discord: 'https://discord.gg/esx-framework', rules: 'https://esx-framework.org/', store: '' }
     },
-    player: { id: 152, name: 'Rwixy', role: 'Unemployed', bank: 125460, cash: 3250, job: 'Unemployed', playTime: 45360, players: 231, maxPlayers: 1024, serverName: 'ESX LEGACY' },
+    player: { id: 152, name: 'Rwixy', characterName: 'Daniel Moreno', sex: 'm', ping: 38, bank: 125460, cash: 3250, job: 'Mecánico · Jefe de taller', playTime: 45360, players: 231, maxPlayers: 1024, serverName: 'ESX LEGACY' },
     location: { city: 'Los Santos', zone: 'Downtown Vinewood', street: 'Power Street' },
-    clock: { hour: 18, minute: 42, day: 19, month: 9, year: 2026 }
+    clock: { hour: 18, minute: 42, day: 27, month: 9, year: 2026 }
 };
 
-if (previewMode) showMenu(demoData);
+function browserLanguage() {
+    const requested = new URLSearchParams(location.search).get('lang');
+    return (requested || navigator.languages?.[0] || navigator.language || 'en').toLowerCase().split(/[-_]/)[0];
+}
+
+async function startPreview() {
+    let catalog = {};
+    try {
+        const response = await fetch('locales.json?v=2');
+        if (response.ok) catalog = await response.json();
+    } catch (_) {
+        // The English defaults also allow an offline file preview.
+    }
+    const detected = browserLanguage();
+    const language = catalog[detected] ? detected : 'en';
+    demoData.config.language = language;
+    demoData.config.locale = catalog[language] || {};
+    demoData.player.job = language === 'es' ? 'Mecánico · Jefe de taller' : 'Mechanic';
+    showMenu(demoData);
+}
+
+if (previewMode) startPreview();

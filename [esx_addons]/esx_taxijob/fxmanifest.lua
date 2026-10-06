@@ -12,25 +12,27 @@ version '1.0'
 legacyversion '1.16.0'
 
 shared_scripts {
-	'@esx_lib/imports.lua',
-	'@es_extended/imports.lua'
+    '@esx_lib/imports.lua',
+    '@es_extended/imports.lua',
 }
 
 client_scripts {
-	'@es_extended/locale.lua',
-	'locales/*.lua',
-	'config.lua',
-	'client/*.lua'
+    '@es_extended/locale.lua',
+    'locales/*.lua',
+    'config.lua',
+    'client/*.lua',
 }
 
 server_scripts {
-	'@es_extended/locale.lua',
-	'locales/*.lua',
-	'config.lua',
-	'server/*.lua'
+    '@oxmysql/lib/MySQL.lua',
+    '@esx_lib/imports/catalog/bootstrap.lua',
+    '@es_extended/locale.lua',
+    'locales/*.lua',
+    'config.lua',
+    'server/*.lua',
 }
 
 dependencies {
-	'esx_lib',
-	'es_extended'
+    'esx_lib',
+    'es_extended',
 }

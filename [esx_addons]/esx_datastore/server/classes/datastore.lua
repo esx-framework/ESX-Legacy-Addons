@@ -6,7 +6,9 @@ function stringsplit(inputstr, sep)
 		sep = "%s"
 	end
 
-	local t={} ; i=1
+	local t = {}
+	local i = 1
+
 	for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
 		t[i] = str
 		i = i + 1
@@ -20,64 +22,131 @@ function CreateDataStore(name, owner, data)
 
 	self.name  = name
 	self.owner = owner
-	self.data  = type(data) == 'string' and json.decode(data) or data
+	if type(data) == 'string' then
+		local ok, decoded = pcall(json.decode, data)
 
-	local timeoutCallbacks = {}
+		data = ok and decoded or nil
+	end
+
+	self.data = type(data) == 'table' and data or {}
+
+	local timeoutCallback
+	local revision = 0
+	local persisted = 0
+	local writing = false
+	local scheduleSave
 
 	function self.set(key, val)
-		data[key] = val
+		if type(key) ~= 'string' or key == '' then
+			return false
+		end
+
+		self.data[key] = val
 		self.save()
 	end
 
 	function self.get(key, i)
-		local path = stringsplit(key, '.')
-		local obj  = self.data
+		if type(key) ~= 'string' or key == '' then
+			return nil
+		end
 
-		for i=1, #path, 1 do
-			obj = obj[path[i]]
+		local obj = self.data
+
+		if type(obj) ~= 'table' then
+			return nil
+		end
+
+		if key:find('.', 1, true) then
+			for segment in key:gmatch('[^.]+') do
+				if type(obj) ~= 'table' then
+					return nil
+				end
+
+				obj = obj[segment]
+			end
+		else
+			obj = obj[key]
 		end
 
 		if i == nil then
 			return obj
-		else
+		elseif type(obj) == 'table' then
 			return obj[i]
 		end
 	end
 
 	function self.count(key, i)
-		local path = stringsplit(key, '.')
-		local obj  = self.data
+		local obj = self.get(key, i)
 
-		for i=1, #path, 1 do
-			obj = obj[path[i]]
-		end
-
-		if i ~= nil then
-			obj = obj[i]
-		end
-
-		if obj == nil then
-			return 0
-		else
+		if type(obj) == 'table' then
 			return #obj
 		end
+
+		return 0
+	end
+
+	function self.isDirty()
+		return persisted ~= revision or writing
+	end
+
+	function self.flush()
+		if timeoutCallback then
+			xLib.timeout.clearTimeout(timeoutCallback)
+			timeoutCallback = nil
+		end
+
+		while writing do
+			Wait(0)
+		end
+
+		while persisted ~= revision do
+			writing = true
+			local version = revision
+
+			local ok, result = pcall(function()
+				local snapshot = json.encode(self.data)
+
+				if self.owner == nil then
+					return MySQL.update.await(
+						'UPDATE datastore_data SET data = ? WHERE name = ?',
+						{ snapshot, self.name }
+					)
+				end
+
+				return MySQL.update.await(
+					'UPDATE datastore_data SET data = ? WHERE name = ? and owner = ?',
+					{ snapshot, self.name, self.owner }
+				)
+			end)
+
+			writing = false
+
+			if not ok or type(result) ~= 'number' or result < 0 then
+				print(('[esx_datastore] Save failed for %s: %s'):format(self.name, tostring(result)))
+				scheduleSave()
+				return false
+			end
+
+			persisted = version
+		end
+
+		return true
+	end
+
+	scheduleSave = function()
+		if timeoutCallback then
+			xLib.timeout.clearTimeout(timeoutCallback)
+		end
+
+		timeoutCallback = xLib.timeout.setTimeout(10000, function()
+			timeoutCallback = nil
+			self.flush()
+		end)
 	end
 
 	function self.save()
-		for i=1, #timeoutCallbacks, 1 do
-			xLib.timeout.clearTimeout(timeoutCallbacks[i])
-			timeoutCallbacks[i] = nil
-		end
-
-		local timeoutCallback = xLib.timeout.setTimeout(10000, function()
-			if self.owner == nil then
-				MySQL.update('UPDATE datastore_data SET data = ? WHERE name = ?', {json.encode(self.data), self.name})
-			else
-				MySQL.update('UPDATE datastore_data SET data = ? WHERE name = ? and owner = ?', {json.encode(self.data), self.name, self.owner})
-			end
-		end)
-
-		table.insert(timeoutCallbacks, timeoutCallback)
+		revision = revision + 1
+		scheduleSave()
 	end
 
 	return self

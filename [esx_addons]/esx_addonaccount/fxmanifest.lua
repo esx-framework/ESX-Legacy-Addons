@@ -11,20 +11,22 @@ version '1.1'
 legacyversion '1.16.0'
 
 server_scripts {
-	'@esx_lib/imports.lua',
-	'@es_extended/imports.lua',
-	'@oxmysql/lib/MySQL.lua',
-	'server/classes/addonaccount.lua',
-	'server/main.lua'
+    '@esx_lib/imports.lua',
+    '@es_extended/imports.lua',
+    '@oxmysql/lib/MySQL.lua',
+    '@esx_lib/imports/catalog/bootstrap.lua',
+    'server/migration.lua',
+    'server/classes/addonaccount.lua',
+    'server/main.lua',
 }
 
 server_exports {
-	'GetSharedAccount',
-	'AddSharedAccount',
-	'GetAccount'
+    'GetSharedAccount',
+    'AddSharedAccount',
+    'GetAccount',
 }
 
 dependencies {
-	'esx_lib',
-	'es_extended'
+    'esx_lib',
+    'es_extended',
 }

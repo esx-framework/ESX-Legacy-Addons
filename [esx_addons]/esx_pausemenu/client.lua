@@ -7,6 +7,7 @@ local openRequest = 0
 local closedAt = 0
 local nativePauseOpen = false
 local uiText
+local uiLanguage
 local OPEN_TIMEOUT_MS <const> = 5000
 local REOPEN_GUARD_MS <const> = 300
 local NATIVE_MAP_CLOSE_CONTROLS <const> = {
@@ -35,7 +36,10 @@ local function getTheme()
 end
 
 local function getUiText()
-    if not uiText then
+    local language = GetConvar("esx:locale", ESX.GetConfig().Locale or "en")
+
+    if not uiText or uiLanguage ~= language then
+        Config.Locale = language
         uiText = {}
 
         for key in pairs(Locales["en"]) do
@@ -43,6 +47,8 @@ local function getUiText()
                 uiText[key] = Translate(key)
             end
         end
+
+        uiLanguage = Config.Locale
     end
 
     return uiText
@@ -59,8 +65,13 @@ local function getClockData()
 end
 
 local function getLocationData()
+    local coords = GetEntityCoords(PlayerPedId())
+    local streetHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)
+    local zone = GetNameOfZone(coords.x, coords.y, coords.z)
     return {
-        city = Config.Brand.city
+        city = Config.Brand.city,
+        street = GetStreetNameFromHashKey(streetHash),
+        zone = GetLabelText(zone)
     }
 end
 
@@ -77,11 +88,13 @@ local function closeMenu()
 end
 
 local function buildConfigForNui()
+    local locale = getUiText()
     return {
         brand = Config.Brand,
         links = Config.Links,
         language = Config.Locale,
-        locale = getUiText()
+        locale = locale,
+        news = Config.News
     }
 end
 
@@ -261,7 +274,7 @@ CreateThread(function()
     end
 end)
 
-AddEventHandler("esx:onPlayerLogout", function()
+ESX.SecureNetEvent("esx:onPlayerLogout", function()
     closeMenu()
 end)
 

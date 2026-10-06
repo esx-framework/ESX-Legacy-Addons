@@ -12,3 +12,6 @@ Config.MaxBillLabelLength = 80
 Config.HighBillConfirmationAmount = 50000
 Config.HighBillConfirmationTimeout = 30000
 Config.BillingMinimumGrades = {}
+Config.BillsPageSize = 50
+Config.BillsReadCooldown = 1000
+Config.BillPaymentCooldown = 500

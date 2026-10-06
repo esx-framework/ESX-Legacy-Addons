@@ -219,7 +219,7 @@
       state.playing = data.playing;
     }
     if (data.activeItem !== undefined) {
-      state.activeItem = data.activeItem;
+      state.activeItem = data.activeItem || null;
     }
     if (data.currentCategory !== undefined) {
       state.activeCategory = data.currentCategory;

@@ -2,9 +2,9 @@
 
 Config = {}
 
-Config.Locale = GetConvar("esx:locale", "en")
+Config.Locale = GetConvar("esx:locale", ESX.GetConfig().Locale or "en")
 
--- Visual copy used by the supplied concept. All text is configurable.
+-- Server branding. Interface copy is translated in locales/.
 Config.Brand = {
     kicker = "FIVEM ROLEPLAY",
     title = "ESX LEGACY",
@@ -21,7 +21,12 @@ Config.Links = {
     store = ""
 }
 
--- If esx_scoreboard is running this command opens it from PEOPLE.
+-- Optional announcements shown by the News button. Newest entries first.
+-- Each entry accepts title, body and date strings; dates are displayed as written.
+-- Example: { title = "Community meeting", body = "Details on Discord.", date = "27 SEP 2026" }
+Config.News = {}
+
+-- The online players chip opens this command when esx_scoreboard is running.
 Config.PeopleCommand = "scoreboard"
 
 -- Pause controls commonly used by GTA/FiveM.
