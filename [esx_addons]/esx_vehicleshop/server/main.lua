@@ -66,9 +66,35 @@ local function isNearVehicleWithPlate(source, plate, distance)
 	return false
 end
 
-CreateThread(function()
-	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
-end)
+if Config.EnablePlayerManagement then
+	local societyRegistered = false
+
+	local function registerCardealer()
+		if societyRegistered then return end
+
+		exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
+		
+		societyRegistered = true
+	end
+
+	AddEventHandler('onResourceStart', function(resourceName)
+		if resourceName == 'esx_society' then
+			registerCardealer()
+		end
+	end)
+
+	AddEventHandler('onResourceStop', function(resourceName)
+		if resourceName == 'esx_society' then
+			societyRegistered = false
+		end
+	end)
+
+	CreateThread(function()
+		if GetResourceState('esx_society') == 'started' then
+			registerCardealer()
+		end
+	end)
+end
 
 CreateThread(function()
 	local char = Config.PlateLetters

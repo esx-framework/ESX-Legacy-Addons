@@ -1,6 +1,38 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
+local RegisteredSocieties = {}
+local SocietiesByName = {}
+
+function GetSociety(name)
+    return SocietiesByName[name]
+end
+
+exports('GetSociety', GetSociety)
+
+function registerSociety(name, label, account, datastore, inventory, data)
+    if SocietiesByName[name] then
+        print(('[^3WARNING^7] society already registered, name: ^5%s^7'):format(name))
+        return
+    end
+
+    local society = {
+        name = name,
+        label = label,
+        account = account,
+        datastore = datastore,
+        inventory = inventory,
+        data = data,
+    }
+
+    SocietiesByName[name] = society
+    table.insert(RegisteredSocieties, society)
+end
+
+AddEventHandler('esx_society:registerSociety', registerSociety)
+
+exports('registerSociety', registerSociety)
+
 ESXCatalog.awaitReady()
 
 local Jobs = setmetatable({}, {
@@ -8,8 +40,6 @@ local Jobs = setmetatable({}, {
         return ESX.GetJobs()[key]
     end,
 })
-local RegisteredSocieties = {}
-local SocietiesByName = {}
 local gradeUpdateLimiters = {}
 
 local function getValidAmount(amount)
@@ -241,32 +271,6 @@ local function getValidJobGrade(job, grade)
 
     return grade
 end
-
-function GetSociety(name)
-    return SocietiesByName[name]
-end
-exports('GetSociety', GetSociety)
-
-function registerSociety(name, label, account, datastore, inventory, data)
-    if SocietiesByName[name] then
-        print(('[^3WARNING^7] society already registered, name: ^5%s^7'):format(name))
-        return
-    end
-
-    local society = {
-        name = name,
-        label = label,
-        account = account,
-        datastore = datastore,
-        inventory = inventory,
-        data = data,
-    }
-
-    SocietiesByName[name] = society
-    table.insert(RegisteredSocieties, society)
-end
-AddEventHandler('esx_society:registerSociety', registerSociety)
-exports('registerSociety', registerSociety)
 
 AddEventHandler('esx_society:getSocieties', function(cb)
     cb(RegisteredSocieties)

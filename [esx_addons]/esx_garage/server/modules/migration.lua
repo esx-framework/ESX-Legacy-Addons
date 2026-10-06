@@ -78,7 +78,9 @@ local function hasIndex(index)
         { TABLE, index }
     )
 
-    return (count or 0) > 0
+    assert(count ~= nil, 'Unable to inspect garage indexes')
+
+    return tonumber(count) > 0
 end
 
 ---@param column string
@@ -89,7 +91,9 @@ local function hasLeadingIndex(column)
         { TABLE, column }
     )
 
-    return (count or 0) > 0
+    assert(count ~= nil, 'Unable to inspect garage leading indexes')
+
+    return tonumber(count) > 0
 end
 
 ---@param column string
@@ -282,6 +286,18 @@ MySQL.ready(function()
             end
 
             markMigrationApplied(MILEAGE_PRECISION_MIGRATION_NAME)
+        end
+
+        if ensureLeadingIndex('idx_owned_vehicles_owner', 'owner', '(`owner`)') then
+            indexed = indexed + 1
+        end
+
+        if ensureLeadingIndex('idx_owned_vehicles_plate', 'plate', '(`plate`)') then
+            indexed = indexed + 1
+        end
+
+        if ensureIndex('idx_owned_vehicles_plate_stored_pound', '(`plate`, `stored`, `pound`)') then
+            indexed = indexed + 1
         end
     end)
 
