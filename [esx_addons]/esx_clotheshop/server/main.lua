@@ -64,11 +64,15 @@ AddEventHandler('esx_clotheshop:saveOutfit', function(label, skin)
         or not label
         or type(skin) ~= 'table'
         or not ClothesPurchases[source]
-        or ClothesPurchases[source] < GetGameTimer()
+        or ClothesPurchases[source].player ~= ESX.GetPlayerFromId(source)
+        or ClothesPurchases[source].expires < GetGameTimer()
     then
         return
     end
 
+    local purchase = ClothesPurchases[source]
+    ClothesPurchases[source] = nil
+    skin = purchase.skin
     TriggerEvent('esx_datastore:getDataStore', 'property', xPlayer.getIdentifier(), function(store)
         if not store then
             return
@@ -97,6 +101,12 @@ end)
 
 xLib.callback.registerCompat('esx_clotheshop:buyClothes', function(source, cb, newSkin, oldSkin)
     local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer or ClothesPayments[xPlayer.getIdentifier()] or not isNearClothesShop(source) then return cb(false) end
+    newSkin = exports.esx_skin:ValidateSkin(newSkin)
+    if not newSkin then return cb(false) end
+    -- The client snapshot cannot determine the price of a purchase.
+    oldSkin = exports.esx_skin:GetSkin(source)
+    if ESX.GetPlayerFromId(source) ~= xPlayer or type(oldSkin) ~= 'table' then return cb(false) end
     local purchaseCost = calculatePurchaseCost(newSkin, oldSkin)
 
     if not xPlayer or type(newSkin) ~= 'table' or not isNearClothesShop(source) then
@@ -136,7 +146,7 @@ xLib.callback.registerCompat('esx_clotheshop:buyClothes', function(source, cb, n
                 print(('[esx_clotheshop] Outfit refund failed for %s'):format(identifier))
             end
         elseif ESX.GetPlayerFromId(source) == xPlayer then
-            ClothesPurchases[source] = GetGameTimer() + (Config.PurchaseSessionDuration or 60000)
+            ClothesPurchases[source] = { player = xPlayer, skin = newSkin, expires = GetGameTimer() + (Config.PurchaseSessionDuration or 60000) }
             TriggerClientEvent(
                 'esx:showNotification',
                 source,
@@ -151,7 +161,7 @@ xLib.callback.registerCompat('esx_clotheshop:buyClothes', function(source, cb, n
     ClothesPayments[identifier] = finish
 
     local ok, accepted = pcall(function()
-        return exports.esx_skin:SaveSkin(source, newSkin, finish)
+        return exports.esx_skin:SaveSkin(source, newSkin, finish, 'clothes')
     end)
 
     if not ok or accepted == false then
