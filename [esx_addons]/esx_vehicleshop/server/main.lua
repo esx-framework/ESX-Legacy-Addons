@@ -5,6 +5,7 @@ ESXCatalog.awaitReady()
 
 local categories, vehicles = {}, {}
 local vehiclesByModel = {}
+local vehiclesLoaded = false
 local normalizePlate = xLib.vehiclePlate.normalize
 
 local function generateServerPlate()
@@ -110,29 +111,41 @@ function RemoveOwnedVehicle(plate)
 	MySQL.update('DELETE FROM owned_vehicles WHERE plate = ?', {plate})
 end
 
-AddEventHandler('onResourceStart', function(resourceName)
-	if resourceName == GetCurrentResourceName() then
-		SQLVehiclesAndCategories()
-	end
-end)
-
 function SQLVehiclesAndCategories()
-	categories = MySQL.query.await('SELECT * FROM vehicle_categories')
-	vehicles = MySQL.query.await('SELECT vehicles.*, vehicle_categories.label AS categoryLabel FROM vehicles JOIN vehicle_categories ON vehicles.category = vehicle_categories.name')
+    local loadedCategories = MySQL.query.await('SELECT * FROM vehicle_categories')
+    local loadedVehicles = MySQL.query.await('SELECT vehicles.*, vehicle_categories.label AS categoryLabel FROM vehicles JOIN vehicle_categories ON vehicles.category = vehicle_categories.name')
+    local loadedModels = {}
 
-	for _, vehicle in pairs(vehicles) do
-		vehiclesByModel[vehicle.model] = vehicle
-	end
+    for _, vehicle in ipairs(loadedVehicles) do
+        loadedModels[vehicle.model] = vehicle
+    end
 
-	TriggerClientEvent("esx_vehicleshop:updateVehiclesAndCategories", -1, vehicles, categories, vehiclesByModel)
+    categories = loadedCategories
+    vehicles = loadedVehicles
+    vehiclesByModel = loadedModels
+    vehiclesLoaded = true
+
+    if #vehicles == 0 then
+        print('[esx_vehicleshop] No vehicles matched the catalog. Check vehicles and their matching vehicle_categories entries.')
+    end
+
+    TriggerClientEvent('esx_vehicleshop:updateVehiclesAndCategories', -1, vehicles, categories, vehiclesByModel)
 end
+
+CreateThread(function()
+    SQLVehiclesAndCategories()
+end)
 
 function getVehicleFromModel(model)
 	return vehiclesByModel[model]
 end
 
 RegisterNetEvent("esx_vehicleshop:getVehiclesAndCategories", function()
-	TriggerClientEvent("esx_vehicleshop:updateVehiclesAndCategories", source, vehicles, categories, vehiclesByModel)
+    if not vehiclesLoaded then
+        return
+    end
+
+    TriggerClientEvent('esx_vehicleshop:updateVehiclesAndCategories', source, vehicles, categories, vehiclesByModel)
 end)
 
 RegisterNetEvent('esx_vehicleshop:setVehicleOwnedPlayerId')
