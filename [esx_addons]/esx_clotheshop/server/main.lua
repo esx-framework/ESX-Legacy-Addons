@@ -4,6 +4,10 @@
 local ClothesPurchases = {}
 local ClothesPayments = {}
 
+local function isCurrentPlayer(source, player)
+    return player and player.source == source and player.isCurrent and player.isCurrent() == true
+end
+
 local function isNearClothesShop(source)
     local ped = GetPlayerPed(source)
     if ped <= 0 then
@@ -64,7 +68,7 @@ AddEventHandler('esx_clotheshop:saveOutfit', function(label, skin)
         or not label
         or type(skin) ~= 'table'
         or not ClothesPurchases[source]
-        or ClothesPurchases[source].player ~= ESX.GetPlayerFromId(source)
+        or not isCurrentPlayer(source, ClothesPurchases[source].player)
         or ClothesPurchases[source].expires < GetGameTimer()
     then
         return
@@ -101,12 +105,24 @@ end)
 
 xLib.callback.registerCompat('esx_clotheshop:buyClothes', function(source, cb, newSkin, oldSkin)
     local xPlayer = ESX.GetPlayerFromId(source)
-    if not xPlayer or ClothesPayments[xPlayer.getIdentifier()] or not isNearClothesShop(source) then return cb(false) end
+
+    if not xPlayer or ClothesPayments[xPlayer.getIdentifier()] or not isNearClothesShop(source) then
+        return cb(false)
+    end
+
     newSkin = exports.esx_skin:ValidateSkin(newSkin)
-    if not newSkin then return cb(false) end
+
+    if not newSkin then
+        return cb(false)
+    end
+
     -- The client snapshot cannot determine the price of a purchase.
     oldSkin = exports.esx_skin:GetSkin(source)
-    if ESX.GetPlayerFromId(source) ~= xPlayer or type(oldSkin) ~= 'table' then return cb(false) end
+
+    if not isCurrentPlayer(source, xPlayer) or type(oldSkin) ~= 'table' then
+        return cb(false)
+    end
+
     local purchaseCost = calculatePurchaseCost(newSkin, oldSkin)
 
     if not xPlayer or type(newSkin) ~= 'table' or not isNearClothesShop(source) then
@@ -145,8 +161,12 @@ xLib.callback.registerCompat('esx_clotheshop:buyClothes', function(source, cb, n
             if xPlayer.addMoney(purchaseCost, 'Outfit Purchase Refund') ~= true then
                 print(('[esx_clotheshop] Outfit refund failed for %s'):format(identifier))
             end
-        elseif ESX.GetPlayerFromId(source) == xPlayer then
-            ClothesPurchases[source] = { player = xPlayer, skin = newSkin, expires = GetGameTimer() + (Config.PurchaseSessionDuration or 60000) }
+        elseif isCurrentPlayer(source, xPlayer) then
+            ClothesPurchases[source] = {
+                player = xPlayer,
+                skin = newSkin,
+                expires = GetGameTimer() + (Config.PurchaseSessionDuration or 60000),
+            }
             TriggerClientEvent(
                 'esx:showNotification',
                 source,
