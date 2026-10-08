@@ -263,21 +263,14 @@ end)
 CreateThread(function()
 	while true do
 		local Sleep = 1500
-		local zones = {}
 
 		if ESX.PlayerLoaded then
 			local playerJob = ESX.PlayerData.job.name
+			local job = playerJob and Config.Jobs[playerJob]
 
-			if playerJob then
-				for k, v in pairs(Config.Jobs) do
-					if playerJob == k then
-						Sleep = 0
-						zones = v.Zones
-					end
-				end
-
+			if job then
 				local coords = GetEntityCoords(PlayerPedId())
-				for k, v in pairs(zones) do
+				for k, v in pairs(job.Zones) do
 					if onDuty or v.Type == "cloakroom" then
 						if (v.Zone) then
 							TriggerEvent("izone:getZoneCenter", v.Zone, function(center)
@@ -353,26 +346,16 @@ CreateThread(function()
 
 		if ESX.PlayerLoaded then
 			local playerJob = ESX.PlayerData.job.name
+			local job = playerJob and Config.Jobs[playerJob]
 
-			if playerJob and playerJob ~= 'unemployed' then
-				local zones = nil
-				local job = nil
-
-				for k, v in pairs(Config.Jobs) do
-					if playerJob == k then
-						Sleep = 0
-						job = v
-						zones = v.Zones
-					end
-				end
-
-				if zones then
+			if job and playerJob ~= 'unemployed' then
+				if job.Zones then
 					local coords      = GetEntityCoords(PlayerPedId())
 					local currentZone = nil
 					local zone        = nil
 					local lastZone    = nil
 
-					for k, v in pairs(zones) do
+					for k, v in pairs(job.Zones) do
 						-- If we defined a zone from iZone
 						if v.Zone then
 							TriggerEvent("izone:isPlayerInZone", v.Zone, function(isIn)
