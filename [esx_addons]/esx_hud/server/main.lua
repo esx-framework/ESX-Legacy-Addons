@@ -33,9 +33,6 @@ VERSION = {
         local currentVersion = GetResourceMetadata(resourceName, "version", 0)
         if not currentVersion then return end
 
-        local manifestURL = HUD.VersionCheckBaseURL .. resourceName .. "/fxmanifest.lua"
-        HUD:InfoHandle(("Checking manifest from %s"):format(manifestURL), "blue")
-
         if err ~= 200 or not response then
             HUD:ErrorHandle(Translate("errorGetCurrentVersion"))
             return
@@ -56,8 +53,6 @@ VERSION = {
         end
 
         if currentVersion == latestVersion then
-            HUD:InfoHandle(Translate("latestVersion"), "green")
-            HUD:InfoHandle(("Up to date version (%s)"):format(currentVersion), "green")
             return
         end
 

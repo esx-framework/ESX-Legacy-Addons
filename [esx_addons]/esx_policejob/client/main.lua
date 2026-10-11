@@ -302,7 +302,7 @@ function OpenPoliceActionsMenu()
 						OpenUnpaidBillsMenu(closestPlayer)
 					end
 				else
-					ESX.ShowNotification(TranslateCap('no_players_nearby'))
+					ESX.ShowNotification(TranslateCap('no_players_nearby'), "info")
 				end
 			end, function(data2, menu2)
 				menu2.close()

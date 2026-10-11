@@ -34,9 +34,10 @@ CREATE TABLE `vehicle_sold` (
 	`model` VARCHAR(50) NOT NULL,
 	`plate` VARCHAR(50) NOT NULL,
 	`soldby` VARCHAR(50) NOT NULL,
-	`date` VARCHAR(50) NOT NULL,
+	`date` DATETIME NOT NULL,
 
-	PRIMARY KEY (`plate`)
+	PRIMARY KEY (`plate`),
+	KEY `idx_vehicle_sold_date_plate` (`date`, `plate`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

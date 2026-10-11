@@ -304,7 +304,7 @@ end
 local function openBillingMenu(title)
 	local closestPlayer, closestDistance = xLib.game.getClosestPlayer()
 	if closestPlayer == -1 or closestDistance > 3.0 then
-		ESX.ShowNotification(TranslateCap('no_players_nearby'), "error")
+		ESX.ShowNotification(TranslateCap('no_players_nearby'), "info")
 		return
 	end
 
@@ -318,7 +318,7 @@ local function openBillingMenu(title)
 
 		local closestPlayer, closestDistance = xLib.game.getClosestPlayer()
 		if closestPlayer == -1 or closestDistance > 3.0 then
-			ESX.ShowNotification(TranslateCap('no_players_nearby'), "error")
+			ESX.ShowNotification(TranslateCap('no_players_nearby'), "info")
 			return
 		end
 

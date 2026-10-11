@@ -58,6 +58,10 @@ and are restored on resource stop when the current outfit still matches. Changin
 character or applying a new outfit discards the old removal history. Disconnects
 use the appearance resource's normal saved skin.
 
+Changing hair, beard or other face details does not discard the removed clothing
+history. Restore outfit reapplies those remembered garments while keeping the new
+appearance. A new hairstyle also releases any temporary hair repair override.
+
 The resource observes `skinchanger:loadSkin` and `skinchanger:loadClothes` events and
 detects changed skin fields on the next operation. A resource that loads an outfit
 directly through exports should explicitly invalidate the history, especially when

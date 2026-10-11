@@ -1,4 +1,3 @@
-// Figma fixture, only enabled explicitly in a standalone browser: ?preview=1.
 if (typeof GetParentResourceName !== 'function' && new URLSearchParams(location.search).has('preview')) {
   const tasks = Array.from({length:6}, () => ({title:'Get 40 diamonds',description:'Lorem ipsum dolor sit amet, consectetur.',current:36,target:40}));
   const description = 'Being a miner is tough work, but it pays well. Your job is to extract raw materials from the mine located outside the city.\n\nUse your pickaxe to break rocks and collect valuable resources such as iron, coal, or diamonds.\nOnce you’ve gathered enough materials, head to the refinery or sell point to exchange them for cash.\n\nThe job requires endurance and strength, but every run can bring a solid income.\nHard work underground — clean profit above.\n\nHard work underground - clean prrofit above.';

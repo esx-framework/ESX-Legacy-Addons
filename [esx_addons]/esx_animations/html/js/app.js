@@ -187,9 +187,7 @@
 
   function open() {
     state.open = true;
-    state.activeCategory = state.categories.length > 0 ? state.categories[0].name : null;
-    state.activeItem = null;
-    state.playing = false;
+    state.activeCategory = state.activeCategory || (state.categories.length > 0 ? state.categories[0].name : null);
     search.value = '';
     hideCategoryTooltip();
     app.classList.remove('hidden');
@@ -237,6 +235,9 @@
     if (!data || typeof data !== 'object') return;
 
     if (data.action === 'open') {
+      state.activeCategory = null;
+      state.activeItem = null;
+      state.playing = false;
       applyState(data);
       open();
     } else if (data.action === 'close') {

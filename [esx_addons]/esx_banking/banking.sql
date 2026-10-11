@@ -2,9 +2,9 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 CREATE TABLE IF NOT EXISTS `banking` (
-  `identifier` varchar(46) DEFAULT NULL,
+  `identifier` varchar(60) DEFAULT NULL,
   `type` varchar(50) DEFAULT NULL,
-  `amount` int(64) DEFAULT NULL,
+  `amount` int DEFAULT NULL,
   `time` bigint(20) DEFAULT NULL,
   `ID` int(11) NOT NULL AUTO_INCREMENT,
   `balance` int(11) DEFAULT 0,
@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS `banking` (
   KEY `idx_banking_identifier_time` (`identifier`, `time`),
   KEY `idx_banking_time` (`time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
+SET @banking_migration := (SELECT IF(
+  (SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'banking' AND COLUMN_NAME = 'identifier') < 60,
+  'ALTER TABLE `banking` MODIFY COLUMN `identifier` VARCHAR(60) NULL',
+  'SELECT 1'));
+PREPARE s FROM @banking_migration; EXECUTE s; DEALLOCATE PREPARE s;
 
 SET @banking_migration := (SELECT IF(
   EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'banking' AND INDEX_NAME = 'idx_banking_time'),

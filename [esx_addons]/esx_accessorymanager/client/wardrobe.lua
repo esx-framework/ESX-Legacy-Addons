@@ -26,6 +26,18 @@ local function matches(skin, values)
     return true
 end
 
+local function matchesOutfit(skin, previous)
+    if skin.sex ~= previous.sex then return false end
+
+    for _, category in ipairs(Accessories.Catalog) do
+        for _, name in ipairs(category.fields) do
+            if skin[name] ~= previous[name] then return false end
+        end
+    end
+
+    return true
+end
+
 local function playClothingAnimation(category, direction)
     local settings = Config.Radial and Config.Radial.Animation
     if not settings or settings.Enabled == false then return end
@@ -60,15 +72,31 @@ end
 function Wardrobe.Read()
     local ped = PlayerPedId()
     local model = GetEntityModel(ped)
+
     if Wardrobe.ped ~= ped or Wardrobe.model ~= model then Wardrobe.Clear() end
+
     Wardrobe.ped, Wardrobe.model = ped, model
+
     local skin = exports.skinchanger:GetSkin()
+
     if type(skin) ~= 'table' then return nil end
-    if Wardrobe.lastSkin and not matches(skin, Wardrobe.lastSkin) then Wardrobe.removed = {} end
+
+    if Wardrobe.lastSkin and not matchesOutfit(skin, Wardrobe.lastSkin) then
+        Wardrobe.removed = {}
+    end
+
+    if Wardrobe.hairFixed and Wardrobe.savedHair and not matches(skin, Wardrobe.savedHair) then
+        Wardrobe.hairFixed = false
+        Wardrobe.savedHair = nil
+        hairOverride = nil
+    end
+
     Wardrobe.lastSkin = snapshot(skin)
+
     for id, item in pairs(Wardrobe.removed) do
         if not matches(skin, item.off) then Wardrobe.removed[id] = nil end
     end
+
     return skin
 end
 
