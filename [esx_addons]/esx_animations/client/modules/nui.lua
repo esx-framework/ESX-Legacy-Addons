@@ -10,9 +10,11 @@ local currentCategory = nil
 local activeItem = nil
 local playing = false
 local playbackId = 0
+local loadingId = nil
 
 local function resetPlayback()
     playbackId = playbackId + 1
+    loadingId = nil
     playing = false
     activeItem = nil
 
@@ -135,13 +137,11 @@ function AnimationUI.Open()
         return
     end
 
-    currentCategory = nil
-    activeItem = nil
-    playing = false
-    playbackId = playbackId + 1
-
     local payload = {
         action = 'open',
+        playing = playing,
+        activeItem = activeItem or false,
+        currentCategory = currentCategory,
         categories = AnimationUI.BuildCategories(),
         locale = AnimationUI.GetNuiLocalePayload(),
         theme = AnimationUI.GetESXThemeColors()
@@ -160,10 +160,9 @@ function AnimationUI.Close()
     end
 
     uiOpen = false
-    currentCategory = nil
-    activeItem = nil
-    playing = false
-    playbackId = playbackId + 1
+    if loadingId then
+        resetPlayback()
+    end
 
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
@@ -171,12 +170,12 @@ end
 
 ---Stops the currently playing animation and notifies the NUI (for keybinding use)
 function AnimationUI.Stop()
-    if not playing then
-        return
-    end
-
+    local resetAttitude = activeItem and activeItem.type == 'attitude'
     resetPlayback()
     ClearPedTasks(ESX.PlayerData.ped)
+    if resetAttitude then
+        ResetPedMovementClipset(ESX.PlayerData.ped, 0.0)
+    end
 end
 
 -- NUI Ready callback — returns theme colors from convars
@@ -210,6 +209,7 @@ xLib.nui.register('play', function(data)
 
     playbackId = playbackId + 1
     local requestId = playbackId
+    loadingId = requestId
     activeItem = data
     playing = true
     local ped = ESX.PlayerData.ped
@@ -236,6 +236,7 @@ xLib.nui.register('play', function(data)
     if playbackId ~= requestId then
         return xLib.nui.fail('Animation cancelled')
     end
+    loadingId = nil
     if not started then
         resetPlayback()
         return xLib.nui.fail('Unable to load animation')
@@ -248,8 +249,7 @@ end)
 
 -- NUI Stop callback
 xLib.nui.register('stop', function()
-    resetPlayback()
-    ClearPedTasks(ESX.PlayerData.ped)
+    AnimationUI.Stop()
     return xLib.nui.ok()
 end)
 
@@ -262,8 +262,7 @@ xLib.nui.register('category', function(data)
     currentCategory = data.name
 
     if playing then
-        resetPlayback()
-        ClearPedTasks(ESX.PlayerData.ped)
+        AnimationUI.Stop()
     end
 
     return xLib.nui.ok()
