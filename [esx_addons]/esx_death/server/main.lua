@@ -102,6 +102,7 @@ local function load(src, player)
     end
 
     local row = MySQL.single.await('SELECT is_dead, death_time FROM users WHERE identifier = ?', { player.identifier })
+
     dbg('load:db-row', { src = src, row = row, stillCurrent = current(src, player) })
 
     if not row or not current(src, player) then
@@ -135,13 +136,14 @@ end
 
 local function withPlayer(src, operation)
     src = tonumber(src)
+
     local player = src and ESX.GetPlayerFromId(src)
 
     dbg('withPlayer:attempt', {
         src = src,
         ready = ready,
         hasPlayer = player ~= nil,
-        locked = src and locks[src] ~= nil
+        locked = src and locks[src] ~= nil,
     })
 
     if not ready or not player then
@@ -155,6 +157,7 @@ local function withPlayer(src, operation)
     end
 
     local token = {}
+
     locks[src] = token
 
     local ok, result = pcall(function()
@@ -210,19 +213,13 @@ local function save(src, player, state, dead, reason)
         identifier = player.identifier,
         dead = dead,
         reason = reason,
-        timestamp = timestamp
+        timestamp = timestamp,
     })
 
     if dead then
-        MySQL.update.await(
-            'UPDATE users SET is_dead = 1, death_time = ? WHERE identifier = ?',
-            { timestamp, player.identifier }
-        )
+        MySQL.update.await('UPDATE users SET is_dead = 1, death_time = ? WHERE identifier = ?', { timestamp, player.identifier })
     else
-        MySQL.update.await(
-            'UPDATE users SET is_dead = 0, death_time = NULL WHERE identifier = ?',
-            { player.identifier }
-        )
+        MySQL.update.await('UPDATE users SET is_dead = 0, death_time = NULL WHERE identifier = ?', { player.identifier })
     end
 
     if not current(src, player) then
@@ -350,6 +347,7 @@ local function retryDeath(src, player, deathInfo)
             end
 
             local retry = recordDeath(src, pending.deathInfo)
+
             dbg('event:esx:onPlayerDeath:retry-result', { src = src, retry = retry })
 
             if retry.ok then
@@ -424,6 +422,8 @@ local function revive(src, reason)
         end
 
         state.recovery = { loadout = not Config.OxInventory and player.getLoadout() or nil }
+        TriggerEvent('esx_status:set', id, 'hunger', 500000)
+        TriggerEvent('esx_status:set', id, 'thirst', 500000)
         dbg('revive:trigger-client-recover', { src = id, wasDead = wasDead, recovery = state.recovery })
 
         TriggerClientEvent('esx_death:recover', id, state.recovery)
@@ -521,8 +521,8 @@ local function closestHospital(src)
             x = closest.coords.x,
             y = closest.coords.y,
             z = closest.coords.z,
-            heading = closest.heading
-        }
+            heading = closest.heading,
+        },
     })
 
     return {
@@ -630,6 +630,8 @@ local function respawn(src)
         }
 
         dbg('respawn:done', { src = id, recovery = state.recovery })
+        TriggerEvent('esx_status:set', id, 'hunger', 500000)
+        TriggerEvent('esx_status:set', id, 'thirst', 500000)
 
         return state.recovery
     end)
@@ -658,6 +660,7 @@ local function distress(src)
         end
 
         state.distressAt = os.time()
+
         local coords = GetEntityCoords(GetPlayerPed(id))
 
         TriggerEvent('esx_death:distress', id, { x = coords.x, y = coords.y, z = coords.z })
@@ -726,20 +729,26 @@ AddEventHandler('txAdmin:events:healedPlayer', function(data)
     end
 end)
 
-ESX.RegisterCommand('revive', 'admin', function(xPlayer, args)
-    dbg('command:revive', { executor = xPlayer and xPlayer.source, target = args.playerId and args.playerId.source })
-    revive(args.playerId.source, 'admin')
-end, true, {
-    help = Translate('revive_help'),
-    validate = true,
-    arguments = {
-        {
-            name = 'playerId',
-            help = Translate('player_id'),
-            type = 'player',
+ESX.RegisterCommand(
+    'revive',
+    'admin',
+    function(xPlayer, args)
+        dbg('command:revive', { executor = xPlayer and xPlayer.source, target = args.playerId and args.playerId.source })
+        revive(args.playerId.source, 'admin')
+    end,
+    true,
+    {
+        help = Translate('revive_help'),
+        validate = true,
+        arguments = {
+            {
+                name = 'playerId',
+                help = Translate('player_id'),
+                type = 'player',
+            },
         },
-    },
-})
+    }
+)
 
 ESX.RegisterCommand('reviveall', 'admin', function()
     dbg('command:reviveall')

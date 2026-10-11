@@ -11,20 +11,17 @@ function CreateAddonAccount(name, owner, money)
     local revision = 0
     local persisted = 0
     local writing = false
+    local transaction = false
     local waiters = {}
 
     local function valid(amount)
-        return type(amount) == 'number'
-            and amount == amount
-            and amount >= 0
-            and amount <= 2147483647
-            and amount % 1 == 0
+        return type(amount) == 'number' and amount == amount and amount >= 0 and amount <= 2147483647 and amount % 1 == 0
     end
 
     local pump
 
     pump = function()
-        if writing or persisted == revision then
+        if transaction or writing or persisted == revision then
             return
         end
 
@@ -36,8 +33,7 @@ function CreateAddonAccount(name, owner, money)
         local params
 
         if owner == nil then
-            query =
-                'UPDATE addon_account_data SET money = ? WHERE account_name = ? AND owner IS NULL'
+            query = 'UPDATE addon_account_data SET money = ? WHERE account_name = ? AND owner IS NULL'
             params = { snapshot, name }
         else
             query = 'UPDATE addon_account_data SET money = ? WHERE account_name = ? AND owner = ?'
@@ -55,20 +51,13 @@ function CreateAddonAccount(name, owner, money)
             if rows == 0 and not verifiedZero then
                 verifiedZero = true
 
-                local lookup = owner == nil
-                        and 'SELECT money FROM addon_account_data WHERE account_name = ? AND owner IS NULL'
+                local lookup = owner == nil and 'SELECT money FROM addon_account_data WHERE account_name = ? AND owner IS NULL'
                     or 'SELECT money FROM addon_account_data WHERE account_name = ? AND owner = ?'
 
                 local values = owner == nil and { name } or { name, owner }
 
                 local ok = pcall(MySQL.query, lookup, values, function(result)
-                    finish(
-                        type(result) == 'table'
-                                and #result == 1
-                                and result[1].money == snapshot
-                                and 1
-                            or nil
-                    )
+                    finish(type(result) == 'table' and #result == 1 and result[1].money == snapshot and 1 or nil)
                 end)
 
                 if not ok then
@@ -136,6 +125,36 @@ function CreateAddonAccount(name, owner, money)
 
     function self.isDirty()
         return writing or persisted ~= revision
+    end
+
+    function self.withPersistence(action)
+        while transaction do
+            Wait(0)
+        end
+
+        transaction = true
+
+        while writing do
+            Wait(0)
+        end
+
+        local version = revision
+        local ok, success, delta = pcall(action, self.money)
+
+        if not ok then
+            print(('[esx_addonaccount] Unresolved transaction for %s; persistence remains locked: %s'):format(name, tostring(success)))
+            return false
+        end
+
+        if ok and success and type(delta) == 'number' then
+            self.money = self.money + delta
+            revision = revision + 1
+            persisted = version
+        end
+
+        transaction = false
+        pump()
+        return success
     end
 
     local function change(amount, event, delta)

@@ -21,6 +21,7 @@ server_scripts {
     'locales/*.lua',
     'config.lua',
     'server/employees.lua',
+    'server/economy.lua',
     'server/main.lua',
 }
 
