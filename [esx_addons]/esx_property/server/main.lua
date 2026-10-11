@@ -2112,10 +2112,16 @@ end)
 
 registerPropertyCallback('esx_property:getPlayerOutfit', function(source, cb, num)
     local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer or type(num) ~= 'number' or num ~= num or num % 1 ~= 0 or num < 1 or num > 100 then return cb(false) end
 
     TriggerEvent('esx_datastore:getDataStore', 'property', xPlayer.identifier, function(store)
-        local outfit = store.get('dressing', num)
-        cb(outfit.skin)
+        local outfit = store and store.get('dressing', num)
+
+        if ESX.GetPlayerFromId(source) ~= xPlayer or type(outfit) ~= 'table' or type(outfit.skin) ~= 'table' then return cb(false) end
+        
+        exports.esx_skin:SaveOutfit(source, outfit.skin, function(saved, appliedSkin)
+            cb(saved and appliedSkin or false)
+        end)
     end)
 end)
 

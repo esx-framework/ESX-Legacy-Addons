@@ -1461,54 +1461,97 @@ local function impoundVehicle(plate, lot)
 end
 
 local deletedVehicleImpounds = {}
+local trackedVehicleEntities = {}
+local deletedVehicleWorkerPending = false
 
-local function queueDeletedVehicleImpound(plate, model)
-    if not validPlate(plate) then
-        return
-    end
-
+local function processDeletedVehicle(record)
+    local plate, model = record.plate, record.model
     local key = normPlate(plate)
-    if deletedVehicleImpounds[key] then
+    
+    local lotId = defaultImpoundLot()
+    if not lotId then
         return
     end
 
-    deletedVehicleImpounds[key] = true
+    local condition, plateParams = plateCondition(plate)
+    local ok, row = pcall(MySQL.single.await,
+        ("SELECT `stored`, `pound`, `vehicle` FROM `owned_vehicles` WHERE %s AND `stored` = 0 AND `pound` IS NULL LIMIT 1")
+        :format(condition),
+        plateParams)
 
+    if not ok or not row then
+        return
+    end
+
+    local storedModel = storedVehicleModel(row)
+    if type(model) == "number" and model ~= 0 and storedModel and not sameVehicleModel(storedModel, model) then
+        return
+    end
+
+    local impounded, err = pcall(impoundVehicle, plate, lotId)
+    if not impounded then
+        print(("[esx_garage] failed to impound deleted vehicle %s: %s"):format(key, tostring(err)))
+    end
+end
+
+local scheduleDeletedVehicleWorker
+scheduleDeletedVehicleWorker = function()
+    if deletedVehicleWorkerPending then return end
+    deletedVehicleWorkerPending = true
     SetTimeout(1500, function()
-        deletedVehicleImpounds[key] = nil
-
-        local lotId = defaultImpoundLot()
-        if not lotId then
-            return
+        local processed = 0
+        -- One worker prevents simultaneous disappearances from flooding oxmysql.
+        for key, record in pairs(deletedVehicleImpounds) do
+            local ok, err = pcall(processDeletedVehicle, record)
+            deletedVehicleImpounds[key] = nil
+            if not ok then
+                print(('[esx_garage] deleted vehicle recovery failed for %s: %s'):format(key, tostring(err)))
+            end
+            processed = processed + 1
+            if processed >= 32 then break end
         end
-
-        local condition, plateParams = plateCondition(plate)
-        local ok, row = pcall(MySQL.single.await,
-            ("SELECT `stored`, `pound`, `vehicle` FROM `owned_vehicles` WHERE %s AND `stored` = 0 AND `pound` IS NULL LIMIT 1")
-            :format(condition),
-            plateParams)
-
-        if not ok or not row then
-            return
-        end
-
-        local storedModel = storedVehicleModel(row)
-        if type(model) == "number" and model ~= 0 and storedModel and not sameVehicleModel(storedModel, model) then
-            return
-        end
-
-        local impounded, err = pcall(impoundVehicle, plate, lotId)
-        if not impounded then
-            print(("[esx_garage] failed to impound deleted vehicle %s: %s"):format(key, tostring(err)))
-        end
+        deletedVehicleWorkerPending = false
+        if next(deletedVehicleImpounds) then scheduleDeletedVehicleWorker() end
     end)
 end
 
+local function queueDeletedVehicleImpound(plate, model)
+    if not GarageReady or not validPlate(plate) then return end
+    local key = normPlate(plate)
+    if deletedVehicleImpounds[key] then return end
+    deletedVehicleImpounds[key] = { plate = plate, model = model }
+    scheduleDeletedVehicleWorker()
+end
+
+AddEventHandler('esx:createdExtendedVehicle', function(vehicle)
+    local entity = vehicle:getEntity()
+    if entity and entity > 0 then
+        trackedVehicleEntities[entity] = { plate = vehicle.plate, model = vehicle:getModelHash() }
+    end
+end)
+
+AddEventHandler('esx:changedExtendedVehiclePlate', function(plate, previousPlate)
+    for _, record in pairs(trackedVehicleEntities) do
+        if record.plate == previousPlate then record.plate = plate end
+    end
+end)
+
 AddEventHandler("entityRemoved", function(entity)
+    local tracked = trackedVehicleEntities[entity]
+    trackedVehicleEntities[entity] = nil
+    if tracked then
+        queueDeletedVehicleImpound(tracked.plate, tracked.model)
+        return
+    end
+
     local typeOk, entityType = pcall(GetEntityType, entity)
     if not typeOk or entityType ~= 2 then
         return
     end
+
+    -- Ambient traffic is not owned; only scripted vehicles need a SQL fallback.
+    local populationOk, populationType = pcall(GetEntityPopulationType, entity)
+    if populationOk and populationType ~= 7 then return end
 
     local plateOk, plate = pcall(GetVehicleNumberPlateText, entity)
     if not plateOk then

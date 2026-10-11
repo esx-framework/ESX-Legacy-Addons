@@ -2,8 +2,10 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 local hasAlreadyEnteredMarker, cachedSkin, lastZone, currentAction, currentActionMsg, hasPaid
+local purchasePending = false
 
 function OpenShopMenu()
+    if purchasePending then return end
 	ESX.HideUI()
 	hasPaid = false
 
@@ -25,13 +27,18 @@ function OpenShopMenu()
 		}
 
 		ESX.OpenContext("right", elements, function(menu,element)
+            if purchasePending then return end
 			if element.value == "yes" then
+				local selectedSkin
+
+				TriggerEvent('skinchanger:getSkin', function(skin) selectedSkin = skin end)
+                purchasePending = true
+
 				xLib.callback('esx_barbershop:pay', false, function(paid)
+                    purchasePending = false
 					if paid then
 						ESX.CloseContext()
-						TriggerEvent('skinchanger:getSkin', function(skin)
-							TriggerServerEvent('esx_skin:save', skin)
-						end)
+						TriggerEvent('esx_skin:setLastSkin', selectedSkin)
 
 						hasPaid = true
 					else
@@ -40,11 +47,18 @@ function OpenShopMenu()
 									
 						ESX.ShowNotification(TranslateCap('not_enough_money'))
 					end
-				end)
+					
+                    if hasAlreadyEnteredMarker then
+                        currentAction = 'shop_menu'
+                        currentActionMsg = TranslateCap('press_access')
+                        ESX.TextUI(currentActionMsg)
+                    end
+				end, selectedSkin)
 			elseif element.value == "no" then
 				TriggerEvent('skinchanger:loadSkin', cachedSkin) 
 				ESX.CloseContext()
 			end
+            if purchasePending or not hasAlreadyEnteredMarker then return end
 			currentAction = 'shop_menu'
 			currentActionMsg = TranslateCap('press_access')
 			ESX.TextUI(currentActionMsg)
@@ -86,20 +100,20 @@ function OpenShopMenu()
 end
 
 AddEventHandler('esx_barbershop:hasEnteredMarker', function(zone)
+    hasAlreadyEnteredMarker = true
 	currentAction = 'shop_menu'
 	currentActionMsg = TranslateCap('press_access')
 	ESX.TextUI(currentActionMsg)
 end)
 
 AddEventHandler('esx_barbershop:hasExitedMarker', function(zone)
+    hasAlreadyEnteredMarker = false
 	ESX.CloseContext()
 	currentAction = nil
 	ESX.HideUI()
 
-	if not hasPaid then
-		xLib.callback('esx_skin:getPlayerSkin', false, function(skin)
-			TriggerEvent('skinchanger:loadSkin', skin)
-		end)
+	if not hasPaid and not purchasePending and type(cachedSkin) == 'table' then
+        TriggerEvent('skinchanger:loadSkin', cachedSkin)
 	end
 end)
 

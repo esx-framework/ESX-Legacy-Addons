@@ -84,7 +84,7 @@ end
 
 local function stopAnimation()
 	if not ESX.PlayerData.dead then
-		if Config.UseNui ~= false and AnimationUI.IsOpen() then
+		if Config.UseNui ~= false then
 			AnimationUI.Stop()
 		else
 			ClearPedTasks(ESX.PlayerData.ped)

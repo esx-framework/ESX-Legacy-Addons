@@ -6,6 +6,7 @@ local CurrentAction, CurrentActionMsg, LastZone, currentDisplayVehicle, CurrentV
 local CurrentActionData, Vehicles, Categories = {}, {}, {}
 local VehiclesByModel = {}
 local vehiclesByCategory = {}
+local vehiclesLoaded = false
 
 function getVehicleFromModel(model)
 	return VehiclesByModel[model]
@@ -40,6 +41,8 @@ RegisterNetEvent('esx_vehicleshop:updateVehiclesAndCategories', function(vehicle
 	Categories = categories
 
 	VehiclesByModel = vehiclesByModel
+	vehiclesByCategory = {}
+	vehiclesLoaded = true
 
 	table.sort(Vehicles, function(a, b)
 		return a.name < b.name
@@ -120,6 +123,12 @@ function StartShopRestriction()
 end
 
 function OpenShopMenu()
+    if not vehiclesLoaded then
+        TriggerServerEvent('esx_vehicleshop:getVehiclesAndCategories')
+        print('[esx_vehicleshop] The vehicle catalog has not been received yet.')
+        return
+    end
+
 	if #Vehicles == 0 then
 		print('[^3ERROR^7] Vehicleshop has ^50^7 vehicles, please add some!')
 		return
@@ -819,4 +828,7 @@ CreateThread(function()
 	RefreshInterior(interiorID)
 end)
 
-if ESX.PlayerLoaded then PlayerManagement() end
+if ESX.PlayerLoaded then
+    PlayerManagement()
+    TriggerServerEvent('esx_vehicleshop:getVehiclesAndCategories')
+end
