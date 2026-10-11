@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local shopBlips = {}
 
 ---Creates blips for all shop locations
@@ -13,16 +16,14 @@ function CreateShopBlips()
 
 			for i = 1, posCount do
 				local pos = zoneData.Pos[i]
-				local blip = AddBlipForCoord(pos.x, pos.y, pos.z)
-
-				SetBlipSprite(blip, zoneData.Type)
-				SetBlipScale(blip, zoneData.Size)
-				SetBlipColour(blip, zoneData.Color)
-				SetBlipAsShortRange(blip, true)
-
-				BeginTextCommandSetBlipName('STRING')
-				AddTextComponentSubstringPlayerName(zoneName)
-				EndTextCommandSetBlipName(blip)
+				local blip = xLib.blips.create({
+					coords = pos,
+					sprite = zoneData.Type,
+					scale = zoneData.Size,
+					color = zoneData.Color,
+					shortRange = true,
+					label = zoneName
+				})
 
 				shopBlips[#shopBlips + 1] = blip
 			end
@@ -35,7 +36,7 @@ end
 ---Removes all shop blips
 function RemoveShopBlips()
 	for i = 1, #shopBlips do
-		RemoveBlip(shopBlips[i])
+		xLib.blips.remove(shopBlips[i])
 	end
 	shopBlips = {}
 end

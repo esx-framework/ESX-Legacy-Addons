@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['da'] = {
   -- global menus
   ['not_enough_in_society']   = 'der er ikke nok af ~r~dette item!',

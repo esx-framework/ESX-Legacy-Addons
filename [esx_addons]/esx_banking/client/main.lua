@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local BANK = {
     Data = {}
 }
@@ -127,15 +130,14 @@ function BANK:CreateBlips()
         if type(Config.Banks[i].Blip) == "table" and Config.Banks[i].Blip.Enabled then
             local position = Config.Banks[i].Position
             local bInfo = Config.Banks[i].Blip
-            local blip = AddBlipForCoord(position.x, position.y, position.z)
-
-            SetBlipSprite(blip, bInfo.Sprite)
-            SetBlipScale(blip, bInfo.Scale)
-            SetBlipColour(blip, bInfo.Color)
-            SetBlipAsShortRange(blip, true)
-            BeginTextCommandSetBlipName("STRING")
-            AddTextComponentSubstringPlayerName(bInfo.Label)
-            EndTextCommandSetBlipName(blip)
+            local blip = xLib.blips.create({
+                coords = position,
+                sprite = bInfo.Sprite,
+                scale = bInfo.Scale,
+                color = bInfo.Color,
+                shortRange = true,
+                label = bInfo.Label
+            })
 
             tmpActiveBlips[#tmpActiveBlips + 1] = blip
         end
@@ -156,9 +158,9 @@ end
 
 function BANK:HandleUi(state, atm, atmData)
     if not state then
-        SetNuiFocus(false, false)
+        xLib.nui.focus(false, false)
         inMenu = false
-        SendNUIMessage({
+        xLib.nui.send({
             action = "closeBanking"
         })
         return
@@ -182,10 +184,10 @@ function BANK:HandleUi(state, atm, atmData)
             return
         end
 
-        SetNuiFocus(true, true)
+        xLib.nui.focus(true, true)
         ClearPedTasks(PlayerPedId())
 
-        SendNUIMessage({
+        xLib.nui.send({
             action = "openBanking",
             payload = {
                 accessType = data.accessType,
@@ -233,14 +235,14 @@ end)
 
 RegisterNetEvent("esx_banking:updateMoneyInUI", function(data, bankMoney, money)
     if type(data) == "table" then
-        SendNUIMessage({
+        xLib.nui.send({
             action = "updateBanking",
             payload = data
         })
         return
     end
 
-    SendNUIMessage({
+    xLib.nui.send({
         action = "updateBanking",
         payload = {
             actionType = data,
@@ -267,7 +269,7 @@ RegisterNetEvent("esx:onPlayerLogout", function()
     inMenu = false
     uiActive = false
     BANK:RemoveBlips()
-    SetNuiFocus(false, false)
+    xLib.nui.focus(false, false)
     ESX.HideUI()
 end)
 
@@ -282,7 +284,7 @@ AddEventHandler("onResourceStop", function(resource)
     end
 
     if inMenu then
-        SetNuiFocus(false, false)
+        xLib.nui.focus(false, false)
     end
 end)
 
@@ -293,34 +295,35 @@ RegisterNetEvent("esx:onPlayerDeath", function()
     end
 end)
 
-RegisterNUICallback("close", function(_, cb)
+xLib.nui.register("close", function()
     BANK:HandleUi(false)
-    cb("ok")
+    return "ok"
 end)
 
-RegisterNUICallback("clickButton", function(data, cb)
+xLib.nui.register("clickButton", function(data)
     if not data or not inMenu then
-        cb({ok = false})
-        return
+        return {ok = false}
     end
 
     TriggerServerEvent("esx_banking:doingType", data)
-    cb({ok = true})
+    return {ok = true}
 end)
 
-RegisterNUICallback("checkPincode", function(data, cb)
+xLib.nui.register("checkPincode", function(data, reply)
     if not data or not inMenu then
-        cb({error = true})
+        reply({error = true})
         return
     end
 
     xLib.callback("esx_banking:checkPincode", false, function(pincode)
         if pincode then
-            cb({success = true})
+            reply({success = true})
             ESX.ShowNotification(TranslateCap("pincode_found"), "success")
         else
-            cb({error = true})
+            reply({error = true})
             ESX.ShowNotification(TranslateCap("pincode_not_found"), "error")
         end
     end, data)
+
+    return xLib.nui.defer
 end)

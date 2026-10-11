@@ -1,3 +1,8 @@
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
 <script lang="ts">
 	import "./PlayerManagement.css";
 	import { uiState } from "$lib/shared/stores/user.svelte";

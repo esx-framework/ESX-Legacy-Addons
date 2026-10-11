@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local function assertClientConfig()
     if type(Config) ~= "table" then
         error("[esx_weather] Config must be configured")

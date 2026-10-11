@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 export type NotificationType = "error" | "success" | "info";
 
 export type NotificationItem = {

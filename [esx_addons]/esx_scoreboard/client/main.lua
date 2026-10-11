@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 --- @module client.main
 --- Main client entry point for the scoreboard resource
 
@@ -6,33 +9,29 @@ local ScoreboardModule = xLib.require "@esx_scoreboard.client.module.main"
 local RESOURCE_NAME <const> = GetCurrentResourceName()
 
 --- Register NUI callback to close scoreboard from UI
-RegisterNUICallback("closeScoreboard", function(data, cb)
+xLib.nui.register("closeScoreboard", function()
   ScoreboardModule.CloseScoreboard()
-  cb({})
+  return {}
 end)
 
 --- Send theme update to NUI
 local function SendThemeUpdate()
-  SendNUIMessage({
-    type = "updateTheme",
-    primaryColor = GetConvar("esx:ui:primaryColor", "#FB9B04"),
-    secondaryColor = GetConvar("esx:ui:secondaryColor", "#252525"),
-    backgroundColor = GetConvar("esx:ui:backgroundColor", "#161616"),
-    accentColor = GetConvar("esx:ui:accentColor", "#383838"),
-    logoUrl = GetConvar("esx:ui:logoUrl", "")
-  })
+  local theme = xLib.colors.getESXTheme()
+  theme.type = "updateTheme"
+
+  xLib.nui.send(theme)
 end
 
 --- Register NUI callback for when the UI is fully mounted
-RegisterNUICallback("nuiReady", function(data, cb)
-  cb({})
+xLib.nui.register("nuiReady", function()
   SendThemeUpdate()
+  return {}
 end)
 
 --- Register NUI callback for paged player requests
-RegisterNUICallback("requestPlayersPage", function(data, cb)
+xLib.nui.register("requestPlayersPage", function(data)
   ScoreboardModule.RequestPage(data)
-  cb({ ok = true })
+  return { ok = true }
 end)
 
 RegisterCommand("scoreboard", function()

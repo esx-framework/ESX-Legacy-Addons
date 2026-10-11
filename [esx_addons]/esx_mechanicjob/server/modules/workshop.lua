@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local MechanicJob = ESXMechanicJob
 local PlayerWorkStates = MechanicJob.PlayerWorkStates
 local WORK_ACTION_DELAY = 4000

@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 var tableauQuestion = [
 	{
 		question: "Jeśli masz 80 km/h, a zbliżasz się do terenu zabudowanego, musisz:",

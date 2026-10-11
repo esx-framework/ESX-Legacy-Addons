@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 INSERT INTO `addon_account` (name, label, shared) VALUES
 	('society_police', 'Poliisi', 1)
 ;

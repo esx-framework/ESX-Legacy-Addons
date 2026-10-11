@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 -- Translations are already shipped with the resource, so resolve them here
 -- instead of paying for them in the init payload. The NUI keeps a full English
 -- set and merges these over it, so any missing key falls back on its own.
@@ -36,7 +39,7 @@ local function requestInitData()
         end
 
         data.translations = activeTranslations()
-        SendNUIMessage({
+        xLib.nui.send({
             action = 'initResource',
             data = data
         })

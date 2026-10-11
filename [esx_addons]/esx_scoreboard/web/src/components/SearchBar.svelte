@@ -1,3 +1,8 @@
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
 <script>
   import { setPageSize, setSearchQuery } from "../stores/scoreboard.js"
 

@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import{r as Bh,a as Rh,b as L,j as S,f as Gh,R as Se,d as U,m as Ua,o as $d,A as fi}from"./vendor-CcJJuIct.js";(function(){const s=document.createElement("link").relList;if(s&&s.supports&&s.supports("modulepreload"))return;for(const h of document.querySelectorAll('link[rel="modulepreload"]'))f(h);new MutationObserver(h=>{for(const p of h)if(p.type==="childList")for(const C of p.addedNodes)C.tagName==="LINK"&&C.rel==="modulepreload"&&f(C)}).observe(document,{childList:!0,subtree:!0});function r(h){const p={};return h.integrity&&(p.integrity=h.integrity),h.referrerPolicy&&(p.referrerPolicy=h.referrerPolicy),h.crossOrigin==="use-credentials"?p.credentials="include":h.crossOrigin==="anonymous"?p.credentials="omit":p.credentials="same-origin",p}function f(h){if(h.ep)return;h.ep=!0;const p=r(h);fetch(h.href,p)}})();var Vf={exports:{}},Mn={},Lf={exports:{}},qf={};/**
  * @license React
  * scheduler.production.js

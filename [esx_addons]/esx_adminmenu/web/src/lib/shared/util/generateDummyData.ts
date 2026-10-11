@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import type { Ban } from "../../tabs/players/types/ban";
 import type { Player } from "../../tabs/players/types/player";
 import type { Vehicle } from "../../tabs/players/types/vehicle";

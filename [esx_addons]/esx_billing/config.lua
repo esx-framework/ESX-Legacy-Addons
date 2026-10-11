@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Config = {}
 Config.Locale = GetConvar('esx:locale', 'en')
 Config.BillingDistance = 10.0
@@ -9,3 +12,6 @@ Config.MaxBillLabelLength = 80
 Config.HighBillConfirmationAmount = 50000
 Config.HighBillConfirmationTimeout = 30000
 Config.BillingMinimumGrades = {}
+Config.BillsPageSize = 50
+Config.BillsReadCooldown = 1000
+Config.BillPaymentCooldown = 500

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local currentAction = nil
 local currentActionMsg = nil
 local currentActionData = {}
@@ -40,10 +43,27 @@ end
 
 -- Register ESX interaction
 xLib.interactions.register('shop_menu', function()
-	local data = GetCurrentActionData()
-	if data and data.zone then
-		OpenShop(data.zone)
+	local zone = GetNearbyShopZone()
+	if zone then
+		OpenShop(zone)
 	end
 end, function()
-	return GetCurrentAction() == 'shop_menu'
+	return GetNearbyShopZone() ~= nil and not IsUIOpen()
+end)
+
+-- Fallback for servers/clients where the keybind interaction command is not firing.
+CreateThread(function()
+	while true do
+		local zone = GetNearbyShopZone()
+
+		if zone and not IsUIOpen() then
+			if IsControlJustReleased(0, 38) then
+				OpenShop(zone)
+			end
+
+			Wait(0)
+		else
+			Wait(250)
+		end
+	end
 end)

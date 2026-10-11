@@ -1,4 +1,9 @@
 <!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
+<!--
   @component EmptyCart
   Displays an empty state message when the shopping cart contains no items.
   Shows a basket icon with descriptive text prompting the user to add items.

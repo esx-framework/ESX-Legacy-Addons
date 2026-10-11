@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import type { ServerState } from "../types/server";
 import type { Translations } from "../stores/translations.svelte";
 import type { Player } from "../../tabs/players/types/player";

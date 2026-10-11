@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['sv'] = {
     ['valid_this_purchase'] = 'Vill du köpa detta?',
     ['yes'] = 'Ja',

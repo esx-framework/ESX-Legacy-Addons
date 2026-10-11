@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales ['sr'] = {
   ['valid_purchase'] = 'potvrdite kupovinu?',
   ['yes'] = 'da (<span style="color: green;">$%s</span>)',

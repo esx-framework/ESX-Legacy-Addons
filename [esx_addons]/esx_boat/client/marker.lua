@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local HasAlreadyEnteredMarker = false
 local LastZone                = nil
 
@@ -185,15 +188,12 @@ CreateThread(function()
 end)
 
 function CreateBlip(coords, text, sprite, color, scale)
-	local blip = AddBlipForCoord(coords.x, coords.y)
-
-	SetBlipSprite(blip, sprite)
-	SetBlipScale(blip, scale)
-	SetBlipColour(blip, color)
-
-	SetBlipAsShortRange(blip, true)
-
-	BeginTextCommandSetBlipName('STRING')
-	AddTextComponentSubstringPlayerName(text)
-	EndTextCommandSetBlipName(blip)
+	return xLib.blips.create({
+		coords = coords,
+		sprite = sprite,
+		scale = scale,
+		color = color,
+		shortRange = true,
+		label = text
+	})
 end

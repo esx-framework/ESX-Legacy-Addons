@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 --  VEC2
 local allowedPermissions = Helpers.getAllowedPermissions()
 
@@ -58,7 +61,7 @@ registerCopyCommand("heading", "Copy your current heading.", function(_, ped)
 	return string.format("%.2f", GetEntityHeading(ped))
 end)
 
-registerCopyCommand({ "coords", "copycoords" }, "Copy your current coordinates and heading as fields.", function(_, ped)
+registerCopyCommand({ "copycoords" }, "Copy your current coordinates and heading as fields.", function(_, ped)
 	local coords = GetEntityCoords(ped)
 	local heading = GetEntityHeading(ped)
 	return string.format("x = %.2f, y = %.2f, z = %.2f, heading = %.2f", coords.x, coords.y, coords.z, heading)

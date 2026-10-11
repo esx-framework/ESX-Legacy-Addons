@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 return {
     ["parking_blip_name"] = "Garaje",
     ["Impound_blip_name"] = "Depósito",
@@ -28,6 +31,12 @@ return {
     ["not_in_vehicle"] = "No estás dentro de un vehículo.",
     ["cannot_store"] = "No se puede guardar este vehículo.",
     ["cannot_access_garage"] = "No puedes acceder a este garaje.",
+    ["store_error_already_stored"] = "Este vehículo ya está guardado.",
+    ["store_error_model_mismatch"] = "El modelo del vehículo no coincide con el registro de propiedad.",
+    ["store_error_no_location"] = "No estás en un garaje válido.",
+    ["store_error_plate_conflict"] = "Otro vehículo activo está usando esta matrícula.",
+    ["store_error_plate_mismatch"] = "La matrícula del vehículo no coincide con este vehículo propio.",
+    ["store_error_too_far"] = "Estás demasiado lejos del garaje.",
     ["received_vehicle"] = "Has recibido un vehículo (matrícula: %s).",
 
     ["open_garage"] = "Abrir garaje"

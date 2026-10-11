@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Config = {}
 
 -------- Note: Can Cause quite abit of clutter ---------------
@@ -139,12 +142,10 @@ Config.WardrobeInteraction = function(PropertyId, Interaction)
     ESX.OpenContext("left", elements, function(menu, element)
         TriggerEvent('skinchanger:getSkin', function(skin)
             xLib.callback('esx_property:getPlayerOutfit', false, function(clothes)
+                if type(clothes) ~= 'table' then return end
                 TriggerEvent('skinchanger:loadClothes', skin, clothes)
                 TriggerEvent('esx_skin:setLastSkin', skin)
 
-                TriggerEvent('skinchanger:getSkin', function(skin)
-                    TriggerServerEvent('esx_skin:save', skin)
-                end)
             end, element.value)
         end)
     end)

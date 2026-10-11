@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 INSERT INTO `items` (`name`, `label`, `weight`, `rare`, `can_remove`) VALUES
 	('cannabis', 'Marijuana húmeda', 3, 0, 1),
 	('marijuana', 'Marijuana', 2, 0, 1)

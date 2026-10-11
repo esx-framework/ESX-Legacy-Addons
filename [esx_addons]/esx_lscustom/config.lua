@@ -1,7 +1,34 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Config                   = {}
 Config.DrawDistance      = 10.0
 Config.Locale = GetConvar('esx:locale', 'en')
 Config.IsMechanicJobOnly = false
+Config.Currency = '$'
+
+Config.Workshop = {
+	UseNui = true,
+	EnableCamera = true,
+	EnableStats = true,
+	PurchaseCooldown = 1500,
+	Ownership = {
+		-- If true, LS Customs only accepts vehicles owned by the paying player,
+		-- or customer vehicles handled by mechanics when AllowMechanicCustomerVehicles is true.
+		RequireOwned = false,
+		-- If true, paid changes are saved to owned_vehicles when the vehicle exists there.
+		SaveOwnedVehicles = true,
+		-- Lets mechanics tune and persist customer vehicles without owning them.
+		AllowMechanicCustomerVehicles = false
+	},
+	StatGains = {
+		modEngine = { accel = 12, speed = 8 },
+		modTransmission = { accel = 8 },
+		modBrakes = { brake = 20 },
+		modSuspension = { handling = 10 },
+		modTurbo = { accel = 6, speed = 6 }
+	}
+}
 
 Config.Zones = {
 
@@ -469,6 +496,10 @@ Config.Menus = {
 	main = {
 		label		= 'LS CUSTOMS',
 		parent		= nil,
+		cartCheckout = TranslateCap('cart_checkout'),
+		cartClear = TranslateCap('cart_clear'),
+		vehicleStats = TranslateCap('vehicle_stats'),
+		cameraMenu = TranslateCap('camera'),
 		upgrades	= TranslateCap('upgrades'),
 		cosmetics	= TranslateCap('cosmetics')
 	},
@@ -515,7 +546,7 @@ Config.Menus = {
 	modTurbo = {
 		label = TranslateCap('turbo'),
 		parent = 'upgrades',
-		modType = 17,
+		modType = 18,
 		price = {55.81}
 	},
 	cosmetics = {
@@ -768,9 +799,9 @@ Config.Menus = {
 		wheelType = 6,
 		price = 3.26
 	},
-		modBackWheelsType6 = {
+	modBackWheelsType6 = {
 		label = TranslateCap('motorcycle'),
-		parent = 'modBackWheelsTypes',
+		parent = 'modFrontWheelsTypes',
 		modType = 24,
 		wheelType = 6,
 		price = 3.26

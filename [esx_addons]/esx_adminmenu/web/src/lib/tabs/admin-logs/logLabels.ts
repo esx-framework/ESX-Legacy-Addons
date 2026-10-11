@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 // Turns a raw log row into a sentence a head admin can skim.
 // Every logged action has its own phrasing, built from the exact payload keys
 // the server handlers actually read, instead of dumping JSON on screen.

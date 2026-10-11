@@ -1,36 +1,36 @@
-fx_version 'adamant'
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+fx_version 'cerulean'
 game 'gta5'
+author 'ESX-Framework'
 description 'Provides a way for players to RP as paramedics (heal/revive players)'
 version '1.0.2'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 lua54 'yes'
 
 shared_scripts {
-	'@esx_lib/imports.lua',
-	'@es_extended/imports.lua',
-	'@es_extended/locale.lua',
-	'locales/*.lua',
-	'config.lua'
+    '@esx_lib/imports.lua',
+    '@es_extended/imports.lua',
+    '@es_extended/locale.lua',
+    'locales/*.lua',
+    'config.lua',
 }
 
 server_scripts {
-	'@oxmysql/lib/MySQL.lua',
-	'server/*.lua'
+    '@oxmysql/lib/MySQL.lua',
+    '@esx_lib/imports/catalog/bootstrap.lua',
+    'server/*.lua',
 }
 
 client_scripts {
-	'client/*.lua'
-}
-
-ui_page 'html/medal.html'
-
-files {
-	'html/medal.html',
-	'html/medal.js'
+    'client/*.lua',
 }
 
 dependencies {
-	'es_extended',
-	'esx_skin',
-	'esx_vehicleshop'
+    'esx_lib',
+    'esx_death',
+    'es_extended',
+    'esx_skin',
+    'esx_vehicleshop',
 }

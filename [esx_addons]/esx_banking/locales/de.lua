@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['de'] = {
   ['invalid_amount'] = 'Das ist eine Ungültige anzahl von Geld',
   ['deposit_money']  = 'Du zahlst ein %s€',

@@ -1,17 +1,30 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 RegisterNetEvent('esx_rpchat:sendProximityMessage')
-AddEventHandler('esx_rpchat:sendProximityMessage', function(playerId, title, message, color)
+AddEventHandler('esx_rpchat:sendProximityMessage', function(playerIdOrTitle, titleOrMessage, messageOrColor, color)
+	if not color then
+		TriggerEvent('chat:addMessage', {args = {playerIdOrTitle, titleOrMessage}, color = messageOrColor})
+		return
+	end
+
+	local playerId = playerIdOrTitle
+	local title = titleOrMessage
+	local message = messageOrColor
 	local player = PlayerId()
 	local target = GetPlayerFromServerId(playerId)
+
+	if target == -1 then
+		return
+	end
 
 	local playerPed = PlayerPedId()
 	local targetPed = GetPlayerPed(target)
 	local playerCoords = GetEntityCoords(playerPed)
 	local targetCoords = GetEntityCoords(targetPed)
 
-	if target ~= -1 then
-		if target == player or #(playerCoords - targetCoords) < 20 then
-			TriggerEvent('chat:addMessage', {args = {title, message}, color = color})
-		end
+	if target == player or #(playerCoords - targetCoords) < (tonumber(Config.ProximityDistance) or 20.0) then
+		TriggerEvent('chat:addMessage', {args = {title, message}, color = color})
 	end
 end)
 

@@ -1,10 +1,13 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---@param source number Player source
 ---@param items table[] Validated items to add
 ---@return boolean canCarry
 function ValidateInventorySpace(source, items)
 	local itemCount = #items
 
-	if Config.Inventory == 'ox_inventory' then
+	if GetShopInventoryBackend() == 'ox_inventory' then
 		local simulatedItems = {}
 		for i = 1, itemCount do
 			local item = items[i]
@@ -20,14 +23,24 @@ function ValidateInventorySpace(source, items)
 		return true
 	else
 		local xPlayer = ESX.Player(source)
-		local simulatedWeight = 0
+		if not xPlayer then
+			return false
+		end
+
+		local registeredItems = ESX.GetItems()
+		local addedWeight = 0
+
 		for i = 1, itemCount do
 			local item = items[i]
-			if not xPlayer.canCarryItem(item.name, item.quantity) then
+			local itemData = registeredItems[item.name]
+			if not itemData then
 				return false
 			end
+
+			addedWeight = addedWeight + (tonumber(itemData.weight) or 0) * item.quantity
 		end
-		return true
+
+		return xPlayer.getWeight() + addedWeight <= xPlayer.getMaxWeight()
 	end
 end
 
@@ -43,21 +56,39 @@ end
 ---@return boolean success Whether all items were added successfully
 function AddItemsToInventory(source, items)
 	local itemCount = #items
+	local useOx = GetShopInventoryBackend() == 'ox_inventory'
+	local xPlayer
 
-	if Config.Inventory == 'ox_inventory' then
-		for i = 1, itemCount do
-			local item = items[i]
-			local success = exports.ox_inventory:AddItem(source, item.name, item.quantity)
-			if not success then
-				DebugPrint(_U('item_add_failed', item.name, source))
-				return false
-			end
+	if not useOx then
+		xPlayer = ESX.Player(source)
+		if not xPlayer then
+			return false
 		end
-	else
-		local xPlayer = ESX.Player(source)
-		for i = 1, itemCount do
-			local item = items[i]
-			xPlayer.addInventoryItem(item.name, item.quantity)
+	end
+
+	for i = 1, itemCount do
+		local item = items[i]
+		local success
+
+		if useOx then
+			success = exports.ox_inventory:AddItem(source, item.name, item.quantity)
+		else
+			success = xPlayer.addInventoryItem(item.name, item.quantity) ~= false
+		end
+
+		if not success then
+			DebugPrint(_U('item_add_failed', item.name, source))
+
+			for j = i - 1, 1, -1 do
+				local delivered = items[j]
+				if useOx then
+					exports.ox_inventory:RemoveItem(source, delivered.name, delivered.quantity)
+				else
+					xPlayer.removeInventoryItem(delivered.name, delivered.quantity)
+				end
+			end
+
+			return false
 		end
 	end
 

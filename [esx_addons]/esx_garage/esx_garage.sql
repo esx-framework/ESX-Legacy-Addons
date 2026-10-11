@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 -- esx_garage schema additions for `owned_vehicles`.
 -- Existing servers: the resource auto-migrates on start (server/modules/migration.lua); this file is optional.
 -- Fresh installs / manual setup: run it once, or as many times as you like.
@@ -77,6 +80,12 @@ SET @add_owner_plate_index := (SELECT IF(
     'ALTER TABLE `owned_vehicles` ADD INDEX `idx_owned_vehicles_owner_plate` (`owner`, `plate`)'));
 PREPARE s FROM @add_owner_plate_index; EXECUTE s; DEALLOCATE PREPARE s;
 
+SET @add_plate_lookup_index := (SELECT IF(
+    EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'owned_vehicles' AND COLUMN_NAME = 'plate' AND SEQ_IN_INDEX = 1),
+    'SELECT 1',
+    'ALTER TABLE `owned_vehicles` ADD INDEX `idx_owned_vehicles_plate` (`plate`)'));
+PREPARE s FROM @add_plate_lookup_index; EXECUTE s; DEALLOCATE PREPARE s;
+
 SET @add_owner_custom_name_index := (SELECT IF(
     EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'owned_vehicles' AND INDEX_NAME = 'idx_owned_vehicles_owner_custom_name'),
     'SELECT 1',
@@ -101,22 +110,34 @@ SET @add_owner_favorite_plate_index := (SELECT IF(
     'ALTER TABLE `owned_vehicles` ADD INDEX `idx_owned_vehicles_owner_favorite_plate` (`owner`, `is_favorite`, `plate`)'));
 PREPARE s FROM @add_owner_favorite_plate_index; EXECUTE s; DEALLOCATE PREPARE s;
 
--- Legacy impound (stored = 2) -> stored = 1 + pound. Set the lot id below to a valid impound id from your config.lua.
--- Idempotent: once converted, no row matches stored = 2 anymore.
-UPDATE `owned_vehicles` SET `stored` = 1, `parking` = NULL, `pound` = 'los_santos' WHERE `stored` = 2;
+-- The automatic migration uses Config.Impounds[1].id. For a manual import,
+-- set this variable to the id from config.lua before importing.
+SET @esx_default_impound = COALESCE(@esx_default_impound, 'los_santos');
+UPDATE `owned_vehicles` SET `stored` = 1, `parking` = NULL, `pound` = @esx_default_impound WHERE `stored` = 2;
+UPDATE `owned_vehicles` SET `pound` = NULL WHERE `pound` = '';
+
+SET @add_plate_stored_pound_index := (SELECT IF(
+    EXISTS(SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'owned_vehicles' AND INDEX_NAME = 'idx_owned_vehicles_plate_stored_pound'),
+    'SELECT 1',
+    'ALTER TABLE `owned_vehicles` ADD INDEX `idx_owned_vehicles_plate_stored_pound` (`plate`, `stored`, `pound`)'));
+PREPARE s FROM @add_plate_stored_pound_index; EXECUTE s; DEALLOCATE PREPARE s;
 
 INSERT INTO `esx_garage_migrations` (`name`, `version`, `applied_at`)
-VALUES ('schema', '1.14.2', UNIX_TIMESTAMP())
-ON DUPLICATE KEY UPDATE `version` = '1.14.2', `applied_at` = UNIX_TIMESTAMP();
+VALUES ('schema', '1.16.0', UNIX_TIMESTAMP())
+ON DUPLICATE KEY UPDATE `version` = '1.16.0', `applied_at` = UNIX_TIMESTAMP();
 
 INSERT INTO `esx_garage_migrations` (`name`, `version`, `applied_at`)
-VALUES ('performance_indexes', '1.14.2', UNIX_TIMESTAMP())
-ON DUPLICATE KEY UPDATE `version` = '1.14.2', `applied_at` = UNIX_TIMESTAMP();
+VALUES ('performance_indexes', '1.16.0', UNIX_TIMESTAMP())
+ON DUPLICATE KEY UPDATE `version` = '1.16.0', `applied_at` = UNIX_TIMESTAMP();
 
 INSERT INTO `esx_garage_migrations` (`name`, `version`, `applied_at`)
-VALUES ('filter_indexes', '1.14.2', UNIX_TIMESTAMP())
-ON DUPLICATE KEY UPDATE `version` = '1.14.2', `applied_at` = UNIX_TIMESTAMP();
+VALUES ('filter_indexes', '1.16.0', UNIX_TIMESTAMP())
+ON DUPLICATE KEY UPDATE `version` = '1.16.0', `applied_at` = UNIX_TIMESTAMP();
 
 INSERT INTO `esx_garage_migrations` (`name`, `version`, `applied_at`)
-VALUES ('mileage_precision', '1.14.2', UNIX_TIMESTAMP())
-ON DUPLICATE KEY UPDATE `version` = '1.14.2', `applied_at` = UNIX_TIMESTAMP();
+VALUES ('mileage_precision', '1.16.0', UNIX_TIMESTAMP())
+ON DUPLICATE KEY UPDATE `version` = '1.16.0', `applied_at` = UNIX_TIMESTAMP();
+
+INSERT INTO `esx_garage_migrations` (`name`, `version`, `applied_at`)
+VALUES ('pound_normalization', '1.16.0', UNIX_TIMESTAMP())
+ON DUPLICATE KEY UPDATE `version` = '1.16.0', `applied_at` = UNIX_TIMESTAMP();

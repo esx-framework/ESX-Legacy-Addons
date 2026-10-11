@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local menuOpen = false
 local inZoneDrugShop = false
 local inRangeMarkerDrugShop = false
@@ -135,24 +138,26 @@ function OpenBuyLicenseMenu(licenseName)
 end
 
 function CreateBlipCircle(coords, text, radius, color, sprite)
-	local blip = AddBlipForRadius(coords, radius)
+	if radius then
+		xLib.blips.create({
+			coords = coords,
+			radius = radius,
+			highDetail = true,
+			color = 1,
+			alpha = 128,
+			shortRange = true
+		})
+	end
 
-	SetBlipHighDetail(blip, true)
-	SetBlipColour(blip, 1)
-	SetBlipAlpha (blip, 128)
-
-	-- create a blip in the middle
-	blip = AddBlipForCoord(coords)
-
-	SetBlipHighDetail(blip, true)
-	SetBlipSprite (blip, sprite)
-	SetBlipScale  (blip, 1.0)
-	SetBlipColour (blip, color)
-	SetBlipAsShortRange(blip, true)
-
-	BeginTextCommandSetBlipName("STRING")
-	AddTextComponentSubstringPlayerName(text)
-	EndTextCommandSetBlipName(blip)
+	xLib.blips.create({
+		coords = coords,
+		highDetail = true,
+		sprite = sprite,
+		scale = 1.0,
+		color = color,
+		shortRange = true,
+		label = text
+	})
 end
 
 CreateThread(function()

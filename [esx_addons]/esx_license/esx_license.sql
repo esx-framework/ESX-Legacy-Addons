@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 
 
 CREATE TABLE `licenses` (
@@ -13,6 +16,7 @@ CREATE TABLE `user_licenses` (
 	`type` varchar(60) NOT NULL,
 	`owner` VARCHAR(60) NOT NULL,
 
-	PRIMARY KEY (`id`)
+	PRIMARY KEY (`id`),
+	UNIQUE KEY `uq_user_licenses_owner_type` (`owner`, `type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

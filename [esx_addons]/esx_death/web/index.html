@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESX · Emergency services</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="locales.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main id="death-screen" hidden>
+    <div class="screen-shade" aria-hidden="true"></div>
+
+    <div class="layout">
+      <section class="hero" aria-labelledby="title">
+        <img id="brand-logo" class="brand-logo" src="brand-logo.png" alt="">
+        <p id="eyebrow" class="eyebrow">YOU ARE UNCONSCIOUS</p>
+        <h1 id="title">
+          <span id="title-first">There is</span><br>
+          <span id="title-second">still </span><em id="title-accent">time.</em>
+        </h1>
+        <p class="description">
+          <span id="description-first">Call emergency services or wait</span> <span id="description-second">for hospital transfer. Your story continues.</span>
+        </p>
+
+        <div class="location">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/>
+            <circle cx="12" cy="10" r="2.5"/>
+          </svg>
+          <div>
+            <span id="location">Vespucci Boulevard</span>
+            <small id="zone">Pillbox Hill</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="timer-panel" aria-label="Automatic transfer timer">
+        <div class="timer-heading">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 2"/>
+            <path d="M9 2h6"/>
+          </svg>
+          <span id="automatic-transfer">AUTOMATIC TRANSFER</span>
+        </div>
+
+        <div id="countdown" class="countdown" role="timer" aria-label="Time until automatic transfer">11<span>:</span>00</div>
+
+        <div class="timer-progress-row">
+          <div class="timeline" aria-hidden="true"><div id="time-progress"></div></div>
+          <span id="time-percent" class="time-percent">100%</span>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button id="distress" class="action action-primary" type="button">
+          <kbd>G</kbd>
+          <span class="action-copy">
+            <strong id="distress-title">Request help</strong>
+            <small id="distress-description">Share your location with emergency services</small>
+          </span>
+        </button>
+
+        <button id="respawn" class="action action-secondary" type="button" disabled>
+          <span id="hold-progress" aria-hidden="true"></span>
+          <kbd>E</kbd>
+          <span class="action-copy">
+            <strong id="respawn-title">Hospital transfer</strong>
+            <small id="respawn-description">Hold E · Free of charge</small>
+          </span>
+        </button>
+      </div>
+
+      <div class="death-reason-wrap" aria-live="polite">
+        <span aria-hidden="true"></span>
+        <p id="death-reason" class="death-reason"></p>
+        <span aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <p id="feedback" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>

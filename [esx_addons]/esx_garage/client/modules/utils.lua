@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Utils = {}
 
 local PED_GROUND_RETRIES <const> = 40
@@ -9,19 +12,15 @@ local PED_GROUND_RETRIES <const> = 40
 ---@param name string
 ---@return integer
 function Utils.CreateBlip(coords, sprite, scale, color, name)
-    local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
-
-    SetBlipSprite(blip, sprite)
-    SetBlipDisplay(blip, 4)
-    SetBlipScale(blip, scale)
-    SetBlipColour(blip, color)
-    SetBlipAsShortRange(blip, true)
-
-    BeginTextCommandSetBlipName("STRING")
-    AddTextComponentSubstringPlayerName(name)
-    EndTextCommandSetBlipName(blip)
-
-    return blip
+    return xLib.blips.create({
+        coords = coords,
+        sprite = sprite,
+        display = 4,
+        scale = scale,
+        color = color,
+        shortRange = true,
+        label = name
+    })
 end
 
 ---@param model string | number

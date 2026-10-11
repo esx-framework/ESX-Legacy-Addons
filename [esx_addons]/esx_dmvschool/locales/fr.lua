@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['fr'] = {
   ['you_paid'] = 'Vous avez payé $%s',
   ['go_next_point'] = 'Allez vers le prochain passage!',

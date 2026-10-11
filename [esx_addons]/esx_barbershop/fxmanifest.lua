@@ -1,11 +1,15 @@
-fx_version 'adamant'
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+fx_version 'cerulean'
 
 game 'gta5'
 
+author 'ESX-Framework'
 description 'Allows Players to pay to change their hairstyle'
 lua54 'yes'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_script '@es_extended/imports.lua'
 
@@ -25,6 +29,7 @@ client_scripts {
 }
 
 dependencies {
+	'esx_lib',
 	'es_extended',
 	'esx_skin'
 }

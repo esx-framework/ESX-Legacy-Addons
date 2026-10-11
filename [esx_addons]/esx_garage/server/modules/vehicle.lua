@@ -1,3 +1,8 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+ESXCatalog.awaitReady()
+
 local MAX_PROPS_BYTES <const> = 16384
 local MAX_PROPS_DEPTH <const> = 4
 local MAX_PAGE <const> = 100
@@ -29,6 +34,48 @@ end
 ---@return boolean
 local function isFiniteNumber(value)
     return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+end
+
+---@param value any
+---@return number?
+local function vehicleModelHash(value)
+    if type(value) == "number" and isFiniteNumber(value) then
+        return math.floor(value)
+    end
+
+    if type(value) ~= "string" then
+        return nil
+    end
+
+    value = value:gsub("^%s+", ""):gsub("%s+$", "")
+    if value == "" then
+        return nil
+    end
+
+    local numeric = tonumber(value)
+    if numeric and isFiniteNumber(numeric) then
+        return math.floor(numeric)
+    end
+
+    local ok, hash = pcall(GetHashKey, value)
+    if ok and type(hash) == "number" and hash ~= 0 then
+        return hash
+    end
+
+    return nil
+end
+
+---@param value number
+---@return number
+local function unsignedModelHash(value)
+    return value < 0 and value + 4294967296 or value
+end
+
+---@param left number
+---@param right number
+---@return boolean
+local function sameVehicleModel(left, right)
+    return left == right or unsignedModelHash(left) == unsignedModelHash(right)
 end
 
 ---@param value any
@@ -272,28 +319,24 @@ local function storedVehicleModel(row)
         return nil
     end
 
-    return tonumber(storedProps.model)
+    return vehicleModelHash(storedProps.model)
 end
 
 ---@param row OwnedVehicleRow
 ---@param entity integer
 ---@return boolean, number?
 local function validateStoredModel(row, entity)
-    local storedModel = storedVehicleModel(row)
-    if not storedModel then
-        return false, nil
-    end
-
-    local entityModel = GetEntityModel(entity)
+    local entityModel = vehicleModelHash(GetEntityModel(entity))
     if not entityModel then
         return false, nil
     end
 
-    if entityModel ~= storedModel then
+    local storedModel = storedVehicleModel(row)
+    if not storedModel or not sameVehicleModel(entityModel, storedModel) then
         return false, nil
     end
 
-    return true, storedModel
+    return true, entityModel
 end
 
 ---@param xVehicle table
@@ -628,7 +671,7 @@ local function hasUnmanagedWorldVehicle(plateKey, expectedModel, managedEntity)
     for i = 1, #vehicles do
         local veh = vehicles[i]
         if veh ~= managedEntity
-            and GetEntityModel(veh) == expectedModel
+            and sameVehicleModel(GetEntityModel(veh), expectedModel)
             and normPlate(GetVehicleNumberPlateText(veh) or "") == plateKey then
             return true
         end
@@ -1418,54 +1461,97 @@ local function impoundVehicle(plate, lot)
 end
 
 local deletedVehicleImpounds = {}
+local trackedVehicleEntities = {}
+local deletedVehicleWorkerPending = false
 
-local function queueDeletedVehicleImpound(plate, model)
-    if not validPlate(plate) then
-        return
-    end
-
+local function processDeletedVehicle(record)
+    local plate, model = record.plate, record.model
     local key = normPlate(plate)
-    if deletedVehicleImpounds[key] then
+    
+    local lotId = defaultImpoundLot()
+    if not lotId then
         return
     end
 
-    deletedVehicleImpounds[key] = true
+    local condition, plateParams = plateCondition(plate)
+    local ok, row = pcall(MySQL.single.await,
+        ("SELECT `stored`, `pound`, `vehicle` FROM `owned_vehicles` WHERE %s AND `stored` = 0 AND `pound` IS NULL LIMIT 1")
+        :format(condition),
+        plateParams)
 
+    if not ok or not row then
+        return
+    end
+
+    local storedModel = storedVehicleModel(row)
+    if type(model) == "number" and model ~= 0 and storedModel and not sameVehicleModel(storedModel, model) then
+        return
+    end
+
+    local impounded, err = pcall(impoundVehicle, plate, lotId)
+    if not impounded then
+        print(("[esx_garage] failed to impound deleted vehicle %s: %s"):format(key, tostring(err)))
+    end
+end
+
+local scheduleDeletedVehicleWorker
+scheduleDeletedVehicleWorker = function()
+    if deletedVehicleWorkerPending then return end
+    deletedVehicleWorkerPending = true
     SetTimeout(1500, function()
-        deletedVehicleImpounds[key] = nil
-
-        local lotId = defaultImpoundLot()
-        if not lotId then
-            return
+        local processed = 0
+        -- One worker prevents simultaneous disappearances from flooding oxmysql.
+        for key, record in pairs(deletedVehicleImpounds) do
+            local ok, err = pcall(processDeletedVehicle, record)
+            deletedVehicleImpounds[key] = nil
+            if not ok then
+                print(('[esx_garage] deleted vehicle recovery failed for %s: %s'):format(key, tostring(err)))
+            end
+            processed = processed + 1
+            if processed >= 32 then break end
         end
-
-        local condition, plateParams = plateCondition(plate)
-        local ok, row = pcall(MySQL.single.await,
-            ("SELECT `stored`, `pound`, `vehicle` FROM `owned_vehicles` WHERE %s AND `stored` = 0 AND (`pound` IS NULL OR `pound` = '') LIMIT 1")
-            :format(condition),
-            plateParams)
-
-        if not ok or not row then
-            return
-        end
-
-        local storedModel = storedVehicleModel(row)
-        if type(model) == "number" and model ~= 0 and storedModel and storedModel ~= model then
-            return
-        end
-
-        local impounded, err = pcall(impoundVehicle, plate, lotId)
-        if not impounded then
-            print(("[esx_garage] failed to impound deleted vehicle %s: %s"):format(key, tostring(err)))
-        end
+        deletedVehicleWorkerPending = false
+        if next(deletedVehicleImpounds) then scheduleDeletedVehicleWorker() end
     end)
 end
 
+local function queueDeletedVehicleImpound(plate, model)
+    if not GarageReady or not validPlate(plate) then return end
+    local key = normPlate(plate)
+    if deletedVehicleImpounds[key] then return end
+    deletedVehicleImpounds[key] = { plate = plate, model = model }
+    scheduleDeletedVehicleWorker()
+end
+
+AddEventHandler('esx:createdExtendedVehicle', function(vehicle)
+    local entity = vehicle:getEntity()
+    if entity and entity > 0 then
+        trackedVehicleEntities[entity] = { plate = vehicle.plate, model = vehicle:getModelHash() }
+    end
+end)
+
+AddEventHandler('esx:changedExtendedVehiclePlate', function(plate, previousPlate)
+    for _, record in pairs(trackedVehicleEntities) do
+        if record.plate == previousPlate then record.plate = plate end
+    end
+end)
+
 AddEventHandler("entityRemoved", function(entity)
+    local tracked = trackedVehicleEntities[entity]
+    trackedVehicleEntities[entity] = nil
+    if tracked then
+        queueDeletedVehicleImpound(tracked.plate, tracked.model)
+        return
+    end
+
     local typeOk, entityType = pcall(GetEntityType, entity)
     if not typeOk or entityType ~= 2 then
         return
     end
+
+    -- Ambient traffic is not owned; only scripted vehicles need a SQL fallback.
+    local populationOk, populationType = pcall(GetEntityPopulationType, entity)
+    if populationOk and populationType ~= 7 then return end
 
     local plateOk, plate = pcall(GetVehicleNumberPlateText, entity)
     if not plateOk then

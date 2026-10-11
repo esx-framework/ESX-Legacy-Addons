@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ESX Accessories</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script defer src="js/catalog.js"></script>
+    <script defer src="js/bridge.js"></script>
+    <script defer src="js/radial.js"></script>
+    <script defer src="js/app.js"></script>
+</head>
+<body>
+    <main id="accessories" hidden role="dialog" aria-modal="true" aria-label="Accessories">
+        <div class="radial-anchor">
+            <div class="radial-layout">
+                <div class="wheel" id="wheel" role="group"></div>
+                <div class="hub"><div class="hub-inner">
+                    <button class="reset action-button" data-action="reset" type="button">
+                        <img class="icon" data-icon="replay" alt="" aria-hidden="true">
+                    </button>
+                </div></div>
+                <button class="utility repair-props action-button" data-action="repairProps" type="button">
+                    <img class="icon" data-icon="tools" alt="" aria-hidden="true">
+                </button>
+                <button class="utility repair-hair action-button" data-action="repairHair" type="button">
+                    <img class="icon" data-icon="barbershop" alt="" aria-hidden="true">
+                </button>
+            </div>
+            <div class="tooltip" id="tooltip" role="tooltip" hidden>
+                <span id="tooltip-label"></span><span id="tooltip-state"></span>
+            </div>
+            <p id="feedback" role="status" aria-live="polite" hidden></p>
+        </div>
+    </main>
+</body>
+</html>

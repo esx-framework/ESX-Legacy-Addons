@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['sl'] = {
   ['ooc_prefix'] = 'OOC | %s',
   ['twt_help'] = 'poslji twita',
@@ -8,4 +11,5 @@ Locales['sl'] = {
   ['do_prefix'] = 'naredi | %s',
   ['generic_argument_name'] = 'sporocilo',
   ['generic_argument_help'] = 'sporocilo',
+  ['rate_limited'] = 'Pocakaj %s s preden posljes novo sporocilo.',
 }

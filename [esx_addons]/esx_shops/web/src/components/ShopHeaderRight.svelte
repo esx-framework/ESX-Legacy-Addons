@@ -1,4 +1,9 @@
 <!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
+<!--
   @component ShopHeaderRight
   Displays search bar and close button in the right header section
 -->

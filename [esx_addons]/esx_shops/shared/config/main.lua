@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---@type table
 Config = Config or {}
 
@@ -8,8 +11,13 @@ Config.Debug = false
 -- CORE CONFIGURATION
 -- ════════════════════════════════════════════════════════════════
 
--- Inventory system ('esx' or 'ox_inventory')
-Config.Inventory = 'ox_inventory'
+-- Inventory system ('esx', 'ox_inventory', or 'auto')
+-- Use 'esx' for the built-in ESX inventory UI.
+Config.Inventory = 'esx'
+
+-- Weight used when a shop item does not define one. ESX inventory requires
+-- items to exist in the item registry before they can be carried.
+Config.DefaultItemWeight = 1
 
 -- ════════════════════════════════════════════════════════════════
 -- IMAGE CONFIGURATION
@@ -77,14 +85,21 @@ Config.SleepFar = 1500      -- Far away
 -- SECURITY CONFIGURATION
 -- ════════════════════════════════════════════════════════════════
 
--- Rate limiting: cooldown between purchases (ms)
+-- Purchase rate limiting uses a token bucket, so short legitimate bursts are allowed.
 Config.PurchaseCooldownMs = 500
 
--- Auto-expire rate limit entries (ms)
+-- Backwards compatible idle cleanup setting for the purchase limiter.
 Config.CooldownExpiryMs = 10000
+
+Config.PurchaseRateLimitCapacity = 3
+Config.PurchaseRateLimitRefill = 1
+Config.PurchaseRateLimitIntervalMs = Config.PurchaseCooldownMs
 
 -- Maximum quantity per item per transaction
 Config.MaxQuantityPerItem = 999
+
+-- Maximum distinct cart lines per transaction
+Config.MaxCartLines = 25
 
 -- Price validation tolerance
 Config.PriceTolerance = 0.001

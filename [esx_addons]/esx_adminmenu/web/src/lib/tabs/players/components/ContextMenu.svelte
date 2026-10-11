@@ -1,3 +1,8 @@
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
 <script lang="ts">
 	import "./Actions.css";
 	import { computePosition, offset, flip, shift, autoUpdate, type VirtualElement } from "@floating-ui/dom";

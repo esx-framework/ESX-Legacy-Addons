@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import { useEffect } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { NuiProvider } from '@/providers/NuiProvider';

@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 import type { Vehicle } from '@/types/vehicle.types';
 import { VehicleType } from '@/types/vehicle.types';
 import type { Garage } from '@/types/garage.types';

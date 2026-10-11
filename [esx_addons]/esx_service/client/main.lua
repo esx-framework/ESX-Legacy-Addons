@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 RegisterNetEvent('esx_service:notifyAllInService')
 AddEventHandler('esx_service:notifyAllInService', function(notification, target)
 	target = GetPlayerFromServerId(target)

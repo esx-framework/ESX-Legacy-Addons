@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['fr'] = {
   ['ooc_prefix'] = 'hrp | %s',
   ['twt_help'] = 'envoie un tweet',
@@ -8,4 +11,5 @@ Locales['fr'] = {
   ['do_prefix'] = 'faire | %s',
   ['generic_argument_name'] = 'message',
   ['generic_argument_help'] = 'le message',
+  ['rate_limited'] = 'Veuillez patienter %s secondes avant de renvoyer un message.',
 }

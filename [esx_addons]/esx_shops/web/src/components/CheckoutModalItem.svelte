@@ -1,4 +1,9 @@
 <!--
+  SPDX-License-Identifier: GPL-3.0-only
+  Copyright (C) 2022-2026 ESX Framework
+-->
+
+<!--
   @component CheckoutModalItem
   Read-only cart item display in checkout modal showing tax breakdown
 -->

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 HUD = HUD or {}
 
 HUD.VersionCheckBaseURL = "https://raw.githubusercontent.com/esx-framework/ESX-Legacy-Addons/main/%5Besx_addons%5D/"
@@ -30,9 +33,6 @@ VERSION = {
         local currentVersion = GetResourceMetadata(resourceName, "version", 0)
         if not currentVersion then return end
 
-        local manifestURL = HUD.VersionCheckBaseURL .. resourceName .. "/fxmanifest.lua"
-        HUD:InfoHandle(("Checking manifest from %s"):format(manifestURL), "blue")
-
         if err ~= 200 or not response then
             HUD:ErrorHandle(Translate("errorGetCurrentVersion"))
             return
@@ -53,8 +53,6 @@ VERSION = {
         end
 
         if currentVersion == latestVersion then
-            HUD:InfoHandle(Translate("latestVersion"), "green")
-            HUD:InfoHandle(("Up to date version (%s)"):format(currentVersion), "green")
             return
         end
 

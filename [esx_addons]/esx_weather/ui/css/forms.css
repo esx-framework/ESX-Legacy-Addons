@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2022-2026 ESX Framework
+ */
+
 /**
  * Form Styles
  * Form Elements, Select, Buttons
@@ -110,6 +115,7 @@
 }
 
 .custom-select-dropdown {
+    display: none;
     position: absolute;
     top: calc(100% + 0.25rem);
     left: 0;
@@ -135,6 +141,7 @@
 }
 
 .custom-select.active .custom-select-dropdown {
+    display: block;
     opacity: 1;
     visibility: visible;
     transform: translateY(0);

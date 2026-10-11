@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['fi'] = {
   ['you_paid'] = 'Sinä maksoit $%s autokoululle',
   ['go_next_point'] = 'Mene seuraavaan pisteeseen.',

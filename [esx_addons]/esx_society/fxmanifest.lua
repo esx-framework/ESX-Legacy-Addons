@@ -1,32 +1,40 @@
-fx_version 'adamant'
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+fx_version 'cerulean'
 
 game 'gta5'
 
+author 'ESX-Framework'
 description 'Provides a way for Jobs to have a society system. (boss menu, salaries, funding etc)'
 lua54 'yes'
 version '1.0'
-legacyversion '1.15.0'
+legacyversion '1.16.0'
 
 shared_script '@es_extended/imports.lua'
 
 shared_script '@esx_lib/imports.lua'
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
+    '@esx_lib/imports/catalog/bootstrap.lua',
     '@es_extended/locale.lua',
     'locales/*.lua',
     'config.lua',
-    'server/main.lua'
+    'server/employees.lua',
+    'server/economy.lua',
+    'server/main.lua',
 }
 
 client_scripts {
     '@es_extended/locale.lua',
     'locales/*.lua',
     'config.lua',
-    'client/main.lua'
+    'client/main.lua',
 }
 
 dependencies {
+    'esx_lib',
     'es_extended',
     'cron',
-    'esx_addonaccount'
+    'esx_addonaccount',
 }

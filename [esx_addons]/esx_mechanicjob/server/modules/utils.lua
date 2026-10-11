@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local MechanicJob = ESXMechanicJob
 
 function MechanicJob.currentTimeMs()
@@ -9,20 +12,24 @@ function MechanicJob.currentTimeMs()
 end
 
 function MechanicJob.rejectRateLimited(source, key, cooldown)
-	local now = MechanicJob.currentTimeMs()
-	local playerLimits = MechanicJob.RateLimits[source]
+	cooldown = math.max(1, math.floor(tonumber(cooldown) or 1))
 
-	if not playerLimits then
-		playerLimits = {}
-		MechanicJob.RateLimits[source] = playerLimits
+	local limiterState = MechanicJob.RateLimiters[key]
+	if not limiterState or limiterState.cooldown ~= cooldown then
+		limiterState = {
+			cooldown = cooldown,
+			limiter = xLib.rateLimiter({
+				capacity = 1,
+				refill = 1,
+				interval = cooldown,
+				staleMs = math.max(60000, cooldown * 4)
+			})
+		}
+		MechanicJob.RateLimiters[key] = limiterState
 	end
 
-	if (playerLimits[key] or 0) > now then
-		return true
-	end
-
-	playerLimits[key] = now + cooldown
-	return false
+	local allowed = limiterState.limiter:consume(source)
+	return not allowed
 end
 
 function MechanicJob.getMechanicPlayer(source)
@@ -70,12 +77,8 @@ function MechanicJob.normalizeItemCount(count)
 end
 
 function MechanicJob.isPlayerNearCoords(source, coords, distance)
-	local ped = GetPlayerPed(source)
-	if not ped or ped == 0 then
-		return false
-	end
-
-	return #(GetEntityCoords(ped) - coords) <= distance
+	local nearby = xLib.player.isNearCoords(source, coords, distance)
+	return nearby
 end
 
 function MechanicJob.isPlayerNearZone(source, zoneName, distance)

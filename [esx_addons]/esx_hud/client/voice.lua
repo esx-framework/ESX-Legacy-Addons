@@ -1,8 +1,11 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 if not Config.Disable.Voice then
     HUD.Data.TalkingOnRadio = false
     if GetResourceState("pma-voice") == "started" then
         AddEventHandler("pma-voice:setTalkingMode", function(mode)
-            SendNUIMessage({ type = "VOICE_RANGE", value = mode })
+            xLib.nui.send({ type = "VOICE_RANGE", value = mode })
             HUD.Data.VoiceRange = mode
         end)
 
@@ -11,16 +14,18 @@ if not Config.Disable.Voice then
         end)
 
         AddEventHandler("onResourceStart", function(resourceName)
-            if not resourceName == "pma-voice" then
+            if resourceName ~= "pma-voice" then
                 return
             end
             Wait(1000)
-            SendNUIMessage({ type = "VOICE_RANGE", value = LocalPlayer.state.proximity.index })
+            local proximity = LocalPlayer.state.proximity
+            HUD.Data.VoiceRange = proximity and proximity.index or 2
+            xLib.nui.send({ type = "VOICE_RANGE", value = HUD.Data.VoiceRange })
         end)
     elseif GetResourceState("saltychat") == "started" then
         -- #TODO: Test salty chat, add restart handlers
         AddEventHandler("SaltyChat_VoiceRangeChanged", function(range, index, availableVoiceRanges)
-            SendNUIMessage({ type = "VOICE_RANGE", value = index })
+            xLib.nui.send({ type = "VOICE_RANGE", value = index })
             HUD.Data.VoiceRange = index
         end)
 

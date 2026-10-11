@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESX Legacy · Pause</title>
+    <link rel="stylesheet" href="styles.css?v=48" />
+</head>
+<body>
+    <main id="app" class="app is-hidden" aria-hidden="true" inert>
+        <div class="screen-shade" aria-hidden="true"></div>
+        <div id="frame" class="frame">
+            <header class="topbar">
+                <div class="brand-wrap">
+                    <img id="brandLogoImage" class="brand-logo" src="assets/esx-logo.png" alt="Server logo" data-alt="ui_server_logo" />
+                    <span id="brandKicker" class="brand-kicker">FIVEM ROLEPLAY</span>
+                </div>
+                <div class="top-status">
+                    <button class="status-chip players-chip" data-action="people" data-label="ui_people" aria-label="Players">
+                        <span class="icon i-community" aria-hidden="true"></span>
+                        <div><span data-text="ui_online">Players online</span><strong id="playersText">231 <small>/ 1024</small></strong></div>
+                        <i class="online-dot" aria-hidden="true"></i>
+                    </button>
+                    <div class="status-chip clock-chip">
+                        <span class="icon i-calendar" aria-hidden="true"></span>
+                        <div><span id="dateText">27 SEP 2026</span><strong id="timeText">18:42</strong></div>
+                    </div>
+                    <div class="status-chip ping-chip">
+                        <span class="icon i-signal" aria-hidden="true"></span>
+                        <div><span data-text="ui_ping">Connection</span><strong id="pingText">38 <small>ms</small></strong></div>
+                    </div>
+                    <div class="identity-chip">
+                        <div id="topAvatar" class="avatar" aria-hidden="true">RW</div>
+                        <div><strong id="topName">Rwixy</strong><span id="topId">#152</span></div>
+                    </div>
+                </div>
+            </header>
+            <aside class="sidebar">
+                <div class="nav-caption" data-text="ui_menu">Pause menu</div>
+                <nav class="side-nav" aria-label="Pause menu navigation" data-label="ui_nav_label">
+                    <button class="side-item play-item" data-action="resume">
+                        <span class="icon i-play" aria-hidden="true"></span>
+                        <span class="side-copy"><strong data-text="ui_play">Play</strong><small data-text="ui_resume_hint">Back to the city</small></span>
+                        <span class="icon i-chevron-right" aria-hidden="true"></span>
+                    </button>
+                    <button class="side-item" data-action="settings"><span class="icon i-settings" aria-hidden="true"></span><strong data-text="ui_settings">Settings</strong></button>
+                    <button class="side-item" data-action="news"><span class="icon i-rules" aria-hidden="true"></span><strong data-text="ui_news">News</strong></button>
+                    <button class="side-item leave-item" data-action="leave"><span class="icon i-logout" aria-hidden="true"></span><strong data-text="ui_exit">Exit</strong></button>
+                </nav>
+                <button class="rules-card panel" data-action="rules">
+                    <div class="rules-top"><span class="icon i-rules" aria-hidden="true"></span><span class="icon i-external-link" aria-hidden="true"></span></div>
+                    <span class="eyebrow" data-text="ui_rules">Server rules</span>
+                    <strong data-text="ui_rules_title">Good stories start with respect.</strong>
+                    <span class="rules-description" data-text="ui_rules_description">Take a moment to read the rules. Make the city better for everyone.</span>
+                    <span class="text-link"><span data-text="ui_rules_hint">Read the rules</span><span class="icon i-chevron-right" aria-hidden="true"></span></span>
+                </button>
+            </aside>
+            <section class="main-content" aria-label="Server overview" data-label="ui_overview">
+                <article class="hero">
+                    <div class="hero-copy">
+                        <div class="hero-label"><i></i><span id="serverTop">ESX LEGACY</span><span class="hero-label-divider">/</span><span id="cityTop">Los Santos</span></div>
+                        <p class="welcome"><span data-text="ui_welcome_back">Welcome back,</span> <strong id="heroName">Rwixy</strong><span>.</span></p>
+                        <h1 data-text="ui_hero_title">Los Santos
+is waiting.</h1>
+                        <p class="hero-subtitle" data-text="ui_hero_subtitle">Take a breath. The city will be here.</p>
+                    </div>
+                    <div class="hero-photo">
+                        <img src="assets/city-skyline.jpg" alt="Los Santos skyline at sunset in GTA V" data-alt="ui_city_photo" />
+                    </div>
+                </article>
+                <div class="content-grid">
+                    <article id="playerCard" class="player-card panel">
+                        <div class="card-head"><span class="eyebrow" data-text="ui_your_character">Your character</span></div>
+                        <div class="player-summary">
+                            <div class="player-summary-copy"><h2 id="playerName">Daniel Moreno</h2></div>
+                        </div>
+                        <div class="money-grid">
+                            <div class="money-stat"><span class="icon i-bank" aria-hidden="true"></span><span data-text="ui_bank">Bank balance</span><strong id="bankValue">$125,460</strong></div>
+                            <div class="money-stat"><span class="icon i-wallet" aria-hidden="true"></span><span data-text="ui_cash">Cash</span><strong id="cashValue">$3,250</strong></div>
+                        </div>
+                        <dl class="character-details">
+                            <div><dt><span class="icon i-user" aria-hidden="true"></span><span data-text="ui_gender">Gender</span></dt><dd id="genderValue">Male</dd></div>
+                            <div><dt><span class="icon i-clock" aria-hidden="true"></span><span data-text="ui_playtime">Time played</span></dt><dd id="playtimeValue">12h 36m</dd></div>
+                            <div><dt><span class="icon i-wrench" aria-hidden="true"></span><span data-text="ui_job">Occupation</span></dt><dd id="jobValue">Mechanic</dd></div>
+                        </dl>
+                    </article>
+                    <div class="right-column">
+                        <button class="map-card panel" data-action="map" aria-label="Open map" data-label="ui_open_map">
+                            <div class="card-head"><span class="eyebrow" data-text="ui_map">City map</span><span class="icon i-external-link" aria-hidden="true"></span></div>
+                            <div class="map-image-wrap">
+                                <img
+                                    src="assets/gtavmap.webp"
+                                    width="2500"
+                                    height="3000"
+                                    alt="GTA V map"
+                                    data-alt="ui_map_alt"
+                                />
+                            </div>
+                            <div class="map-bottom"><div><span class="icon i-map-pin" aria-hidden="true"></span><strong id="locationText">Los Santos</strong></div><span class="text-link"><span data-text="ui_explore_map">Explore the map</span><span class="icon i-chevron-right" aria-hidden="true"></span></span></div>
+                        </button>
+                        <button class="discord-card" data-action="discord">
+                            <div class="discord-mark"><span class="icon i-discord" aria-hidden="true"></span></div>
+                            <div class="discord-copy"><span class="eyebrow">Discord</span><strong data-text="ui_discord_join">Join the community</strong><span data-text="ui_discord_description">News, events and support on Discord.</span></div>
+                            <span class="discord-cta"><span data-text="ui_discord_action">Join</span><span class="icon i-external-link" aria-hidden="true"></span></span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <footer class="footer">
+                <div class="footer-brand"><span id="brandTagline">ROLEPLAY BEYOND LIMITS</span><span class="footer-divider">/</span><span data-text="ui_since">SINCE</span> <span id="establishedText">2015</span></div>
+                <div class="controls-hint"><span><kbd>Esc</kbd><span data-text="ui_close">Close</span></span><span><kbd>↑ ↓</kbd><span data-text="ui_navigate">Navigate</span></span><span><kbd>Enter</kbd><span data-text="ui_select">Select</span></span></div>
+            </footer>
+            <div id="modal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalText">
+                <div class="modal-card panel">
+                    <button id="modalClose" class="modal-x" aria-label="Close" data-label="ui_close">×</button>
+                    <span id="modalIcon" class="modal-icon icon i-rules" aria-hidden="true"></span>
+                    <h2 id="modalTitle">News</h2>
+                    <p id="modalText"></p>
+                    <div id="newsList" class="news-list"></div>
+                    <div id="modalActions" class="modal-actions"></div>
+                </div>
+            </div>
+            <div id="toast" class="toast" role="status" aria-live="polite"></div>
+        </div>
+    </main>
+    <script src="app.js?v=38"></script>
+</body>
+</html>

@@ -4,6 +4,30 @@
 
 - [esx_vehicleshop](https://github.com/esx-framework/esx_vehicleshop)
 
+## Ownership Policy
+
+LS Customs validates every cart server-side, but vehicle ownership is configurable:
+
+```lua
+Config.Workshop.Ownership = {
+	RequireOwned = false,
+	SaveOwnedVehicles = true,
+	AllowMechanicCustomerVehicles = false
+}
+```
+
+- `RequireOwned = false` lets players/mechanics tune spawned or non-owned vehicles.
+  Those changes apply to the current vehicle entity, but are not written to
+  `owned_vehicles` unless the plate exists there and the saver is allowed.
+- `SaveOwnedVehicles = true` persists paid changes when the vehicle exists in
+  `owned_vehicles`.
+- `AllowMechanicCustomerVehicles = true` lets mechanics persist changes to customer
+  vehicles without owning them. When the plate belongs to a vehicle spawned by ESX
+  (`ESX.GetExtendedVehicleFromPlate`), the mechanic must be inside that exact entity.
+
+Set `RequireOwned = true` only if your server wants LS Customs to reject spawned
+vehicles and vehicles that are neither owned by the player nor handled by a mechanic.
+
 ## Legal
 
 esx_lscustoms - The best LS Custom out there for FX

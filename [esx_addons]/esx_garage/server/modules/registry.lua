@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 ---@type table<string, Garage>
 Garages = {}
 
@@ -15,8 +18,7 @@ local CALLBACK_COOLDOWNS <const> = {
     ["esx_garage:giveKeys"] = 1000,
 }
 
----@type table<integer, table<string, integer>>
-local callbackCooldowns = {}
+local callbackLimiters = {}
 
 ---@return integer
 local function defaultImpoundFee()
@@ -35,15 +37,6 @@ local function configuredImpoundCost(impound)
     return math.max(0, math.floor(cost))
 end
 
----@return integer
-local function currentTimeMs()
-    if type(GetGameTimer) == "function" then
-        return GetGameTimer()
-    end
-
-    return math.floor(os.clock() * 1000)
-end
-
 ---@param source integer
 ---@param cb function
 ---@param callbackName string
@@ -54,19 +47,22 @@ function rejectRateLimited(source, cb, callbackName)
         return false
     end
 
-    local now = currentTimeMs()
-    local playerCooldowns = callbackCooldowns[source]
-    if not playerCooldowns then
-        playerCooldowns = {}
-        callbackCooldowns[source] = playerCooldowns
+    local limiter = callbackLimiters[callbackName]
+    if not limiter then
+        limiter = xLib.rateLimiter({
+            capacity = 1,
+            refill = 1,
+            interval = cooldown,
+            staleMs = math.max(60000, cooldown * 4)
+        })
+        callbackLimiters[callbackName] = limiter
     end
 
-    if (playerCooldowns[callbackName] or 0) > now then
+    if not limiter:consume(source) then
         cb({ success = false, error = "rate_limited" })
         return true
     end
 
-    playerCooldowns[callbackName] = now + cooldown
     return false
 end
 
@@ -217,10 +213,6 @@ xLib.callback.registerCompat("esx_garage:getGarages", function(source, cb)
     local payload = accessiblePayload(source)
 
     cb(payload)
-end)
-
-AddEventHandler("playerDropped", function()
-    callbackCooldowns[source] = nil
 end)
 
 ---@param def Garage

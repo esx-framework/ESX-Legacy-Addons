@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 local HasAlreadyEnteredMarker = false
 local LastZone, CurrentAction, CurrentActionMsg
 local CurrentActionData	= {}
@@ -135,72 +138,56 @@ CreateThread(function()
 	for k,v in pairs(Config.ShopsBlips) do
 		if v.Pos then
 			for i=1, #v.Pos, 1 do
-				local blip = AddBlipForCoord(v.Pos[i])
-
-				SetBlipSprite (blip, v.Blip.sprite)
-				SetBlipDisplay(blip, 4)
-				SetBlipScale  (blip, 1.0)
-				SetBlipColour (blip, v.Blip.color)
-				SetBlipAsShortRange(blip, true)
-
-				BeginTextCommandSetBlipName("STRING")
-				AddTextComponentSubstringPlayerName(TranslateCap('shop', TranslateCap(string.lower(k))))
-				EndTextCommandSetBlipName(blip)
+				xLib.blips.create({
+					coords = v.Pos[i],
+					sprite = v.Blip.sprite,
+					display = 4,
+					scale = 1.0,
+					color = v.Blip.color,
+					shortRange = true,
+					label = TranslateCap('shop', TranslateCap(string.lower(k)))
+				})
 			end
 		end
 	end
 end)
 
-local nearMarker = false
 -- Display markers
 CreateThread(function()
-	while true do
-		local sleep = 1500
-		local coords = GetEntityCoords(PlayerPedId())
-		for k,v in pairs(Config.Zones) do
-			for i = 1, #v.Pos, 1 do
-				if(Config.Type ~= -1 and #(coords - v.Pos[i]) < Config.DrawDistance) then
-					DrawMarker(Config.Type, v.Pos[i], 0.0, 0.0, 0.0, 0, 0.0, 0.0, Config.Size.x, Config.Size.y, Config.Size.z, Config.Color.r, Config.Color.g, Config.Color.b, 255, true, false, 2, true, false, false, false)
-					sleep = 0
-					break
-				end
-			end
-		end
-		if sleep == 0 then nearMarker = true else nearMarker = false end
-		Wait(sleep)
+	if Config.Type == -1 then
+		return
 	end
-end)
 
-CreateThread(function()
-	while true do
-		local sleep = 1500
-		if nearMarker then
-			sleep = 0
-			local coords = GetEntityCoords(PlayerPedId())
-			local isInMarker = false
-			local currentZone = nil
-			for k,v in pairs(Config.Zones) do
-				for i = 1, #v.Pos, 1 do
-					if #(coords - v.Pos[i]) < Config.Size.x then
-						isInMarker  = true
-						currentZone = k
-						break
-					end
+	for k, v in pairs(Config.Zones) do
+		for i = 1, #v.Pos, 1 do
+			xLib.markerZone.create({
+				coords = v.Pos[i],
+				drawDistance = Config.DrawDistance,
+				interactDistance = Config.Size.x,
+				marker = {
+					type = Config.Type,
+					size = Config.Size,
+					color = {
+						r = Config.Color.r,
+						g = Config.Color.g,
+						b = Config.Color.b,
+						a = 255
+					},
+					bobUpAndDown = true,
+					faceCamera = false,
+					rotate = true
+				},
+				onEnter = function()
+					HasAlreadyEnteredMarker = true
+					LastZone = k
+					TriggerEvent('esx_accessories:hasEnteredMarker', k)
+				end,
+				onExit = function()
+					HasAlreadyEnteredMarker = false
+					TriggerEvent('esx_accessories:hasExitedMarker', k)
 				end
-			end
-
-			if (isInMarker and not HasAlreadyEnteredMarker) or (isInMarker and LastZone ~= currentZone) then
-				HasAlreadyEnteredMarker = true
-				LastZone = currentZone
-				TriggerEvent('esx_accessories:hasEnteredMarker', currentZone)
-			end
-
-			if not isInMarker and HasAlreadyEnteredMarker then
-				HasAlreadyEnteredMarker = false
-				TriggerEvent('esx_accessories:hasExitedMarker', LastZone)
-			end
+			})
 		end
-		Wait(sleep)
 	end
 end)
 

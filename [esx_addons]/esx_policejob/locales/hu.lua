@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['hu'] = {
   -- Cloakroom
   ['cloakroom'] = 'Öltöző',
@@ -60,6 +63,7 @@ Locales['hu'] = {
   -- Service
   ['service_max'] = 'Nem léphet szolgálatba. Maximális létszám: %s/%s',
   ['service_not'] = 'Elöször vedd fel a szolgálatot...',
+  ['off_duty'] = 'Nem vagy szolgálatban.',
   ['service_anonunce'] = 'információk',
   ['service_in'] = 'Szolgálatba léptél, üdvözlünk!',
   ['service_in_announce'] = 'operátor %s szolgálatba lépett!',

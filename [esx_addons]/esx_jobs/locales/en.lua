@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
 Locales['en'] = {
   -- Global menus
   ['cloakroom'] = 'locker Room',
@@ -22,6 +25,7 @@ Locales['en'] = {
   ['spawn_veh_button'] = 'press ~INPUT_PICKUP~ to call the delivery vehicle.',
   ['spawn_truck_button'] = 'press ~INPUT_PICKUP~ to spawn the truck.',
   ['spawn_blocked'] = 'a vehicle is blocking the spawnpoint!',
+  ['vehicle_already_out'] = 'you must return your current vehicle first.',
   ['service_vh'] = 'service vehicle',
   ['return_vh'] = 'vehicle return',
   ['return_vh_button'] = 'press ~INPUT_PICKUP~ to return the vehicle.',
