@@ -89,13 +89,11 @@ RegisterNetEvent('esx_billing:confirmHighBill', function(token, label, amount, s
             icon = 'fas fa-scroll',
             title = ('%s - %s'):format(label, ESX.Math.GroupDigits(amount)),
         },
-        { icon = 'fas fa-check', title = 'Accept invoice', value = true },
-        { icon = 'fas fa-times', title = 'Decline invoice', value = false },
+        { icon = 'fas fa-check', title = TranslateCap('accept_invoice'), value = true },
+        { icon = 'fas fa-times', title = TranslateCap('decline_invoice'), value = false },
     }
 
-    ESX.ShowNotification(
-        ('High invoice from %s requires confirmation'):format(senderName or 'unknown')
-    )
+    ESX.ShowNotification(TranslateCap('accept_invoice', senderName or 'unknown'))
 
     ESX.OpenContext('right', elements, function(menu, element)
         if element.value == nil then
