@@ -6,24 +6,29 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run check && vite build && node scripts/check-compat.js",
-    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p tsconfig.node.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:cef": "vite build && node scripts/cef103.js"
   },
   "dependencies": {
     "@fontsource/poppins": "^5.3.0"
   },
   "devDependencies": {
+    "@puppeteer/browsers": "^3.2.4",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^22.20.5",
     "prettier": "^3.9.10",
     "prettier-plugin-svelte": "^4.1.1",
+    "puppeteer-core": "14.4.1",
     "svelte": "^5.57.2",
     "svelte-check": "^4.7.6",
     "typescript": "~6.0.3",
     "vite": "^8.3.4",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.4",
+    "yauzl": "^3.4.0"
   }
 }
