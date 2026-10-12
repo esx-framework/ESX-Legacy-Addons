@@ -14,7 +14,6 @@ Locales['de'] = {
   ['keymap_showbills'] = 'Rechnungs-Menü öffnen',
   ['bill_reservation'] = 'Rechnungs-Reservierung',
   ['paid_bill'] = 'Bezahlte Rechnung',
-  ['credit_rejected'] = 'Kredit abgelehnt und Entschädigung nicht gewährt; Quittung aufbewahrt!',
   ['payment_receipt_missing'] = 'Zahlungsbeleg fehlt; manuelle Abstimmung erforderlich!',
   ['unexpected_payment'] = 'Unerwarteter Zahlungsbelegstatus',
 }
