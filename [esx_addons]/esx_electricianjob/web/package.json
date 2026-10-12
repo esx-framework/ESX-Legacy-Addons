@@ -13,10 +13,8 @@
     "preview": "vite preview",
     "test:cef": "vite build && node scripts/cef103.js"
   },
-  "dependencies": {
-    "@fontsource/poppins": "^5.3.0"
-  },
   "devDependencies": {
+    "@fontsource/poppins": "^5.3.0",
     "@puppeteer/browsers": "^3.2.4",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tsconfig/svelte": "^5.0.8",

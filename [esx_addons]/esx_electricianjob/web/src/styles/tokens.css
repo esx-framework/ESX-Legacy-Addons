@@ -1,0 +1,42 @@
+/*
+ * Design tokens from the ESX UI Kit guidelines. Everything outside the game scene (frame,
+ * HUD, buttons, results) is built from these values only.
+ *
+ * Colors are plain hex/rgba on purpose: color-mix() and relative colors need Chromium 111,
+ * so translucent variants are spelled out instead of derived.
+ */
+
+:root {
+  --esx-brand: #fb9b04;
+  --esx-darkest: #161616;
+  --esx-dark: #252525;
+  --esx-mid: #383838;
+  --esx-light: #969696;
+  --esx-lightest: #f2f2f2;
+
+  --esx-brand-soft: rgba(251, 155, 4, 0.16);
+  --esx-brand-glow: rgba(251, 155, 4, 0.45);
+  --esx-darkest-glass: rgba(22, 22, 22, 0.86);
+  --esx-dark-glass: rgba(37, 37, 37, 0.72);
+  --esx-line: rgba(242, 242, 242, 0.08);
+
+  /* Status colors are not part of the kit palette; kept muted so the brand orange stays dominant. */
+  --esx-danger: #e5484d;
+  --esx-success: #46a758;
+
+  --esx-font: 'Poppins', 'Segoe UI', sans-serif;
+  --esx-h1: 32px;
+  --esx-h2: 24px;
+  --esx-h3: 20px;
+  --esx-h4: 18px;
+  --esx-h5: 16px;
+  --esx-h6: 14px;
+  --esx-caption: 12px;
+
+  --esx-radius-sm: 4px;
+  --esx-radius: 8px;
+  --esx-radius-lg: 12px;
+
+  --esx-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --esx-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}

@@ -1,0 +1,71 @@
+/*
+ * Page-level defaults. The NUI page is layered over the game, so html and body stay
+ * transparent and never scroll.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  font-family: var(--esx-font);
+  font-size: var(--esx-h6);
+  line-height: 1.5;
+  color: var(--esx-lightest);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--esx-h1);
+}
+
+h2 {
+  font-size: var(--esx-h2);
+}
+
+h3 {
+  font-size: var(--esx-h3);
+}
+
+h4 {
+  font-size: var(--esx-h4);
+}
+
+h5 {
+  font-size: var(--esx-h5);
+}
+
+h6 {
+  font-size: var(--esx-h6);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+img {
+  -webkit-user-drag: none;
+}

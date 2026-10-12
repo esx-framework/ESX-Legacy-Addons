@@ -6,6 +6,9 @@
 
 import { mount } from 'svelte';
 import App from './App.svelte';
+import './styles/fonts.css';
+import './styles/tokens.css';
+import './styles/global.css';
 
 const target: HTMLElement | null = document.getElementById('app');
 if (!target) {
