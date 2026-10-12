@@ -401,7 +401,7 @@ function OpenPromoteMenu(society, employee, options)
             }
         end
 
-        elements[#elements + 1] = { icon = 'fas fa-arrow-left', title = 'Return', value = 'return' }
+        elements[#elements + 1] = { icon = 'fas fa-arrow-left', title = TranslateCap('return'), value = 'return' }
 
         ESX.OpenContext('right', elements, function(menu, element)
             if element.value == 'return' then
