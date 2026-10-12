@@ -500,7 +500,7 @@ xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId)
             return false
         end
 
-        if xPlayer.removeAccountMoney(paymentAccount, amount, 'Bill reservation') ~= true then
+        if xPlayer.removeAccountMoney(paymentAccount, amount, TranslateCap('bill_reservation')) ~= true then
             return false
         end
 
@@ -555,7 +555,7 @@ xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId)
         end
 
         local credited = receiverPlayer
-                and receiverPlayer.addAccountMoney(paymentAccount, amount, 'Paid bill')
+                and receiverPlayer.addAccountMoney(paymentAccount, amount, TranslateCap('paid_bill'))
             or (not receiverPlayer and account.addMoney(amount))
 
         if credited ~= true then
@@ -677,7 +677,7 @@ xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId)
     if
         reserved
         and not claimed
-        and xPlayer.addAccountMoney(paymentAccount, amount, 'Bill reservation refund') ~= true
+        and xPlayer.addAccountMoney(paymentAccount, amount, TranslateCap('bill_reservation_refund')) ~= true
     then
         print(
             ('[esx_billing] CRITICAL: rejected refund for payment %s/%s'):format(
