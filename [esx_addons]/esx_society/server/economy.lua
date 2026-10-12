@@ -86,7 +86,7 @@ function SocietyEconomy.queue(player, society, amount)
         local encoded = json.encode(accounts)
         local token = ('wash:%s:%s:%s'):format(os.time(), GetGameTimer(), math.random(1, 2147483647))
 
-        if not current.removeAccountMoney('black_money', amount, 'Washing') then
+        if not current.removeAccountMoney('black_money', amount, TranslateCap('washing')) then
             return false
         end
 
@@ -108,7 +108,7 @@ function SocietyEconomy.queue(player, society, amount)
         })
 
         if not lookup(token) then
-            current.addAccountMoney('black_money', amount, 'Moneywash Refund')
+            current.addAccountMoney('black_money', amount, TranslateCap('moneywash_refund'))
             return false
         end
 
