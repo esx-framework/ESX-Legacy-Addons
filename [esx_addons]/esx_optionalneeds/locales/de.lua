@@ -2,5 +2,5 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales['de'] = {
-	['used_beer'] = 'Du trinkst 1x Bier',
+	['used_beer'] = 'Du hast ein Bier getrunken.',
 }
