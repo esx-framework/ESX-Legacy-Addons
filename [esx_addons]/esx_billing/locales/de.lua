@@ -12,8 +12,10 @@ Locales['de'] = {
   ['no_money'] = 'Du hast nicht genügend Geld um diese Rechnung zu zahlen',
   ['target_no_money'] = 'Diese Person hat nicht genug Geld um die Rechnung zu zahlen!',
   ['keymap_showbills'] = 'Rechnungs-Menü öffnen',
+  ['accept_invoice'] = 'Rechnung akzeptieren',
+  ['decline_invoice'] = 'Rechnung ablehnen',
+  ['invoice_requires_confirmation'] = 'Hohe Rechnung von %s erfordert Bestätigung!',
   ['bill_reservation'] = 'Rechnungs-Reservierung',
   ['paid_bill'] = 'Bezahlte Rechnung',
-  ['payment_receipt_missing'] = 'Zahlungsbeleg fehlt; manuelle Abstimmung erforderlich!',
-  ['unexpected_payment'] = 'Unerwarteter Zahlungsbelegstatus',
+  ['bill_reservation_refund'] = 'Rechnungs-Reservierung-Rückerstattung',
 }
