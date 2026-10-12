@@ -12,4 +12,9 @@ Locales['en'] = {
   ['no_money'] = 'you do not have enough money to pay this bill',
   ['target_no_money'] = 'the player ~r~does not have enough money to pay the bill!',
   ['keymap_showbills'] = 'open bills menu',
+  ['bill_reservation'] = 'Bill reservation',
+  ['paid_bill'] = 'Paid bill',
+  ['credit_rejected'] = 'Credit rejected and compensation failed; claimed receipt retained',
+  ['payment_receipt_missing'] = 'Payment receipt is missing; manual reconciliation required',
+  ['unexpected_payment'] = 'Unexpected payment receipt state',
 }
