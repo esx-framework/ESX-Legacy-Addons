@@ -25,6 +25,17 @@
  *   Scenario body, throws on failure
  */
 
+/**
+ * Builds an open message for a round.
+ * @param {string} game Game kind
+ * @param {number} seed Puzzle seed
+ * @param {number} difficulty Difficulty tier
+ * @returns {object} Message as Lua would send it
+ */
+function openMessage(game, seed, difficulty) {
+  return { action: 'open', session: { id: `cef-${game}-${seed}`, game, seed, difficulty } };
+}
+
 /** @type {Scenario[]} */
 export const scenarios = [
   {
@@ -32,6 +43,30 @@ export const scenarios = [
     async run(page, nui) {
       await page.waitForSelector('#app main');
       await nui.screenshot('idle');
+    },
+  },
+  {
+    name: 'escape-aborts',
+    async run(page, nui) {
+      await nui.send(openMessage('wiring', 7, 1));
+      await page.waitForSelector('main[data-game="wiring"]');
+      await page.keyboard.press('Escape');
+
+      const body = /** @type {{ sessionId?: unknown, outcome?: unknown }} */ (
+        await nui.waitForCallback('finish')
+      );
+      if (body.sessionId !== 'cef-wiring-7' || body.outcome !== 'aborted') {
+        throw new Error(`unexpected finish payload ${JSON.stringify(body)}`);
+      }
+      await page.waitForSelector('main:not([data-game])');
+    },
+  },
+  {
+    name: 'invalid-message-ignored',
+    async run(page, nui) {
+      await nui.send({ action: 'open', session: { id: 'x', game: 'wiring', seed: -5 } });
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      if (await page.$('main[data-game]')) throw new Error('invalid open message was accepted');
     },
   },
 ];
