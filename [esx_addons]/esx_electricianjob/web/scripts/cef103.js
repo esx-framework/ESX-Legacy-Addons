@@ -44,6 +44,11 @@ const CHROMIUM_BUILD = '1002910';
 const RESOURCE_NAME = 'esx_electricianjob';
 const CALLBACK_ORIGIN = `https://${RESOURCE_NAME}/`;
 const CALLBACK_TIMEOUT_MS = 5_000;
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 /** Switches FiveM passes to its CEF 103 build (NUIApp.cpp). */
 const FIVEM_FLAGS = ['--enable-experimental-web-platform-features', '--js-flags=--jitless'];
@@ -100,6 +105,13 @@ async function prepare(page, scenario, errors) {
       return;
     }
 
+    // The callback origin differs from the page origin, so JSON posts are preflighted. FiveM
+    // currently runs CEF with web security off, but the UI must not depend on that.
+    if (request.method() === 'OPTIONS') {
+      void request.respond({ status: 204, headers: CORS_HEADERS });
+      return;
+    }
+
     const name = url.slice(CALLBACK_ORIGIN.length);
     const raw = request.postData();
     const body = raw ? JSON.parse(raw) : undefined;
@@ -110,7 +122,12 @@ async function prepare(page, scenario, errors) {
     } else {
       pending.push({ name, body });
     }
-    void request.respond({ status: 200, contentType: 'application/json', body: '{}' });
+    void request.respond({
+      status: 200,
+      contentType: 'application/json',
+      headers: CORS_HEADERS,
+      body: '{}',
+    });
   });
 
   page.on('console', (message) => {
