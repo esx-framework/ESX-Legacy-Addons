@@ -181,6 +181,7 @@ Locales["de"] = {
 	["escape_spectate"] = "Drücke [ESC], um das Zuschauen zu beenden",
 	["default_ban"] = "Du wurdest von diesem Server gebannt!",
 	["finalizing_connection"] = "Verbinde...",
+	["kicked_by_admin"] = "Von einem Admin gekickt",
 	["action_failed"] = "Aktion fehlgeschlagen.",
 
 	-- Bannverwaltung
@@ -237,4 +238,35 @@ Locales["de"] = {
 	["must_be_in_vehicle"] = "Du musst in einem Fahrzeug sein.",
 	["no_permission_command"] = "Du hast keine Berechtigung, für diesen Befehl.",
 	["database_unavailable"] = "Datenbank nicht verfügbar.",
+
+	-- Fahrzeugspawner Farben
+	["black"] = "Schwarz",
+	["white"] = "Weiß",
+	["silver"] = "Silber",
+	["red"] = "Rot",
+	["orange"] = "Orange",
+	["yellow"] = "Gelb",
+	["green"] = "Grün",
+	["blue"] = "Blau",
+	["purple"] = "Lila",
+
+	-- Fahrzeugspawner Fenstertönung
+	["none"] = "Keine",
+	["pure_black"] = "Reines Schwarz",
+	["dark_smoke"] = "Dunkles Rauchglas",
+	["light_smoke"] = "Helles Rauchglas",
+	["stock"] = "Standard",
+	["limo"] = "Limousine",
+
+	-- Fahrzeugspawner Rad Kategorien
+	["sport"] = "Sport",
+	["muscle"] = "Muscle",
+	["lowrider"] = "Lowrider",
+	["suv"] = "SUV",
+	["offroad"] = "Gelände",
+	["tuner"] = "Tuning",
+	["bike"] = "Motorrad",
+	["highend"] = "Luxus",
+	["street"] = "Straße",
+	["track"] = "Rennen",
 }
