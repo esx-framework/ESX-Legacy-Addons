@@ -29,6 +29,8 @@ Locales["en"] = {
 	["recent_players"] = "Recent Players",
 	["no_players_found"] = "No players found...",
 	["bans_list"] = "Bans List",
+	["no_permission_open_dashboard"] = "You do not have permission to open the admin dashboard.",
+	["no_permission_open_menu"] = "You do not have permission to open the admin menu.",
 
 	-- Player Data Titles
 	["id"] = "ID",
@@ -182,6 +184,7 @@ Locales["en"] = {
 	["escape_spectate"] = "Press [ESC] to stop spectating",
 	["default_ban"] = "You are banned from this server!",
 	["finalizing_connection"] = "Finalizing connection...",
+	["action_failed"] = "Action failed.",
 
 	-- Ban Management
 	["banned_by"] = "Banned By",
