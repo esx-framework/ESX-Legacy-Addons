@@ -875,6 +875,7 @@ function ClientActions.SpawnVehicle(data)
 	SetVehicleHasBeenOwnedByPlayer(vehicle, true)
 	SetVehicleNeedsToBeHotwired(vehicle, false)
 	SetVehRadioStation(vehicle, "OFF")
+	SetVehicleFuelLevel(vehicle, 100.0)
 
 	local fallbackColor = trimString(data.color)
 	if fallbackColor == "" then
