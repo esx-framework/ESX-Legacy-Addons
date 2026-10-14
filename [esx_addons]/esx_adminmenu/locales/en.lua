@@ -29,6 +29,15 @@ Locales["en"] = {
 	["recent_players"] = "Recent Players",
 	["no_players_found"] = "No players found...",
 	["bans_list"] = "Bans List",
+	["population_density"] = "Population Density",
+	["ped_density"] = "Pedestrian Density",
+	["vehicle_density"] = "Vehicle Density",
+	["random_vehicle_density"] = "Random Traffic Density",
+	["density_override_active"] = "Override active",
+	["density_server_defaults"] = "Using server defaults",
+	["density_hint"] = "0% disables new population; 100% uses normal density. Applies to everyone, including players joining later.",
+	["apply_density"] = "Apply Density",
+	["restore_density"] = "Restore Server Defaults",
 
 	-- Player Data Titles
 	["id"] = "ID",

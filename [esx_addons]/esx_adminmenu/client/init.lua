@@ -56,3 +56,16 @@ function RefreshAdminInitData()
 end
 
 requestInitData()
+
+AddStateBagChangeHandler('esx:populationDensity', 'global', function(_, _, density)
+    local enabled = type(density) == 'table'
+    xLib.nui.send({
+        action = 'updatePopulationDensity',
+        data = {
+            densityEnabled = enabled,
+            pedDensity = enabled and density.pedDensity or nil,
+            vehicleDensity = enabled and density.vehicleDensity or nil,
+            randomVehicleDensity = enabled and density.randomVehicleDensity or nil,
+        },
+    })
+end)

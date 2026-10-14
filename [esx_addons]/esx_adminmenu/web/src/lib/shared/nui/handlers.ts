@@ -4,7 +4,7 @@
  */
 
 import { listenNui } from "./receiveNUI";
-import type { ServerState } from "../types/server";
+import type { ServerEnvironmentState, ServerState } from "../types/server";
 import { server } from "../stores/server.svelte";
 import type { Translations } from "../stores/translations.svelte";
 import { translations } from "../stores/translations.svelte";
@@ -22,6 +22,7 @@ type NuiMessage =
 	| { action: "openAdminDashboard"; data: { players: Player[]; serverData?: ServerState; selectedPlayerId?: number; impounds?: Record<string, Impound> | Impound[] } }
 	| { action: "openAdminMenu"; data?: { serverData?: ServerState; impounds?: Record<string, Impound> | Impound[] } }
 	| { action: "updateServerData"; data: ServerState }
+	| { action: "updatePopulationDensity"; data: Partial<ServerEnvironmentState> }
 	| { action: "adminMenuState"; data: { action: string; active: boolean; value?: string } }
 	| { action: "updatePlayers"; data: Player[] }
 	| { action: "stopSpectate"; data: boolean }
@@ -75,6 +76,10 @@ listenNui<NuiMessage>((msg) => {
 		case "updateServerData":
 			if (!msg.data) return null;
 			server.set(msg.data);
+			break;
+
+		case "updatePopulationDensity":
+			server.setEnvironment(msg.data);
 			break;
 
 		case "adminMenuState":
