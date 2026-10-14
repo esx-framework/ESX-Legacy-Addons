@@ -69,7 +69,7 @@ end
 
 local function notifyClientError(err)
     if ESX and ESX.ShowNotification then
-        ESX.ShowNotification(err or TranslateCap('action_failed'), "error")
+        ESX.ShowNotification(err or TranslateCap("action_failed"), "error")
     end
 end
 
@@ -82,7 +82,7 @@ end
 local function openDashboard(cb)
     xLib.callback("esx-adminmenu:server:openDashboard", false, function(res)
         if not res or not res.success then
-            local err = getCallbackError(res, TranslateCap('no_permission_open_dashboard'))
+            local err = getCallbackError(res, TranslateCap("no_permission_open_dashboard"))
             notifyClientError(err)
 
             if cb then
@@ -111,7 +111,7 @@ end
 local function openAdminMenu(cb)
     xLib.callback("esx-adminmenu:server:canOpen", false, function(res)
         if not res or not res.success then
-            local err = getCallbackError(res, TranslateCap('no_permission_open_menu'))
+            local err = getCallbackError(res, TranslateCap("no_permission_open_menu"))
             notifyClientError(err)
 
             if cb then
@@ -205,7 +205,7 @@ end, false)
 local function runAdminCommandAction(action, handler)
     checkAdminAction(action, function(res)
         if not res or not res.success then
-            notifyClientError(getCallbackError(res, TranslateCap('no_permission_command')))
+            notifyClientError(getCallbackError(res, TranslateCap("no_permission_command")))
             return
         end
 
@@ -218,8 +218,8 @@ local function runAdminCommandAction(action, handler)
     end)
 end
 
-RegisterKeyMapping("adminmenu", TranslateCap('open_admin_menu'), "keyboard", Config.Keybinds.AdminMenu)
-RegisterKeyMapping("admindashboard", TranslateCap('open_admin_dashboard'), "keyboard", Config.Keybinds.AdminDashboard)
+RegisterKeyMapping("adminmenu", TranslateCap("open_admin_menu"), "keyboard", Config.Keybinds.AdminMenu)
+RegisterKeyMapping("admindashboard", TranslateCap("open_admin_dashboard"), "keyboard", Config.Keybinds.AdminDashboard)
 
 xLib.nui.register("openDashboard", function(data, cb)
     openDashboard(cb)
