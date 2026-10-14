@@ -11,8 +11,7 @@ Locales['cs'] = {
   ['no_outfit'] = 'není zde žádná uniforma, která by ti sedla!',
   ['open_cloackroom'] = 'stiskni [E] pro změnu oblečení.',
   -- Armory
-  ['remove_object'] = 'vzít objekt',
-  ['deposit_object'] = 'odevzdat objekt',
+  ['open_inventory'] = 'Otevřít inventář',
   ['get_weapon'] = 'vzít zbraň ze zbrojnice',
   ['put_weapon'] = 'uchovat zbraň ve zbrojnici',
   ['buy_weapons'] = 'koupit zbraně',
@@ -155,7 +154,6 @@ Locales['cs'] = {
   ['quantity'] = 'množství',
   ['quantity_placeholder'] = 'Amount to withdraw..', --not translated
   ['inventory'] = 'inventář',
-  ['police_stock'] = 'policejní sklad',
   -- Misc
   ['remove_prop'] = 'stiskni [E] pro odstranění předmětu',
   ['map_blip'] = 'policejní stanice',

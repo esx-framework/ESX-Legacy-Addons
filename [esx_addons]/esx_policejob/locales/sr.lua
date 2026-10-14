@@ -11,8 +11,7 @@ Locales['sr'] = {
 		['no_outfit'] = 'Nema uniforme koja Vam odgovara!',
 		['open_cloackroom'] = 'Pritisni [E] da promeniš odeću.',
 		-- Armory
-		['remove_object'] = 'Ukloni objekat',
-		['deposit_object'] = 'Postavi objekat',
+		['open_inventory'] = 'Otvori inventar',
 		['get_weapon'] = 'Uzmi oružje iz oružarnice',
 		['put_weapon'] = 'Ostavi oružje u oružarnicu',
 		['buy_weapons'] = 'Kupi oružje',
@@ -147,7 +146,6 @@ Locales['sr'] = {
 		['have_deposited'] = 'Ostavili ste %sx %s',
 		['quantity'] = 'Količina',
 		['inventory'] = 'Inventar',
-		['police_stock'] = 'Policijske zalihe',
 		-- Misc
 		['remove_prop'] = 'Pritisni [E] da ukloniš objekat',
 		['map_blip'] = 'Policijska Stanica',

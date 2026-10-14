@@ -11,8 +11,7 @@ Locales['fi'] = {
   ['no_outfit'] = 'täällä ei ole sinulle sopivaa asua',
   ['open_cloackroom'] = 'paina [E] vaihtaaksesi vaatteita.',
   -- Armory
-  ['remove_object'] = 'ota esine',
-  ['deposit_object'] = 'talleta esine',
+  ['open_inventory'] = 'Avaa inventaario',
   ['get_weapon'] = 'ota ase',
   ['put_weapon'] = 'laita ase pois',
   ['buy_weapons'] = 'osta aseita',
@@ -155,7 +154,6 @@ Locales['fi'] = {
   ['quantity'] = 'määrä',
   ['quantity_placeholder'] = 'Määrä mitä otat..',
   ['inventory'] = 'varasto',
-  ['police_stock'] = 'poliisin Varasto',
   -- Misc
   ['remove_prop'] = 'paina [E] poistaaksesi objektin',
   ['map_blip'] = 'poliisilaitos',

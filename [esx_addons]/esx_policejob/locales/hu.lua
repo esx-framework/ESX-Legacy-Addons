@@ -11,8 +11,7 @@ Locales['hu'] = {
   ['no_outfit'] = 'Nincs hozzád illő egyenruha!',
   ['open_cloackroom'] = 'Nyomj [E] hogy hozzáférj: Öltöző.',
   -- Armory
-  ['remove_object'] = 'Tárgy kivétele',
-  ['deposit_object'] = 'Tárgy berakás',
+  ['open_inventory'] = 'Leltár megnyitása',
   ['get_weapon'] = 'Fegyver kivétele',
   ['put_weapon'] = 'Fegyver berakás',
   ['buy_weapons'] = 'Fegyver vásárlás',
@@ -156,7 +155,6 @@ Locales['hu'] = {
   ['quantity'] = 'mennyiség',
   ['quantity_placeholder'] = 'Amount to withdraw..', --not translated
   ['inventory'] = 'leltár',
-  ['police_stock'] = 'Állomány',
   -- Misc
   ['remove_prop'] = 'Nyomj [E] gombot az objektum törléséhez',
   ['map_blip'] = 'Rendőrség',

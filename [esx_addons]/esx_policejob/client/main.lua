@@ -226,8 +226,7 @@ function OpenArmoryMenu(station)
 	if Config.EnableArmoryManagement then
 		table.insert(elements, {label = TranslateCap('get_weapon'),     value = 'get_weapon'})
 		table.insert(elements, {label = TranslateCap('put_weapon'),     value = 'put_weapon'})
-		table.insert(elements, {label = TranslateCap('remove_object'),  value = 'get_stock'})
-		table.insert(elements, {label = TranslateCap('deposit_object'), value = 'put_stock'})
+		table.insert(elements, {label = TranslateCap('open_inventory'),  value = 'stock'})
 	end
 
 	OpenPoliceMenu('default', 'armory', TranslateCap('armory'), elements, function(data, menu)
@@ -237,10 +236,9 @@ function OpenArmoryMenu(station)
 			OpenPutWeaponMenu()
 		elseif data.current.value == 'buy_weapons' then
 			OpenBuyWeaponsMenu()
-		elseif data.current.value == 'put_stock' then
-			OpenPutStocksMenu()
-		elseif data.current.value == 'get_stock' then
-			OpenGetStocksMenu()
+		elseif data.current.value == 'stock' then
+			TriggerServerEvent('esx_policejob:openInventory')
+			menu.close()
 		end
 	end, function(data, menu)
 		menu.close()
@@ -837,83 +835,6 @@ function OpenWeaponComponentShop(components, weaponName, parentShop)
 		end
 	end, function(data, menu)
 		menu.close()
-	end)
-end
-
-function OpenGetStocksMenu()
-	xLib.callback('esx_policejob:getStockItems', false, function(items)
-		local elements = {}
-
-		for i=1, #items, 1 do
-			elements[#elements+1] = {
-				label = 'x' .. items[i].count .. ' ' .. items[i].label,
-				value = items[i].name
-			}
-		end
-
-		OpenPoliceMenu('default', 'stocks_menu', TranslateCap('police_stock'), elements, function(data, menu)
-			local itemName = data.current.value
-
-			OpenPoliceMenu('dialog', 'stocks_menu_get_item_count', TranslateCap('quantity'), nil, function(data2, menu2)
-				local count = tonumber(data2.value)
-
-				if not count then
-					ESX.ShowNotification(TranslateCap('quantity_invalid'))
-				else
-					menu2.close()
-					menu.close()
-					TriggerServerEvent('esx_policejob:getStockItem', itemName, count)
-
-					Wait(300)
-					OpenGetStocksMenu()
-				end
-			end, function(data2, menu2)
-				menu2.close()
-			end)
-		end, function(data, menu)
-			menu.close()
-		end)
-	end)
-end
-
-function OpenPutStocksMenu()
-	xLib.callback('esx_policejob:getPlayerInventory', false, function(inventory)
-		local elements = {}
-
-		for i=1, #inventory.items, 1 do
-			local item = inventory.items[i]
-
-			if item.count > 0 then
-				elements[#elements+1] = {
-					label = item.label .. ' x' .. item.count,
-					type  = 'item_standard',
-					value = item.name
-				}
-			end
-		end
-
-		OpenPoliceMenu('default', 'stocks_menu', TranslateCap('inventory'), elements, function(data, menu)
-			local itemName = data.current.value
-
-			OpenPoliceMenu('dialog', 'stocks_menu_put_item_count', TranslateCap('quantity'), nil, function(data2, menu2)
-				local count = tonumber(data2.value)
-
-				if not count then
-					ESX.ShowNotification(TranslateCap('quantity_invalid'))
-				else
-					menu2.close()
-					menu.close()
-					TriggerServerEvent('esx_policejob:putStockItems', itemName, count)
-
-					Wait(300)
-					OpenPutStocksMenu()
-				end
-			end, function(data2, menu2)
-				menu2.close()
-			end)
-		end, function(data, menu)
-			menu.close()
-		end)
 	end)
 end
 

@@ -315,70 +315,45 @@ AddEventHandler('playerDropped', function()
     cuffedPlayers[source] = nil
 end)
 
-RegisterNetEvent('esx_policejob:getStockItem')
+local function registerStorages()
+    exports.esx_inventory:RegisterStorage("society_police", {
+        label = "Police Stock",
+        slots = 30,
+        maxWeight = 200,
+        canAccess = function(xPlayer)
+            return xPlayer.getJob().name == "police"
+        end,
+        getItems = function(xPlayer)
+            return stockItems
+        end,
+        putItem = function(xPlayer, itemName, count)
+            return addToStock(itemName, count)
+        end,
+        takeItem = function(xPlayer, itemName, count)
+            return removeFromStock(itemName, count)
+        end,
+        coords = Config.PoliceStations.LSPD.Armories[1],
+        distance = 5.0,
+    })
+end
 
-AddEventHandler('esx_policejob:getStockItem', function(itemName, count)
+AddEventHandler("esx_inventory:ready", registerStorages)
+
+if GetResourceState("esx_inventory") == "started" then
+    registerStorages()
+end
+
+RegisterNetEvent('esx_policejob:openInventory')
+AddEventHandler('esx_policejob:openInventory', function()
     local source = source
     local xPlayer = ESX.Player(source)
 
-    count = getValidCount(count)
-
-    if not count or not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
-        if not notifyOffDuty(xPlayer) then
-            print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock withdrawal!'):format(source))
-        end
-
+    if not xPlayer or xPlayer.getJob().name ~= 'police' then
+        print(('[^3WARNING^7] Player ^5%s^7 attempted to exploit the police inventory!'):format(source))
         return
     end
 
-    TriggerEvent('esx_addoninventory:getSharedInventory', 'society_police', function(inventory)
-        local inventoryItem = inventory.getItem(itemName)
-
-        -- is there enough in the society?
-        if count > 0 and inventoryItem.count >= count then
-            -- can the player carry the said amount of x item?
-            if xPlayer.canCarryItem(itemName, count) then
-                inventory.removeItem(itemName, count)
-                xPlayer.addInventoryItem(itemName, count)
-                xPlayer.showNotification(TranslateCap('have_withdrawn', count, inventoryItem.name))
-            else
-                xPlayer.showNotification(TranslateCap('quantity_invalid'))
-            end
-        else
-            xPlayer.showNotification(TranslateCap('quantity_invalid'))
-        end
-    end)
-end)
-
-RegisterNetEvent('esx_policejob:putStockItems')
-
-AddEventHandler('esx_policejob:putStockItems', function(itemName, count)
-    local source = source
-    local xPlayer = ESX.Player(source)
-    local sourceItem = xPlayer.getInventoryItem(itemName)
-
-    count = getValidCount(count)
-
-    if not count or not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
-        if not notifyOffDuty(xPlayer) then
-            print(('[^3WARNING^7] Player ^5%s^7 attempted invalid police stock deposit!'):format(source))
-        end
-
-        return
-    end
-
-    TriggerEvent('esx_addoninventory:getSharedInventory', 'society_police', function(inventory)
-        local inventoryItem = inventory.getItem(itemName)
-
-        -- does the player have enough of the item?
-        if sourceItem.count >= count and count > 0 then
-            xPlayer.removeInventoryItem(itemName, count)
-            inventory.addItem(itemName, count)
-            xPlayer.showNotification(TranslateCap('have_deposited', count, inventoryItem.name))
-        else
-            xPlayer.showNotification(TranslateCap('quantity_invalid'))
-        end
-    end)
+    exports.esx_inventory:OpenStorage(xPlayer.src, "society_police")
 end)
 
 xLib.callback.registerCompat('esx_policejob:getOtherPlayerData', function(source, cb, target, notify)
@@ -729,30 +704,6 @@ function getPriceFromHash(vehicleHash, jobGrade, type)
 
     return 0
 end
-
-xLib.callback.registerCompat('esx_policejob:getStockItems', function(source, cb)
-    local xPlayer = ESX.Player(source)
-
-    if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
-        return cb({})
-    end
-
-    TriggerEvent('esx_addoninventory:getSharedInventory', 'society_police', function(inventory)
-        cb(inventory.items)
-    end)
-end)
-
-xLib.callback.registerCompat('esx_policejob:getPlayerInventory', function(source, cb)
-    local xPlayer = ESX.Player(source)
-
-    if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
-        return cb({ items = {} })
-    end
-
-    local items = xPlayer.getInventory(false)
-
-    cb({ items = items })
-end)
 
 AddEventHandler('onResourceStop', function(resource)
     if resource == GetCurrentResourceName() then

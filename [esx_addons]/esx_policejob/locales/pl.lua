@@ -11,8 +11,7 @@ Locales['pl'] = {
   ['no_outfit'] = 'brak ubrania',
   ['open_cloackroom'] = 'naciśnij [E] aby zmienić ubranie.',
   -- Armory
-  ['remove_object'] = 'weź przedmiot',
-  ['deposit_object'] = 'zdeponuj przedmiot',
+  ['open_inventory'] = 'Otwórz ekwipunek',
   ['get_weapon'] = 'weź broń',
   ['put_weapon'] = 'odłóż broń',
   ['buy_weapons'] = 'kup Broń',
@@ -155,7 +154,6 @@ Locales['pl'] = {
   ['quantity'] = 'ilość',
   ['quantity_placeholder'] = 'Amount to withdraw..', --not translated
   ['inventory'] = 'ekwipunek',
-  ['police_stock'] = 'zapasy policji',
   -- Misc
   ['remove_prop'] = 'naciśnij [E] aby usunąć ten obiekt',
   ['map_blip'] = 'komisariat Policji',

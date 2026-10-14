@@ -11,8 +11,7 @@ Locales['es'] = {
   ['no_outfit'] = '¡No hay ningún uniforme disponible para ti!',
   ['open_cloackroom'] = 'Presionar [E] para abrir su taquilla',
   -- Armory
-  ['remove_object'] = 'Coger objeto',
-  ['deposit_object'] = 'Depositar objeto',
+  ['open_inventory'] = 'Abrir inventario',
   ['get_weapon'] = 'Coger arma',
   ['put_weapon'] = 'Depositar arma',
   ['buy_weapons'] = 'Comprar armas',
@@ -155,7 +154,6 @@ Locales['es'] = {
   ['quantity'] = 'cantidad',
   ['quantity_placeholder'] = 'Amount to withdraw..', --not translated
   ['inventory'] = 'inventario',
-  ['police_stock'] = 'almacen Policial',
   -- Misc
   ['remove_prop'] = 'presionar [E] para eliminar el objeto',
   ['map_blip'] = 'comisaría de policía',

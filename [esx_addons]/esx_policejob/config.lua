@@ -10,7 +10,7 @@ Config.MarkerSize = { x = 1.5, y = 1.5, z = 0.5 }
 Config.MarkerColor = { r = 50, g = 50, b = 204 }
 
 Config.EnablePlayerManagement = true -- Enable if you want society managing.
-Config.EnableArmoryManagement = false
+Config.EnableArmoryManagement = true
 Config.EnableESXIdentity = true -- Enable if you're using esx_identity.
 Config.EnableESXOptionalneeds = false -- Enable if you're using esx_optionalneeds
 Config.EnableLicenses = false -- Enable if you're using esx_license.

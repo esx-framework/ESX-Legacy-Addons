@@ -11,8 +11,7 @@ Locales['nl'] = {
     ['no_outfit'] = 'Er zijn geen passende uniformen voor jou!',
     ['open_cloackroom'] = 'Druk op [E] om je kleding aan te passen.',
     -- Wapenkamer
-    ['remove_object'] = 'Haal item uit kluis',
-    ['deposit_object'] = 'Leg item in kluis',
+    ['open_inventory'] = 'Inventaris openen',
     ['get_weapon'] = 'Haal wapen uit wapenkamer',
     ['put_weapon'] = 'Leg wapen in wapenkamer',
     ['buy_weapons'] = 'Koop wapens',
@@ -156,7 +155,6 @@ Locales['nl'] = {
     ['quantity'] = 'Aantal',
     ['quantity_placeholder'] = 'Amount to withdraw..', --not translated
     ['inventory'] = 'Inventaris',
-    ['police_stock'] = 'Politie Voorraad',
     -- Misc
     ['remove_prop'] = 'Druk op [E] om dit object te verwijderen.',
     ['map_blip'] = 'Politiebureau',

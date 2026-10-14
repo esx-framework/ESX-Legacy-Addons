@@ -11,8 +11,7 @@ Locales['fr'] = {
   ['no_outfit'] = 'il n\'y a pas d\'uniforme à votre taille...',
   ['open_cloackroom'] = 'appuyez sur [E] pour vous changer',
   -- Armurerie
-  ['remove_object'] = 'prendre Objet',
-  ['deposit_object'] = 'déposer objet',
+  ['open_inventory'] = 'Ouvrir l\'inventaire',
   ['get_weapon'] = 'prendre Arme',
   ['put_weapon'] = 'déposer Arme',
   ['buy_weapons'] = 'acheter Armes',
@@ -155,7 +154,6 @@ Locales['fr'] = {
   ['quantity'] = 'quantité',
   ['quantity_placeholder'] = 'Montant à retirer..',
   ['inventory'] = 'inventaire',
-  ['police_stock'] = 'coffre de la police',
   -- Misc
   ['remove_prop'] = 'appuyez sur [E] pour enlever l\'objet',
   ['map_blip'] = 'Commissariat',
