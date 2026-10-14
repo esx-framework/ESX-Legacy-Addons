@@ -184,6 +184,7 @@ Locales["en"] = {
 	["escape_spectate"] = "Press [ESC] to stop spectating",
 	["default_ban"] = "You are banned from this server!",
 	["finalizing_connection"] = "Finalizing connection...",
+	["kicked_by_admin"] = "Kicked by admin",
 	["action_failed"] = "Action failed.",
 
 	-- Ban Management
@@ -240,4 +241,35 @@ Locales["en"] = {
 	["must_be_in_vehicle"] = "You must be in a vehicle.",
 	["no_permission_command"] = "You do not have permission to use this command.",
 	["database_unavailable"] = "Database unavailable.",
+
+	-- Vehice spawner colors
+	["black"] = "Black",
+	["white"] = "White",
+	["silver"] = "Silver",
+	["red"] = "Red",
+	["orange"] = "Orange",
+	["yellow"] = "Yellow",
+	["green"] = "Green",
+	["blue"] = "Blue",
+	["purple"] = "Purple",
+
+	-- Vehicle spawner window tints
+	["none"] = "None",
+	["pure_black"] = "Pure Black",
+	["dark_smoke"] = "Dark Smoke",
+	["light_smoke"] = "Light Smoke",
+	["stock"] = "Stock",
+	["limo"] = "Limo",
+
+	-- Vehicle spawner wheel categorys
+	["sport"] = "Sport",
+	["muscle"] = "Muscle",
+	["lowrider"] = "Lowrider",
+	["suv"] = "SUV",
+	["offroad"] = "Offroad",
+	["tuner"] = "Tuner",
+	["bike"] = "Bike",
+	["highend"] = "High End",
+	["street"] = "Street",
+	["track"] = "Track",
 }
