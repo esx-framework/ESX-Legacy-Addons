@@ -46,6 +46,12 @@
   {/if}
 </main>
 
+{#if import.meta.env.DEV}
+  {#await import('./dev/DevHarness.svelte') then harness}
+    <harness.default />
+  {/await}
+{/if}
+
 <style>
   .app {
     position: fixed;
