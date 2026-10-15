@@ -14,6 +14,7 @@
     "test:cef": "vite build && node scripts/cef103.js"
   },
   "devDependencies": {
+    "@fontsource/permanent-marker": "^5.3.0",
     "@fontsource/poppins": "^5.3.0",
     "@puppeteer/browsers": "^3.2.5",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

@@ -36,8 +36,45 @@ function openMessage(game, seed, difficulty) {
   return { action: 'open', session: { id: `cef-${game}-${seed}`, game, seed, difficulty } };
 }
 
+/** Resolutions FiveM players commonly run, from 720p up to 4K. */
+const RESOLUTIONS = [
+  { label: '720p', width: 1280, height: 720 },
+  { label: '1080p', width: 1920, height: 1080 },
+  { label: '1440p', width: 2560, height: 1440 },
+  { label: '4k', width: 3840, height: 2160 },
+];
+
+/**
+ * Opens a wiring round at a resolution and waits until the scene is interactive.
+ * @param {import('puppeteer-core').Page} page Browser page
+ * @param {NuiHarness} nui Harness
+ * @param {{ width: number, height: number }} viewport Screen size
+ * @param {number} seed Puzzle seed
+ * @param {number} difficulty Difficulty tier
+ * @returns {Promise<void>}
+ */
+async function openWiring(page, nui, viewport, seed, difficulty) {
+  await page.setViewport({ width: viewport.width, height: viewport.height, deviceScaleFactor: 1 });
+  await nui.send(openMessage('wiring', seed, difficulty));
+  await page.waitForSelector('.game[data-phase="playing"]', { timeout: 10_000 });
+  // Two frames: one for the resize, one for the first paint.
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+}
+
 /** @type {Scenario[]} */
 export const scenarios = [
+  ...RESOLUTIONS.map(
+    (resolution) =>
+      /** @type {Scenario} */ ({
+        name: `wiring-${resolution.label}`,
+        async run(page, nui) {
+          await openWiring(page, nui, resolution, 0x2c4f81a3, 2);
+          await nui.screenshot('start');
+        },
+      }),
+  ),
   {
     name: 'boot',
     async run(page, nui) {
