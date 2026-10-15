@@ -2,6 +2,7 @@ node_modules/
 *.local
 *.tsbuildinfo
 .vite/
+.e2e-dist/
 test-results/
 playwright-report/
 

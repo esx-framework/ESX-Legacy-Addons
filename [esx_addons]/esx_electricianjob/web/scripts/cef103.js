@@ -12,8 +12,10 @@
  * an uncaught exception or a failing scenario fails the run. Every scenario can store
  * screenshots in test-results/cef103/.
  *
- * usage: node scripts/cef103.js [scenario ...]
+ * usage: node scripts/cef103.js [--e2e] [scenario ...]
  *
+ * `--e2e` serves the `--mode e2e` build from .e2e-dist and runs the scenarios that play a
+ * round through the test probe; without it, the production build in dist/ is used.
  * Set CHROMIUM_103_PATH to use an existing binary instead of the cached download.
  */
 
@@ -166,10 +168,12 @@ async function prepare(page, scenario, errors) {
   };
 }
 
-const selected = process.argv.slice(2);
-const queue = selected.length
-  ? scenarios.filter((scenario) => selected.includes(scenario.name))
-  : scenarios;
+const e2e = process.argv.includes('--e2e');
+const selected = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
+const queue = scenarios.filter(
+  (scenario) =>
+    Boolean(scenario.e2e) === e2e && (selected.length === 0 || selected.includes(scenario.name)),
+);
 
 if (queue.length === 0) {
   console.error(`cef103: no scenario matches ${selected.join(', ')}`);
@@ -178,7 +182,12 @@ if (queue.length === 0) {
 
 await mkdir(RESULTS_DIR, { recursive: true });
 const executablePath = await resolveChromium();
-const server = await preview({ root: ROOT, logLevel: 'warn', preview: { port: 4319 } });
+const server = await preview({
+  root: ROOT,
+  logLevel: 'warn',
+  build: { outDir: e2e ? '.e2e-dist' : 'dist' },
+  preview: { port: 4319 },
+});
 const baseUrl = server.resolvedUrls?.local[0];
 if (!baseUrl) throw new Error('vite preview did not report a local URL');
 
@@ -210,6 +219,9 @@ try {
       failed += 1;
       const message = error instanceof Error ? error.message : String(error);
       console.error(`  FAIL ${scenario.name}\n    ${message}`);
+      await page
+        .screenshot({ path: join(RESULTS_DIR, `${scenario.name}-failure.png`) })
+        .catch(() => undefined);
     } finally {
       await page.close();
     }

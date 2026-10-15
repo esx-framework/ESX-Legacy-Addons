@@ -5,6 +5,8 @@
 
 // @ts-check
 
+import { playWiring } from './play-wiring.js';
+
 /**
  * Scenarios for scripts/cef103.js. Each one gets a page that already has the production
  * build loaded and a harness that stands in for the Lua side of the resource.
@@ -21,6 +23,7 @@
 /**
  * @typedef {object} Scenario
  * @property {string} name Unique name, also accepted as CLI filter
+ * @property {boolean} [e2e] Needs the e2e build with the test probe (`--e2e`)
  * @property {(page: import('puppeteer-core').Page, nui: NuiHarness) => Promise<void>} run
  *   Scenario body, throws on failure
  */
@@ -63,8 +66,40 @@ async function openWiring(page, nui, viewport, seed, difficulty) {
   );
 }
 
+/**
+ * Plays a wiring round to the end and expects the server callback to report success.
+ * @param {number} seed Puzzle seed
+ * @param {number} difficulty Difficulty tier
+ * @returns {Scenario['run']} Scenario body
+ */
+function solveWiring(seed, difficulty) {
+  return async (page, nui) => {
+    await openWiring(page, nui, { width: 1920, height: 1080 }, seed, difficulty);
+    await nui.screenshot('start');
+    await playWiring(page, nui.screenshot);
+
+    const [inspect] = await page.$$('.button.primary');
+    if (!inspect) throw new Error('inspect button missing');
+    await inspect.click();
+    await page.waitForSelector('.result');
+    await nui.screenshot('result');
+
+    const body = /** @type {{ outcome?: unknown, actions?: unknown[] }} */ (
+      await nui.waitForCallback('finish')
+    );
+    if (body.outcome !== 'success') {
+      throw new Error(`expected success, got ${JSON.stringify(body.outcome)}`);
+    }
+    if (!Array.isArray(body.actions) || body.actions.length === 0) {
+      throw new Error('finish callback carried no action log');
+    }
+  };
+}
+
 /** @type {Scenario[]} */
 export const scenarios = [
+  { name: 'e2e-wiring-easy', e2e: true, run: solveWiring(1056, 1) },
+  { name: 'e2e-wiring-hard', e2e: true, run: solveWiring(1056, 3) },
   ...RESOLUTIONS.map(
     (resolution) =>
       /** @type {Scenario} */ ({

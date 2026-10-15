@@ -73,6 +73,7 @@
   let flashTimer = 0;
   let clock = 0;
   let resizeObserver: ResizeObserver | null = null;
+  let removeProbe: (() => void) | null = null;
   let finished = false;
   const startedAt = performance.now();
 
@@ -288,6 +289,15 @@
       resizeObserver.observe(target);
       resize();
       syncHud();
+      if (import.meta.env.MODE === 'e2e') {
+        const { installWiringProbe } = await import('./probe');
+        const activeRenderer = renderer;
+        removeProbe = installWiringProbe(
+          engine,
+          target,
+          (): StageTransform => activeRenderer.stage,
+        );
+      }
       phase = 'playing';
       clock = window.setInterval((): void => {
         remaining = Math.max(
@@ -307,6 +317,7 @@
   });
 
   onDestroy((): void => {
+    removeProbe?.();
     resizeObserver?.disconnect();
     window.clearInterval(clock);
     window.clearTimeout(toastTimer);
