@@ -54,10 +54,15 @@ const RESOLUTIONS = [
  * @param {{ width: number, height: number }} viewport Screen size
  * @param {number} seed Puzzle seed
  * @param {number} difficulty Difficulty tier
+ * @param {{ tutorial?: boolean }} [options] Show the first-play tutorial instead of skipping it
  * @returns {Promise<void>}
  */
-async function openWiring(page, nui, viewport, seed, difficulty) {
+async function openWiring(page, nui, viewport, seed, difficulty, options = {}) {
   await page.setViewport({ width: viewport.width, height: viewport.height, deviceScaleFactor: 1 });
+  await page.evaluate((show) => {
+    if (show) localStorage.removeItem('esx_electricianjob:wiring-tutorial');
+    else localStorage.setItem('esx_electricianjob:wiring-tutorial', '1');
+  }, Boolean(options.tutorial));
   await nui.send(openMessage('wiring', seed, difficulty));
   await page.waitForSelector('.game[data-phase="playing"]', { timeout: 10_000 });
   // Two frames: one for the resize, one for the first paint.
@@ -100,6 +105,31 @@ function solveWiring(seed, difficulty) {
 export const scenarios = [
   { name: 'e2e-wiring-easy', e2e: true, run: solveWiring(1056, 1) },
   { name: 'e2e-wiring-hard', e2e: true, run: solveWiring(1056, 3) },
+  ...[1, 2, 3].map(
+    (tier) =>
+      /** @type {Scenario} */ ({
+        name: `wiring-tier${tier}`,
+        async run(page, nui) {
+          await openWiring(page, nui, { width: 1920, height: 1080 }, 0x2c4f81a3, tier);
+          await nui.screenshot('start');
+        },
+      }),
+  ),
+  {
+    name: 'wiring-tutorial',
+    async run(page, nui) {
+      await openWiring(page, nui, { width: 1920, height: 1080 }, 0x2c4f81a3, 1, {
+        tutorial: true,
+      });
+      await page.waitForSelector('.dialog');
+      for (let pageIndex = 1; pageIndex <= 4; pageIndex++) {
+        await nui.screenshot(`page${pageIndex}`);
+        const buttons = await page.$$('.dialog .button.primary');
+        await buttons[buttons.length - 1]?.click();
+      }
+      await page.waitForSelector('.game[data-help="false"]');
+    },
+  },
   ...RESOLUTIONS.map(
     (resolution) =>
       /** @type {Scenario} */ ({

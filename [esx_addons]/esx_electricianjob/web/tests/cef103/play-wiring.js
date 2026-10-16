@@ -105,13 +105,33 @@ function splices(page) {
  * @param {Page} page Browser page
  * @param {Point} from Start
  * @param {Point} to End
+ * @param {() => Promise<void>} [beforeRelease] Runs while the button is still held
  * @returns {Promise<void>}
  */
-async function drag(page, from, to) {
+async function drag(page, from, to, beforeRelease) {
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(to.x, to.y, { steps: 14 });
+  if (beforeRelease) await beforeRelease();
   await page.mouse.up();
+}
+
+/** Screenshot helper handed in by the scenario, null to skip mid-action shots. */
+/** @type {((label: string) => Promise<void>) | null} */
+let capture = null;
+
+/**
+ * Takes a mid-action screenshot once per label.
+ * @param {string} label Screenshot label
+ * @returns {() => Promise<void>} Callback for {@link drag}
+ */
+function shotOnce(label) {
+  return async () => {
+    if (!capture) return;
+    const take = capture;
+    capture = label === 'aim-cap' ? null : capture;
+    await take(label);
+  };
 }
 
 /**
@@ -171,7 +191,7 @@ function clearTarget(members, obstacles, center, angle, scale) {
  */
 async function strip(page, end) {
   const stripper = /** @type {Point} */ (await probe(page, "probe.tool('stripper')"));
-  await drag(page, stripper, end);
+  await drag(page, stripper, end, shotOnce('aim-strip'));
   await page.waitForSelector('.notch');
   const notches = await page.$$('.notch');
   for (const notch of notches) {
@@ -237,7 +257,7 @@ async function bundle(page, ids, target) {
 async function capSplice(page, splice) {
   for (const color of NUT_ORDER) {
     const source = /** @type {Point} */ (await probe(page, `probe.nuts('${color}')`));
-    await drag(page, source, splice);
+    await drag(page, source, splice, color === 'orange' ? shotOnce('aim-cap') : undefined);
     const seated = (await splices(page)).find((s) => s.id === splice.id);
     if (seated?.nut) break;
   }
@@ -279,6 +299,7 @@ async function clickControl(page, index) {
  * @returns {Promise<void>}
  */
 export async function playWiring(page, screenshot) {
+  capture = screenshot;
   await clickControl(page, 0); // Breaker off before touching anything.
 
   let all = await ends(page);
