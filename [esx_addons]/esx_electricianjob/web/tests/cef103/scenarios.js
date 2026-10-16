@@ -116,6 +116,19 @@ export const scenarios = [
       }),
   ),
   {
+    name: 'wiring-tier1-coach',
+    async run(page, nui) {
+      await openWiring(page, nui, { width: 1920, height: 1080 }, 0x2c4f81a3, 1);
+      await nui.screenshot('breaker');
+      const [breaker] = await page.$$('.control');
+      await breaker?.click();
+      await page.evaluate(
+        () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+      );
+      await nui.screenshot('first-move');
+    },
+  },
+  {
     name: 'wiring-tutorial',
     async run(page, nui) {
       await openWiring(page, nui, { width: 1920, height: 1080 }, 0x2c4f81a3, 1, {
