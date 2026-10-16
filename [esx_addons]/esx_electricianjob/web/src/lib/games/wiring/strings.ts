@@ -115,8 +115,19 @@ export const TOAST = {
 
 /** HUD labels. */
 export const LABEL = {
-  workOrder: 'Work order',
+  serviceOrder: 'Service order',
+  orderNumber: 'No.',
   title: 'Junction box',
+  customer: 'Customer',
+  site: 'Site',
+  location: 'Location',
+  grade: 'Grade',
+  reported: 'Reported',
+  job: 'Job',
+  procedure: 'Procedure',
+  connections: 'Connections',
+  cables: 'Cables in the box',
+  colorCode: 'Color code',
   mistakes: 'Mistakes',
   panel: 'Panel',
   breaker: 'Breaker',
@@ -135,10 +146,6 @@ export const LABEL = {
   help: 'Help',
   next: 'Next',
   start: 'Got it',
-  checklist: 'Job steps',
-  plan: 'Wiring plan',
-  cables: 'Cables in the box',
-  rules: 'Wire colors',
   hint: 'Hint',
   unlabeled: 'no label',
   unlabeledHint: 'find it with the tester',
@@ -157,20 +164,40 @@ export const STEP_TEXT: Readonly<Record<StepId, string>> = {
   inspect: 'Press Inspect',
 };
 
-/** Names and one-line explanations of the bundles in the plan. */
-export const BUNDLE_TEXT: Readonly<Record<BundleRole, readonly [string, string]>> = {
-  hot: ['Always hot', 'power in, passed on'],
-  switched: ['Switched hot', 'from the switch to the light'],
-  neutral: ['Neutral', 'the return path'],
-  ground: ['Ground', 'all bare copper'],
+/** Names of the bundles in the connection list. */
+export const BUNDLE_TEXT: Readonly<Record<BundleRole, string>> = {
+  hot: 'Hot',
+  switched: 'Switched',
+  neutral: 'Neutral',
+  ground: 'Ground',
 };
 
-/** Color rules on the reference card. */
-export const RULES: readonly (readonly [string, string])[] = [
-  ['Black, red', 'hot, carries power'],
-  ['White', 'neutral, the return path'],
-  ['White taped black', 'used as hot'],
-  ['Bare copper', 'ground'],
+/** Wire look drawn next to a color rule. */
+export type RuleSwatch = 'black' | 'red' | 'white' | 'taped' | 'bare';
+
+/** One line of the color code. */
+export interface ColorRule {
+  /** Wire looks the rule is about */
+  swatches: readonly RuleSwatch[];
+  /** Colors in words */
+  colors: string;
+  /** What those wires do */
+  meaning: string;
+  /** One-word version of the meaning for the printed legend */
+  role: string;
+}
+
+/** Color code printed on the work order and repeated in the tutorial. */
+export const RULES: readonly ColorRule[] = [
+  {
+    swatches: ['black', 'red'],
+    colors: 'Black, red',
+    meaning: 'hot, carries power',
+    role: 'hot',
+  },
+  { swatches: ['white'], colors: 'White', meaning: 'neutral, the return path', role: 'neutral' },
+  { swatches: ['taped'], colors: 'White taped', meaning: 'used as hot', role: 'hot' },
+  { swatches: ['bare'], colors: 'Bare copper', meaning: 'ground', role: 'ground' },
 ];
 
 /** Extra line under the color rules. */
@@ -225,7 +252,7 @@ export const TUTORIAL: readonly TutorialPage[] = [
   },
   {
     title: 'Bundle what belongs together',
-    body: 'Drag a wire end onto another one to bundle them. Black goes with black, white with white, bare copper with bare copper. On easier jobs the wiring plan on the left shows every bundle.',
+    body: 'Drag a wire end onto another one to bundle them. Black goes with black, white with white, bare copper with bare copper. On easier jobs the work order on the left lists every bundle.',
   },
   {
     title: 'Cap and twist',
@@ -233,14 +260,14 @@ export const TUTORIAL: readonly TutorialPage[] = [
   },
   {
     title: 'Test, then inspect',
-    body: 'Switch the breaker back on and flip the wall switch: the light has to come on. When everything works, press Inspect. The checklist on the left always shows the next step.',
+    body: 'Switch the breaker back on and flip the wall switch: the light has to come on. When everything works, press Inspect. The work order on the left ticks off every step.',
   },
 ];
 
 /** Plain-language text of the next move, shown under the hint arrow. */
 export const MOVE_TEXT: Readonly<Record<Move['kind'], string>> = {
   test: 'Sweep the voltage tester over the marked cable: it beeps when the cable is live',
-  breaker: 'Switch the breaker off before you touch anything (panel, top left)',
+  breaker: 'Switch the breaker off before you touch anything (panel on the left)',
   switch: 'Flip the wall switch: the light should come on',
   inspect: 'All done. Press Inspect',
   strip: 'Drop the wire stripper on the glowing wire end',

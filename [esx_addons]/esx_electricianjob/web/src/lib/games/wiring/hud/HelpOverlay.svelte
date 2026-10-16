@@ -98,8 +98,8 @@
 
     {#if last}
       <ul class="rules">
-        {#each RULES as [color, meaning] (color)}
-          <li><strong>{color}</strong> {meaning}</li>
+        {#each RULES as rule (rule.colors)}
+          <li><strong>{rule.colors}</strong> {rule.meaning}</li>
         {/each}
       </ul>
     {/if}

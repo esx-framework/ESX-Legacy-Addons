@@ -34,9 +34,9 @@
   } from './guide';
   import ControlsCard from './hud/ControlsCard.svelte';
   import CursorBadge, { type Badge } from './hud/CursorBadge.svelte';
-  import GuideCard, { type CableRow, type PlanChip, type PlanRow } from './hud/GuideCard.svelte';
   import HelpOverlay from './hud/HelpOverlay.svelte';
-  import JobCard from './hud/JobCard.svelte';
+  import StatusBar from './hud/StatusBar.svelte';
+  import WorkOrder, { type CableRow, type PlanChip, type PlanRow } from './hud/WorkOrder.svelte';
   import { computeWiringLayout, STAGE, type WiringLayout } from './layout';
   import {
     NUT_COLORS,
@@ -62,6 +62,7 @@
     NUT_CARD,
     TOAST,
   } from './strings';
+  import { workOrder, type WorkOrder as Order } from './work-order';
 
   interface Props {
     /** Round to play */
@@ -94,6 +95,7 @@
   const round: GameSession = untrack((): GameSession => session);
   const puzzle: WiringPuzzle = generateWiringPuzzle(round.seed, round.difficulty);
   const tier: WiringTier = WIRING_TIERS[round.difficulty];
+  const order: Order = workOrder(round.seed, puzzle.template);
   const receptacleIds: readonly string[] = puzzle.loads
     .filter((load): boolean => load.kind === 'receptacle')
     .map((load): string => load.id);
@@ -630,17 +632,20 @@
   </div>
 
   <div class="hud" style="--hud-scale: {hudScale}">
+    <div class="hud-top">
+      <StatusBar {remaining} timeLimit={tier.timeLimit} {mistakes} maxMistakes={tier.maxMistakes} />
+    </div>
+
     <div class="hud-left">
-      <JobCard
-        seed={round.seed}
+      <WorkOrder
+        {order}
         briefing={BRIEFING[puzzle.template]}
-        {remaining}
-        timeLimit={tier.timeLimit}
-        {mistakes}
-        maxMistakes={tier.maxMistakes}
-        {steps}
         grade={tier.name}
-        level={round.difficulty}
+        tier={round.difficulty}
+        {steps}
+        plan={planRows}
+        cables={cableRows}
+        onhighlight={highlightPlan}
       />
       <ControlsCard
         {breakerOn}
@@ -652,12 +657,6 @@
         {attention}
         ontogglebreaker={toggleBreaker}
         ontoggleswitch={toggleSwitch}
-      />
-      <GuideCard
-        tier={round.difficulty}
-        plan={planRows}
-        cables={cableRows}
-        onhighlight={highlightPlan}
       />
     </div>
 
@@ -821,14 +820,22 @@
     pointer-events: none;
   }
 
+  .hud-top {
+    position: absolute;
+    left: 50%;
+    top: 20px;
+    transform: translateX(-50%) scale(var(--hud-scale));
+    transform-origin: 50% 0;
+  }
+
   .hud-left {
     position: absolute;
     left: 24px;
-    top: 24px;
+    top: 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    width: 350px;
+    gap: 14px;
+    width: 380px;
     transform: scale(var(--hud-scale));
     transform-origin: 0 0;
     pointer-events: auto;
@@ -886,7 +893,7 @@
   .toast {
     position: absolute;
     left: 50%;
-    top: 28px;
+    top: calc(84px * var(--hud-scale));
     max-width: 640px;
     padding: 12px 20px;
     border: 1px solid var(--esx-line);

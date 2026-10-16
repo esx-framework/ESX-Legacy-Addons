@@ -14,6 +14,7 @@
     | 'x'
     | 'check'
     | 'help'
+    | 'clock'
     | 'arrow-left'
     | 'arrow-right';
 </script>
@@ -89,6 +90,9 @@
   {:else if name === 'help'}
     <circle cx="12" cy="12" r="9" />
     <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01" />
+  {:else if name === 'clock'}
+    <circle cx="12" cy="13" r="8" />
+    <path d="M12 9v4l2.5 2.5M10 2h4" />
   {:else if name === 'arrow-left'}
     <path d="M19 12H5M11 6l-6 6 6 6" />
   {:else if name === 'arrow-right'}
