@@ -103,7 +103,7 @@
     flex: 1;
     align-items: center;
     gap: 10px;
-    padding: 8px 10px;
+    padding: 5px 10px;
     border: 2px solid transparent;
     border-radius: var(--esx-radius);
     background: var(--esx-dark);
@@ -134,11 +134,11 @@
   }
 
   .breaker {
-    height: 64px;
+    height: 48px;
   }
 
   .switch {
-    height: 58px;
+    height: 44px;
   }
 
   .control-text {
@@ -166,7 +166,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 6px 16px;
-    margin-top: 12px;
+    margin-top: 10px;
     font-size: 13px;
   }
 
@@ -179,7 +179,7 @@
   .bulb {
     position: relative;
     display: inline-flex;
-    width: 48px;
+    width: 40px;
   }
 
   .bulb img {
