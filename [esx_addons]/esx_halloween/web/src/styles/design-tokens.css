@@ -1,0 +1,103 @@
+:root {
+  /* ESX UI Convars - Set dynamically from game */
+  --primary-color: #fb9b04;
+  --secondary-color: #1a1a1a;
+  --background-color: #000000;
+  --accent-color: #fb9b04;
+  --logo-url: '';
+
+  /* Colors */
+  --color-brand: var(--primary-color);
+  --color-brand-rgb: 251, 155, 4;
+
+  /* Danger/Zone Colors (for Domain Zones) */
+  --color-danger: #ff3b3b;
+  --color-danger-rgb: 255, 59, 59;
+
+  /* Dark Shades */
+  --color-darkest: #161616;
+  --color-darkest-rgb: 22, 22, 22;
+
+  --color-dark: #252525;
+  --color-dark-rgb: 37, 37, 37;
+
+  --color-mid: #383838;
+  --color-mid-rgb: 56, 56, 56;
+
+  /* Light Shades */
+  --color-light: #969696;
+  --color-light-rgb: 150, 150, 150;
+
+  --color-lightest: #f2f2f2;
+  --color-lightest-rgb: 242, 242, 242;
+  --color-bg-primary: var(--color-darkest);
+  --color-bg-secondary: var(--color-dark);
+  --color-bg-tertiary: var(--color-mid);
+
+  --color-text-primary: var(--color-lightest);
+  --color-text-secondary: var(--color-light);
+  --color-text-inverse: var(--color-darkest);
+
+  /* Typography */
+  --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-halloween: 'Creepster', cursive;
+  --font-size-base: 1rem;
+  --font-size-h1: 2rem;
+  --font-size-h2: 1.5rem;
+  --font-size-h3: 1.25rem;
+  --font-size-h4: 1.125rem;
+  --font-size-h5: 1rem;
+  --font-size-h6: 0.875rem;
+  --font-size-body: 1rem;
+  --font-size-small: 0.875rem;
+  --font-size-tiny: 0.75rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-brand: 0 0 20px rgba(var(--color-brand-rgb), 0.3);
+  --shadow-brand-strong: 0 0 30px rgba(var(--color-brand-rgb), 0.5);
+  --shadow-danger: 0 0 30px rgba(var(--color-danger-rgb), 0.2);
+  --shadow-danger-strong: 0 0 50px rgba(var(--color-danger-rgb), 0.6);
+
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+
+  /* Z-Index */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-notification: 800;
+}
