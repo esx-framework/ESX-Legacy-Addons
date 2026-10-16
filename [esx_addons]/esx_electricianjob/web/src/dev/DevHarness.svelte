@@ -22,7 +22,7 @@
   }
 
   function toDifficulty(value: string | null): Difficulty {
-    return value === '1' || value === '3' ? (Number(value) as Difficulty) : 2;
+    return value === '2' || value === '3' ? (Number(value) as Difficulty) : 1;
   }
 
   function start(): void {
