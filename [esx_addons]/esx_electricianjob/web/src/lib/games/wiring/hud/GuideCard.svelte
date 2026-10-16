@@ -14,6 +14,8 @@
 
   /** One bundle of the wiring plan. */
   export interface PlanRow {
+    /** Number on the wire markers of this bundle */
+    number: number;
     /** Bundle role */
     role: BundleRole;
     /** Conductors that go into it */
@@ -39,6 +41,7 @@
   import type { Difficulty } from '../../../nui/messages';
   import Panel from '../../../ui/Panel.svelte';
   import { CABLE_ROLE_TEXT } from '../guide';
+  import { markerStyle } from '../markers';
   import { BUNDLE_TEXT, LABEL, RULES, RULES_NOTE } from '../strings';
 
   interface Props {
@@ -108,6 +111,13 @@
           onmouseleave={(): void => onhighlight(null)}
         >
           <span class="row-head">
+            <span
+              class="number"
+              style="background: {markerStyle(row.number).fill}; color: {markerStyle(row.number)
+                .text}"
+            >
+              {row.number}
+            </span>
             <span class="row-name">{BUNDLE_TEXT[row.role][0]}</span>
             <span class="row-hint">{BUNDLE_TEXT[row.role][1]}</span>
           </span>
@@ -193,8 +203,21 @@
 
   .row-head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
+  }
+
+  .number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px rgba(22, 22, 22, 0.9);
   }
 
   .row-name {

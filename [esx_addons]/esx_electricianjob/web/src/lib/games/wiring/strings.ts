@@ -4,6 +4,7 @@
  */
 
 import type { IssueCode } from './electrical';
+import type { Move } from './coach';
 import type { AimReason, ToolKind } from './engine';
 import type { BundleRole, StepId } from './guide';
 import type { NutColor, WiringTemplate } from './model';
@@ -83,6 +84,7 @@ export const LABEL = {
   plan: 'Wiring plan',
   cables: 'Cables in the box',
   rules: 'Wire colors',
+  hint: 'Hint',
   unlabeled: 'no label',
   unlabeledHint: 'find it with the tester',
 } as const;
@@ -179,3 +181,29 @@ export const TUTORIAL: readonly TutorialPage[] = [
     body: 'Switch the breaker back on and flip the wall switch: the light has to come on. When everything works, press Inspect. The checklist on the left always shows the next step.',
   },
 ];
+
+/** Plain-language text of the next move, shown under the hint arrow. */
+export const MOVE_TEXT: Readonly<Record<Move['kind'], string>> = {
+  test: 'Sweep the voltage tester over the marked cable: it beeps when the cable is live',
+  breaker: 'Switch the breaker off before you touch anything (panel, top left)',
+  switch: 'Flip the wall switch: the light should come on',
+  inspect: 'All done. Press Inspect',
+  strip: 'Drop the wire stripper on the glowing wire end',
+  tape: 'Drop the black tape on the glowing white wire',
+  unnut: 'Wrong wires in this bundle: right-click the wire nut to take it off',
+  separate: 'This wire does not belong here: drag it out of the bundle',
+  place: 'Drag the glowing wire to the marked spot',
+  join: 'Drag the glowing wire onto the marked bundle',
+  nut: 'Drag the marked wire nut onto the bundle',
+  twist: 'Hold the wire nut and circle the mouse clockwise until it is tight',
+};
+
+/** Hint texts that name the numbered markers, used on the first tier. */
+export const NUMBERED_MOVE_TEXT = {
+  place: (n: number): string => `Drag wire ${n} to the marked spot`,
+  join: (n: number): string => `Drag wire ${n} onto the marked wire ${n}`,
+  nut: (n: number, color: string): string => `Drag a ${color} wire nut onto bundle ${n}`,
+} as const;
+
+/** Breaker hint once the box is finished. */
+export const MOVE_POWER_ON = 'Everything is capped: switch the breaker back on';

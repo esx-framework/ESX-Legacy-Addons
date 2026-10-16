@@ -24,9 +24,14 @@
     maxMistakes: number;
     /** Checklist steps in order */
     steps: readonly ChecklistStep[];
+    /** Job grade of the difficulty tier, e.g. Apprentice */
+    grade: string;
+    /** Difficulty tier, 1 to 3 */
+    level: number;
   }
 
-  let { seed, briefing, remaining, timeLimit, mistakes, maxMistakes, steps }: Props = $props();
+  let { seed, briefing, remaining, timeLimit, mistakes, maxMistakes, steps, grade, level }: Props =
+    $props();
 
   let current: string | undefined = $derived(
     steps.find((step: ChecklistStep): boolean => !step.done)?.id,
@@ -40,7 +45,17 @@
 </script>
 
 <Panel caption="{LABEL.workOrder} #{seed.toString(16).toUpperCase().padStart(8, '0')}">
-  <h4 class="title">{LABEL.title}</h4>
+  <div class="heading">
+    <h4 class="title">{LABEL.title}</h4>
+    <span class="grade" title="Difficulty {level} of 3">
+      {grade}
+      <span class="grade-pips">
+        {#each [1, 2, 3] as pip (pip)}
+          <span class="grade-pip" class:on={pip <= level}></span>
+        {/each}
+      </span>
+    </span>
+  </div>
   <p class="briefing">{briefing}</p>
 
   <div class="timer">
@@ -74,9 +89,44 @@
 </Panel>
 
 <style>
+  .heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
   .title {
     font-size: var(--esx-h4);
     font-weight: 600;
+  }
+
+  .grade {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background: var(--esx-brand-soft);
+    color: var(--esx-brand);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .grade-pips {
+    display: inline-flex;
+    gap: 3px;
+  }
+
+  .grade-pip {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(251, 155, 4, 0.3);
+  }
+
+  .grade-pip.on {
+    background: var(--esx-brand);
   }
 
   .briefing {

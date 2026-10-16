@@ -23,6 +23,8 @@ import {
   type WiringEngine,
 } from '../engine';
 import { BOX, CANOPY, JACKET_LIP, SCREW_POSITION, STAGE, type CableLayout } from '../layout';
+import type { Move } from '../coach';
+import { markerStyle } from '../markers';
 import { NUT_COLORS, type Cable, type NutColor } from '../model';
 import { SHADOW_PADDING, type ShadowedSprite, type WiringSprites } from './assets';
 import {
@@ -74,6 +76,32 @@ export interface StageTransform {
   offsetY: number;
 }
 
+/** What the guidance layer shows. */
+export interface GuideOverlay {
+  /** Bundle number per conductor, null to hide the markers */
+  numbers: ReadonlyMap<string, number> | null;
+  /** Hint to draw, null for none */
+  move: Move | null;
+}
+
+/** Point at an arc length along a sampled conductor. */
+function pointAlong(runtime: ConductorRuntime, at: number): Vec2 {
+  const { points, distances } = runtime.line;
+  for (let i = 1; i < distances.length; i++) {
+    const d1 = distances[i] as number;
+    if (d1 < at) continue;
+    const d0 = distances[i - 1] as number;
+    const t = d1 === d0 ? 0 : (at - d0) / (d1 - d0);
+    const x0 = points[(i - 1) * 2] as number;
+    const y0 = points[(i - 1) * 2 + 1] as number;
+    return vec(
+      x0 + ((points[i * 2] as number) - x0) * t,
+      y0 + ((points[i * 2 + 1] as number) - y0) * t,
+    );
+  }
+  return runtime.end;
+}
+
 /** Canvas renderer of the junction box scene. */
 export class WiringRenderer {
   private readonly ctx: CanvasRenderingContext2D;
@@ -84,6 +112,7 @@ export class WiringRenderer {
   private transform: StageTransform = { scale: 1, offsetX: 0, offsetY: 0 };
   private sparks: Spark[] = [];
   private focus: ReadonlySet<string> = new Set();
+  private guide: GuideOverlay = { numbers: null, move: null };
   private readonly sparkRandom = new Random(0x5eed);
   private readonly cableById: ReadonlyMap<string, Cable>;
   private readonly nmCables: readonly CableLayout[];
@@ -98,6 +127,15 @@ export class WiringRenderer {
     this.ctx = ctx;
     this.cableById = new Map(engine.puzzle.cables.map((c: Cable): [string, Cable] => [c.id, c]));
     this.nmCables = engine.layout.cables.filter((c: CableLayout): boolean => c.entry !== null);
+  }
+
+  /**
+   * Sets the numbered markers and the hint arrow.
+   *
+   * @param guide - What to show; pass empty values to hide everything
+   */
+  setGuide(guide: GuideOverlay): void {
+    this.guide = guide;
   }
 
   /**
@@ -195,6 +233,7 @@ export class WiringRenderer {
     ctx.drawImage(this.flags, 0, 0);
     ctx.restore();
     this.paintTools();
+    this.paintGuide();
     this.paintLampLight();
     this.paintHeld();
     this.paintSparks();
@@ -349,7 +388,7 @@ export class WiringRenderer {
     let glow: string | null = null;
     if (this.engine.highlighted.has(id)) glow = ISSUE_GLOW;
     else if (aim?.conductors.includes(id)) glow = aim.valid ? HOVER_GLOW : ISSUE_GLOW;
-    else if (this.focus.has(id)) glow = FOCUS_GLOW;
+    else if (this.focus.has(id) || this.guideTarget() === id) glow = FOCUS_GLOW;
 
     return {
       insulation: conductor.insulation,
@@ -436,6 +475,214 @@ export class WiringRenderer {
       if (width > 0 && height > 0)
         ctx.drawImage(this.layer, left, top, width, height, left, top, width, height);
     }
+    ctx.restore();
+  }
+
+  /** Conductor the current hint is about, if any. */
+  private guideTarget(): string | null {
+    const move = this.guide.move;
+    if (!move) return null;
+    switch (move.kind) {
+      case 'strip':
+      case 'tape':
+      case 'separate':
+      case 'place':
+      case 'join':
+        return move.conductorId;
+      default:
+        return null;
+    }
+  }
+
+  private paintGuide(): void {
+    const { numbers, move } = this.guide;
+    if (numbers) this.paintMarkers(numbers);
+    if (!move) return;
+
+    const { engine } = this;
+    switch (move.kind) {
+      case 'test': {
+        const cable = engine.layout.cables.find(
+          (c: CableLayout): boolean => c.cableId === move.cableId,
+        );
+        if (cable?.entry) {
+          this.paintArrow(
+            TOOL_PLACEMENT.tester,
+            vec((cable.entry.x + cable.sheathEnd.x) / 2, (cable.entry.y + cable.sheathEnd.y) / 2),
+          );
+        }
+        break;
+      }
+      case 'strip':
+        this.paintArrow(TOOL_PLACEMENT.stripper, engine.conductor(move.conductorId).end);
+        break;
+      case 'tape':
+        this.paintArrow(TOOL_PLACEMENT.tape, engine.conductor(move.conductorId).end);
+        break;
+      case 'separate':
+      case 'place':
+      case 'join':
+        this.paintArrow(engine.conductor(move.conductorId).end, move.to);
+        break;
+      case 'nut': {
+        const splice = engine.splices.get(move.spliceId);
+        const area = compartment(move.color);
+        if (splice) {
+          this.paintArrow(vec(area.x + area.width / 2, area.y + area.height / 2), splice.point);
+        }
+        break;
+      }
+      case 'twist': {
+        const splice = engine.splices.get(move.spliceId);
+        if (splice) this.paintTwistHint(nutCenter(splice));
+        break;
+      }
+      case 'unnut': {
+        const splice = engine.splices.get(move.spliceId);
+        if (splice) this.paintRing(nutCenter(splice), 48);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  /** Numbered discs on every conductor that is not capped yet. */
+  private paintMarkers(numbers: ReadonlyMap<string, number>): void {
+    const { ctx, engine } = this;
+    ctx.save();
+    ctx.font = '700 15px Poppins, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const runtime of engine.conductors) {
+      const number = numbers.get(runtime.conductor.id);
+      if (number === undefined) continue;
+      const splice = runtime.spliceId ? engine.splices.get(runtime.spliceId) : undefined;
+      if (splice && splice.nut !== null && splice.twist >= 1) continue;
+
+      // Sit on the insulation just behind the bare copper, where the hand grabs the wire.
+      const back = runtime.conductor.insulation === 'bare' ? 30 : STRIP_LENGTH + 26;
+      const point = pointAlong(runtime, Math.max(0, runtime.total - back));
+      const style = markerStyle(number);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.beginPath();
+      ctx.arc(point.x + 2, point.y + 3, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = style.fill;
+      ctx.strokeStyle = 'rgba(22, 22, 22, 0.9)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = style.text;
+      ctx.fillText(String(number), point.x, point.y + 1);
+    }
+    ctx.restore();
+  }
+
+  private paintRing(at: { x: number; y: number }, radius: number): void {
+    const { ctx } = this;
+    ctx.save();
+    ctx.lineWidth = 9;
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.beginPath();
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = 4;
+    ctx.setLineDash([10, 8]);
+    ctx.strokeStyle = BRAND;
+    ctx.beginPath();
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** Dashed, slightly curved arrow from where to grab to where to drop. */
+  private paintArrow(from: { x: number; y: number }, to: { x: number; y: number }): void {
+    const { ctx } = this;
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const length = Math.hypot(dx, dy);
+    if (length < 8) {
+      this.paintRing(to, 30);
+      return;
+    }
+    const bend = Math.min(80, length * 0.18);
+    const cx = (from.x + to.x) / 2 - (dy / length) * bend;
+    const cy = (from.y + to.y) / 2 + (dx / length) * bend;
+    // Stop short of the target so the head does not cover it.
+    const t = Math.max(0, 1 - 30 / length);
+    const ex = (1 - t) * (1 - t) * from.x + 2 * (1 - t) * t * cx + t * t * to.x;
+    const ey = (1 - t) * (1 - t) * from.y + 2 * (1 - t) * t * cy + t * t * to.y;
+    const angle = Math.atan2(ey - (cy + (ey - cy) * 0.5), ex - (cx + (ex - cx) * 0.5));
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.quadraticCurveTo(cx, cy, ex, ey);
+    ctx.stroke();
+    ctx.lineWidth = 5;
+    ctx.setLineDash([14, 10]);
+    ctx.strokeStyle = BRAND;
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.quadraticCurveTo(cx, cy, ex, ey);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.translate(ex, ey);
+    ctx.rotate(angle);
+    ctx.fillStyle = BRAND;
+    ctx.strokeStyle = 'rgba(22, 22, 22, 0.85)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(14, 0);
+    ctx.lineTo(-10, -11);
+    ctx.lineTo(-6, 0);
+    ctx.lineTo(-10, 11);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    this.paintRing(to, 26);
+  }
+
+  /** Clockwise arc around a wire nut that shows which way to turn it. */
+  private paintTwistHint(at: { x: number; y: number }): void {
+    const { ctx } = this;
+    const radius = 76;
+    const start = -Math.PI / 2;
+    const end = start + Math.PI * 1.6;
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (const [width, color] of [
+      [10, 'rgba(0, 0, 0, 0.5)'],
+      [5, BRAND],
+    ] as const) {
+      ctx.lineWidth = width;
+      ctx.strokeStyle = color;
+      ctx.beginPath();
+      ctx.arc(at.x, at.y, radius, start, end);
+      ctx.stroke();
+    }
+    ctx.translate(at.x + Math.cos(end) * radius, at.y + Math.sin(end) * radius);
+    ctx.rotate(end + Math.PI / 2);
+    ctx.fillStyle = BRAND;
+    ctx.strokeStyle = 'rgba(22, 22, 22, 0.85)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(14, 0);
+    ctx.lineTo(-10, -11);
+    ctx.lineTo(-6, 0);
+    ctx.lineTo(-10, 11);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
     ctx.restore();
   }
 

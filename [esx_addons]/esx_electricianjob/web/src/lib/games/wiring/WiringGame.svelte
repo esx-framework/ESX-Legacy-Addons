@@ -10,6 +10,8 @@
   import type { GameOutcome, GameSession } from '../../nui/messages';
   import Button from '../../ui/Button.svelte';
   import Icon, { type IconName } from '../../ui/Icon.svelte';
+  import type { Vec2 } from '../../core/vec';
+  import { bundleNumbers, coachInputFrom, meetingPoints, nextMove, type Move } from './coach';
   import { WIRING_TIERS, type WiringTier } from './difficulty';
   import type { Issue, LoadState } from './electrical';
   import {
@@ -25,6 +27,7 @@
     cableLabel,
     checklist,
     connectionPlan,
+    type BundleRole,
     type ChecklistStep,
     type PlanBundle,
     type StepId,
@@ -34,7 +37,7 @@
   import GuideCard, { type CableRow, type PlanChip, type PlanRow } from './hud/GuideCard.svelte';
   import HelpOverlay from './hud/HelpOverlay.svelte';
   import JobCard from './hud/JobCard.svelte';
-  import { computeWiringLayout, STAGE } from './layout';
+  import { computeWiringLayout, STAGE, type WiringLayout } from './layout';
   import {
     NUT_COLORS,
     type Cable,
@@ -53,6 +56,9 @@
     ISSUE_TEXT,
     ITEM_TEXT,
     LABEL,
+    MOVE_POWER_ON,
+    MOVE_TEXT,
+    NUMBERED_MOVE_TEXT,
     NUT_CARD,
     TOAST,
   } from './strings';
@@ -99,7 +105,8 @@
   );
 
   const planRows: readonly PlanRow[] = connectionPlan(puzzle).map(
-    (bundle: PlanBundle): PlanRow => ({
+    (bundle: PlanBundle, index: number): PlanRow => ({
+      number: index + 1,
       role: bundle.role,
       chips: bundle.conductorIds.map((id: string): PlanChip => {
         const conductor = conductorById.get(id) as Conductor;
@@ -134,22 +141,31 @@
   let pointer = $state({ x: 0, y: 0 });
   let helpOpen = $state(false);
 
+  let move = $state<Move | null>(null);
+  let hintActive = $state(false);
+  let hintsLeft = $state(tier.hints);
+
   let hudScale: number = $derived(Math.max(MIN_HUD_SCALE, stage.scale));
   /** Stage-anchored labels grow on small screens so they never drop below HUD size. */
   let labelBoost: number = $derived(Math.max(1, MIN_HUD_SCALE / stage.scale));
   let currentStep: StepId | undefined = $derived(
     steps.find((step: ChecklistStep): boolean => !step.done)?.id,
   );
+  /** Hint currently on screen: always on the first tier, on request on the second. */
+  let shownMove: Move | null = $derived(tier.guidance === 'full' || hintActive ? move : null);
+  let moveText: string | null = $derived(shownMove === null ? null : describeMove(shownMove));
   let attention: 'breaker' | 'switch' | null = $derived(
-    currentStep === 'power-off' || currentStep === 'power-on'
+    shownMove?.kind === 'breaker' || currentStep === 'power-off' || currentStep === 'power-on'
       ? 'breaker'
-      : currentStep === 'switch'
+      : shownMove?.kind === 'switch' || currentStep === 'switch'
         ? 'switch'
         : null,
   );
 
   let engine: WiringEngine | null = null;
   let renderer: WiringRenderer | null = null;
+  let meeting: ReadonlyMap<BundleRole, Vec2> | null = null;
+  const numbers: ReadonlyMap<string, number> = bundleNumbers(puzzle);
   let frameRequested = false;
   let toastTimer = 0;
   let flashTimer = 0;
@@ -212,6 +228,45 @@
         }),
       ),
     });
+    updateCoach();
+  }
+
+  function updateCoach(): void {
+    if (!engine || !meeting) return;
+    const next = nextMove(coachInputFrom(engine, meeting));
+    // A requested hint stays up until the player has done what it showed.
+    if (hintActive && move && JSON.stringify(move) !== JSON.stringify(next)) hintActive = false;
+    move = next;
+    renderer?.setGuide({
+      numbers: tier.guidance === 'full' ? numbers : null,
+      move: tier.guidance === 'full' || hintActive ? move : null,
+    });
+  }
+
+  /** Hint text; on the first tier it names the numbers on the wire markers. */
+  function describeMove(next: Move): string {
+    if (next.kind === 'breaker' && next.on) return MOVE_POWER_ON;
+    if (tier.guidance !== 'full') return MOVE_TEXT[next.kind];
+    switch (next.kind) {
+      case 'place':
+        return NUMBERED_MOVE_TEXT.place(numbers.get(next.conductorId) ?? 0);
+      case 'join':
+        return NUMBERED_MOVE_TEXT.join(numbers.get(next.conductorId) ?? 0);
+      case 'nut': {
+        const first = engine?.splices.get(next.spliceId)?.members[0];
+        return NUMBERED_MOVE_TEXT.nut(first ? (numbers.get(first) ?? 0) : 0, next.color);
+      }
+      default:
+        return MOVE_TEXT[next.kind];
+    }
+  }
+
+  function useHint(): void {
+    if (hintsLeft <= 0 || hintActive || !interactive()) return;
+    hintsLeft -= 1;
+    hintActive = true;
+    updateCoach();
+    invalidate();
   }
 
   function badgeFor(aim: Aim | null): Badge | null {
@@ -487,7 +542,9 @@
         document.fonts.load('19px "Permanent Marker"'),
       ]);
       if (cancelled) return;
-      engine = new WiringEngine(puzzle, computeWiringLayout(puzzle), TRAY_AREAS, handleEvent);
+      const layout: WiringLayout = computeWiringLayout(puzzle);
+      meeting = meetingPoints(puzzle, layout);
+      engine = new WiringEngine(puzzle, layout, TRAY_AREAS, handleEvent);
       renderer = new WiringRenderer(target, sprites, engine);
       resizeObserver = new ResizeObserver(resize);
       resizeObserver.observe(target);
@@ -581,6 +638,8 @@
         {mistakes}
         maxMistakes={tier.maxMistakes}
         {steps}
+        grade={tier.name}
+        level={round.difficulty}
       />
       <ControlsCard
         {breakerOn}
@@ -602,9 +661,17 @@
     </div>
 
     <div class="hud-actions">
+      {#if tier.guidance === 'hints'}
+        <Button onclick={useHint} disabled={hintsLeft === 0 || hintActive}>
+          <Icon name="zap" size={16} />{LABEL.hint} ({hintsLeft})
+        </Button>
+      {/if}
       <Button onclick={openHelp}><Icon name="help" size={16} />{LABEL.help}</Button>
       <Button onclick={abort}>{LABEL.abort}</Button>
-      <span class="inspect" class:attention={currentStep === 'inspect'}>
+      <span
+        class="inspect"
+        class:attention={currentStep === 'inspect' || shownMove?.kind === 'inspect'}
+      >
         <Button variant="primary" onclick={inspect} disabled={phase !== 'playing'}>
           {LABEL.inspect}
         </Button>
@@ -613,6 +680,13 @@
 
     {#if badge && !helpOpen}
       <CursorBadge {badge} x={pointer.x} y={pointer.y} scale={hudScale} />
+    {/if}
+
+    {#if moveText && phase === 'playing' && !helpOpen}
+      <div class="coach" role="status">
+        <span class="coach-label">{LABEL.next}</span>
+        {moveText}
+      </div>
     {/if}
 
     {#if toast}
@@ -777,6 +851,35 @@
 
   .inspect.attention {
     box-shadow: 0 0 0 4px var(--esx-brand-soft);
+  }
+
+  .coach {
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 720px;
+    padding: 12px 18px;
+    border: 1px solid var(--esx-brand);
+    border-radius: var(--esx-radius);
+    background: var(--esx-darkest-glass);
+    box-shadow: var(--esx-shadow);
+    font-weight: 500;
+    transform: translateX(-50%) scale(var(--hud-scale));
+    transform-origin: 50% 100%;
+  }
+
+  .coach-label {
+    padding: 2px 8px;
+    border-radius: var(--esx-radius-sm);
+    background: var(--esx-brand);
+    color: var(--esx-darkest);
+    font-size: var(--esx-caption);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .toast {
