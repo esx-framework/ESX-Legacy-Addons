@@ -606,24 +606,33 @@ export class WiringEngine {
     return span <= max ? bounded : add(anchor, scale(offset, max / span));
   }
 
-  /** Splice or loose end a dragged end would join when released here. */
+  /** Nearest splice or loose end a dragged end would join when released here. */
   private joinTarget(
     runtime: ConductorRuntime,
   ): { splice: SpliceRuntime } | { partner: ConductorRuntime } | null {
-    const splice = [...this.splices.values()].find(
-      (s: SpliceRuntime): boolean =>
-        s.nut === null &&
-        !s.members.includes(runtime.conductor.id) &&
-        distance(s.point, runtime.end) < SPLICE_RADIUS,
-    );
-    if (splice) return { splice };
+    let splice: SpliceRuntime | null = null;
+    let spliceDistance = SPLICE_RADIUS;
+    for (const candidate of this.splices.values()) {
+      if (candidate.nut !== null || candidate.members.includes(runtime.conductor.id)) continue;
+      const d = distance(candidate.point, runtime.end);
+      if (d < spliceDistance) {
+        splice = candidate;
+        spliceDistance = d;
+      }
+    }
 
-    const partner = this.conductors.find(
-      (other: ConductorRuntime): boolean =>
-        other !== runtime &&
-        other.spliceId === null &&
-        distance(other.end, runtime.end) < JOIN_RADIUS,
-    );
+    let partner: ConductorRuntime | null = null;
+    let partnerDistance = JOIN_RADIUS;
+    for (const other of this.conductors) {
+      if (other === runtime || other.spliceId !== null) continue;
+      const d = distance(other.end, runtime.end);
+      if (d < partnerDistance) {
+        partner = other;
+        partnerDistance = d;
+      }
+    }
+
+    if (splice && (!partner || spliceDistance <= partnerDistance)) return { splice };
     return partner ? { partner } : null;
   }
 
