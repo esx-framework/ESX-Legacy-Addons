@@ -122,9 +122,8 @@ export const scenarios = [
       await nui.screenshot('breaker');
       const [breaker] = await page.$$('.control');
       await breaker?.click();
-      await page.evaluate(
-        () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
-      );
+      // Lets the ticks on the work order finish drawing.
+      await new Promise((resolve) => setTimeout(resolve, 400));
       await nui.screenshot('first-move');
     },
   },
