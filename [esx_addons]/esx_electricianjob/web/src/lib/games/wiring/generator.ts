@@ -174,7 +174,8 @@ function receptacleRange(
 ): [number, number] {
   switch (template) {
     case 'splice-through':
-      return awg === 12 ? [1, 2] : difficulty === 1 ? [1, 2] : [2, 3];
+      // The first tier keeps the box small: one cable in, one cable out.
+      return difficulty === 1 ? [1, 1] : awg === 12 ? [1, 2] : [2, 3];
     case 'switched-light-feed-through':
       return awg === 12 ? [1, 1] : [1, 2];
     case 'switched-light':
