@@ -17,6 +17,61 @@ export const BRIEFING: Readonly<Record<WiringTemplate, string>> = {
     'Hook up the ceiling light on its switch and keep the outlets downstream live.',
 };
 
+/** Customer-facing texts of one scenario on the work order. */
+export interface OrderScenarioText {
+  /** Rooms the job can be in, lower case */
+  rooms: readonly string[];
+  /** Where the box is, from the room and a utility spot from {@link BOX_PLACES} */
+  location: (room: string, place: string) => string;
+  /** What the customer reported, given the room */
+  complaints: readonly ((room: string) => string)[];
+}
+
+/** Utility spots where a splice box sits out of sight. */
+export const BOX_PLACES: readonly string[] = [
+  'Basement ceiling',
+  'Garage wall',
+  'Laundry room',
+  'Utility closet',
+  'Crawl space',
+  'Attic hatch',
+];
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** Work order texts per scenario. */
+export const ORDER_SCENARIOS: Readonly<Record<WiringTemplate, OrderScenarioText>> = {
+  'splice-through': {
+    rooms: ['kitchen', 'living room', 'bedroom', 'office', 'dining room', 'den'],
+    location: (_room: string, place: string): string => place,
+    complaints: [
+      (room: string): string => `Outlets in the ${room} went dead after the remodel.`,
+      (room: string): string => `Half the ${room} outlets quit. Breaker looks fine.`,
+      (room: string): string => `${capitalize(room)} outlets keep cutting out, now nothing.`,
+    ],
+  },
+  'switched-light': {
+    rooms: ['living room', 'bedroom', 'hallway', 'kitchen', 'office', 'dining room'],
+    location: (room: string): string => `${capitalize(room)} ceiling`,
+    complaints: [
+      (room: string): string => `New ceiling light for the ${room}, should run off the switch.`,
+      (room: string): string => `Old ${room} light is gone. Put the new one on the switch.`,
+      (room: string): string => `Bought a ${room} light, needs hooking up to the wall switch.`,
+    ],
+  },
+  'switched-light-feed-through': {
+    rooms: ['living room', 'bedroom', 'kitchen', 'office', 'den'],
+    location: (room: string): string => `${capitalize(room)} ceiling`,
+    complaints: [
+      (room: string): string => `Swap the ${room} light. Outlets fed from that box stay live.`,
+      (room: string): string =>
+        `${capitalize(room)} light on the switch, and keep the outlets working.`,
+    ],
+  },
+};
+
 /** Inspection findings. */
 export const ISSUE_TEXT: Readonly<Record<IssueCode, string>> = {
   'short-circuit': 'Dead short: hot is touching neutral or ground.',
