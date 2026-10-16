@@ -81,6 +81,8 @@
   const RESULT_MS = 1900;
   /** HUD never shrinks below this, so 720p stays readable. */
   const MIN_HUD_SCALE = 0.8;
+  /** Screen margin above and below the left column, in CSS pixels. */
+  const COLUMN_MARGIN = { top: 20, bottom: 24 } as const;
   /** Remembers that the tutorial was seen; a convenience only, the game works without it. */
   const TUTORIAL_KEY = 'esx_electricianjob:wiring-tutorial';
   const ITEM_ICON: Readonly<Record<ToolKind | NutColor, IconName>> = {
@@ -142,12 +144,24 @@
   let badge: Badge | null = $state(null);
   let pointer = $state({ x: 0, y: 0 });
   let helpOpen = $state(false);
+  let viewportHeight = $state(window.innerHeight);
+  /** Unscaled height of the left column. */
+  let columnHeight = $state(0);
 
   let move = $state<Move | null>(null);
   let hintActive = $state(false);
   let hintsLeft = $state(tier.hints);
 
   let hudScale: number = $derived(Math.max(MIN_HUD_SCALE, stage.scale));
+  /** Long work orders shrink the column below the HUD scale rather than run off screen. */
+  let columnScale: number = $derived(
+    columnHeight > 0
+      ? Math.min(
+          hudScale,
+          (viewportHeight - COLUMN_MARGIN.top - COLUMN_MARGIN.bottom) / columnHeight,
+        )
+      : hudScale,
+  );
   /** Stage-anchored labels grow on small screens so they never drop below HUD size. */
   let labelBoost: number = $derived(Math.max(1, MIN_HUD_SCALE / stage.scale));
   let currentStep: StepId | undefined = $derived(
@@ -587,7 +601,7 @@
   });
 </script>
 
-<svelte:window onkeydowncapture={onKeydown} />
+<svelte:window onkeydowncapture={onKeydown} bind:innerHeight={viewportHeight} />
 
 <div class="game" data-phase={phase} data-help={helpOpen} style="cursor: {cursor}">
   <canvas
@@ -636,7 +650,11 @@
       <StatusBar {remaining} timeLimit={tier.timeLimit} {mistakes} maxMistakes={tier.maxMistakes} />
     </div>
 
-    <div class="hud-left">
+    <div
+      class="hud-left"
+      style="top: {COLUMN_MARGIN.top}px; --column-scale: {columnScale}"
+      bind:offsetHeight={columnHeight}
+    >
       <WorkOrder
         {order}
         briefing={BRIEFING[puzzle.template]}
@@ -831,12 +849,11 @@
   .hud-left {
     position: absolute;
     left: 24px;
-    top: 20px;
     display: flex;
     flex-direction: column;
     gap: 14px;
     width: 380px;
-    transform: scale(var(--hud-scale));
+    transform: scale(var(--column-scale));
     transform-origin: 0 0;
     pointer-events: auto;
   }
