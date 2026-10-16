@@ -13,11 +13,12 @@ import {
   type SpliceRuntime,
 } from './engine';
 import { generateWiringPuzzle } from './generator';
+import { bundleRoleOf, type BundleRole } from './guide';
 import { computeWiringLayout, SCREW_POSITION } from './layout';
-import { NUT_COLORS, type Conductor } from './model';
+import { NUT_COLORS } from './model';
 import { TRAY_AREAS } from './scene/tray';
 
-type Group = 'hot' | 'switched' | 'neutral' | 'ground';
+type Group = BundleRole;
 
 const GROUP_ANGLE: Readonly<Record<Group, number>> = {
   hot: Math.PI * 1.15,
@@ -25,13 +26,6 @@ const GROUP_ANGLE: Readonly<Record<Group, number>> = {
   switched: Math.PI * 0.32,
   ground: Math.PI * 1.7,
 };
-
-function groupOf(conductor: Conductor): Group {
-  if (conductor.insulation === 'bare' || conductor.insulation === 'green') return 'ground';
-  if (conductor.terminal === 'switch.b' || conductor.terminal === 'fixture.hot') return 'switched';
-  if (conductor.terminal === 'switch.a' || conductor.terminal.endsWith('.hot')) return 'hot';
-  return 'neutral';
-}
 
 function areaCenter(area: { x: number; y: number; width: number; height: number }): Vec2 {
   return vec(area.x + area.width / 2, area.y + area.height / 2);
@@ -126,7 +120,7 @@ class Player {
 
     const groups = new Map<Group, string[]>();
     for (const runtime of engine.conductors) {
-      const group = groupOf(runtime.conductor);
+      const group = bundleRoleOf(runtime.conductor);
       groups.set(group, [...(groups.get(group) ?? []), runtime.conductor.id]);
     }
 
@@ -266,5 +260,92 @@ describe('WiringEngine', () => {
     expect(player.events.some((event: EngineEvent): boolean => event.type === 'nut-rejected')).toBe(
       true,
     );
+  });
+});
+
+describe('WiringEngine aim', () => {
+  it('should offer stripping only on damaged ends', () => {
+    const player = new Player(1056, 3);
+    const { engine } = player;
+    engine.toggleBreaker();
+    const damaged = engine.conductors.find(
+      (r: ConductorRuntime): boolean => r.conductor.needsStrip,
+    ) as ConductorRuntime;
+    const intact = engine.conductors.find(
+      (r: ConductorRuntime): boolean =>
+        !r.conductor.needsStrip && r.conductor.insulation === 'black',
+    ) as ConductorRuntime;
+
+    engine.pointerDown(areaCenter(TRAY_AREAS.tools.stripper), 0);
+    engine.pointerMove(damaged.end);
+    expect(engine.aim).toMatchObject({
+      action: 'strip',
+      valid: true,
+      conductors: [damaged.conductor.id],
+    });
+    engine.pointerMove(intact.end);
+    expect(engine.aim).toMatchObject({ action: 'strip', valid: false, reason: 'not-damaged' });
+    engine.pointerUp(intact.end);
+  });
+
+  it('should flag a wire nut that is too small before it is dropped', () => {
+    const player = new Player(1056, 3);
+    const { engine } = player;
+    engine.toggleBreaker();
+    const grounds = engine.conductors.filter(
+      (r: ConductorRuntime): boolean => r.conductor.insulation === 'bare',
+    );
+    const target = player.target(
+      grounds.map((r: ConductorRuntime): string => r.conductor.id),
+      'ground',
+    );
+    grounds.forEach((runtime: ConductorRuntime, index: number): void => {
+      const splice = player.spliceOf((grounds[0] as ConductorRuntime).conductor.id);
+      player.drag(
+        runtime.end,
+        index === 0 ? target : splice ? splice.point : vec(target.x + 6, target.y),
+      );
+    });
+    const splice = player.spliceOf((grounds[0] as ConductorRuntime).conductor.id) as SpliceRuntime;
+
+    engine.pointerDown(areaCenter(TRAY_AREAS.nuts.orange), 0);
+    engine.pointerMove(splice.point);
+    expect(engine.aim).toMatchObject({ action: 'cap', valid: false, reason: 'too-small' });
+    engine.pointerUp(splice.point);
+  });
+
+  it('should report live voltage under the tester without revealing it on plain hover', () => {
+    const player = new Player(1056, 1);
+    const { engine } = player;
+    const feed = engine.conductors.find(
+      (r: ConductorRuntime): boolean => r.conductor.terminal === 'panel.hot',
+    ) as ConductorRuntime;
+    const other = engine.conductors.find(
+      (r: ConductorRuntime): boolean =>
+        r.conductor.insulation === 'black' && r.conductor.terminal !== 'panel.hot',
+    ) as ConductorRuntime;
+
+    engine.pointerMove(feed.end);
+    expect(engine.aim).toMatchObject({ action: 'grab', reason: 'breaker-on' });
+    engine.pointerMove(other.end);
+    expect(engine.aim).toMatchObject({ action: 'grab', reason: 'breaker-on' });
+
+    engine.pointerDown(areaCenter(TRAY_AREAS.tools.tester), 0);
+    engine.pointerMove(feed.end);
+    expect(engine.aim).toMatchObject({ action: 'test', valid: true });
+    expect(engine.testedLive).toBe(true);
+    engine.pointerUp(feed.end);
+  });
+
+  it('should show a join target while dragging an end onto another', () => {
+    const player = new Player(1056, 1);
+    const { engine } = player;
+    engine.toggleBreaker();
+    const [first, second] = engine.conductors as [ConductorRuntime, ConductorRuntime];
+    engine.pointerDown(second.end, 0);
+    engine.pointerMove(vec(first.end.x + 4, first.end.y + 2));
+    expect(engine.aim).toMatchObject({ action: 'join' });
+    expect(engine.aim?.conductors).toContain(first.conductor.id);
+    engine.pointerUp(vec(first.end.x + 4, first.end.y + 2));
   });
 });

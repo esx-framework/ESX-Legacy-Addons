@@ -4,23 +4,58 @@
    *
    * The scene is driven by WiringEngine and drawn by WiringRenderer; this component wires
    * pointer input into the engine, schedules frames only when something changed and mirrors
-   * the few values the HUD shows into Svelte state.
+   * the values the HUD shows (checklist, controls, cursor badge) into Svelte state.
    */
   import { onDestroy, untrack } from 'svelte';
   import type { GameOutcome, GameSession } from '../../nui/messages';
   import Button from '../../ui/Button.svelte';
-  import Meter from '../../ui/Meter.svelte';
-  import Panel from '../../ui/Panel.svelte';
+  import Icon, { type IconName } from '../../ui/Icon.svelte';
   import { WIRING_TIERS, type WiringTier } from './difficulty';
   import type { Issue, LoadState } from './electrical';
-  import { WiringEngine, type EngineEvent, type WiringAction } from './engine';
+  import {
+    WiringEngine,
+    type Aim,
+    type EngineEvent,
+    type SpliceRuntime,
+    type ToolKind,
+    type WiringAction,
+  } from './engine';
   import { generateWiringPuzzle } from './generator';
+  import {
+    cableLabel,
+    checklist,
+    connectionPlan,
+    type ChecklistStep,
+    type PlanBundle,
+    type StepId,
+  } from './guide';
+  import ControlsCard from './hud/ControlsCard.svelte';
+  import CursorBadge, { type Badge } from './hud/CursorBadge.svelte';
+  import GuideCard, { type CableRow, type PlanChip, type PlanRow } from './hud/GuideCard.svelte';
+  import HelpOverlay from './hud/HelpOverlay.svelte';
+  import JobCard from './hud/JobCard.svelte';
   import { computeWiringLayout, STAGE } from './layout';
-  import { NUT_COLORS, type WiringPuzzle } from './model';
-  import { loadWiringSprites, spriteUrl } from './scene/assets';
+  import {
+    NUT_COLORS,
+    type Cable,
+    type CableRole,
+    type Conductor,
+    type NutColor,
+    type WiringPuzzle,
+  } from './model';
+  import { loadWiringSprites } from './scene/assets';
   import { WiringRenderer, type StageTransform } from './scene/renderer';
   import { compartment, TRAY, TRAY_AREAS } from './scene/tray';
-  import { BRIEFING, ISSUE_TEXT, LABEL, NUT_CARD, TOAST } from './strings';
+  import {
+    AIM_REASON,
+    AIM_TEXT,
+    BRIEFING,
+    ISSUE_TEXT,
+    ITEM_TEXT,
+    LABEL,
+    NUT_CARD,
+    TOAST,
+  } from './strings';
 
   interface Props {
     /** Round to play */
@@ -39,6 +74,16 @@
   const RESULT_MS = 1900;
   /** HUD never shrinks below this, so 720p stays readable. */
   const MIN_HUD_SCALE = 0.8;
+  /** Remembers that the tutorial was seen; a convenience only, the game works without it. */
+  const TUTORIAL_KEY = 'esx_electricianjob:wiring-tutorial';
+  const ITEM_ICON: Readonly<Record<ToolKind | NutColor, IconName>> = {
+    tester: 'zap',
+    stripper: 'strip',
+    tape: 'tape',
+    orange: 'cap',
+    yellow: 'cap',
+    red: 'cap',
+  };
 
   const round: GameSession = untrack((): GameSession => session);
   const puzzle: WiringPuzzle = generateWiringPuzzle(round.seed, round.difficulty);
@@ -46,6 +91,30 @@
   const receptacleIds: readonly string[] = puzzle.loads
     .filter((load): boolean => load.kind === 'receptacle')
     .map((load): string => load.id);
+  const cableById = new Map(
+    puzzle.cables.map((cable: Cable): [string, Cable] => [cable.id, cable]),
+  );
+  const conductorById = new Map(
+    puzzle.conductors.map((conductor: Conductor): [string, Conductor] => [conductor.id, conductor]),
+  );
+
+  const planRows: readonly PlanRow[] = connectionPlan(puzzle).map(
+    (bundle: PlanBundle): PlanRow => ({
+      role: bundle.role,
+      chips: bundle.conductorIds.map((id: string): PlanChip => {
+        const conductor = conductorById.get(id) as Conductor;
+        const cable = cableById.get(conductor.cableId) as Cable;
+        return { id, label: cableLabel(cable), insulation: conductor.insulation };
+      }),
+    }),
+  );
+  const cableRows: readonly CableRow[] = puzzle.cables
+    .filter((cable: Cable): cable is Cable & { role: CableRole } => cable.role !== 'pigtail')
+    .map((cable: Cable & { role: CableRole }): CableRow => ({
+      id: cable.id,
+      label: cableLabel(cable),
+      role: cable.role,
+    }));
 
   let canvas: HTMLCanvasElement | undefined = $state();
   let phase: Phase = $state('loading');
@@ -53,17 +122,30 @@
   let switchOn = $state(false);
   let mistakes = $state(0);
   let fixture: LoadState = $state('off');
-  let outlets: Record<string, LoadState> = $state({});
+  let outlets: { id: string; state: LoadState }[] = $state([]);
+  let steps: ChecklistStep[] = $state([]);
   let toast: string | null = $state(null);
   let flash: 'shock' | 'short' | null = $state(null);
   let cursor = $state('default');
   let remaining = $state(tier.timeLimit);
   let stage: StageTransform = $state({ scale: 1, offsetX: 0, offsetY: 0 });
   let stripRequest: { id: string; x: number; y: number } | null = $state(null);
+  let badge: Badge | null = $state(null);
+  let pointer = $state({ x: 0, y: 0 });
+  let helpOpen = $state(false);
 
   let hudScale: number = $derived(Math.max(MIN_HUD_SCALE, stage.scale));
-  let timeLabel: string = $derived(
-    `${Math.floor(remaining / 60)}:${String(Math.max(0, remaining) % 60).padStart(2, '0')}`,
+  /** Stage-anchored labels grow on small screens so they never drop below HUD size. */
+  let labelBoost: number = $derived(Math.max(1, MIN_HUD_SCALE / stage.scale));
+  let currentStep: StepId | undefined = $derived(
+    steps.find((step: ChecklistStep): boolean => !step.done)?.id,
+  );
+  let attention: 'breaker' | 'switch' | null = $derived(
+    currentStep === 'power-off' || currentStep === 'power-on'
+      ? 'breaker'
+      : currentStep === 'switch'
+        ? 'switch'
+        : null,
   );
 
   let engine: WiringEngine | null = null;
@@ -76,6 +158,8 @@
   let removeProbe: (() => void) | null = null;
   let finished = false;
   const startedAt = performance.now();
+  let pausedTotal = 0;
+  let pausedAt = 0;
 
   function invalidate(): void {
     if (frameRequested || !renderer) return;
@@ -109,9 +193,118 @@
     switchOn = engine.switchOn;
     mistakes = engine.mistakes;
     fixture = engine.live.loads.get('fixture') ?? 'off';
-    const next: Record<string, LoadState> = {};
-    for (const id of receptacleIds) next[id] = engine.live.loads.get(id) ?? 'off';
-    outlets = next;
+    outlets = receptacleIds.map((id: string): { id: string; state: LoadState } => ({
+      id,
+      state: engine?.live.loads.get(id) ?? 'off',
+    }));
+    steps = checklist({
+      puzzle,
+      testedLive: engine.testedLive,
+      everOff: engine.everOff,
+      breakerOn: engine.breakerOn,
+      lightSeen: engine.lightSeen,
+      stripped: engine.stripped,
+      taped: engine.taped,
+      splices: [...engine.splices.values()].map(
+        (splice: SpliceRuntime): { members: readonly string[]; tight: boolean } => ({
+          members: splice.members,
+          tight: splice.nut !== null && splice.twist >= 1,
+        }),
+      ),
+    });
+  }
+
+  function badgeFor(aim: Aim | null): Badge | null {
+    if (!aim) return null;
+    const blocked = (text: string): Badge => ({ icon: 'x', text, hint: null, tone: 'blocked' });
+    switch (aim.action) {
+      case 'pick': {
+        if (!aim.item) return null;
+        const [name, hint] = ITEM_TEXT[aim.item];
+        return { icon: ITEM_ICON[aim.item], text: name, hint, tone: 'info' };
+      }
+      case 'grab':
+        return aim.reason === 'breaker-on'
+          ? {
+              icon: 'warning',
+              text: AIM_TEXT.grab,
+              hint: AIM_REASON['breaker-on'],
+              tone: 'warning',
+            }
+          : { icon: 'grab', text: AIM_TEXT.grab, hint: null, tone: 'info' };
+      case 'move':
+        return { icon: 'move', text: AIM_TEXT.move, hint: null, tone: 'info' };
+      case 'twist':
+        return { icon: 'rotate', text: AIM_TEXT.twist, hint: null, tone: 'action' };
+      case 'join':
+        return { icon: 'join', text: AIM_TEXT.join, hint: null, tone: 'action' };
+      case 'strip':
+        return aim.valid
+          ? { icon: 'strip', text: AIM_TEXT.strip, hint: null, tone: 'action' }
+          : blocked(AIM_REASON[aim.reason ?? 'not-damaged']);
+      case 'tape':
+        return aim.valid
+          ? { icon: 'tape', text: AIM_TEXT.tape, hint: null, tone: 'action' }
+          : blocked(AIM_REASON[aim.reason ?? 'already-marked']);
+      case 'cap':
+        return aim.valid
+          ? { icon: 'cap', text: AIM_TEXT.cap, hint: null, tone: 'action' }
+          : blocked(AIM_REASON[aim.reason ?? 'too-small']);
+      case 'test':
+        return aim.valid
+          ? { icon: 'zap', text: AIM_TEXT.live, hint: null, tone: 'danger' }
+          : { icon: 'zap-off', text: AIM_REASON['no-voltage'], hint: null, tone: 'info' };
+      default:
+        return null;
+    }
+  }
+
+  function updatePointerUi(): void {
+    if (!engine) return;
+    const p = engine.pointer;
+    pointer = { x: stage.offsetX + p.x * stage.scale, y: stage.offsetY + p.y * stage.scale };
+    badge = badgeFor(engine.aim);
+    const aim = engine.aim;
+    if (engine.held) cursor = 'none';
+    else if (engine.dragged || engine.twisting) cursor = 'grabbing';
+    else if (aim && (aim.action === 'grab' || aim.action === 'move' || aim.action === 'pick'))
+      cursor = 'grab';
+    else if (aim?.action === 'twist') cursor = 'grab';
+    else cursor = 'default';
+  }
+
+  function elapsedSeconds(): number {
+    const paused = pausedTotal + (helpOpen ? performance.now() - pausedAt : 0);
+    return Math.floor((performance.now() - startedAt - paused) / 1000);
+  }
+
+  function openHelp(): void {
+    if (helpOpen || finished) return;
+    engine?.cancel();
+    stripRequest = null;
+    badge = null;
+    pausedAt = performance.now();
+    helpOpen = true;
+    invalidate();
+  }
+
+  function closeHelp(): void {
+    if (!helpOpen) return;
+    pausedTotal += performance.now() - pausedAt;
+    helpOpen = false;
+    try {
+      window.localStorage.setItem(TUTORIAL_KEY, '1');
+    } catch {
+      // Storage can be unavailable; the tutorial will simply show again next time.
+    }
+  }
+
+  function tutorialSeen(): boolean {
+    try {
+      return window.localStorage.getItem(TUTORIAL_KEY) === '1';
+    } catch {
+      return false;
+    }
   }
 
   function end(outcome: GameOutcome): void {
@@ -120,6 +313,7 @@
     phase = outcome === 'success' ? 'passed' : 'failed';
     window.clearInterval(clock);
     engine?.cancel();
+    badge = null;
     const actions: readonly WiringAction[] = engine?.actions ?? [];
     window.setTimeout((): void => onfinish(outcome, actions), RESULT_MS);
   }
@@ -144,21 +338,14 @@
         showToast(TOAST.short);
         break;
       case 'nut-rejected':
-        showToast(
-          event.reason === 'occupied'
-            ? TOAST.nutOccupied
-            : event.reason === 'single'
-              ? TOAST.nutSingle
-              : TOAST.nutTooSmall,
-        );
+        showToast(event.reason === 'occupied' ? TOAST.nutOccupied : TOAST.nutTooSmall);
         break;
       case 'nut-seated':
         showToast(TOAST.twist);
         break;
-      case 'strip-request': {
+      case 'strip-request':
         stripRequest = { id: event.conductorId, x: event.at.x, y: event.at.y };
         break;
-      }
       case 'stripped':
         showToast(TOAST.stripped);
         break;
@@ -194,48 +381,50 @@
     );
   }
 
-  function updateCursor(): void {
-    if (!engine) return;
-    if (engine.held || engine.dragged || engine.twisting) cursor = 'grabbing';
-    else if (engine.hover) cursor = 'grab';
-    else cursor = 'default';
+  function interactive(): boolean {
+    return engine !== null && phase === 'playing' && !helpOpen;
   }
 
   function onPointerDown(event: PointerEvent): void {
-    if (!engine || phase !== 'playing') return;
+    if (!engine || !interactive()) return;
     stripRequest = null;
     canvas?.setPointerCapture(event.pointerId);
     engine.pointerDown(stagePoint(event), event.button);
-    updateCursor();
-    invalidate();
-  }
-
-  function onPointerMove(event: PointerEvent): void {
-    if (!engine || phase !== 'playing') return;
-    const hoverBefore = engine.hover;
-    engine.pointerMove(stagePoint(event));
-    updateCursor();
-    if (engine.held || engine.dragged || engine.twisting || engine.hover !== hoverBefore)
-      invalidate();
-  }
-
-  function onPointerUp(event: PointerEvent): void {
-    if (!engine || phase !== 'playing') return;
-    engine.pointerUp(stagePoint(event));
-    updateCursor();
+    updatePointerUi();
     syncHud();
     invalidate();
   }
 
+  function onPointerMove(event: PointerEvent): void {
+    if (!engine || !interactive()) return;
+    const aimBefore = engine.aim;
+    engine.pointerMove(stagePoint(event));
+    updatePointerUi();
+    if (engine.held || engine.dragged || engine.twisting || engine.aim !== aimBefore) invalidate();
+  }
+
+  function onPointerUp(event: PointerEvent): void {
+    if (!engine || !interactive()) return;
+    engine.pointerUp(stagePoint(event));
+    updatePointerUi();
+    syncHud();
+    invalidate();
+  }
+
+  function onPointerLeave(): void {
+    if (engine?.dragged || engine?.held || engine?.twisting) return;
+    badge = null;
+  }
+
   function toggleBreaker(): void {
-    if (!engine || phase !== 'playing') return;
+    if (!engine || !interactive()) return;
     engine.toggleBreaker();
     syncHud();
     invalidate();
   }
 
   function toggleSwitch(): void {
-    if (!engine || phase !== 'playing') return;
+    if (!engine || !interactive()) return;
     engine.toggleSwitch();
     syncHud();
     invalidate();
@@ -245,11 +434,17 @@
     if (!engine || !stripRequest) return;
     engine.strip(stripRequest.id, notch);
     stripRequest = null;
+    syncHud();
+    invalidate();
+  }
+
+  function highlightPlan(ids: readonly string[] | null): void {
+    renderer?.setFocus(ids);
     invalidate();
   }
 
   function inspect(): void {
-    if (!engine || phase !== 'playing') return;
+    if (!engine || !interactive()) return;
     const issues: Issue[] = engine.inspect();
     const first: Issue | undefined = issues[0];
     if (!first) {
@@ -262,6 +457,15 @@
     showToast(`${TOAST.failed} ${ISSUE_TEXT[first.code]}`);
     engine.addMistake();
     invalidate();
+  }
+
+  function onKeydown(event: KeyboardEvent): void {
+    // Escape closes Help instead of aborting the round underneath.
+    if (event.key === 'Escape' && helpOpen) {
+      event.stopPropagation();
+      event.preventDefault();
+      closeHelp();
+    }
   }
 
   function resize(): void {
@@ -299,11 +503,9 @@
         );
       }
       phase = 'playing';
+      if (!tutorialSeen()) openHelp();
       clock = window.setInterval((): void => {
-        remaining = Math.max(
-          0,
-          tier.timeLimit - Math.floor((performance.now() - startedAt) / 1000),
-        );
+        remaining = Math.max(0, tier.timeLimit - elapsedSeconds());
         if (remaining === 0 && phase === 'playing') {
           showToast(TOAST.timeout);
           end('failure');
@@ -325,7 +527,9 @@
   });
 </script>
 
-<div class="game" data-phase={phase} style="cursor: {cursor}">
+<svelte:window onkeydowncapture={onKeydown} />
+
+<div class="game" data-phase={phase} data-help={helpOpen} style="cursor: {cursor}">
   <canvas
     bind:this={canvas}
     class="scene"
@@ -333,12 +537,13 @@
     onpointermove={onPointerMove}
     onpointerup={onPointerUp}
     onpointercancel={onPointerUp}
+    onpointerleave={onPointerLeave}
     oncontextmenu={(event: MouseEvent): void => event.preventDefault()}
   ></canvas>
 
   <div
     class="stage-overlay"
-    style="width: {STAGE.width}px; height: {STAGE.height}px; transform: translate({stage.offsetX}px, {stage.offsetY}px) scale({stage.scale})"
+    style="width: {STAGE.width}px; height: {STAGE.height}px; transform: translate({stage.offsetX}px, {stage.offsetY}px) scale({stage.scale}); --label-boost: {labelBoost}"
   >
     {#each NUT_COLORS as color (color)}
       {@const area = compartment(color)}
@@ -368,69 +573,47 @@
 
   <div class="hud" style="--hud-scale: {hudScale}">
     <div class="hud-left">
-      <Panel caption="{LABEL.workOrder} #{round.seed.toString(16).toUpperCase().padStart(8, '0')}">
-        <h4 class="title">{LABEL.title}</h4>
-        <p class="briefing">{BRIEFING[puzzle.template]}</p>
-        <div class="timer">
-          <Meter value={remaining / tier.timeLimit} critical={remaining <= 30} />
-          <span class="time" class:critical={remaining <= 30}>{timeLabel}</span>
-        </div>
-        <div class="mistakes">
-          <span>{LABEL.mistakes}</span>
-          <span class="pips">
-            {#each Array.from({ length: tier.maxMistakes }, (_: unknown, i: number): number => i) as i (i)}
-              <span class="pip" class:used={i < mistakes}></span>
-            {/each}
-          </span>
-        </div>
-      </Panel>
-
-      <Panel caption={LABEL.panel}>
-        <div class="controls">
-          <button type="button" class="control" onclick={toggleBreaker}>
-            <img src={spriteUrl(breakerOn ? 'breakerOn' : 'breakerOff')} alt="" class="breaker" />
-            <span class="control-text">
-              <span class="control-label">{LABEL.breaker} {puzzle.breakerAmps} A</span>
-              <span class="state" class:on={breakerOn}>{breakerOn ? LABEL.on : LABEL.off}</span>
-            </span>
-          </button>
-          {#if puzzle.wallSwitch}
-            <button type="button" class="control" onclick={toggleSwitch}>
-              <img src={spriteUrl(switchOn ? 'switchOn' : 'switchOff')} alt="" class="switch" />
-              <span class="control-text">
-                <span class="control-label">{LABEL.wallSwitch}</span>
-                <span class="state" class:on={switchOn}>{switchOn ? LABEL.on : LABEL.off}</span>
-              </span>
-            </button>
-          {/if}
-        </div>
-      </Panel>
-
-      <Panel caption={LABEL.loads}>
-        {#if puzzle.wallSwitch}
-          <div class="load">
-            <span class="bulb" class:lit={fixture === 'on' || fixture === 'reversed'}>
-              <img src={spriteUrl('bulb')} alt="" />
-            </span>
-            <span>{LABEL.fixture}</span>
-          </div>
-        {/if}
-        {#each receptacleIds as id, i (id)}
-          <div class="load">
-            <span class="led" class:on={outlets[id] === 'on'}></span>
-            <span>{LABEL.outlet} {i + 1}</span>
-            <span class="load-state">{outlets[id] === 'on' ? LABEL.live : LABEL.dead}</span>
-          </div>
-        {/each}
-      </Panel>
+      <JobCard
+        seed={round.seed}
+        briefing={BRIEFING[puzzle.template]}
+        {remaining}
+        timeLimit={tier.timeLimit}
+        {mistakes}
+        maxMistakes={tier.maxMistakes}
+        {steps}
+      />
+      <ControlsCard
+        {breakerOn}
+        amps={puzzle.breakerAmps}
+        hasSwitch={puzzle.wallSwitch !== null}
+        {switchOn}
+        fixture={puzzle.wallSwitch ? fixture : null}
+        {outlets}
+        {attention}
+        ontogglebreaker={toggleBreaker}
+        ontoggleswitch={toggleSwitch}
+      />
+      <GuideCard
+        tier={round.difficulty}
+        plan={planRows}
+        cables={cableRows}
+        onhighlight={highlightPlan}
+      />
     </div>
 
     <div class="hud-actions">
+      <Button onclick={openHelp}><Icon name="help" size={16} />{LABEL.help}</Button>
       <Button onclick={abort}>{LABEL.abort}</Button>
-      <Button variant="primary" onclick={inspect} disabled={phase !== 'playing'}
-        >{LABEL.inspect}</Button
-      >
+      <span class="inspect" class:attention={currentStep === 'inspect'}>
+        <Button variant="primary" onclick={inspect} disabled={phase !== 'playing'}>
+          {LABEL.inspect}
+        </Button>
+      </span>
     </div>
+
+    {#if badge && !helpOpen}
+      <CursorBadge {badge} x={pointer.x} y={pointer.y} scale={hudScale} />
+    {/if}
 
     {#if toast}
       <div class="toast" role="status">{toast}</div>
@@ -440,6 +623,10 @@
       <div class="result" class:passed={phase === 'passed'}>
         <h2>{phase === 'passed' ? TOAST.passed : TOAST.failed}</h2>
       </div>
+    {/if}
+
+    {#if helpOpen}
+      <HelpOverlay onclose={closeHelp} scale={hudScale} />
     {/if}
   </div>
 
@@ -481,7 +668,7 @@
   }
 
   .nut-name {
-    font-size: 13px;
+    font-size: calc(14px * var(--label-boost));
     font-weight: 700;
     letter-spacing: 0.1em;
   }
@@ -499,19 +686,20 @@
   }
 
   .nut-rating {
-    font-size: 12px;
+    font-size: calc(13px * var(--label-boost));
     color: var(--esx-lightest);
     opacity: 0.85;
   }
 
   .notches {
     position: absolute;
-    transform: translateX(-50%);
     padding: 10px 12px;
     border: 1px solid var(--esx-line);
     border-radius: var(--esx-radius);
     background: var(--esx-darkest-glass);
     box-shadow: var(--esx-shadow);
+    transform: translateX(-50%) scale(var(--label-boost));
+    transform-origin: 50% 100%;
     pointer-events: auto;
   }
 
@@ -564,186 +752,11 @@
     top: 24px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    width: 340px;
+    gap: 12px;
+    width: 350px;
     transform: scale(var(--hud-scale));
     transform-origin: 0 0;
     pointer-events: auto;
-  }
-
-  .title {
-    font-size: var(--esx-h4);
-    font-weight: 600;
-  }
-
-  .briefing {
-    margin-top: 4px;
-    font-size: 13px;
-    color: var(--esx-light);
-  }
-
-  .timer {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 14px;
-  }
-
-  .timer :global(.meter) {
-    flex: 1;
-  }
-
-  .time {
-    min-width: 40px;
-    font-size: var(--esx-h6);
-    font-weight: 600;
-    text-align: right;
-  }
-
-  .time.critical {
-    color: var(--esx-danger);
-  }
-
-  .mistakes {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 13px;
-    color: var(--esx-light);
-  }
-
-  .pips {
-    display: flex;
-    gap: 6px;
-  }
-
-  .pip {
-    width: 10px;
-    height: 10px;
-    border: 2px solid var(--esx-mid);
-    border-radius: 50%;
-  }
-
-  .pip.used {
-    border-color: var(--esx-danger);
-    background: var(--esx-danger);
-  }
-
-  .controls {
-    display: flex;
-    gap: 10px;
-  }
-
-  .control {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
-    border: 2px solid transparent;
-    border-radius: var(--esx-radius);
-    background: var(--esx-dark);
-    text-align: left;
-    cursor: pointer;
-    transition: border-color 140ms var(--esx-ease);
-  }
-
-  .control:hover {
-    border-color: var(--esx-brand);
-  }
-
-  .breaker {
-    height: 72px;
-  }
-
-  .switch {
-    height: 64px;
-  }
-
-  .control-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .control-label {
-    font-size: 12px;
-    color: var(--esx-light);
-  }
-
-  .state {
-    font-size: var(--esx-h6);
-    font-weight: 700;
-    color: var(--esx-light);
-  }
-
-  .state.on {
-    color: var(--esx-brand);
-  }
-
-  .load {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 34px;
-    font-size: 13px;
-  }
-
-  .load + .load {
-    margin-top: 6px;
-  }
-
-  .bulb {
-    position: relative;
-    display: inline-flex;
-    width: 64px;
-  }
-
-  .bulb img {
-    width: 100%;
-    filter: grayscale(0.25) brightness(0.8);
-    transition: filter 200ms var(--esx-ease);
-  }
-
-  .bulb::after {
-    content: '';
-    position: absolute;
-    right: -6px;
-    top: 50%;
-    width: 40px;
-    height: 40px;
-    margin-top: -20px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 214, 140, 0.95) 0%, rgba(255, 190, 90, 0) 70%);
-    opacity: 0;
-    transition: opacity 200ms var(--esx-ease);
-  }
-
-  .bulb.lit img {
-    filter: none;
-  }
-
-  .bulb.lit::after {
-    opacity: 1;
-  }
-
-  .led {
-    width: 10px;
-    height: 10px;
-    margin: 0 27px 0 27px;
-    border-radius: 50%;
-    background: var(--esx-mid);
-  }
-
-  .led.on {
-    background: var(--esx-success);
-    box-shadow: 0 0 10px rgba(70, 167, 88, 0.8);
-  }
-
-  .load-state {
-    margin-left: auto;
-    color: var(--esx-light);
   }
 
   .hud-actions {
@@ -757,6 +770,15 @@
     pointer-events: auto;
   }
 
+  .inspect {
+    display: inline-flex;
+    border-radius: var(--esx-radius);
+  }
+
+  .inspect.attention {
+    box-shadow: 0 0 0 4px var(--esx-brand-soft);
+  }
+
   .toast {
     position: absolute;
     left: 50%;
@@ -768,7 +790,6 @@
     border-radius: var(--esx-radius);
     background: var(--esx-darkest-glass);
     box-shadow: var(--esx-shadow);
-    font-size: var(--esx-h6);
     font-weight: 500;
     transform: translateX(-50%) scale(var(--hud-scale));
     transform-origin: 50% 0;

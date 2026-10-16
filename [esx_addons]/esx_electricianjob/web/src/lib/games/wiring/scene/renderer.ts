@@ -52,6 +52,7 @@ const HOLD_ANGLE = 0.62;
 const BRAND = '#fb9b04';
 const HOVER_GLOW = 'rgba(251, 155, 4, 0.55)';
 const ISSUE_GLOW = 'rgba(229, 72, 77, 0.7)';
+const FOCUS_GLOW = 'rgba(255, 214, 120, 0.95)';
 
 /** Short-lived spark particle. */
 interface Spark {
@@ -80,6 +81,7 @@ export class WiringRenderer {
   private dpr = 1;
   private transform: StageTransform = { scale: 1, offsetX: 0, offsetY: 0 };
   private sparks: Spark[] = [];
+  private focus: ReadonlySet<string> = new Set();
   private readonly sparkRandom = new Random(0x5eed);
   private readonly cableById: ReadonlyMap<string, Cable>;
   private readonly nmCables: readonly CableLayout[];
@@ -94,6 +96,15 @@ export class WiringRenderer {
     this.ctx = ctx;
     this.cableById = new Map(engine.puzzle.cables.map((c: Cable): [string, Cable] => [c.id, c]));
     this.nmCables = engine.layout.cables.filter((c: CableLayout): boolean => c.entry !== null);
+  }
+
+  /**
+   * Highlights conductors, e.g. while the player hovers a bundle in the wiring plan.
+   *
+   * @param ids - Conductors to highlight, null to clear
+   */
+  setFocus(ids: readonly string[] | null): void {
+    this.focus = new Set(ids ?? []);
   }
 
   /** Current stage transform, used to map pointer events and to place the HUD. */
@@ -313,13 +324,11 @@ export class WiringRenderer {
     const exposed = this.engine.isExposed(id);
     const taped = conductor.marked || this.engine.taped.has(id);
     const tapeEnd = runtime.total - STRIP_LENGTH - 22;
+    const aim = this.engine.aim;
     let glow: string | null = null;
     if (this.engine.highlighted.has(id)) glow = ISSUE_GLOW;
-    else if (
-      this.engine.hover === id ||
-      (runtime.spliceId !== null && this.engine.hover === runtime.spliceId)
-    )
-      glow = HOVER_GLOW;
+    else if (aim?.conductors.includes(id)) glow = aim.valid ? HOVER_GLOW : ISSUE_GLOW;
+    else if (this.focus.has(id)) glow = FOCUS_GLOW;
 
     return {
       insulation: conductor.insulation,

@@ -59,6 +59,28 @@ export type ToolKind = 'tester' | 'stripper' | 'tape';
 /** Something the player can carry with the pointer. */
 export type Held = { kind: 'tool'; tool: ToolKind } | { kind: 'nut'; color: NutColor };
 
+/** What the pointer would do right now. */
+export type AimAction =
+  'pick' | 'grab' | 'move' | 'twist' | 'join' | 'strip' | 'tape' | 'cap' | 'test';
+
+/** Why an aimed action would not work, or what to watch out for. */
+export type AimReason =
+  'not-damaged' | 'already-marked' | 'too-small' | 'occupied' | 'breaker-on' | 'no-voltage';
+
+/** Target under the pointer, for highlighting and the cursor badge. */
+export interface Aim {
+  /** Action a click or drop would perform */
+  action: AimAction;
+  /** Whether that action would succeed */
+  valid: boolean;
+  /** Why not, or a warning, null when there is nothing to say */
+  reason: AimReason | null;
+  /** Conductors to highlight */
+  conductors: readonly string[];
+  /** Tool or nut size under the pointer in the tray */
+  item: ToolKind | NutColor | null;
+}
+
 /** Rectangle on the stage, used for tray hit areas. */
 export interface Area {
   /** Left edge */
@@ -124,7 +146,7 @@ export type EngineEvent =
   | { type: 'joined'; at: Vec2 }
   | { type: 'parted' }
   | { type: 'nut-seated'; at: Vec2 }
-  | { type: 'nut-rejected'; reason: 'too-small' | 'single' | 'occupied'; at: Vec2 }
+  | { type: 'nut-rejected'; reason: 'too-small' | 'occupied'; at: Vec2 }
   | { type: 'nut-tight'; at: Vec2 }
   | { type: 'nut-removed'; at: Vec2 }
   | { type: 'strip-request'; conductorId: string; at: Vec2 }
@@ -196,12 +218,18 @@ export class WiringEngine {
   pointer: Vec2 = vec(0, 0);
   /** Item following the pointer, if any */
   held: Held | null = null;
-  /** Conductor or splice under the pointer, for hover highlighting */
-  hover: string | null = null;
   /** 0..1 proximity of the tester tip to a live conductor */
   testerLevel = 0;
   /** Conductor ends glowing after a failed inspection */
   highlighted: ReadonlySet<string> = new Set();
+  /** Target under the pointer, null when there is nothing to interact with */
+  aim: Aim | null = null;
+  /** The breaker has been switched off at least once */
+  everOff = false;
+  /** The tester has picked up a live conductor at least once */
+  testedLive = false;
+  /** The ceiling light has burned since the wiring last changed */
+  lightSeen = false;
 
   private drag: Drag | null = null;
   private simulation: Simulation;
@@ -301,6 +329,25 @@ export class WiringEngine {
   }
 
   pointerDown(p: Vec2, button: number): void {
+    this.press(p, button);
+    this.updateAim();
+  }
+
+  pointerMove(p: Vec2): void {
+    this.pointer = p;
+    this.move(p);
+    this.updateGeometry();
+    this.updateAim();
+  }
+
+  pointerUp(p: Vec2): void {
+    this.pointer = p;
+    this.release(p);
+    this.updateGeometry();
+    this.updateAim();
+  }
+
+  private press(p: Vec2, button: number): void {
     this.pointer = p;
     if (button === 2) {
       this.secondaryAction(p);
@@ -353,14 +400,10 @@ export class WiringEngine {
     this.emit({ type: 'pickup' });
   }
 
-  pointerMove(p: Vec2): void {
-    this.pointer = p;
+  private move(p: Vec2): void {
     const drag = this.drag;
 
-    if (!drag) {
-      this.hover = this.spliceAt(p)?.splice.id ?? this.endAt(p)?.conductor.id ?? null;
-      return;
-    }
+    if (!drag) return;
 
     switch (drag.kind) {
       case 'end': {
@@ -393,11 +436,9 @@ export class WiringEngine {
       default:
         break;
     }
-    this.updateGeometry();
   }
 
-  pointerUp(p: Vec2): void {
-    this.pointer = p;
+  private release(p: Vec2): void {
     const drag = this.drag;
     this.drag = null;
     if (!drag) return;
@@ -405,7 +446,6 @@ export class WiringEngine {
     if (drag.kind === 'end') this.dropEnd(drag.id);
     if (drag.kind === 'held') this.dropHeld(drag.held, p);
     this.testerLevel = 0;
-    this.updateGeometry();
   }
 
   /** Releases whatever is held without using it, e.g. when focus is lost. */
@@ -413,10 +453,12 @@ export class WiringEngine {
     this.drag = null;
     this.held = null;
     this.testerLevel = 0;
+    this.aim = null;
   }
 
   toggleBreaker(): void {
     this.breakerOn = !this.breakerOn;
+    if (!this.breakerOn) this.everOff = true;
     this.log({ t: this.now(), a: 'breaker', on: this.breakerOn });
     this.emit({ type: 'breaker', on: this.breakerOn });
     this.refresh();
@@ -489,6 +531,7 @@ export class WiringEngine {
   /** Re-runs the simulation after a change and trips the breaker on a short. */
   private refresh(): void {
     this.simulation = this.simulate();
+    if (this.simulation.loads.get('fixture') === 'on') this.lightSeen = true;
     if (!this.simulation.shorted) return;
 
     const at = this.lastSplicePoint();
@@ -563,16 +606,17 @@ export class WiringEngine {
     return span <= max ? bounded : add(anchor, scale(offset, max / span));
   }
 
-  private dropEnd(id: string): void {
-    const runtime = this.conductor(id);
+  /** Splice or loose end a dragged end would join when released here. */
+  private joinTarget(
+    runtime: ConductorRuntime,
+  ): { splice: SpliceRuntime } | { partner: ConductorRuntime } | null {
     const splice = [...this.splices.values()].find(
       (s: SpliceRuntime): boolean =>
-        s.nut === null && distance(s.point, runtime.end) < SPLICE_RADIUS,
+        s.nut === null &&
+        !s.members.includes(runtime.conductor.id) &&
+        distance(s.point, runtime.end) < SPLICE_RADIUS,
     );
-    if (splice) {
-      this.joinSplice(splice, [id]);
-      return;
-    }
+    if (splice) return { splice };
 
     const partner = this.conductors.find(
       (other: ConductorRuntime): boolean =>
@@ -580,18 +624,29 @@ export class WiringEngine {
         other.spliceId === null &&
         distance(other.end, runtime.end) < JOIN_RADIUS,
     );
-    if (partner) {
-      const created: SpliceRuntime = {
-        id: `s${this.nextSpliceId++}`,
-        members: [],
-        point: partner.end,
-        direction: partner.endDirection,
-        nut: null,
-        twist: 0,
-      };
-      this.splices.set(created.id, created);
-      this.joinSplice(created, [partner.conductor.id, id]);
+    return partner ? { partner } : null;
+  }
+
+  private dropEnd(id: string): void {
+    const runtime = this.conductor(id);
+    const target = this.joinTarget(runtime);
+    if (!target) return;
+    if ('splice' in target) {
+      this.joinSplice(target.splice, [id]);
+      return;
     }
+
+    const { partner } = target;
+    const created: SpliceRuntime = {
+      id: `s${this.nextSpliceId++}`,
+      members: [],
+      point: partner.end,
+      direction: partner.endDirection,
+      nut: null,
+      twist: 0,
+    };
+    this.splices.set(created.id, created);
+    this.joinSplice(created, [partner.conductor.id, id]);
   }
 
   private joinSplice(splice: SpliceRuntime, ids: readonly string[]): void {
@@ -600,6 +655,7 @@ export class WiringEngine {
       this.conductor(id).spliceId = splice.id;
     }
     this.log({ t: this.now(), a: 'join', ids: splice.members.slice() });
+    this.lightSeen = false;
     this.arrangeSplice(splice);
     this.emit({ type: 'joined', at: splice.point });
   }
@@ -612,6 +668,7 @@ export class WiringEngine {
 
     splice.members = splice.members.filter((member: string): boolean => member !== id);
     this.log({ t: this.now(), a: 'part', id });
+    this.lightSeen = false;
     if (splice.members.length < 2) {
       for (const member of splice.members) this.conductor(member).spliceId = null;
       this.splices.delete(splice.id);
@@ -667,6 +724,7 @@ export class WiringEngine {
     this.drag = null;
     const color = splice.nut as NutColor;
     this.log({ t: this.now(), a: 'nut', splice: splice.members.slice(), color });
+    this.lightSeen = false;
     this.emit({ type: 'nut-tight', at: splice.point });
     this.refresh();
   }
@@ -683,6 +741,7 @@ export class WiringEngine {
     splice.nut = null;
     splice.twist = 0;
     if (wasTight) this.log({ t: this.now(), a: 'unnut', splice: splice.members.slice() });
+    this.lightSeen = false;
     this.emit({ type: 'nut-removed', at: splice.point });
     this.refresh();
   }
@@ -706,22 +765,32 @@ export class WiringEngine {
     }
   }
 
-  private dropNut(color: NutColor, p: Vec2): void {
-    const splice = [...this.splices.values()].find(
-      (s: SpliceRuntime): boolean => distance(s.point, p) < SPLICE_RADIUS + 14,
-    );
-    if (!splice) return;
-    if (splice.nut !== null) {
-      this.emit({ type: 'nut-rejected', reason: 'occupied', at: splice.point });
-      return;
+  /** Bundle a carried wire nut would go on when dropped here. */
+  private nutTarget(p: Vec2): SpliceRuntime | null {
+    let best: SpliceRuntime | null = null;
+    let bestDistance = SPLICE_RADIUS + 14;
+    for (const splice of this.splices.values()) {
+      const d = distance(splice.point, p);
+      if (d < bestDistance) {
+        best = splice;
+        bestDistance = d;
+      }
     }
+    return best;
+  }
+
+  private nutProblem(color: NutColor, splice: SpliceRuntime): 'occupied' | 'too-small' | null {
+    if (splice.nut !== null) return 'occupied';
     const members = splice.members.map((id: string): Conductor => this.conductor(id).conductor);
-    if (!nutFits(color, members)) {
-      this.emit({
-        type: 'nut-rejected',
-        reason: members.length < 2 ? 'single' : 'too-small',
-        at: splice.point,
-      });
+    return nutFits(color, members) ? null : 'too-small';
+  }
+
+  private dropNut(color: NutColor, p: Vec2): void {
+    const splice = this.nutTarget(p);
+    if (!splice) return;
+    const problem = this.nutProblem(color, splice);
+    if (problem) {
+      this.emit({ type: 'nut-rejected', reason: problem, at: splice.point });
       return;
     }
     if (this.shockOnTouch(splice.members)) return;
@@ -748,12 +817,17 @@ export class WiringEngine {
     return best;
   }
 
-  private dropStripper(p: Vec2): void {
-    const target = this.nearestEnd(
+  /** Loose insulated end the stripper would work on. */
+  private stripTarget(p: Vec2): ConductorRuntime | null {
+    return this.nearestEnd(
       p,
       60,
       (r: ConductorRuntime): boolean => r.conductor.insulation !== 'bare' && r.spliceId === null,
     );
+  }
+
+  private dropStripper(p: Vec2): void {
+    const target = this.stripTarget(p);
     if (!target) return;
     if (!target.conductor.needsStrip || this.stripped.has(target.conductor.id)) {
       this.emit({ type: 'not-damaged', at: target.end });
@@ -763,7 +837,8 @@ export class WiringEngine {
     this.emit({ type: 'strip-request', conductorId: target.conductor.id, at: target.end });
   }
 
-  private dropTape(p: Vec2): void {
+  /** Insulated solid conductor the tape would go on. */
+  private tapeTarget(p: Vec2): ConductorRuntime | null {
     let best: ConductorRuntime | null = null;
     let bestDistance = TAPE_RANGE;
     for (const runtime of this.conductors) {
@@ -774,8 +849,18 @@ export class WiringEngine {
         bestDistance = d;
       }
     }
-    if (!best || this.taped.has(best.conductor.id) || best.conductor.marked) return;
+    return best;
+  }
+
+  private isMarked(runtime: ConductorRuntime): boolean {
+    return runtime.conductor.marked || this.taped.has(runtime.conductor.id);
+  }
+
+  private dropTape(p: Vec2): void {
+    const best = this.tapeTarget(p);
+    if (!best || this.isMarked(best)) return;
     this.taped.add(best.conductor.id);
+    this.lightSeen = false;
     this.log({ t: this.now(), a: 'tape', id: best.conductor.id });
     this.emit({ type: 'taped', at: p });
     this.refresh();
@@ -800,5 +885,112 @@ export class WiringEngine {
       nearest = Math.min(nearest, Math.max(0, distance(mid, p) - cable.width / 2));
     }
     this.testerLevel = nearest >= TESTER_RANGE ? 0 : 1 - nearest / TESTER_RANGE;
+    if (this.testerLevel > 0.5) this.testedLive = true;
+  }
+
+  /** Works out what the pointer is aimed at, for highlighting and the cursor badge. */
+  private updateAim(): void {
+    this.aim = this.computeAim();
+  }
+
+  private computeAim(): Aim | null {
+    const p = this.pointer;
+    const drag = this.drag;
+    const none = { valid: true, reason: null, conductors: [], item: null } as const;
+
+    if (drag?.kind === 'twist') {
+      const splice = this.splices.get(drag.id);
+      return { ...none, action: 'twist', conductors: splice?.members ?? [] };
+    }
+    if (drag?.kind === 'splice') {
+      return { ...none, action: 'move', conductors: this.splices.get(drag.id)?.members ?? [] };
+    }
+    if (drag?.kind === 'end') {
+      const target = this.joinTarget(this.conductor(drag.id));
+      if (!target) return { ...none, action: 'grab', conductors: [drag.id] };
+      const others = 'splice' in target ? target.splice.members : [target.partner.conductor.id];
+      return { ...none, action: 'join', conductors: [drag.id, ...others] };
+    }
+
+    const held = this.held;
+    if (held?.kind === 'tool') {
+      switch (held.tool) {
+        case 'tester':
+          return {
+            ...none,
+            action: 'test',
+            valid: this.testerLevel > 0.15,
+            reason: this.testerLevel > 0.15 ? null : 'no-voltage',
+          };
+        case 'stripper': {
+          const target = this.stripTarget(p);
+          if (!target) return null;
+          const damaged = target.conductor.needsStrip && !this.stripped.has(target.conductor.id);
+          return {
+            ...none,
+            action: 'strip',
+            valid: damaged,
+            reason: damaged ? null : 'not-damaged',
+            conductors: [target.conductor.id],
+          };
+        }
+        case 'tape': {
+          const target = this.tapeTarget(p);
+          if (!target) return null;
+          const marked = this.isMarked(target);
+          return {
+            ...none,
+            action: 'tape',
+            valid: !marked,
+            reason: marked ? 'already-marked' : null,
+            conductors: [target.conductor.id],
+          };
+        }
+        default:
+          return null;
+      }
+    }
+    if (held?.kind === 'nut') {
+      const splice = this.nutTarget(p);
+      if (!splice) return null;
+      const problem = this.nutProblem(held.color, splice);
+      return {
+        ...none,
+        action: 'cap',
+        valid: problem === null,
+        reason: problem,
+        conductors: splice.members,
+      };
+    }
+
+    const tool = (Object.keys(this.tray.tools) as ToolKind[]).find((kind: ToolKind): boolean =>
+      inside(this.tray.tools[kind], p),
+    );
+    if (tool) return { ...none, action: 'pick', item: tool };
+    const nut = (Object.keys(this.tray.nuts) as NutColor[]).find((color: NutColor): boolean =>
+      inside(this.tray.nuts[color], p),
+    );
+    if (nut) return { ...none, action: 'pick', item: nut };
+
+    const hit = this.spliceAt(p);
+    const end = this.endAt(p);
+    if (hit && (!end || hit.distance <= distance(end.end, p))) {
+      return {
+        ...none,
+        action: hit.splice.twist < 1 ? 'twist' : 'move',
+        conductors: hit.splice.members,
+      };
+    }
+    if (end) {
+      // A general warning only: it must not reveal which conductor is the live one.
+      const risky = this.breakerOn && this.isExposed(end.conductor.id);
+      return {
+        ...none,
+        action: 'grab',
+        reason: risky ? 'breaker-on' : null,
+        conductors: [end.conductor.id],
+      };
+    }
+    return null;
   }
 }
