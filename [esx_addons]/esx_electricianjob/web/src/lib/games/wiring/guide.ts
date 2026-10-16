@@ -143,7 +143,8 @@ export function checklist(input: ChecklistInput): ChecklistStep[] {
     steps.push({ id, done, progress });
   };
 
-  step('test', input.testedLive);
+  // Once the power is off there is nothing left to find with the tester.
+  step('test', input.testedLive || input.everOff);
   step('power-off', input.everOff);
 
   const damaged = puzzle.conductors.filter((c: Conductor): boolean => c.needsStrip);
