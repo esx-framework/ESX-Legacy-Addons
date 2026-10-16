@@ -36,7 +36,12 @@
   import CursorBadge, { type Badge } from './hud/CursorBadge.svelte';
   import HelpOverlay from './hud/HelpOverlay.svelte';
   import StatusBar from './hud/StatusBar.svelte';
-  import WorkOrder, { type CableRow, type PlanChip, type PlanRow } from './hud/WorkOrder.svelte';
+  import WorkOrder, {
+    type CableRow,
+    type PlanChip,
+    type PlanRow,
+    type Verdict,
+  } from './hud/WorkOrder.svelte';
   import { computeWiringLayout, STAGE, type WiringLayout } from './layout';
   import {
     NUT_COLORS,
@@ -161,6 +166,9 @@
           (viewportHeight - COLUMN_MARGIN.top - COLUMN_MARGIN.bottom) / columnHeight,
         )
       : hudScale,
+  );
+  let verdict: Verdict | null = $derived.by((): Verdict | null =>
+    phase === 'passed' || phase === 'failed' ? phase : null,
   );
   /** Stage-anchored labels grow on small screens so they never drop below HUD size. */
   let labelBoost: number = $derived(Math.max(1, MIN_HUD_SCALE / stage.scale));
@@ -663,6 +671,7 @@
         {steps}
         plan={planRows}
         cables={cableRows}
+        {verdict}
         onhighlight={highlightPlan}
       />
       <ControlsCard

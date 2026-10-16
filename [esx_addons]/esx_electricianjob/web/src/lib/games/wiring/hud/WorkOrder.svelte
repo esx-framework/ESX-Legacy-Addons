@@ -31,13 +31,17 @@
     /** What the cable connects to */
     role: CableRole;
   }
+
+  /** Inspection result stamped onto the order. */
+  export type Verdict = 'passed' | 'failed';
 </script>
 
 <script lang="ts">
   /**
    * The job as a printed service order on a clipboard: customer, site, what was reported,
    * the procedure with hand-drawn ticks and, depending on the tier, the connection list or
-   * the cables in the box. The step in progress is marked with a highlighter.
+   * the cables in the box. The step in progress is marked with a highlighter, and the
+   * inspection result is stamped onto the sheet.
    *
    * Everything on the sheet uses the ESX palette; only wire swatches and bundle numbers
    * show the colors of the things they stand for in the scene.
@@ -64,11 +68,13 @@
     plan: readonly PlanRow[];
     /** Cables, listed on tier 2 */
     cables: readonly CableRow[];
+    /** Inspection result to stamp, null while the round runs */
+    verdict: Verdict | null;
     /** Highlights conductors in the scene while a bundle is hovered, null to clear */
     onhighlight: (ids: readonly string[] | null) => void;
   }
 
-  let { order, briefing, grade, tier, steps, plan, cables, onhighlight }: Props = $props();
+  let { order, briefing, grade, tier, steps, plan, cables, verdict, onhighlight }: Props = $props();
 
   /** One bar of the decorative barcode. */
   interface Bar {
@@ -277,6 +283,13 @@
         <p class="note">{RULES_NOTE}</p>
       {/if}
     </footer>
+
+    {#if verdict}
+      <div class="stamp {verdict}" role="status">
+        <span class="stamp-caption">{LABEL.inspection}</span>
+        <span class="stamp-word">{verdict === 'passed' ? LABEL.passed : LABEL.failed}</span>
+      </div>
+    {/if}
   </article>
   <span class="clip" aria-hidden="true"></span>
 </div>
@@ -694,5 +707,52 @@
     font-size: 11.5px;
     line-height: 1.45;
     color: var(--esx-mid);
+  }
+
+  .stamp {
+    position: absolute;
+    right: 22px;
+    top: 42%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 14px 2px;
+    border: 3px solid currentColor;
+    border-radius: 6px;
+    color: var(--esx-brand);
+    line-height: 1.1;
+    text-transform: uppercase;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    mask-image: url('../../../../assets/order/stamp-ink.webp');
+    mask-size: 96px 96px;
+    animation: stamp-in 320ms cubic-bezier(0.3, 1.4, 0.6, 1) both;
+  }
+
+  .stamp.failed {
+    color: var(--esx-danger);
+  }
+
+  .stamp-caption {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+  }
+
+  .stamp-word {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  @keyframes stamp-in {
+    from {
+      opacity: 0;
+      transform: rotate(-12deg) scale(1.9);
+    }
+    to {
+      opacity: 0.92;
+      transform: rotate(-12deg) scale(1);
+    }
   }
 </style>
