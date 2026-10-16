@@ -21,7 +21,7 @@ import {
   vec,
   type Vec2,
 } from '../../core/vec';
-import type { Awg, Cable, Conductor, WiringPuzzle } from './model';
+import type { Awg, Cable, Conductor, Insulation, WiringPuzzle } from './model';
 
 /** Stage size in scene units. */
 export const STAGE = { width: 1920, height: 1080 } as const;
@@ -83,6 +83,18 @@ const SHEATH_MM: Readonly<Record<string, number>> = {
   '12/2': 10.4,
   '12/3': 12.4,
   '10/2': 11.6,
+};
+
+/** How far conductors start inside the jacket, hidden under its cut edge. */
+export const JACKET_LIP = 14;
+
+/** Order of the conductors inside a flat NM-B jacket, across its width. */
+const JACKET_ORDER: Readonly<Record<Insulation, number>> = {
+  black: 0,
+  red: 1,
+  bare: 2,
+  green: 2,
+  white: 3,
 };
 
 const END_MARGIN = 36;
@@ -203,10 +215,23 @@ export function computeWiringLayout(puzzle: WiringPuzzle): WiringLayout {
       tagTilt: random.float(-0.14, 0.14),
     });
 
-    members.forEach((conductor: Conductor, i: number): void => {
-      const offset =
-        members.length === 1 ? 0 : ((i / (members.length - 1)) * 2 - 1) * (width / 2 - 8);
-      const anchor = add(sheathEnd, scale(across, offset));
+    // Inside the jacket the conductors lie side by side, ground in the middle, and come out
+    // from under the cut edge.
+    const ordered = [...members].sort(
+      (a: Conductor, b: Conductor): number =>
+        JACKET_ORDER[a.insulation] - JACKET_ORDER[b.insulation],
+    );
+    const widths = ordered.map(conductorWidth);
+    const packed =
+      widths.reduce((sum: number, w: number): number => sum + w, 0) + (ordered.length - 1) * 1.5;
+    let cursor = -packed / 2;
+    const tucked = sub(sheathEnd, scale(slot.inward, JACKET_LIP));
+
+    ordered.forEach((conductor: Conductor, i: number): void => {
+      const w = widths[i] as number;
+      const offset = cursor + w / 2;
+      cursor += w + 1.5;
+      const anchor = add(tucked, scale(across, offset));
       const length = random.float(520, 600);
       const initialEnd = placeEnd(
         placement,

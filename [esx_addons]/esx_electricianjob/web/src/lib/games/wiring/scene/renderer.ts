@@ -22,7 +22,7 @@ import {
   type ToolKind,
   type WiringEngine,
 } from '../engine';
-import { BOX, CANOPY, SCREW_POSITION, STAGE, type CableLayout } from '../layout';
+import { BOX, CANOPY, JACKET_LIP, SCREW_POSITION, STAGE, type CableLayout } from '../layout';
 import { NUT_COLORS, type Cable, type NutColor } from '../model';
 import { SHADOW_PADDING, type ShadowedSprite, type WiringSprites } from './assets';
 import {
@@ -78,6 +78,8 @@ export interface StageTransform {
 export class WiringRenderer {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly layer = document.createElement('canvas');
+  /** Tape flags, transparent, drawn over the wires so labels stay readable. */
+  private readonly flags = document.createElement('canvas');
   private dpr = 1;
   private transform: StageTransform = { scale: 1, offsetX: 0, offsetY: 0 };
   private sparks: Spark[] = [];
@@ -136,6 +138,8 @@ export class WiringRenderer {
     };
     this.layer.width = this.canvas.width;
     this.layer.height = this.canvas.height;
+    this.flags.width = this.canvas.width;
+    this.flags.height = this.canvas.height;
     this.paintStatic();
   }
 
@@ -185,6 +189,11 @@ export class WiringRenderer {
     ctx.setTransform(s, 0, 0, s, offsetX * this.dpr, offsetY * this.dpr);
 
     this.paintConductors();
+    this.paintJacketLips();
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(this.flags, 0, 0);
+    ctx.restore();
     this.paintTools();
     this.paintLampLight();
     this.paintHeld();
@@ -299,22 +308,34 @@ export class WiringRenderer {
     ctx.globalAlpha = 1;
   }
 
-  /** Jackets and tape flags never move, so they live in the static layer. */
+  /** Jackets and tape flags never move, so they are painted once per resize. */
   private paintCables(ctx: CanvasRenderingContext2D): void {
     for (const cable of this.nmCables) {
       const model = this.cableById.get(cable.cableId);
       if (!model || model.sheath === 'none' || !cable.entry) continue;
       drawSheath(ctx, cable.entry, cable.sheathEnd, cable.width, model.sheath);
     }
+    const flags = this.flags.getContext('2d');
+    if (!flags) return;
+    flags.setTransform(1, 0, 0, 1, 0, 0);
+    flags.clearRect(0, 0, this.flags.width, this.flags.height);
+    flags.setTransform(ctx.getTransform());
     for (const cable of this.nmCables) {
       const model = this.cableById.get(cable.cableId);
       if (!model?.tag || !cable.entry) continue;
       const x = cable.entry.x + (cable.sheathEnd.x - cable.entry.x) * 0.45;
       const y = cable.entry.y + (cable.sheathEnd.y - cable.entry.y) * 0.45;
-      const along = Math.atan2(cable.inward.y, cable.inward.x);
-      // Flags read left to right; vertical cables get the flag across them.
-      const angle = (Math.abs(cable.inward.x) > 0.5 ? along + Math.PI / 2 : 0) + cable.tagTilt;
-      drawTag(ctx, this.sprites.images.maskingTape, model.tag, x, y, angle);
+      // Flags always read left to right: wrapped across a vertical cable, sticking out above
+      // a horizontal one.
+      const horizontal = Math.abs(cable.inward.x) > 0.5;
+      drawTag(
+        flags,
+        this.sprites.images.maskingTape,
+        model.tag,
+        horizontal ? x + cable.inward.x * 8 : x,
+        horizontal ? y - cable.width / 2 - 8 : y,
+        cable.tagTilt,
+      );
     }
   }
 
@@ -374,6 +395,48 @@ export class WiringRenderer {
       drawConductor(ctx, runtime.line, runtime.total, this.styleOf(runtime));
     const splice = dragged ? engine.splices.get(dragged) : undefined;
     if (splice) this.paintNut(splice, true);
+  }
+
+  /**
+   * Conductors start a little inside their jacket. Copying the jacket's cut end back from the
+   * static layer puts it on top of them, so they come out from under the edge.
+   */
+  private paintJacketLips(): void {
+    const { ctx, dpr } = this;
+    const { scale, offsetX, offsetY } = this.transform;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    for (const cable of this.nmCables) {
+      // Deep enough to cover the round start caps and their shadows.
+      const depth = JACKET_LIP + 20;
+      const inner = {
+        x: cable.sheathEnd.x - cable.inward.x * depth,
+        y: cable.sheathEnd.y - cable.inward.y * depth,
+      };
+      const half = cable.width / 2;
+      const across = { x: -cable.inward.y * half, y: cable.inward.x * half };
+      const xs = [
+        cable.sheathEnd.x + across.x,
+        cable.sheathEnd.x - across.x,
+        inner.x + across.x,
+        inner.x - across.x,
+      ];
+      const ys = [
+        cable.sheathEnd.y + across.y,
+        cable.sheathEnd.y - across.y,
+        inner.y + across.y,
+        inner.y - across.y,
+      ];
+      const left = Math.floor((offsetX + Math.min(...xs) * scale) * dpr);
+      const top = Math.floor((offsetY + Math.min(...ys) * scale) * dpr);
+      const right = Math.ceil((offsetX + Math.max(...xs) * scale) * dpr);
+      const bottom = Math.ceil((offsetY + Math.max(...ys) * scale) * dpr);
+      const width = right - left;
+      const height = bottom - top;
+      if (width > 0 && height > 0)
+        ctx.drawImage(this.layer, left, top, width, height, left, top, width, height);
+    }
+    ctx.restore();
   }
 
   private paintNut(splice: SpliceRuntime, lifted: boolean): void {
