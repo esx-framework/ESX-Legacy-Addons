@@ -17,6 +17,9 @@ export const GAME_KINDS: readonly GameKind[] = ['wiring', 'circuit', 'fuse', 'vo
 /** Difficulty tier: 1 = apprentice, 2 = journeyman, 3 = master electrician. */
 export type Difficulty = 1 | 2 | 3;
 
+/** Tier used when Lua leaves the difficulty out: most players are not electricians. */
+export const DEFAULT_DIFFICULTY: Difficulty = 1;
+
 /** Largest seed value; seeds are unsigned 32-bit integers so Lua and JS agree on them. */
 export const MAX_SEED = 0xffffffff;
 
@@ -28,7 +31,7 @@ export interface GameSession {
   game: GameKind;
   /** Seed for the puzzle generator; the same seed always produces the same round */
   seed: number;
-  /** Difficulty tier */
+  /** Difficulty tier; {@link DEFAULT_DIFFICULTY} when Lua omits it */
   difficulty: Difficulty;
 }
 
@@ -84,7 +87,7 @@ function isSeed(value: unknown): value is number {
 
 function parseSession(value: unknown): GameSession | undefined {
   if (!isRecord(value)) return undefined;
-  const { id, game, seed, difficulty } = value;
+  const { id, game, seed, difficulty = DEFAULT_DIFFICULTY } = value;
   if (typeof id !== 'string' || !SESSION_ID_PATTERN.test(id)) return undefined;
   if (!isGameKind(game) || !isSeed(seed) || !isDifficulty(difficulty)) return undefined;
   return { id, game, seed, difficulty };

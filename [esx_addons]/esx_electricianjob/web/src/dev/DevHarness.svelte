@@ -4,7 +4,13 @@
    * round from the URL (`?game=wiring&seed=42&difficulty=2`) and offers a small toolbar to
    * roll new seeds. Never part of the production bundle.
    */
-  import { GAME_KINDS, MAX_SEED, type Difficulty, type GameKind } from '../lib/nui/messages';
+  import {
+    DEFAULT_DIFFICULTY,
+    GAME_KINDS,
+    MAX_SEED,
+    type Difficulty,
+    type GameKind,
+  } from '../lib/nui/messages';
   import { isInGame } from '../lib/nui/bridge';
   import { session } from '../lib/session.svelte';
 
@@ -22,7 +28,7 @@
   }
 
   function toDifficulty(value: string | null): Difficulty {
-    return value === '2' || value === '3' ? (Number(value) as Difficulty) : 1;
+    return value === '2' || value === '3' ? (Number(value) as Difficulty) : DEFAULT_DIFFICULTY;
   }
 
   function start(): void {

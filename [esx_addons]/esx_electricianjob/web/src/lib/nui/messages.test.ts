@@ -24,6 +24,14 @@ describe('parseNuiMessage', () => {
     expect(result).toEqual({ action: 'open', session: validSession });
   });
 
+  it('should fall back to the apprentice tier when the difficulty is missing', () => {
+    const session = { id: validSession.id, game: validSession.game, seed: validSession.seed };
+    expect(parseNuiMessage({ action: 'open', session })).toEqual({
+      action: 'open',
+      session: { ...session, difficulty: 1 },
+    });
+  });
+
   it.each([
     ['unknown action', { action: 'explode' }],
     ['non-object', 'open'],
@@ -33,6 +41,7 @@ describe('parseNuiMessage', () => {
     ['negative seed', { action: 'open', session: { ...validSession, seed: -1 } }],
     ['seed above 32 bit', { action: 'open', session: { ...validSession, seed: 2 ** 32 } }],
     ['difficulty out of range', { action: 'open', session: { ...validSession, difficulty: 4 } }],
+    ['null difficulty', { action: 'open', session: { ...validSession, difficulty: null } }],
     ['id with markup', { action: 'open', session: { ...validSession, id: '<img src=x>' } }],
     ['empty id', { action: 'open', session: { ...validSession, id: '' } }],
   ])('should reject %s', (_label: string, data: unknown) => {
