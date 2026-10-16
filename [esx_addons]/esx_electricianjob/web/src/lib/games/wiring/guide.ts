@@ -57,6 +57,8 @@ export interface ChecklistInput {
   taped: ReadonlySet<string>;
   /** Splices with their members and whether the nut is tight */
   splices: readonly { members: readonly string[]; tight: boolean }[];
+  /** The box has passed inspection */
+  passed: boolean;
 }
 
 /**
@@ -171,6 +173,6 @@ export function checklist(input: ChecklistInput): ChecklistStep[] {
 
   step('power-on', capped && input.breakerOn);
   if (puzzle.wallSwitch) step('switch', capped && input.breakerOn && input.lightSeen);
-  step('inspect', false);
+  step('inspect', input.passed);
   return steps;
 }

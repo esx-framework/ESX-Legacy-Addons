@@ -27,6 +27,7 @@ function input(puzzle: WiringPuzzle, overrides: Partial<ChecklistInput> = {}): C
     stripped: new Set(),
     taped: new Set(),
     splices: [],
+    passed: false,
     ...overrides,
   };
 }
@@ -92,6 +93,14 @@ describe('checklist', () => {
       'switch',
       'inspect',
     ]);
+  });
+
+  it('should tick the inspect step only once the box has passed', () => {
+    const puzzle = findPuzzle((p: WiringPuzzle): boolean => p.template === 'splice-through');
+    const inspectDone = (passed: boolean): boolean | undefined =>
+      checklist(input(puzzle, { passed })).find((step): boolean => step.id === 'inspect')?.done;
+    expect(inspectDone(false)).toBe(false);
+    expect(inspectDone(true)).toBe(true);
   });
 
   it('should count bundled conductors and tight nuts', () => {

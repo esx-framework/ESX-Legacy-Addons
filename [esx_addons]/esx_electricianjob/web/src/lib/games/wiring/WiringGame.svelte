@@ -227,6 +227,7 @@
           tight: splice.nut !== null && splice.twist >= 1,
         }),
       ),
+      passed: phase === 'passed',
     });
     updateCoach();
   }
@@ -503,8 +504,8 @@
     const issues: Issue[] = engine.inspect();
     const first: Issue | undefined = issues[0];
     if (!first) {
-      showToast(TOAST.passed);
       end('success');
+      syncHud();
       invalidate();
       return;
     }
