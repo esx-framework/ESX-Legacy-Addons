@@ -634,15 +634,14 @@ function Helpers.getTranslations()
     if not translations then
         translations = {}
 
-        -- Resolve against the full English key set so a partial community
-        -- translation can never drop keys. es_extended's Translate has no
-        -- per-key English fallback: a key missing from the active locale
-        -- returns a "Translation [xx][key] does not exist" placeholder, so we
-        -- fall back to the English string here.
+        -- UI strings are literal text, not string.format templates (for
+        -- example density_hint contains percentages). Locale files are
+        -- loaded by the manifest; read them directly with English fallback.
         local english = Locales and Locales["en"] or {}
+        local active = Locales and Locales[Config.Locale] or english
         for key in pairs(english) do
-            local value = Translate(key)
-            if type(value) ~= "string" or value:sub(1, 13) == "Translation [" then
+            local value = active[key]
+            if type(value) ~= "string" then
                 value = english[key]
             end
             translations[key] = value

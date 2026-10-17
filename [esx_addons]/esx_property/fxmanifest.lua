@@ -35,7 +35,8 @@ ui_page "client/html/copy.html"
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'config.lua',
-    'server/*.lua'
+    'server/storage.lua',
+    'server/main.lua'
 }
 
 client_scripts {
@@ -47,5 +48,6 @@ client_scripts {
 
 dependencies {
 	'esx_lib',
-	'es_extended'
+	'es_extended',
+    'oxmysql'
 }

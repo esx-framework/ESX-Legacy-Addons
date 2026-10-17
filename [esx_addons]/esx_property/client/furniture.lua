@@ -296,7 +296,7 @@ if Config.Furniture.Enabled then
                         xLib.callback('esx_property:editFurniture', false, function(response)
                             if response then
                                 DeleteEntity(CurrentlyEditing)
-                                ESX.ShowNotification(TranslateCap('edited_furni'), 'success')
+                                ESX.ShowNotification(TranslateCap('edited_furni', PropName), 'success')
                                 ESX.CloseContext()
                             else
                                 ESX.ShowNotification(TranslateCap('cannot_edit'), 'error')

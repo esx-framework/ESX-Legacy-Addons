@@ -54,6 +54,10 @@ local propertySchemaReady = false
 local propertyMigrationPending = true
 local PropertyLocks = {}
 local PendingPropertySales = {}
+local pendingVehicleStores = {}
+local storedVehiclePlateOwners = {}
+local indexedVehiclePlates = {}
+local updateVehiclePlateIndex
 
 local PropertyActionDistance = 6.0
 local PropertySaleOfferDuration = 30000
@@ -65,17 +69,78 @@ local propertyRaidLimiter = xLib.rateLimiter({
     staleMs = math.max(60000, PropertyRaidCooldown * 4),
 })
 
-local function SavePropertiesToDisk(Reason)
-    if Properties then
-        if not SaveResourceFile(GetCurrentResourceName(), 'properties.json', json.encode(Properties)) then
-            print('[esx_property] Could not save properties.json')
+local saveInProgress = false
+local refreshInProgress = false
+local refreshPending = false
+local saveRequested = false
+local saveRetryScheduled = false
+local lastSaveSucceeded = true
+local propertyStopping = false
+local dirtyProperties = {}
+local fullSaveRequested = false
+local propertyActionLimiter = xLib.rateLimiter({ capacity = 20, refill = 10, interval = 1000 })
+
+local function SavePropertiesToSQL(Reason, changesOnly)
+    if not propertySchemaReady then
+        return false
+    end
+
+    saveRequested = true
+    if not changesOnly then fullSaveRequested = true end
+    while refreshInProgress do
+        Wait(0)
+    end
+
+    if not propertySchemaReady then
+        return false
+    end
+
+    if saveInProgress then
+        while saveInProgress do
+            Wait(0)
         end
 
-        Log('Properties Saving', 11141375, {
-            { name = '**Reason**', value = Reason or 'Immediate save', inline = true },
-            { name = '**Property Count**', value = tostring(#Properties), inline = true },
-        }, 1)
+        return lastSaveSucceeded
     end
+
+    saveInProgress = true
+    repeat
+        saveRequested = false
+        local snapshot, full = dirtyProperties, fullSaveRequested
+        dirtyProperties, fullSaveRequested = {}, false
+        local ok, saved, err = pcall(PropertyStorage.save, Properties, not full and snapshot or nil)
+        lastSaveSucceeded = ok and saved == true
+        if not lastSaveSucceeded then
+            saveRequested = true
+            fullSaveRequested = fullSaveRequested or full
+            for id in pairs(snapshot) do dirtyProperties[id] = true end
+            print(('[esx_property] SQL save failed; changes remain pending: %s'):format(tostring(ok and err or saved)))
+            break
+        end
+    until not saveRequested
+
+    saveInProgress = false
+
+    if not lastSaveSucceeded then
+        if not saveRetryScheduled and not propertyStopping then
+            saveRetryScheduled = true
+            SetTimeout(5000, function()
+                saveRetryScheduled = false
+                if not propertyStopping then
+                    SavePropertiesToSQL('Retry pending SQL save', true)
+                end
+            end)
+        end
+
+        return false
+    end
+
+    Log('Properties Saving', 11141375, {
+        { name = '**Reason**', value = Reason or 'Immediate SQL save', inline = true },
+        { name = '**Property Count**', value = tostring(#Properties), inline = true },
+    }, 1)
+
+    return true
 end
 
 local function PropertyForPlayer(property, xPlayer)
@@ -123,7 +188,14 @@ end
 
 local saveScheduled = false
 
-local function SchedulePropertiesSave(reason)
+local function SchedulePropertiesSave(reason, propertyId)
+    saveRequested = true
+    if propertyId then dirtyProperties[propertyId] = true else fullSaveRequested = true end
+    3
+    if saveInProgress then
+        return
+    end
+
     if saveScheduled then
         return
     end
@@ -132,21 +204,21 @@ local function SchedulePropertiesSave(reason)
 
     SetTimeout(1000, function()
         saveScheduled = false
-        SavePropertiesToDisk(reason)
+        SavePropertiesToSQL(reason, true)
     end)
 end
 
 local function SyncPropertiesAndSave(Reason, propertyId)
+    updateVehiclePlateIndex(propertyId and Properties[propertyId] or nil)
     for _, xPlayer in pairs(ESX.GetExtendedPlayers()) do
         if propertyId then
             TriggerClientEvent('esx_property:syncProperty', xPlayer.source, propertyId, PropertyForPlayer(Properties[propertyId], xPlayer))
         else
-            -- Deletion shifts the legacy numeric property IDs; replace the snapshot.
             TriggerClientEvent('esx_property:syncProperties', xPlayer.source, PropertiesForPlayer(xPlayer))
         end
     end
 
-    SchedulePropertiesSave(Reason)
+    SchedulePropertiesSave(Reason, propertyId)
 end
 
 local function SyncFurniture(propertyId)
@@ -202,6 +274,27 @@ local function normalizePlate(plate)
         maxLength = 12,
         uppercase = false,
     })
+end
+
+updateVehiclePlateIndex = function(property)
+    if not property then
+        storedVehiclePlateOwners, indexedVehiclePlates = {}, {}
+        for _, item in pairs(Properties) do updateVehiclePlateIndex(item) end
+        return
+    end
+
+    for plate in pairs(indexedVehiclePlates[property] or {}) do
+        if storedVehiclePlateOwners[plate] == property then storedVehiclePlateOwners[plate] = nil end
+    end
+
+    local plates = {}
+
+    for _, item in pairs(property.garage and property.garage.StoredVehicles or {}) do
+        local plate = item.vehicle and normalizePlate(item.vehicle.plate)
+        if plate then plates[plate], storedVehiclePlateOwners[plate] = true, property end
+    end
+
+    indexedVehiclePlates[property] = plates
 end
 
 local function isNearCoords(source, coords, maxDistance)
@@ -303,6 +396,51 @@ local function validCoords(value)
     return (type(value) == 'table' or type(value) == 'vector3') and finite(value.x, 20000) and finite(value.y, 20000) and finite(value.z, 10000)
 end
 
+local function copyVehiclePayload(value)
+    local seen, entries, bytes = {}, 0, 0
+
+    local function visit(item, depth)
+        entries = entries + 1
+
+        if entries > 2048 or depth > 8 then return false end
+
+        local kind = type(item)
+
+        if kind == 'table' then
+            if seen[item] then return false end
+            seen[item] = true
+
+            for key, child in pairs(item) do
+                if (type(key) ~= 'string' and type(key) ~= 'number')
+                    or not visit(key, depth + 1) or not visit(child, depth + 1) then return false end
+            end
+
+            seen[item] = nil
+        elseif kind == 'string' then
+            bytes = bytes + #item + 5
+        elseif kind == 'number' then
+            if not finite(item, 9007199254740991) then return false end
+
+            bytes = bytes + 24
+        elseif kind == 'boolean' then
+            bytes = bytes + 5
+        else
+            return false
+        end
+
+        return bytes <= 32768
+    end
+
+    if not visit(value, 0) then return nil end
+
+    local ok, encoded = pcall(json.encode, value)
+    if not ok or #encoded > 32768 then return nil end
+
+    local decodedOk, decoded = pcall(json.decode, encoded)
+
+    return decodedOk and decoded or nil
+end
+
 local function registerPropertyCallback(name, handler)
     xLib.callback.registerCompat(name, function(playerId, cb, ...)
         local args = table.pack(...)
@@ -311,7 +449,7 @@ local function registerPropertyCallback(name, handler)
             return cb(tableResponses[name] and {} or false)
         end
 
-        if not propertySchemaReady or not ESX.GetPlayerFromId(playerId) then
+        if not propertySchemaReady or not lastSaveSucceeded or not ESX.GetPlayerFromId(playerId) or not propertyActionLimiter:consume(playerId) then
             return reject()
         end
 
@@ -339,12 +477,25 @@ local function registerPropertyCallback(name, handler)
                 return reject()
             end
 
+            if name == 'esx_property:buyFurniture' and (not validCoords(args[5]) or not finite(args[6], 360)) then
+                return reject()
+            end
+            if name == 'esx_property:editFurniture' and (not validCoords(args[3]) or not finite(args[4], 360)) then
+                return reject()
+            end
+            if name == 'esx_property:buyFurniture' then
+                args[5] = { x = args[5].x, y = args[5].y, z = args[5].z }
+            elseif name == 'esx_property:editFurniture' then
+                args[3] = { x = args[3].x, y = args[3].y, z = args[3].z }
+            end
+
             if name == 'esx_property:SetCCTVangle' then
                 local angles = args[2]
 
                 if type(angles) ~= 'table' or not validCoords(angles.rot) or not finite(angles.maxleft, 360) or not finite(angles.maxright, 360) then
                     return reject()
                 end
+                args[2] = { rot = { x = angles.rot.x, y = angles.rot.y, z = angles.rot.z }, maxleft = angles.maxleft, maxright = angles.maxright }
             end
 
             if name == 'esx_property:ChangePrice' and (not finite(args[2], 2147483647) or args[2] < 0 or args[2] % 1 ~= 0) then
@@ -363,6 +514,7 @@ local function registerPropertyCallback(name, handler)
                 if not validCoords(args[2]) then
                     return reject()
                 end
+                args[2] = { x = args[2].x, y = args[2].y, z = args[2].z }
             end
 
             if
@@ -388,6 +540,8 @@ local function isNearPropertyGarage(source, Property)
 end
 
 local function isVehicleAlreadyStored(Property, plate)
+    if storedVehiclePlateOwners[plate] then return true end
+
     if not Property or not Property.garage or not Property.garage.StoredVehicles then
         return false
     end
@@ -429,71 +583,101 @@ local function getPlayerVehicleForProps(source, vehicleProps)
     return vehicle
 end
 
-function PropertiesRefresh()
-    Properties = {}
+local function PrepareProperties(properties)
+    for id, property in ipairs(properties) do
+        assert(type(property.Name) == 'string' and type(property.Interior) == 'string'
+            and GetInteriorValues(property.Interior) and validCoords(property.Entrance)
+            and finite(property.Price, 2147483647) and property.Price >= 0, ('Invalid core data for property %d'):format(id))
 
-    local PropertiesList = LoadResourceFile(GetCurrentResourceName(), 'properties.json')
+        if property.Keys == nil then property.Keys = {} end
+        assert(type(property.Keys) == 'table', ('Invalid keys for property %d'):format(id))
 
-    if PropertiesList then
-        Properties = json.decode(PropertiesList)
-        Wait(10)
+        if property.Owner == nil then property.Owner = '' end
+        if property.Owned == nil then property.Owned = false end
+        if property.Locked == nil then property.Locked = false end
+        assert(type(property.Owner) == 'string' and type(property.Owned) == 'boolean' and type(property.Locked) == 'boolean',
+            ('Invalid ownership data for property %d'):format(id))
 
-        for i = 1, #Properties do
-            if not Properties[i].furniture then
-                Properties[i].furniture = {}
-            end
+        if property.furniture == nil then property.furniture = {} end
+        if property.cctv == nil then property.cctv = { enabled = false } end
+        if property.garage == nil then property.garage = { enabled = false } end
+        assert(type(property.garage) == 'table', ('Invalid garage for property %d'):format(id))
+        
+        if property.garage.StoredVehicles == nil then property.garage.StoredVehicles = {} end
+        assert(type(property.garage.StoredVehicles) == 'table', ('Invalid stored vehicles for property %d'):format(id))
+        property.setName = property.setName or ''
 
-            if not Properties[i].cctv then
-                Properties[i].cctv = { enabled = false }
-            end
-
-            if not Properties[i].garage then
-                Properties[i].garage = { enabled = false }
-            end
-
-            if not Properties[i].garage.StoredVehicles then
-                Properties[i].garage.StoredVehicles = {}
-            end
-
-            if not Properties[i].setName then
-                Properties[i].setName = ''
-            end
-
-            if not Properties[i].positions then
-                local Interior = GetInteriorValues(Properties[i].Interior)
-
-                Properties[i].positions = Interior.positions
-            end
-
-            Properties[i].plysinside = {}
-
-            if Config.OxInventory then
-                if Properties[i].Owned then
-                    exports.ox_inventory:RegisterStash('property-' .. i, Properties[i].Name, 15, 100000, Properties[i].Owner)
-                end
-            else
-                Properties[i].positions.Storage = nil
-            end
+        if not property.positions then
+            local interior = assert(GetInteriorValues(property.Interior), ('Invalid interior for property %d'):format(id))
+            property.positions = json.decode(json.encode(interior.positions))
         end
 
-        local Players = ESX.GetExtendedPlayers()
+        assert(type(property.positions) == 'table', ('Invalid positions for property %d'):format(id))
+        assert(type(property.furniture) == 'table', ('Invalid furniture for property %d'):format(id))
+        assert(type(property.cctv) == 'table', ('Invalid CCTV for property %d'):format(id))
 
-        Log('ESX-Property Loaded', 11141375, {
-            { name = 'Property Count', value = #Properties, inline = true },
-            {
-                name = 'OX Inventory',
-                value = Config.OxInventory and 'Enabled' or 'Disabled',
-                inline = true,
-            },
-        }, 1)
+        property.plysinside = {}
 
-        for _, xPlayer in pairs(Players) do
-            TriggerClientEvent('esx_property:syncProperties', xPlayer.source, PropertiesForPlayer(xPlayer), xPlayer.get('lastProperty'))
+        if not Config.OxInventory then
+            property.positions.Storage = nil
         end
-    else
-        Properties = {}
-        print('[^1ERROR^7]: ^5Properties.json^7 Not Found!')
     end
+
+    return properties
+end
+
+function PropertiesRefresh()
+    if refreshPending or next(PropertyLocks) then
+        return false
+    end
+
+    refreshPending = true
+
+    if propertySchemaReady and not SavePropertiesToSQL('Before properties refresh') then
+        refreshPending = false
+        return false
+    end
+
+    local previousSnapshot = json.encode(Properties)
+    refreshInProgress = true
+
+    local ok, nextProperties = pcall(function()
+        return PrepareProperties(PropertyStorage.load())
+    end)
+
+    refreshInProgress = false
+    refreshPending = false
+
+    if not ok then
+        propertySchemaReady = false
+        error(('Could not load SQL properties; current data was kept and writes were disabled: %s'):format(tostring(nextProperties)))
+    end
+
+    if propertySchemaReady and (saveRequested or previousSnapshot ~= json.encode(Properties)) then
+        return SavePropertiesToSQL('Changes made during properties refresh')
+    end
+
+    Properties = nextProperties
+    updateVehiclePlateIndex()
+
+    if Config.OxInventory then
+        for id, property in ipairs(Properties) do
+            if property.Owned then
+                exports.ox_inventory:RegisterStash('property-' .. id, property.Name, 15, 100000, property.Owner)
+            end
+        end
+    end
+
+    Log('ESX-Property Loaded', 11141375, {
+        { name = 'Property Count', value = #Properties, inline = true },
+        { name = 'OX Inventory', value = Config.OxInventory and 'Enabled' or 'Disabled', inline = true },
+    }, 1)
+
+    for _, xPlayer in pairs(ESX.GetExtendedPlayers()) do
+        TriggerClientEvent('esx_property:syncProperties', xPlayer.source, PropertiesForPlayer(xPlayer), xPlayer.get('lastProperty'))
+    end
+
+    return true
 end
 
 function IsPlayerAdmin(player, action)
@@ -521,18 +705,19 @@ end
 MySQL.ready(function()
     local ok, err = pcall(function()
         xLib.schema.ensureProperty()
+        PropertyStorage.initialize(PrepareProperties)
         PropertiesRefresh()
     end)
 
     propertyMigrationPending = false
 
     if not ok then
-        print(('[esx_property] 1.16.0 migration failed; properties are disabled: %s'):format(tostring(err)))
+        print(('[esx_property] SQL initialization failed; properties are disabled: %s'):format(tostring(err)))
         return
     end
 
     propertySchemaReady = true
-    print('[esx_property] 1.16.0 schema ready')
+    print('[esx_property] SQL storage ready')
 
     -- Check if datastore table exists before to insert values.
     if
@@ -936,6 +1121,10 @@ registerPropertyCallback('esx_property:buyFurniture', function(source, cb, Prope
         return cb(false)
     end
 
+    local furnitureCount = 0
+    for _ in pairs(Property.furniture or {}) do furnitureCount = furnitureCount + 1 end
+    if furnitureCount >= (Config.MaxFurniturePerProperty or 500) then return cb(false) end
+
     if getBankMoney(xPlayer) < Price then
         xPlayer.showNotification(TranslateCap('furni_cannot_afford'))
         return cb(false)
@@ -950,7 +1139,7 @@ registerPropertyCallback('esx_property:buyFurniture', function(source, cb, Prope
     Property.plysinside = Property.plysinside or {}
 
     local furniture = {
-        Name = PropName,
+        Name = FurnitureItem.name,
         Index = PropIndex,
         Catagory = PropCatagory,
         Pos = pos,
@@ -965,7 +1154,7 @@ registerPropertyCallback('esx_property:buyFurniture', function(source, cb, Prope
     end
 
     SyncFurniture(PropertyId)
-    SchedulePropertiesSave('Furniture bought')
+    SchedulePropertiesSave('Furniture bought', PropertyId)
 
     Log('Furniture Bought', 3640511, {
         { name = '**Property Name**', value = Property.Name, inline = true },
@@ -1168,7 +1357,9 @@ registerPropertyCallback('esx_property:SetCCTVangle', function(source, cb, Prope
         Properties[PropertyId].cctv.maxleft = angles.maxleft
         Properties[PropertyId].cctv.maxright = angles.maxright
         SyncPropertiesAndSave('Property CCTV angle changed', PropertyId)
+
         cb(true)
+
         Log('Property CCTV Angle Changed', 3640511, {
             { name = '**Property Name**', value = Properties[PropertyId].Name, inline = true },
             { name = '**Owner**', value = Properties[PropertyId].OwnerName, inline = true },
@@ -1213,6 +1404,7 @@ registerPropertyCallback('esx_property:CCTV', function(source, cb, PropertyId)
         coords = GetEntityCoords(GetPlayerPed(source)),
         bucket = GetPlayerRoutingBucket(source),
     }
+
     SetEntityCoords(GetPlayerPed(source), vector3(property.Entrance.x, property.Entrance.y, property.Entrance.z + 5.0))
     SetPlayerRoutingBucket(source, 0)
     cb(true)
@@ -1326,6 +1518,8 @@ end)
 registerPropertyCallback('esx_property:deleteProperty', function(source, cb, PropertyId)
     local xPlayer = ESX.GetPlayerFromId(source)
 
+    if next(PropertyLocks) then return cb(false) end
+
     if IsPlayerAdmin(source, 'DeleteProperty') then
         Log('Property Deleted', 16711680, {
             { name = '**Property Name**', value = Properties[PropertyId].Name, inline = true },
@@ -1432,7 +1626,7 @@ registerPropertyCallback('esx_property:RemoveAllfurniture', function(source, cb,
 
         Property.furniture = {}
         SyncFurniture(PropertyId)
-        SchedulePropertiesSave('Property furniture reset')
+        SchedulePropertiesSave('Property furniture reset', PropertyId)
     end
 
     Log('Property Furniture Reset', 16711680, {
@@ -1463,7 +1657,7 @@ registerPropertyCallback('esx_property:deleteFurniture', function(source, cb, Pr
         if Property.furniture[furnitureIndex] then
             Property.furniture[furnitureIndex] = nil
             SyncFurniture(PropertyId)
-            SchedulePropertiesSave('Property furniture deleted')
+            SchedulePropertiesSave('Property furniture deleted', PropertyId)
         end
 
         for i = 1, #Property.plysinside do
@@ -1501,7 +1695,7 @@ registerPropertyCallback('esx_property:editFurniture', function(source, cb, Prop
             Property.furniture[furnitureIndex].Pos = Pos
             Property.furniture[furnitureIndex].Heading = Heading
             SyncFurniture(PropertyId)
-            SchedulePropertiesSave('Property furniture edited')
+            SchedulePropertiesSave('Property furniture edited', PropertyId)
 
             for i = 1, #Property.plysinside do
                 TriggerClientEvent('esx_property:editFurniture', Property.plysinside[i], PropertyId, furnitureIndex, Pos, Heading)
@@ -1945,9 +2139,32 @@ registerPropertyCallback('esx_property:StoreVehicle', function(source, cb, Prope
         return cb(false)
     end
 
-    if isVehicleAlreadyStored(Property, VehicleProperties.plate) then
+    VehicleProperties = copyVehiclePayload(VehicleProperties)
+    if not VehicleProperties or type(VehicleProperties.DisplayName) ~= 'string' or #VehicleProperties.DisplayName > 128
+        or #(Property.garage.StoredVehicles or {}) >= (Config.MaxVehiclesPerProperty or 100) then
         return cb(false)
     end
+
+    if PropertyLocks[PropertyId] or pendingVehicleStores[VehicleProperties.plate] or isVehicleAlreadyStored(Property, VehicleProperties.plate) then
+        return cb(false)
+    end
+
+    local reservation = { player = source, cancelled = false }
+    pendingVehicleStores[VehicleProperties.plate] = reservation
+    PropertyLocks[PropertyId] = reservation
+
+    local function done(success)
+        if pendingVehicleStores[VehicleProperties.plate] == reservation then pendingVehicleStores[VehicleProperties.plate] = nil end
+        if PropertyLocks[PropertyId] == reservation then PropertyLocks[PropertyId] = nil end
+
+        cb(success)
+    end
+    SetTimeout(30000, function()
+        if pendingVehicleStores[VehicleProperties.plate] == reservation and not reservation.committing then
+            reservation.cancelled = true
+            done(false)
+        end
+    end)
 
     local function finishStore(owner)
         Properties[PropertyId].garage.StoredVehicles = Properties[PropertyId].garage.StoredVehicles or {}
@@ -1981,33 +2198,42 @@ registerPropertyCallback('esx_property:StoreVehicle', function(source, cb, Prope
 
     if Config.Garage.OwnedVehiclesOnly then
         MySQL.single('SELECT `owner`, `vehicle` FROM `owned_vehicles` WHERE `plate` = ?', { VehicleProperties.plate }, function(result)
+            local current = ESX.GetPlayerFromId(source)
+
+            if reservation.cancelled or not propertySchemaReady or not lastSaveSucceeded
+                or Properties[PropertyId] ~= Property or not current or current.identifier ~= xPlayer.identifier
+                or not hasPropertyAccess(current, Property) or not isNearPropertyGarage(source, Property)
+                or not getPlayerVehicleForProps(source, VehicleProperties) then return done(false) end
+
             if not result or not (result.owner == xPlayer.identifier or result.owner == Property.Owner or (Property.Keys and Property.Keys[result.owner])) then
-                return cb(false)
+                return done(false)
             end
 
-            local storedVehicle = result.vehicle and json.decode(result.vehicle)
+            local decoded, storedVehicle = pcall(json.decode, result.vehicle)
+            if not decoded or type(storedVehicle) ~= 'table' then return done(false) end
 
             if storedVehicle and tonumber(storedVehicle.model) and tonumber(storedVehicle.model) ~= tonumber(VehicleProperties.model) then
-                return cb(false)
+                return done(false)
             end
 
+            reservation.committing = true
             MySQL.update(
-                'UPDATE `owned_vehicles` SET `stored` = ? WHERE `plate` = ? AND `owner` = ?',
+                'UPDATE `owned_vehicles` SET `stored` = ? WHERE `plate` = ? AND `owner` = ? AND `stored` = 0',
                 { 1, VehicleProperties.plate, result.owner },
                 function(rowsChanged)
                     if rowsChanged and rowsChanged > 0 then
                         finishStore(result.owner)
-                        return cb(true)
+                        return done(true)
                     end
 
-                    cb(false)
+                    done(false)
                 end
             )
         end)
     else
         finishStore(xPlayer.identifier)
         MySQL.query(Config.Garage.MySQLquery, { 1, VehicleProperties.plate })
-        cb(true)
+        done(true)
     end
 end)
 
@@ -2154,7 +2380,7 @@ end
 -- Enter/leave Events
 
 RegisterNetEvent('esx_property:enter', function(PropertyId)
-    if not propertySchemaReady then
+    if not propertySchemaReady or not lastSaveSucceeded or not propertyActionLimiter:consume(source) then
         return
     end
 
@@ -2169,6 +2395,8 @@ RegisterNetEvent('esx_property:enter', function(PropertyId)
     if not xPlayer or not Property or not canEnterProperty(xPlayer, Property) then
         return
     end
+    
+    if isPlayerInsideProperty(player, Property) then return end
 
     if not isRestoringLastProperty(xPlayer, PropertyId) and not isNearCoords(player, Property.Entrance, 6.0) then
         return
@@ -2186,9 +2414,9 @@ RegisterNetEvent('esx_property:enter', function(PropertyId)
 
     TriggerClientEvent('esx_property:loadFurniture', player, PropertyId, Property.furniture or {})
 
-    local PropertyData = { id = PropertyId, coords = Property.Entrance } -- Save the property data to the table
+    local PropertyData = { id = PropertyId, coords = Property.Entrance }
 
-    MySQL.query('UPDATE `users` SET `last_property` = ? WHERE `identifier` = ?', { json.encode(PropertyData), xPlayer.identifier }) -- Save the property data to the database
+    MySQL.query('UPDATE `users` SET `last_property` = ? WHERE `identifier` = ?', { json.encode(PropertyData), xPlayer.identifier })
     xPlayer.set('lastProperty', PropertyData)
 
     if Interior.type == 'shell' then
@@ -2258,6 +2486,7 @@ RegisterNetEvent('esx_property:leave', function(PropertyId)
 end)
 
 RegisterNetEvent('esx_property:SetVehicleOut', function(PropertyId, VehIndex)
+    if not propertySchemaReady or not lastSaveSucceeded or not propertyActionLimiter:consume(source) then return end
     local player = source
     local xPlayer = ESX.GetPlayerFromId(player)
 
@@ -2270,6 +2499,7 @@ RegisterNetEvent('esx_property:SetVehicleOut', function(PropertyId, VehIndex)
 
     local Property = Properties[PropertyId]
 
+    if PropertyLocks[PropertyId] then return end
     if not hasPropertyAccess(xPlayer, Property) or not Property.garage or not Property.garage.enabled or not isNearPropertyGarage(player, Property) then
         return
     end
@@ -2302,6 +2532,10 @@ end)
 
 AddEventHandler('playerDropped', function()
     local source = source
+    propertyActionLimiter:reset(source)
+    for _, reservation in pairs(pendingVehicleStores) do
+        if reservation.player == source and not reservation.committing then reservation.cancelled = true end
+    end
 
     for token, offer in pairs(PendingPropertySales) do
         if offer.seller == source or offer.target == source then
@@ -2363,8 +2597,11 @@ RegisterNetEvent('esx_property:server:createProperty', function(Property)
     local xPlayer = ESX.GetPlayerFromId(source)
 
     if
-        not xPlayer
+        not propertySchemaReady
+        or not lastSaveSucceeded
+        or not xPlayer
         or not IsPlayerAdmin(source, 'CreateProperty')
+        or not propertyActionLimiter:consume(source)
         or type(Property) ~= 'table'
         or type(Property.garage) ~= 'table'
         or type(Property.cctv) ~= 'table'
@@ -2373,26 +2610,28 @@ RegisterNetEvent('esx_property:server:createProperty', function(Property)
         return
     end
 
+    if type(Property.interior) ~= 'string' then return end
     local Interior = GetInteriorValues(Property.interior)
     local Price = tonumber(Property.price)
 
     if
         not Interior
-        or not Price
-        or Price <= 0
+        or not finite(Price, 2147483647)
+        or Price <= 0 or Price % 1 ~= 0
         or type(Property.name) ~= 'string'
         or Property.name == ''
         or #Property.name > Config.MaxNameLength
-        or not tonumber(Property.entrance.x)
-        or not tonumber(Property.entrance.y)
-        or not tonumber(Property.entrance.z)
+        or Property.name:find('[%c]')
+        or type(Property.garage.enabled) ~= 'boolean'
+        or type(Property.cctv.enabled) ~= 'boolean'
+        or not validCoords(Property.entrance)
     then
         return
     end
 
     if
         Property.garage.enabled
-        and (not Property.garage.pos or not tonumber(Property.garage.pos.x) or not tonumber(Property.garage.pos.y) or not tonumber(Property.garage.pos.z))
+        and (not validCoords(Property.garage.pos) or not finite(Property.garage.heading, 360))
     then
         return
     end
@@ -2400,11 +2639,12 @@ RegisterNetEvent('esx_property:server:createProperty', function(Property)
     local garageData = Property.garage.enabled
             and {
                 enabled = true,
-                pos = Property.garage.pos,
+                pos = { x = Property.garage.pos.x, y = Property.garage.pos.y, z = Property.garage.pos.z },
                 Heading = Property.garage.heading,
                 StoredVehicles = {},
             }
         or { enabled = false }
+
     local ActualProperty = {
         Name = Property.name,
         setName = '',
@@ -2412,17 +2652,18 @@ RegisterNetEvent('esx_property:server:createProperty', function(Property)
         furniture = {},
         plysinside = {},
         Interior = Property.interior,
-        Entrance = Property.entrance,
+        Entrance = { x = Property.entrance.x, y = Property.entrance.y, z = Property.entrance.z },
         Owner = '',
         Keys = {},
-        positions = Interior.positions,
-        cctv = Property.cctv,
+        positions = json.decode(json.encode(Interior.positions)),
+        cctv = { enabled = Property.cctv.enabled },
         garage = garageData,
         Owned = false,
         Locked = false,
     }
 
     Properties[#Properties + 1] = ActualProperty
+
     Log('Property Created', 65280, {
         { name = '**Admin**', value = xPlayer.getName(), inline = true },
         { name = '**Name**', value = Property.name, inline = true },
@@ -2444,10 +2685,11 @@ RegisterNetEvent('esx_property:server:createProperty', function(Property)
             inline = true,
         },
     }, 1)
+
     SyncPropertiesAndSave('Property created', #Properties)
 end)
 
--- Json File Saving
+-- SQL persistence
 
 --- Save Properties On Server Scheduled Restart
 AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)
@@ -2460,7 +2702,7 @@ AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)
 end)
 
 function PropertySave(Reason)
-    SavePropertiesToDisk(Reason)
+    return SavePropertiesToSQL(Reason)
 end
 
 --- Save Properties On Server Stop/Restart
@@ -2472,17 +2714,17 @@ end)
 
 AddEventHandler('onResourceStop', function(ResourceName)
     if ResourceName == GetCurrentResourceName() then
+        propertyStopping = true
         PropertySave(TranslateCap('resource_stop'))
     end
 end)
 
 AddEventHandler('onServerResourceStop', function(ResourceName)
     if ResourceName == GetCurrentResourceName() then
+        propertyStopping = true
         PropertySave(TranslateCap('resource_stop'))
     end
 end)
-
--- Save Properties every x Minutes
 
 CreateThread(function()
     while true do
