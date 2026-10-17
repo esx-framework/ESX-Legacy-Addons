@@ -33,6 +33,10 @@ local serverEnvironment = {
     minute = math.floor(tonumber(serverManagementConfig.DefaultMinute) or 0),
     blackout = serverManagementConfig.DefaultBlackout == true,
     pvp = serverManagementConfig.DefaultPvp ~= false,
+    densityEnabled = false,
+    pedDensity = 1.0,
+    vehicleDensity = 1.0,
+    randomVehicleDensity = 1.0,
 }
 
 for group, allowed in pairs(Config.AllowedGroups) do
@@ -235,7 +239,92 @@ function Helpers.getServerEnvironment()
         minute = serverEnvironment.minute,
         blackout = serverEnvironment.blackout,
         pvp = serverEnvironment.pvp,
+        densityEnabled = serverEnvironment.densityEnabled,
+        pedDensity = serverEnvironment.pedDensity,
+        vehicleDensity = serverEnvironment.vehicleDensity,
+        randomVehicleDensity = serverEnvironment.randomVehicleDensity,
     }
+end
+
+local densityStorageKey = "populationDensity:v1"
+
+local function setPopulationDensity(enabled, data, persist)
+    if type(enabled) ~= "boolean" then
+        return false, "Invalid density override state."
+    end
+
+    local density = {}
+    if enabled then
+        if type(data) ~= "table" then
+            return false, "Invalid population density."
+        end
+        for _, key in ipairs({ "pedDensity", "vehicleDensity", "randomVehicleDensity" }) do
+            local value = data[key]
+            if type(value) ~= "number" or value ~= value or value < 0 or value > 1 then
+                return false, "Density values must be numbers between 0 and 1."
+            end
+            density[key] = value
+        end
+    end
+
+    if persist then
+        local saved = { version = 1, enabled = enabled }
+        for key, value in pairs(density) do
+            saved[key] = value
+        end
+        -- The regular setter is synchronous. Persist before publishing so a
+        -- failed write is reported instead of presenting a temporary success.
+        local ok, err = pcall(function()
+            local encoded = json.encode(saved)
+            SetResourceKvp(densityStorageKey, encoded)
+            assert(GetResourceKvpString(densityStorageKey) == encoded, "KVP write verification failed")
+        end)
+        if not ok then
+            print(("[esx-adminmenu] Could not persist population density: %s"):format(tostring(err)))
+            return false, "Could not save population density. Please try again."
+        end
+    end
+
+    serverEnvironment.densityEnabled = enabled
+    if enabled then
+        for key, value in pairs(density) do
+            serverEnvironment[key] = value
+        end
+    end
+
+    GlobalState["esx:populationDensity"] = enabled and density or false
+    return true
+end
+
+function Helpers.setPopulationDensity(enabled, data)
+    return setPopulationDensity(enabled, data, true)
+end
+
+local densityRestored = false
+local densityReadOk, savedDensity = pcall(GetResourceKvpString, densityStorageKey)
+if not densityReadOk then
+    print(("[esx-adminmenu] Could not read saved population density: %s"):format(tostring(savedDensity)))
+elseif savedDensity ~= nil then
+    local decodedOk, saved = pcall(json.decode, savedDensity)
+    local err = "Invalid saved population density format or version."
+    if decodedOk and type(saved) == "table" and saved.version == 1 then
+        densityRestored, err = setPopulationDensity(saved.enabled, saved, false)
+    end
+    if not densityRestored then
+        print(("[esx-adminmenu] Ignoring invalid saved population density: %s"):format(tostring(err)))
+    end
+end
+
+if not densityRestored then
+    if type(serverManagementConfig.DefaultDensity) == "table" then
+        local ok, err = setPopulationDensity(true, serverManagementConfig.DefaultDensity, false)
+        if not ok then
+            print(("[esx-adminmenu] Invalid DefaultDensity: %s"):format(err))
+            setPopulationDensity(false, nil, false)
+        end
+    else
+        setPopulationDensity(false, nil, false)
+    end
 end
 
 function Helpers.getServerData()
@@ -545,15 +634,14 @@ function Helpers.getTranslations()
     if not translations then
         translations = {}
 
-        -- Resolve against the full English key set so a partial community
-        -- translation can never drop keys. es_extended's Translate has no
-        -- per-key English fallback: a key missing from the active locale
-        -- returns a "Translation [xx][key] does not exist" placeholder, so we
-        -- fall back to the English string here.
+        -- UI strings are literal text, not string.format templates (for
+        -- example density_hint contains percentages). Locale files are
+        -- loaded by the manifest; read them directly with English fallback.
         local english = Locales and Locales["en"] or {}
+        local active = Locales and Locales[Config.Locale] or english
         for key in pairs(english) do
-            local value = Translate(key)
-            if type(value) ~= "string" or value:sub(1, 13) == "Translation [" then
+            local value = active[key]
+            if type(value) ~= "string" then
                 value = english[key]
             end
             translations[key] = value

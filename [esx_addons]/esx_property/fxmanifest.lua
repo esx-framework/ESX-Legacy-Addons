@@ -26,7 +26,7 @@ lua54 'yes'
 author 'ESX-Framework'
 description 'Allows players to buy/sell houses, aswell as furnish them'
 version '2.0'
-legacyversion '1.16.0'
+legacyversion '1.16.2'
 
 shared_scripts { '@esx_lib/imports.lua', '@es_extended/imports.lua', '@es_extended/locale.lua', 'locales/*.lua' }
 file "client/html/copy.html"
@@ -35,7 +35,8 @@ ui_page "client/html/copy.html"
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'config.lua',
-    'server/*.lua'
+    'server/storage.lua',
+    'server/main.lua'
 }
 
 client_scripts {
@@ -47,5 +48,6 @@ client_scripts {
 
 dependencies {
 	'esx_lib',
-	'es_extended'
+	'es_extended',
+    'oxmysql'
 }

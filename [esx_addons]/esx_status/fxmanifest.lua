@@ -9,7 +9,7 @@ author 'ESX-Framework'
 description 'Handles the overall status system for Hunger, Thrist and others'
 
 version '1.1'
-legacyversion '1.16.0'
+legacyversion '1.16.2'
 
 lua54 'yes'
 

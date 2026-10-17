@@ -16,6 +16,10 @@ const initialState: ServerState = {
 		minute: 0,
 		blackout: false,
 		pvp: true,
+		densityEnabled: false,
+		pedDensity: 1,
+		vehicleDensity: 1,
+		randomVehicleDensity: 1,
 	},
 };
 
@@ -29,6 +33,10 @@ export class ServerStore {
 	minute = $state(initialState.environment?.minute ?? 0);
 	blackout = $state(initialState.environment?.blackout ?? false);
 	pvp = $state(initialState.environment?.pvp ?? true);
+	densityEnabled = $state(initialState.environment?.densityEnabled ?? false);
+	pedDensity = $state(initialState.environment?.pedDensity ?? 1);
+	vehicleDensity = $state(initialState.environment?.vehicleDensity ?? 1);
+	randomVehicleDensity = $state(initialState.environment?.randomVehicleDensity ?? 1);
 
 	set(state: ServerState) {
 		this.currentPlayers = state.currentPlayers;
@@ -46,6 +54,10 @@ export class ServerStore {
 		this.minute = environment.minute ?? this.minute;
 		this.blackout = environment.blackout ?? this.blackout;
 		this.pvp = environment.pvp ?? this.pvp;
+		this.densityEnabled = environment.densityEnabled ?? this.densityEnabled;
+		this.pedDensity = environment.pedDensity ?? this.pedDensity;
+		this.vehicleDensity = environment.vehicleDensity ?? this.vehicleDensity;
+		this.randomVehicleDensity = environment.randomVehicleDensity ?? this.randomVehicleDensity;
 	}
 }
 

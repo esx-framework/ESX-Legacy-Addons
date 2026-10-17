@@ -9,7 +9,7 @@ author 'ESX-Framework'
 description 'Allows Players to RP as Police Officers (cars, outfits, handcuffing etc)'
 lua54 'yes'
 version '1.0.2'
-legacyversion '1.16.0'
+legacyversion '1.16.2'
 
 shared_scripts {
     '@esx_lib/imports.lua',

@@ -108,7 +108,7 @@ Vehicles:
 Server management:
 
 - `serverManagement` - general server management access.
-- `serverEnvironment` - weather, time, blackout, and PvP toggles.
+- `serverEnvironment` - weather, time, population density, blackout, and PvP toggles.
 - `serverPlayerModeration` - freeze/unfreeze all, bring all, revive all.
 - `serverPlayerDestructive` - kick all and kill all.
 - `serverCleanup` - delete world vehicles, peds, and objects.
@@ -175,6 +175,54 @@ By default, `Config.Revive.Events` triggers:
 ```
 
 That event is fired from the server, matching the normal ESX ambulance job command style. A native fallback can also run after a short delay.
+
+## Population Density
+
+Server Management > Environment includes three 0–100% population controls:
+
+- Pedestrian Density controls street pedestrians and indoor/outdoor scenario pedestrians.
+- Vehicle Density controls ambient vehicles and parked vehicles.
+- Random Traffic Density controls randomly generated traffic.
+
+Apply Density uses the existing `serverManagement` and `serverEnvironment`
+permissions and admin action log. A server-owned `GlobalState["esx:populationDensity"]`
+snapshot synchronizes the values for all players, including late joiners.
+Other open admin dashboards also receive updated density values.
+
+This feature requires the matching esx_core update to
+`es_extended/client/modules/adjustments/world.lua`. It uses es_extended's existing
+per-frame population loop, avoiding two resources competing to set the same
+natives. Deploy that core file together with this menu update. Existing scenario
+type/dispatch restrictions and scripts which create their own NPCs remain in effect.
+
+Admin density changes are saved automatically in the server-side FiveM resource
+KVP key `populationDensity:v1` before they are applied. Restarting the resource
+or server restores the last saved override and republishes it for all players.
+There is no manual SQL import, configuration edit or separate save button.
+
+`Config.ServerManagement.DefaultDensity` is used only when no valid saved choice
+exists. Its default value of `false` preserves the configured `Config.Multipliers`
+until an admin enables an override. Optionally configure the initial values:
+
+```lua
+DefaultDensity = { pedDensity = 0.5, vehicleDensity = 0.5, randomVehicleDensity = 0.25 },
+```
+
+Restore Server Defaults saves an explicit disabled override and returns to
+es_extended's current configuration, including after restarts. Stopping this
+resource clears the live override only; the saved choice is kept and restored
+when the resource starts again. Invalid saved data is reported and falls back to
+`DefaultDensity` without overwriting the stored value. A failed save is reported
+to the admin and does not change the live values.
+
+KVP storage belongs to the resource name and server data directory. Preserve the
+server's KVP database in backups and when moving hosts; renaming the resource or
+using a fresh server data directory starts with no saved choice. See the
+[FiveM server KVP configuration](https://docs.fivem.net/docs/server-manual/server-commands/#sv_kvsname-name).
+This persistence covers population density; other environment controls retain
+their existing behaviour.
+
+Density affects new population, without deleting existing entities or players.
 
 ## Web Development
 

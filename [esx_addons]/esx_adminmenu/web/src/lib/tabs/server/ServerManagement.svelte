@@ -90,6 +90,15 @@
 		void action("pvp", { enabled: !server.pvp });
 	}
 
+	function applyDensity() {
+		void action("density", {
+			enabled: true,
+			pedDensity: server.pedDensity,
+			vehicleDensity: server.vehicleDensity,
+			randomVehicleDensity: server.randomVehicleDensity,
+		});
+	}
+
 	async function lookupRadioPlayers() {
 		if (radioLoading || radioChannel <= 0) return;
 
@@ -172,7 +181,7 @@
 	<section class="management-section">
 		<div class="section-title">
 			<h3>Environment</h3>
-			<span>Weather, time, blackout, and PvP.</span>
+			<span>Weather, time, population density, blackout, and PvP.</span>
 		</div>
 		<div class="control-row">
 			<label class="field">
@@ -191,6 +200,31 @@
 			<button type="button" disabled={busy !== null} onclick={() => action("time", { hour: server.hour, minute: server.minute })}>Apply Time</button>
 			<button type="button" class:active={server.blackout} disabled={busy !== null} onclick={toggleBlackout}>Toggle Blackout</button>
 			<button type="button" class:active={server.pvp} disabled={busy !== null} onclick={togglePvp}>Toggle PvP</button>
+		</div>
+		<div class="population-controls">
+			<div class="density-heading">
+				<strong>{t("population_density", "Population Density")}</strong>
+				<span>{server.densityEnabled ? t("density_override_active", "Override active") : t("density_server_defaults", "Using server defaults")}</span>
+			</div>
+			<div class="density-grid">
+				<label class="field density-field">
+					<span>{t("ped_density", "Pedestrian Density")} <span class="density-value" aria-hidden="true">{Math.round(server.pedDensity * 100)}%</span></span>
+					<input aria-label={t("ped_density", "Pedestrian Density")} type="range" min="0" max="1" step="0.05" bind:value={server.pedDensity} disabled={busy !== null} />
+				</label>
+				<label class="field density-field">
+					<span>{t("vehicle_density", "Vehicle Density")} <span class="density-value" aria-hidden="true">{Math.round(server.vehicleDensity * 100)}%</span></span>
+					<input aria-label={t("vehicle_density", "Vehicle Density")} type="range" min="0" max="1" step="0.05" bind:value={server.vehicleDensity} disabled={busy !== null} />
+				</label>
+				<label class="field density-field">
+					<span>{t("random_vehicle_density", "Random Traffic Density")} <span class="density-value" aria-hidden="true">{Math.round(server.randomVehicleDensity * 100)}%</span></span>
+					<input aria-label={t("random_vehicle_density", "Random Traffic Density")} type="range" min="0" max="1" step="0.05" bind:value={server.randomVehicleDensity} disabled={busy !== null} />
+				</label>
+			</div>
+			<p class="density-hint">{t("density_hint", "0% disables new population; 100% uses normal density. Applies to everyone, including players joining later.")}</p>
+			<div class="density-actions">
+				<button type="button" class="primary-action" disabled={busy !== null} onclick={applyDensity}>{t("apply_density", "Apply Density")}</button>
+				<button type="button" disabled={busy !== null || !server.densityEnabled} onclick={() => action("density", { enabled: false })}>{t("restore_density", "Restore Server Defaults")}</button>
+			</div>
 		</div>
 	</section>
 
@@ -466,6 +500,59 @@
 		grid-template-columns: minmax(20vh, 2fr) minmax(8vh, 0.7fr) minmax(12vh, 1fr) minmax(9vh, 0.8fr) minmax(10vh, 1fr);
 	}
 
+	.population-controls {
+		grid-column: 2;
+		display: grid;
+		gap: 0.7vh;
+		padding-top: 0.7vh;
+		border-top: 0.1vh solid #2E2E2C;
+	}
+
+	.density-heading,
+	.density-field > span {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.8vh;
+	}
+
+	.density-heading strong {
+		font-size: 1.12vh;
+		font-weight: 500;
+	}
+
+	.density-heading > span,
+	.density-hint {
+		margin: 0;
+		color: rgba(242, 242, 242, 0.54);
+		font-size: 1vh;
+		line-height: 1.4;
+	}
+
+	.density-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1.2vh;
+	}
+
+	.density-value {
+		color: #FB9B04;
+	}
+
+	.density-field input {
+		height: 2.2vh;
+		padding: 0;
+		accent-color: #FB9B04;
+	}
+
+	.density-actions {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.7vh;
+		max-width: 42vh;
+		justify-self: end;
+		width: 100%;
+	}
+
 	.radio-panel {
 		display: grid;
 		gap: 0.8vh;
@@ -636,6 +723,14 @@
 	}
 
 	@media (max-width: 1200px) {
+		.population-controls {
+			grid-column: 1;
+		}
+
+		.density-grid {
+			grid-template-columns: repeat(auto-fit, minmax(13vh, 1fr));
+		}
+
 		.management-header,
 		.management-section {
 			grid-template-columns: 1fr;

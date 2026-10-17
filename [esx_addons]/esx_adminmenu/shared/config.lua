@@ -253,6 +253,10 @@ Config.ServerManagement = {
 	DefaultMinute = 0,
 	DefaultBlackout = false,
 	DefaultPvp = true,
+	-- Used only when no valid saved admin density exists. Admin changes persist across restarts.
+	-- false keeps es_extended's configured multipliers until an admin applies an override.
+	-- Or set { pedDensity = 0.5, vehicleDensity = 0.5, randomVehicleDensity = 0.5 }.
+	DefaultDensity = false,
 	WeatherTypes = {
 		CLEAR = true,
 		EXTRASUNNY = true,
@@ -268,6 +272,7 @@ Config.ServerManagement = {
 		time = "serverEnvironment",
 		blackout = "serverEnvironment",
 		pvp = "serverEnvironment",
+		density = "serverEnvironment",
 		freezeAll = "serverPlayerModeration",
 		unfreezeAll = "serverPlayerModeration",
 		bringAll = "serverPlayerModeration",
