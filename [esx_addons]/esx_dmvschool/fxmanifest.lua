@@ -8,7 +8,7 @@ game 'gta5'
 author 'ESX-Framework'
 description 'A DMV School for players to get their drivers license'
 version '1.0'
-legacyversion '1.16.0'
+legacyversion '1.16.2'
 
 lua54 'yes'
 

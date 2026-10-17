@@ -8,7 +8,7 @@ game 'gta5'
 author 'ESX-Framework'
 description 'Adds the ability to customise your clothing'
 version '1.0'
-legacyversion '1.16.0'
+legacyversion '1.16.2'
 
 lua54 'yes'
 

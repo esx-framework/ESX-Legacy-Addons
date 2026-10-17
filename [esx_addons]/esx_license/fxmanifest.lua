@@ -9,7 +9,7 @@ author 'ESX-Framework'
 description 'Handles logic for player licenses, such as: Driving License, gun license and more'
 lua54 'yes'
 version '1.0'
-legacyversion '1.16.0'
+legacyversion '1.16.2'
 
 shared_script '@esx_lib/imports.lua'
 server_scripts {

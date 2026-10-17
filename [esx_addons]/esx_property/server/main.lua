@@ -191,7 +191,6 @@ local saveScheduled = false
 local function SchedulePropertiesSave(reason, propertyId)
     saveRequested = true
     if propertyId then dirtyProperties[propertyId] = true else fullSaveRequested = true end
-    3
     if saveInProgress then
         return
     end
