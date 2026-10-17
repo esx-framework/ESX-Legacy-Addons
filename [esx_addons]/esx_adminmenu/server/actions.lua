@@ -935,6 +935,18 @@ regServer('pvp', function(_, payload)
     return withServerData({ success = true })
 end)
 
+regServer('density', function(_, payload)
+    if type(payload) ~= 'table' then
+        return { success = false, err = 'Invalid population density.' }
+    end
+
+    local ok, err = Helpers.setPopulationDensity(payload.enabled, payload)
+    if not ok then
+        return { success = false, err = err }
+    end
+    return withServerData({ success = true })
+end)
+
 regServer('freezeAll', function()
     TriggerClientEvent('esx-adminmenu:client:setFrozen', -1, true)
     return { success = true }

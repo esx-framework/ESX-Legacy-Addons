@@ -131,6 +131,12 @@ const ACTIONS: Record<string, { category: LogCategory; build: Builder }> = {
 	},
 	blackout: { category: "server", build: (p) => (bool(p.enabled) ? "turned the blackout on" : "turned the blackout off") },
 	pvp: { category: "server", build: (p) => (bool(p.enabled) ? "enabled PvP" : "disabled PvP") },
+	density: {
+		category: "server",
+		build: (p) => bool(p.enabled)
+			? `set population density to pedestrians ${num(Number(p.pedDensity) * 100)}%, vehicles ${num(Number(p.vehicleDensity) * 100)}%, random traffic ${num(Number(p.randomVehicleDensity) * 100)}%`
+			: "restored the configured population density",
+	},
 	freezeAll: { category: "server", build: () => "froze every player" },
 	unfreezeAll: { category: "server", build: () => "unfroze every player" },
 	bringAll: { category: "server", build: () => "teleported every player to them" },
@@ -219,6 +225,9 @@ const DETAIL_LABELS: Record<string, string> = {
 	permission: "Permission",
 	trollAction: "Troll action",
 	weather: "Weather",
+	pedDensity: "Pedestrian density",
+	vehicleDensity: "Vehicle density",
+	randomVehicleDensity: "Random traffic density",
 	hour: "Hour",
 	minute: "Minute",
 	message: "Message",

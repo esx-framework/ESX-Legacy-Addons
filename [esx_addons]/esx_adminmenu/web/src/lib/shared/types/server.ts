@@ -9,6 +9,10 @@ export interface ServerEnvironmentState {
   minute: number;
   blackout: boolean;
   pvp: boolean;
+  densityEnabled: boolean;
+  pedDensity: number;
+  vehicleDensity: number;
+  randomVehicleDensity: number;
 }
 
 export interface ServerState {

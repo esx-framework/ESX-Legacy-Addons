@@ -8,7 +8,7 @@ lua54 'yes'
 author 'ESX-Framework'
 description 'Allows players to harvest and sell marijuana'
 version '1.0.1'
-legacyversion '1.16.0'
+legacyversion '1.16.2'
 
 shared_script '@es_extended/imports.lua'
 

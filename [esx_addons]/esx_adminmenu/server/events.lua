@@ -48,3 +48,9 @@ end)
 AddEventHandler("playerDropped", function()
 	Helpers.addRecentPlayer(source)
 end)
+
+AddEventHandler("onResourceStop", function(resource)
+    if resource == GetCurrentResourceName() then
+        GlobalState["esx:populationDensity"] = false
+    end
+end)

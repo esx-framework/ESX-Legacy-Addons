@@ -9,7 +9,7 @@ author 'ESX-Framework'
 description 'Adds a Hunger & Thirst system'
 lua54 'yes'
 version '1.0'
-legacyversion '1.16.0'
+legacyversion '1.16.2'
 
 shared_script '@es_extended/imports.lua'
 

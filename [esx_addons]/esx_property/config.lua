@@ -11,7 +11,9 @@ Config.OwnedBlips = true -- Add blips for Owned Properties
 --------------------- General Settings ---------------------------------
 Config.Locale = GetConvar('esx:locale', 'en')
 Config.Shells = false -- Enable/Disable Shell Interiors Default: false
-Config.SaveInterval = 5 -- Interval in Minutes to Save Properties
+Config.SaveInterval = 5 -- Fallback SQL save interval in minutes, changes are also saved after a short debounce.
+Config.MaxFurniturePerProperty = 500 -- Limits new furniture purchases, existing furniture is never removed by this limit.
+Config.MaxVehiclesPerProperty = 100 -- Limits new garage deposits, existing stored vehicles are kept.
 Config.CanAlwaysExit = true -- Disabling this allows players to be locked in
 Config.OwnerCanAlwaysEnter = true -- Disabling this means the owner can't enter the property unless door is unlocked
 Config.MaxNameLength = 20 -- Max Name Length for Owned Properties Default: 20
