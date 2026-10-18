@@ -4,6 +4,7 @@
    * onto it; the controller talks to Lua.
    */
   import PaymentDialog from './components/PaymentDialog.svelte';
+  import { sounds } from './lib/audio/sounds';
   import { onNuiMessage } from './lib/nui/bridge';
   import type { NuiMessage } from './lib/nui/messages';
   import { controller } from './lib/payment/controller.svelte';
@@ -52,6 +53,8 @@
     onNuiMessage((message: NuiMessage): void => controller.handle(message)),
   );
   $effect((): (() => void) => uiScale.track());
+  // Decodes the cues up front, so the first one is not lost to loading.
+  $effect((): void => void sounds.load());
 </script>
 
 <svelte:window onkeydown={handleKeydown} onkeyup={handleKeyup} />

@@ -114,6 +114,16 @@ describe('parseNuiMessage', (): void => {
     expect(message?.action === 'open' && message.closeDelay).toBe(expected);
   });
 
+  it.each([
+    [0.4, 0.4],
+    [0, 0],
+    [1.5, undefined],
+    [-0.1, undefined],
+  ])('should read a volume of %s as %s', (volume: number, expected?: number): void => {
+    const message = parseNuiMessage({ action: 'open', payment, volume });
+    expect(message?.action === 'open' && message.volume).toBe(expected);
+  });
+
   it('should accept a result and drop its invalid fields', (): void => {
     expect(
       parseNuiMessage({

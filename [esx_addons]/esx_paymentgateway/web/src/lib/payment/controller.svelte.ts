@@ -1,11 +1,12 @@
 /**
  * Runs a payment between Lua and the dialog: takes the messages Lua sends, sends the player's
- * choices back and owns the timers around them (the shortest working time of the pay button,
- * the wait for the server's answer and the receipt's own close).
+ * choices back, plays the cues that go with them and owns the timers around them (the shortest
+ * working time of the pay button, the wait for the server's answer and the receipt's own close).
  *
  * @see controller
  */
 
+import { DEFAULT_VOLUME, sounds } from '../audio/sounds';
 import { postNui } from '../nui/bridge';
 import type { NuiMessage } from '../nui/messages';
 import { applyTheme } from '../ui/theme';
@@ -43,14 +44,22 @@ class PaymentController {
         hold.cancel();
         this.logo = applyTheme(message.theme);
         this.closeDelay = message.closeDelay ?? DEFAULT_CLOSE_DELAY;
+        sounds.setVolume(message.volume ?? DEFAULT_VOLUME);
         flow.open(message);
+        sounds.play('open');
         break;
       case 'result': {
         const { result } = message;
         clearTimeout(this.answerTimer);
         const wait = Math.max(0, this.payingSince + MIN_PAYING_MS - Date.now());
         this.answerTimer = setTimeout((): void => {
-          if (!flow.answer(result) || flow.phase !== 'paid' || this.closeDelay === 0) return;
+          if (!flow.answer(result)) return;
+          if (flow.phase !== 'paid') {
+            sounds.play('refuse');
+            return;
+          }
+          sounds.play(flow.receipt?.method === 'cash' ? 'cash' : 'card');
+          if (this.closeDelay === 0) return;
           this.closeTimer = setTimeout((): void => void this.close(), this.closeDelay);
         }, wait);
         break;
@@ -70,7 +79,8 @@ class PaymentController {
    * @param method - Method the player picked
    */
   choose(method: PaymentMethod): void {
-    flow.choose(method);
+    const changed = flow.method !== method;
+    if (flow.choose(method) && changed) sounds.play('select');
   }
 
   /** Pays with the chosen method and waits for the server's answer. */
@@ -78,8 +88,11 @@ class PaymentController {
     const body = flow.pay();
     if (!body) return;
     this.payingSince = Date.now();
+    sounds.play('press');
     const giveUp = (): void => {
-      flow.answer({ id: body.id, ok: false, message: flow.labels.unreachable });
+      if (flow.answer({ id: body.id, ok: false, message: flow.labels.unreachable })) {
+        sounds.play('refuse');
+      }
     };
     this.answerTimer = setTimeout(giveUp, ANSWER_TIMEOUT_MS);
     try {
@@ -97,6 +110,7 @@ class PaymentController {
     this.clearTimers();
     const body = flow.close();
     if (!body) return;
+    sounds.play('close');
     try {
       await postNui('close', body);
     } catch (err: unknown) {

@@ -52,6 +52,8 @@ export interface OpenMessage {
   locale?: string;
   /** Milliseconds the receipt stays before the dialog closes itself, 0 to wait for Done */
   closeDelay?: number;
+  /** Sound volume from the resource config, 0 silent to 1 full; the page default when left out */
+  volume?: number;
 }
 
 /** The server's answer to the method the player chose. */
@@ -165,6 +167,8 @@ export function parseNuiMessage(data: unknown): NuiMessage | undefined {
       if (typeof closeDelay === 'number' && closeDelay >= 0 && closeDelay <= MAX_CLOSE_DELAY) {
         message.closeDelay = Math.round(closeDelay);
       }
+      const { volume } = data;
+      if (typeof volume === 'number' && volume >= 0 && volume <= 1) message.volume = volume;
       return message;
     }
     case 'result': {
