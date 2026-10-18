@@ -69,3 +69,33 @@ export function fill(template: string, values: Readonly<Record<string, string>>)
     (match: string, name: string): string => values[name] ?? match,
   );
 }
+
+/** A piece of a filled text: plain text, or a value that was put in for a placeholder. */
+export interface TextPart {
+  /** The text of the piece */
+  text: string;
+  /** Whether the piece is a filled-in value, which the dialog can set apart */
+  value: boolean;
+}
+
+/**
+ * Fills `{name}` placeholders like {@link fill}, but keeps the filled-in values as their own
+ * pieces, so the dialog can set them apart, e.g. in bold.
+ *
+ * @param template - Text with placeholders
+ * @param values - Replacement by placeholder name
+ * @returns The text in pieces, empty pieces left out
+ */
+export function fillParts(template: string, values: Readonly<Record<string, string>>): TextPart[] {
+  const parts: TextPart[] = [];
+  let rest = 0;
+  for (const match of template.matchAll(/\{(\w+)\}/g)) {
+    const value = values[match[1] ?? ''];
+    if (value === undefined) continue;
+    if (match.index > rest) parts.push({ text: template.slice(rest, match.index), value: false });
+    parts.push({ text: value, value: true });
+    rest = match.index + match[0].length;
+  }
+  if (rest < template.length) parts.push({ text: template.slice(rest), value: false });
+  return parts;
+}

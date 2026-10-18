@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LABELS, fill, resolveLabels } from './labels';
+import { DEFAULT_LABELS, fill, fillParts, resolveLabels } from './labels';
 
 describe('resolveLabels', (): void => {
   it('should use the English texts without overrides', (): void => {
@@ -18,6 +18,22 @@ describe('resolveLabels', (): void => {
     expect(labels.cancel).toBe('Abbrechen');
     expect(labels.done).toBe('Done');
     expect('unknown' in labels).toBe(false);
+  });
+});
+
+describe('fillParts', (): void => {
+  it('should keep the filled-in value as its own piece', (): void => {
+    expect(fillParts('After paying {amount}', { amount: '$3,570' })).toEqual([
+      { text: 'After paying ', value: false },
+      { text: '$3,570', value: true },
+    ]);
+  });
+
+  it('should leave an unknown placeholder in the text', (): void => {
+    expect(fillParts('{amount} of {total}', { amount: '$5' })).toEqual([
+      { text: '$5', value: true },
+      { text: ' of {total}', value: false },
+    ]);
   });
 });
 
