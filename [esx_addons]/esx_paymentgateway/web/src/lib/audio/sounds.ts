@@ -1,7 +1,8 @@
 /**
- * Sounds of the dialog. They are short Opus files rendered once ahead of time, decoded into
- * memory on first use and played through Web Audio, so a cue starts without delay. Sound is a
- * nicety: if the page cannot decode or play it, the dialog works the same in silence.
+ * Sounds of the dialog: short, muted thocks like a well damped key, kept quiet so they sit under
+ * the game. They are Opus files rendered once ahead of time, decoded into memory on first use and
+ * played through Web Audio, so a cue starts without delay. Sound is a nicety: if the page cannot
+ * decode or play it, the dialog works the same in silence.
  *
  * @see sounds
  */
@@ -22,11 +23,11 @@ const FILES = {
   select: selectUrl,
   /** The pay button is pressed */
   press: pressUrl,
-  /** A card payment went through: the terminal's two beeps */
+  /** A card payment went through: two quick thocks stepping up */
   card: cardUrl,
-  /** A cash payment went through: the register's bell and coins */
+  /** A cash payment went through: a deep drawer thock, notes sliding in, two coin taps */
   cash: cashUrl,
-  /** The server refused the payment */
+  /** The server refused the payment: two dull thocks stepping down */
   refuse: refuseUrl,
   /** The player closes the dialog */
   close: closeUrl,
