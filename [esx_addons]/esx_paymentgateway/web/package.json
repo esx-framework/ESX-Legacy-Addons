@@ -14,10 +14,12 @@
     "test:cef": "vite build && node scripts/cef103.js"
   },
   "devDependencies": {
+    "@fontsource/poppins": "^5.3.0",
     "@puppeteer/browsers": "^3.2.5",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tsconfig/svelte": "^5.0.8",
     "@types/node": "^22.20.5",
+    "esx-ui-kit-svelte": "^0.1.0",
     "prettier": "^3.9.10",
     "prettier-plugin-svelte": "^4.1.1",
     "puppeteer-core": "14.4.1",

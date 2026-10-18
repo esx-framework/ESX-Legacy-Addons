@@ -80,6 +80,31 @@ const JS_RULES = [
   { name: 'WebAssembly (disabled by --jitless)', since: Infinity, pattern: /\bWebAssembly\./g },
 ];
 
+/**
+ * Known gaps of esx-ui-kit-svelte 0.1.0 in Chromium 103, by feature and the selector of the kit
+ * rule that uses it. The kit's Tailwind 4 build tints theme colors with color-mix() behind a
+ * feature query whose fallback is the untinted color, moves two parts with the translate
+ * property (FiveM only has it through the experimental flag) and sizes date inputs in lh. The
+ * page does not use these classes. They are reported as warnings; an entry the kit no longer
+ * needs fails the check, so the list shrinks with every kit update.
+ * @type {Record<string, string[]>}
+ */
+const KIT_GAPS = {
+  'individual transform property': ['.translate-x-6', '.-translate-y-1\\/2'],
+  'lh unit': ['::-webkit-date-and-time-value'],
+  'color-mix()': [
+    '::placeholder',
+    '*',
+    '.bg-error\\/10',
+    '.bg-info\\/10',
+    '.bg-success\\/10',
+    '.bg-warning\\/10',
+    '.shadow-darkest\\/50',
+    '.hover\\:bg-light\\/20:hover',
+    '.hover\\:bg-mid\\/50:hover',
+  ],
+};
+
 const distDir = fileURLToPath(new URL('../dist', import.meta.url));
 
 /**
@@ -109,9 +134,37 @@ function excerpt(source, index) {
   return source.slice(start, index + 60).replace(/\s+/g, ' ');
 }
 
+/**
+ * Whether a match is part of an `@supports` condition. Asking for a feature is how CSS uses it
+ * safely, so the condition itself never counts; the guarded rules do.
+ * @param {string} source Minified stylesheet
+ * @param {number} index Match offset
+ * @returns {boolean} True inside a feature query's condition
+ */
+function inFeatureQuery(source, index) {
+  const start = source.lastIndexOf('@supports', index);
+  return start !== -1 && !source.slice(start, index).includes('{');
+}
+
+/**
+ * Returns the selector of the rule a minified declaration belongs to.
+ * @param {string} source Minified stylesheet
+ * @param {number} index Offset inside the declaration block
+ * @returns {string} Selector, as written in the stylesheet
+ */
+function selectorAt(source, index) {
+  const open = source.lastIndexOf('{', index);
+  const before = Math.max(source.lastIndexOf('{', open - 1), source.lastIndexOf('}', open - 1));
+  return source.slice(before + 1, open).trim();
+}
+
 const files = await walk(distDir);
 /** @type {string[]} */
 const violations = [];
+/** @type {string[]} */
+const kitWarnings = [];
+/** @type {Set<string>} */
+const kitSeen = new Set();
 
 for (const file of files) {
   const ext = extname(file);
@@ -121,11 +174,29 @@ for (const file of files) {
   const source = await readFile(file, 'utf8');
   for (const rule of rules) {
     for (const match of source.matchAll(rule.pattern)) {
-      violations.push(
-        `${relative(distDir, file)}: ${rule.name} (Chrome ${rule.since}) near "${excerpt(source, match.index)}"`,
-      );
+      if (ext === '.css' && inFeatureQuery(source, match.index)) continue;
+      const report = `${relative(distDir, file)}: ${rule.name} (Chrome ${rule.since})`;
+      const selector = ext === '.css' ? selectorAt(source, match.index) : '';
+      if (KIT_GAPS[rule.name]?.includes(selector)) {
+        kitSeen.add(`${rule.name}|${selector}`);
+        kitWarnings.push(`${report} in kit rule ${selector}`);
+        continue;
+      }
+      violations.push(`${report} near "${excerpt(source, match.index)}"`);
     }
   }
+}
+
+const stale = Object.entries(KIT_GAPS).flatMap(([name, selectors]) =>
+  selectors.filter((selector) => !kitSeen.has(`${name}|${selector}`)).map((s) => `${name} ${s}`),
+);
+for (const entry of stale) {
+  violations.push(`KIT_GAPS lists ${entry}, which the bundle no longer has: remove the entry`);
+}
+
+if (kitWarnings.length > 0) {
+  console.warn(`check-compat: ${kitWarnings.length} known esx-ui-kit gap(s), see KIT_GAPS`);
+  for (const warning of kitWarnings) console.warn(`  ${warning}`);
 }
 
 if (violations.length > 0) {

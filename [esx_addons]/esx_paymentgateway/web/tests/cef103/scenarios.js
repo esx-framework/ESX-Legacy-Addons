@@ -22,6 +22,9 @@ export const scenarios = [
       await settle(page);
       const shown = await page.$eval('.app', (app) => app.childElementCount);
       if (shown !== 0) throw new Error('the page shows something before a payment was opened');
+      // The kit paints the body; over the game it has to stay see-through.
+      const background = await page.$eval('body', (body) => getComputedStyle(body).backgroundColor);
+      if (background !== 'rgba(0, 0, 0, 0)') throw new Error(`body background is ${background}`);
     },
   },
   {
