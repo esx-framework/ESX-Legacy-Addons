@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * Top of the dialog: the server's logo or the ESX mark and the dialog's name.
+   * Top of the bill: the server's logo or the ESX mark and the dialog's name, set to the left.
    */
   import esxLogo from '../assets/esx-logo.png';
 
@@ -28,7 +28,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 24px;
+    min-height: 28px;
   }
 
   .logo {

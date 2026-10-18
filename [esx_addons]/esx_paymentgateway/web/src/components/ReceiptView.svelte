@@ -1,17 +1,16 @@
 <script lang="ts">
   /**
-   * What the player sees once the money is taken: the success mark, the amount and a short
-   * receipt. The headline has three levels only (status, amount, what for) and every line of the
-   * slip is set the same way, so the screen reads calm. The dialog closes on its own after the
-   * configured delay; the Done button drains to show the time left, and pressing it closes at
-   * once.
+   * The right side of the dialog once the money is taken: the success mark, the status and a
+   * short slip. The bill next to it keeps the amount and what it was for, so the slip only adds
+   * what changed, and every line of it is set the same way. The dialog closes on its own after
+   * the configured delay; the Done button drains to show the time left, and pressing it closes
+   * at once.
    */
   import { Button } from 'esx-ui-kit-svelte';
   import { flow, type Receipt } from '../lib/payment/flow.svelte';
   import { formatMoney } from '../lib/payment/format';
   import type { Payment } from '../lib/payment/types';
   import { DURATION, rise } from '../lib/ui/motion';
-  import Money from './Money.svelte';
   import SuccessMark from './SuccessMark.svelte';
 
   interface Props {
@@ -40,13 +39,7 @@
 
 <section class="receipt" in:rise={{ distance: 6 }}>
   <SuccessMark method={receipt.method} />
-  <div class="headline">
-    <p class="status">{labels.success}</p>
-    <Money amount={payment.amount} currency={payment.currency} locale={flow.locale} />
-    <p class="what">
-      {payment.description ? `${payment.title} · ${payment.description}` : payment.title}
-    </p>
-  </div>
+  <h4 class="status">{labels.success}</h4>
   <dl class="slip">
     {#each rows as row, index (row.label)}
       <div class="row" in:rise={{ delay: 280 + index * DURATION.stagger, distance: 6 }}>
@@ -68,32 +61,15 @@
 <style>
   .receipt {
     display: flex;
+    flex: 1;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    padding-top: 4px;
-  }
-
-  .headline {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+    justify-content: center;
+    gap: 12px;
   }
 
   .status {
-    margin-bottom: 4px;
-    font-size: var(--font-size-caption);
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--brand-color);
-  }
-
-  .what {
-    margin-top: 6px;
-    font-size: var(--font-size-body-small);
-    color: var(--light-color);
+    text-align: center;
   }
 
   .slip {
@@ -125,7 +101,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    height: 40px;
+    height: 38px;
     font-size: var(--font-size-body-small);
   }
 

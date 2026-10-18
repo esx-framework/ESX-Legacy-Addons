@@ -1,7 +1,8 @@
 <script lang="ts">
   /**
-   * The payment dialog over a dimmed game: header, then either the choice of method or the
-   * receipt. It is zoomed with the screen height so it reads the same from 720p to 4K.
+   * The payment dialog over a dimmed game, split like a checkout page: the bill on the left, how
+   * to pay on the right. Once the money is taken, the right side turns into the receipt and the
+   * bill stays. It is zoomed with the screen height so it reads the same from 720p to 4K.
    */
   import { Card } from 'esx-ui-kit-svelte';
   import { fade } from 'svelte/transition';
@@ -48,14 +49,23 @@
       aria-label={flow.labels.heading}
       data-phase={flow.phase}
     >
-      <DialogHeader {logo} heading={flow.labels.heading} />
-      {#if flow.phase === 'paid' && flow.receipt}
-        <ReceiptView {payment} receipt={flow.receipt} {closeDelay} ondone={onclose} />
-      {:else}
+      <aside class="bill">
+        <DialogHeader {logo} heading={flow.labels.heading} />
         <PaymentSummary {payment} />
-        <MethodList {payment} {onchoose} />
-        <PayActions {payment} {onpay} oncancel={onclose} />
-      {/if}
+      </aside>
+      <div class="pane">
+        {#if flow.phase === 'paid' && flow.receipt}
+          <ReceiptView {payment} receipt={flow.receipt} {closeDelay} ondone={onclose} />
+        {:else}
+          <div class="pane-head">
+            <h5>{flow.labels.choose}</h5>
+          </div>
+          <div class="choices">
+            <MethodList {payment} {onchoose} />
+          </div>
+          <PayActions {payment} {onpay} oncancel={onclose} />
+        {/if}
+      </div>
     </Card>
   </div>
 </div>
@@ -74,15 +84,53 @@
   }
 
   .stage {
-    width: 480px;
+    width: 760px;
   }
 
   .stage :global(.dialog) {
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
+    display: grid;
+    grid-template-columns: 304px 1fr;
+    padding: 0;
+    overflow: hidden;
     box-shadow:
       0 24px 60px rgba(0, 0, 0, 0.45),
       0 0 0 1px rgba(var(--brand-color-rgb), 0.06);
+  }
+
+  /* A faint glow of the brand color in the corner of the logo, over the darkest tone. */
+  .bill {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding: 24px;
+    border-right: 1px solid var(--mid-color);
+    background:
+      radial-gradient(
+        120% 70% at 0% 0%,
+        rgba(var(--brand-color-rgb), 0.09) 0%,
+        rgba(var(--brand-color-rgb), 0) 70%
+      ),
+      var(--darkest-color);
+  }
+
+  .pane {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+    padding: 24px 24px 12px;
+  }
+
+  .pane-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 28px;
+  }
+
+  /* Takes the height the bill adds, so the pay button stays at the bottom. */
+  .choices {
+    flex: 1;
   }
 </style>
