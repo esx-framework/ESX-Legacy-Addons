@@ -351,7 +351,7 @@ function Actions.Goto(src, data)
     data = data or {}
 
     if not Helpers.hasFeaturePermission(src, 'playerTeleport') then
-        return { success = false, err = 'Insufficient Permissions', playerOnline = true }
+        return { success = false, err = TranslateCap('insufficient_permissions'), playerOnline = true }
     end
 
     local targetId = getTargetId(data)
@@ -409,17 +409,17 @@ function Actions.Spectate(src, data)
     data = data or {}
 
     if not Helpers.hasFeaturePermission(src, 'spectate') then
-        return { success = false, err = 'Insufficient Permissions', playerOnline = true, isAdmin = false }
+        return { success = false, err = TranslateCap('insufficient_permissions'), playerOnline = true, isAdmin = false }
     end
 
     local targetId = getTargetId(data)
 
     if not Helpers.isOnline(targetId) then
-        return { success = false, err = 'Player Not Online', playerOnline = false, isAdmin = true }
+        return { success = false, err = TranslateCap('player_not_online'), playerOnline = false, isAdmin = true }
     end
 
     if targetId == src then
-        return { success = false, err = 'You cannot spectate yourself.', playerOnline = true, isAdmin = true }
+        return { success = false, err = TranslateCap('cannot_spectate_yourself'), playerOnline = true, isAdmin = true }
     end
 
     local targetPed = GetPlayerPed(targetId)
@@ -437,7 +437,7 @@ end)
 
 function Actions.StopSpectate(src)
     if not Helpers.hasFeaturePermission(src, 'spectate') then
-        return { success = false, err = 'Insufficient Permissions' }
+        return { success = false, err = TranslateCap('insufficient_permissions') }
     end
 
     Helpers.stopSpectate(src)
@@ -454,20 +454,20 @@ function Actions.Kick(src, data)
     data = data or {}
 
     if not Helpers.hasFeaturePermission(src, 'playerModeration') then
-        return { success = false, err = 'Insufficient Permissions', playerOnline = true, isAdmin = false }
+        return { success = false, err = TranslateCap('insufficient_permissions'), playerOnline = true, isAdmin = false }
     end
 
     local targetId = getTargetId(data)
 
     if not Helpers.isOnline(targetId) then
-        return { success = false, err = 'Player Not Online', playerOnline = false, isAdmin = true }
+        return { success = false, err = TranslateCap('player_not_online'), playerOnline = false, isAdmin = true }
     end
 
     if targetId == src then
-        return { success = false, err = 'You cannot kick yourself.', playerOnline = true, isAdmin = true }
+        return { success = false, err = TranslateCap('cannot_kick_yourself'), playerOnline = true, isAdmin = true }
     end
 
-    local reason = limitString(data.reason, getLimits().MaxReasonLength, 'Kicked by admin')
+    local reason = limitString(data.reason, getLimits().MaxReasonLength, TranslateCap('kicked_by_admin'))
 
     -- Queued, not written inline: the drop must not wait on the database.
     -- Recorded before DropPlayer so the target is still resolvable.
@@ -493,23 +493,23 @@ function Actions.Ban(src, data)
     data = data or {}
 
     if not Helpers.hasFeaturePermission(src, 'banManagement') then
-        return { success = false, err = 'Insufficient Permissions', playerOnline = true, isAdmin = false }
+        return { success = false, err = TranslateCap('insufficient_permissions'), playerOnline = true, isAdmin = false }
     end
 
     local targetId = getTargetId(data)
 
     if not Helpers.isOnline(targetId) then
-        return { success = false, err = 'Player Not Online', playerOnline = false, isAdmin = true }
+        return { success = false, err = TranslateCap('player_not_online'), playerOnline = false, isAdmin = true }
     end
 
     if targetId == src then
-        return { success = false, err = 'You cannot ban yourself.', playerOnline = true, isAdmin = true }
+        return { success = false, err = TranslateCap('cannot_ban_yourself'), playerOnline = true, isAdmin = true }
     end
 
     local identifier = Helpers.getPlayerLicenseIdentifier(targetId)
 
     if not identifier then
-        return { success = false, err = 'Missing player license identifier.', playerOnline = true, isAdmin = true }
+        return { success = false, err = TranslateCap('missing_player_license_id'), playerOnline = true, isAdmin = true }
     end
 
     -- Capture every enabled identifier so the ban matches on reconnect even if
@@ -520,13 +520,13 @@ function Actions.Ban(src, data)
     local seconds = duration and (os.time() + duration * 60) or nil
     local bannedAt = os.time()
     local adminName = GetPlayerName(src)
-    local reason = limitString(data.reason, getLimits().MaxReasonLength, 'Banned by admin')
+    local reason = limitString(data.reason, getLimits().MaxReasonLength, TranslateCap('banned_by_admin'))
 
     local ok, banId = pcall(insertBan, identifier, reason, adminName, seconds, bannedAt, banIdentifiers)
 
     if not ok or not banId then
         print(('[esx-adminmenu] Failed to persist ban for %s: %s'):format(tostring(identifier), tostring(banId)))
-        return { success = false, err = 'Failed to persist ban.', playerOnline = true, isAdmin = true }
+        return { success = false, err = TranslateCap('failed_persist_ban'), playerOnline = true, isAdmin = true }
     end
 
     BanCache.add({
@@ -560,7 +560,7 @@ end)
 
 Helpers.registerCallback('esx-adminmenu:server:ban:offline', function(source, data)
     if not Helpers.hasFeaturePermission(source, 'banManagement') then
-        return { success = false, err = 'Insufficient Permissions', isAdmin = false }
+        return { success = false, err = TranslateCap('insufficient_permissions'), isAdmin = false }
     end
 
     data = data or {}
@@ -568,14 +568,14 @@ Helpers.registerCallback('esx-adminmenu:server:ban:offline', function(source, da
     local normalizedIdentifier = Helpers.normalizeLicenseIdentifier(data.identifier)
 
     if not normalizedIdentifier then
-        return { success = false, err = 'Invalid Identifier', isAdmin = true }
+        return { success = false, err = TranslateCap('invalid_identifier'), isAdmin = true }
     end
 
     local duration = normalizeBanDuration(data.duration)
     local seconds = duration and (os.time() + duration * 60) or nil
     local bannedAt = os.time()
     local adminName = GetPlayerName(source)
-    local reason = limitString(data.reason, getLimits().MaxReasonLength, 'Banned by admin')
+    local reason = limitString(data.reason, getLimits().MaxReasonLength, TranslateCap('banned_by_admin'))
 
     -- Offline bans are single-identifier by design: the player is not connected,
     -- so their other identifiers (discord, steam, ...) cannot be read, and ESX
@@ -584,7 +584,7 @@ Helpers.registerCallback('esx-adminmenu:server:ban:offline', function(source, da
 
     if not ok or not banId then
         print(('[esx-adminmenu] Failed to persist offline ban for %s: %s'):format(tostring(normalizedIdentifier), tostring(banId)))
-        return { success = false, err = 'Failed to persist ban.', isAdmin = true }
+        return { success = false, err = TranslateCap('failed_persist_ban'), isAdmin = true }
     end
 
     BanCache.add({
@@ -611,7 +611,7 @@ end)
 
 Helpers.registerCallback('esx-adminmenu:server:ban:changeExpiry', function(source, data)
     if not Helpers.hasFeaturePermission(source, 'banManagement') then
-        return { success = false, err = 'Insufficient Permissions', isAdmin = false }
+        return { success = false, err = TranslateCap('insufficient_permissions'), isAdmin = false }
     end
 
     data = data or {}
@@ -619,7 +619,7 @@ Helpers.registerCallback('esx-adminmenu:server:ban:changeExpiry', function(sourc
     local normalizedIdentifier = Helpers.normalizeLicenseIdentifier(data.identifier)
 
     if not normalizedIdentifier then
-        return { success = false, err = 'Invalid Identifier', isAdmin = true }
+        return { success = false, err = TranslateCap('invalid_identifier'), isAdmin = true }
     end
 
     local seconds = nil
@@ -628,7 +628,7 @@ Helpers.registerCallback('esx-adminmenu:server:ban:changeExpiry', function(sourc
         local newDate = tonumber(data.newDate)
 
         if not newDate then
-            return { success = false, err = 'Invalid expiry date.', isAdmin = true }
+            return { success = false, err = TranslateCap('invalid_expiry_date'), isAdmin = true }
         end
 
         local now = os.time()
@@ -652,7 +652,7 @@ Helpers.registerCallback('esx-adminmenu:server:ban:changeExpiry', function(sourc
     end)
 
     if not ok then
-        return { success = false, err = 'Failed to update ban expiry.', isAdmin = true }
+        return { success = false, err = TranslateCap('failed_update_ban_expiry'), isAdmin = true }
     end
 
     Logs.record({
@@ -670,7 +670,7 @@ end)
 
 Helpers.registerCallback('esx-adminmenu:server:ban:revoke', function(source, data)
     if not Helpers.hasFeaturePermission(source, 'banManagement') then
-        return { success = false, err = 'Insufficient Permissions', isAdmin = false }
+        return { success = false, err = TranslateCap('insufficient_permissions'), isAdmin = false }
     end
 
     data = data or {}
@@ -678,7 +678,7 @@ Helpers.registerCallback('esx-adminmenu:server:ban:revoke', function(source, dat
     local normalizedIdentifier = Helpers.normalizeLicenseIdentifier(data.identifier)
 
     if not normalizedIdentifier then
-        return { success = false, err = 'Invalid Identifier', isAdmin = true }
+        return { success = false, err = TranslateCap('invalid_identifier'), isAdmin = true }
     end
 
     local ok = pcall(function()
@@ -687,7 +687,7 @@ Helpers.registerCallback('esx-adminmenu:server:ban:revoke', function(source, dat
     end)
 
     if not ok then
-        return { success = false, err = 'Failed to revoke ban.', isAdmin = true }
+        return { success = false, err = TranslateCap('failed_revoke_ban'), isAdmin = true }
     end
 
     Logs.record({
@@ -704,7 +704,7 @@ end)
 
 local function vehicleUpdate(source, data, queryTemplate, params, feature)
     if not Helpers.hasFeaturePermission(source, feature or 'vehicleManagement') then
-        return { success = false, err = 'Insufficient Permissions' }
+        return { success = false, err = TranslateCap('insufficient_permissions') }
     end
 
     data = data or {}
@@ -713,7 +713,7 @@ local function vehicleUpdate(source, data, queryTemplate, params, feature)
     local plate = normalizePlate(data.plate)
 
     if not plate then
-        return { success = false, err = 'Missing plate' }
+        return { success = false, err = TranslateCap('missing_plate') }
     end
 
     local condition, plateParams = plateCondition(plate)
@@ -751,7 +751,7 @@ local function setVehicleImpounded(plate, impoundName)
     end
 
     if not impoundName then
-        return { success = false, err = 'Invalid impound.' }
+        return { success = false, err = TranslateCap('invalid_impound') }
     end
 
     local condition, plateParams = plateCondition(plate)
@@ -762,11 +762,11 @@ local function setVehicleImpounded(plate, impoundName)
     local affected = Helpers.safeUpdate(('UPDATE owned_vehicles SET stored = 1, parking = NULL, pound = ? WHERE %s'):format(condition), params)
 
     if affected == nil then
-        return { success = false, err = 'Failed to impound vehicle.' }
+        return { success = false, err = TranslateCap('failed_impound_vehicle') }
     end
 
     if affected < 1 then
-        return { success = false, err = 'Vehicle not found.' }
+        return { success = false, err = TranslateCap('vehicle_not_found') }
     end
 
     return { success = true }
@@ -774,7 +774,7 @@ end
 
 Helpers.registerCallback('esx-adminmenu:server:vehicleImpound', function(source, data)
     if not Helpers.hasFeaturePermission(source, 'vehicleManagement') then
-        return { success = false, err = 'Insufficient Permissions' }
+        return { success = false, err = TranslateCap('insufficient_permissions') }
     end
 
     data = data or {}
@@ -782,7 +782,7 @@ Helpers.registerCallback('esx-adminmenu:server:vehicleImpound', function(source,
     local plate = normalizePlate(data.plate)
 
     if not plate then
-        return { success = false, err = 'Missing plate' }
+        return { success = false, err = TranslateCap('missing_plate') }
     end
 
     local impoundName = trimString(data.impoundName)
@@ -794,7 +794,7 @@ Helpers.registerCallback('esx-adminmenu:server:vehicleImpound', function(source,
     local impounds = Helpers.getImpounds() or {}
 
     if next(impounds) and not impounds[impoundName] then
-        return { success = false, err = 'Invalid impound.' }
+        return { success = false, err = TranslateCap('invalid_impound') }
     end
 
     return setVehicleImpounded(plate, impoundName)
@@ -831,16 +831,16 @@ function Actions.Notify(src, data)
     data = data or {}
 
     if not Helpers.hasFeaturePermission(src, 'playerNotify') then
-        return { success = false, err = 'Insufficient Permissions', playerOnline = true, isAdmin = false }
+        return { success = false, err = TranslateCap('insufficient_permissions'), playerOnline = true, isAdmin = false }
     end
 
     local targetId = getTargetId(data)
 
     if not Helpers.isOnline(targetId) then
-        return { success = false, err = 'Player Not Online', playerOnline = false, isAdmin = true }
+        return { success = false, err = TranslateCap('player_not_online'), playerOnline = false, isAdmin = true }
     end
 
-    local message = limitString(data.notificationContent, getLimits().MaxNotificationLength, 'Notification by Admin')
+    local message = limitString(data.notificationContent, getLimits().MaxNotificationLength, TranslateCap('notification_by_admin'))
     local notificationType = normalizeNotificationType(data.notificationType)
     local duration = math.floor(clampNumber(data.duration, 1000, getLimits().MaxNotificationDuration or 30000, 5000))
     local title = limitString(data.notificationTitle, 80, '')
@@ -860,14 +860,14 @@ function Actions.SelfAction(src, data)
     data = data or {}
 
     if not Helpers.hasPermission(src) then
-        return { success = false, err = 'Insufficient Permissions' }
+        return { success = false, err = TranslateCap('insufficient_permissions') }
     end
 
     local action = data.action
     local feature = Helpers.getActionPermission('adminMenu', action)
 
     if not feature or not Helpers.hasFeaturePermission(src, feature) then
-        return { success = false, err = 'Insufficient Permissions' }
+        return { success = false, err = TranslateCap('insufficient_permissions') }
     end
 
     if action == 'revive' then
@@ -875,7 +875,7 @@ function Actions.SelfAction(src, data)
         return { success = true }
     end
 
-    return { success = false, err = 'Unknown self action.' }
+    return { success = false, err = TranslateCap('unknown_self_action') }
 end
 
 Helpers.registerCallback('esx-adminmenu:server:selfAction', function(source, data)
@@ -937,7 +937,7 @@ end)
 
 regServer('density', function(_, payload)
     if type(payload) ~= 'table' then
-        return { success = false, err = 'Invalid population density.' }
+        return { success = false, err = TranslateCap('invalid_population_density') }
     end
 
     local ok, err = Helpers.setPopulationDensity(payload.enabled, payload)
@@ -961,7 +961,7 @@ regServer('bringAll', function(src)
     local admin = ESX.GetPlayerFromId(src)
 
     if not admin then
-        return { success = false, err = 'Admin player not found.' }
+        return { success = false, err = TranslateCap('admin_not_found') }
     end
 
     local coords = admin.getCoords(true)
@@ -988,7 +988,7 @@ end)
 
 regServer('kickAll', function(src, payload)
     local reason =
-        limitString(payload.reason, getLimits().MaxReasonLength, (Config.ServerManagement and Config.ServerManagement.DefaultKickReason) or 'Kicked by admin')
+        limitString(payload.reason, getLimits().MaxReasonLength, (Config.ServerManagement and Config.ServerManagement.DefaultKickReason) or TranslateCap('kicked_by_admin'))
 
     for _, playerSource in ipairs(GetPlayers()) do
         local targetId = tonumber(playerSource)
@@ -1014,7 +1014,7 @@ regServer('deleteObjects', function()
 end)
 
 regServer('notifyAll', function(_, payload)
-    local message = limitString(payload.message, getLimits().MaxNotificationLength, 'Notification by Admin')
+    local message = limitString(payload.message, getLimits().MaxNotificationLength, TranslateCap('notification_by_admin'))
     local notificationType = normalizeNotificationType(payload.notificationType)
     local duration = math.floor(clampNumber(payload.duration, 1000, getLimits().MaxNotificationDuration or 30000, 5000))
     local title = limitString(payload.title, 80, '')
@@ -1028,16 +1028,16 @@ regServer('giveMoneyAll', function(_, payload)
     local account = normalizeMoneyAccount(payload.account)
 
     if amount <= 0 then
-        return { success = false, err = 'Amount must be greater than 0.' }
+        return { success = false, err = TranslateCap('amount_must_be_positive') }
     end
 
     local players = ESX.ExtendedPlayers()
 
     for i = 1, #players do
         if account == 'money' then
-            players[i].addMoney(amount, 'Admin menu')
+            players[i].addMoney(amount, TranslateCap('admin_menu'))
         else
-            players[i].addAccountMoney(account, amount, 'Admin menu')
+            players[i].addAccountMoney(account, amount, TranslateCap('admin_menu'))
         end
     end
 
@@ -1055,38 +1055,31 @@ function Actions.ServerManagement(src, data)
     -- Any client can invoke a server callback, so a denial here is a genuine
     -- abuse signal and is worth recording.
     if not Helpers.hasFeaturePermission(src, 'serverManagement') then
-        Logs.record({ namespace = 'serverManagement', action = action, actor = src, success = false, err = 'Insufficient Permissions' })
-        return { success = false, err = 'Insufficient Permissions' }
+        Logs.record({namespace = 'serverManagement', action = action, actor = src, success = false, err = TranslateCap('insufficient_permissions')})
+        return { success = false, err = TranslateCap('insufficient_permissions') }
     end
 
     local handler = ServerHandlers[action]
 
     if not handler then
-        return { success = false, err = 'Unknown server action.' }
+        return { success = false, err = TranslateCap('unknown_server_action') }
     end
 
     local permission = getServerActionPermission(action)
 
     if not permission then
-        Logs.record({ namespace = 'serverManagement', action = action, actor = src, success = false, err = 'Action permission not configured' })
-        return { success = false, err = 'Action permission not configured.' }
+        Logs.record({namespace = 'serverManagement', action = action, actor = src, success = false, err = TranslateCap('action_permission_not_configured')})
+        return { success = false, err = TranslateCap('action_permission_not_configured') }
     end
 
     if not Helpers.hasFeaturePermission(src, permission) then
-        Logs.record({ namespace = 'serverManagement', action = action, actor = src, success = false, err = 'Insufficient Permissions' })
-        return { success = false, err = 'Insufficient Permissions' }
+        Logs.record({namespace = 'serverManagement', action = action, actor = src, success = false, err = TranslateCap('insufficient_permissions')})
+        return { success = false, err = TranslateCap('insufficient_permissions') }
     end
 
     local result = handler(src, data.payload or {})
 
-    Logs.record({
-        namespace = 'serverManagement',
-        action = action,
-        actor = src,
-        success = type(result) ~= 'table' or result.success ~= false,
-        err = type(result) == 'table' and result.err or nil,
-        payload = data.payload,
-    })
+    Logs.record({namespace = 'serverManagement', action = action, actor = src, success = type(result) ~= 'table' or result.success ~= false, err = type(result) == 'table' and result.err or nil, payload = data.payload})
 
     return result
 end
@@ -1112,7 +1105,7 @@ local function moneyHandler(ctx, isGive)
     local account = normalizeMoneyAccount(ctx.payload.account)
 
     if amount <= 0 then
-        return { success = false, err = 'Amount must be greater than 0.', playerOnline = true }
+        return { success = false, err = TranslateCap('amount_must_be_positive'), playerOnline = true }
     end
 
     local method
@@ -1126,19 +1119,19 @@ local function moneyHandler(ctx, isGive)
     -- Callable, not type()=="function": xPlayer methods reach us as function
     -- references across the es_extended resource boundary.
     if not Helpers.isCallable(ctx.target[method]) then
-        return { success = false, err = 'This ESX version does not expose ' .. method .. '.', playerOnline = true }
+        return { success = false, err = TranslateCap('version_not_expose') .. ' ' .. method, playerOnline = true }
     end
 
     local ok = pcall(function()
         if account == 'money' then
-            ctx.target[method](amount, 'Admin menu')
+            ctx.target[method](amount, TranslateCap('admin_menu'))
         else
-            ctx.target[method](account, amount, 'Admin menu')
+            ctx.target[method](account, amount, TranslateCap('admin_menu'))
         end
     end)
 
     if not ok then
-        return { success = false, err = 'Failed to update balance.', playerOnline = true }
+        return { success = false, err = TranslateCap('failed_update_balance'), playerOnline = true }
     end
 
     return { success = true, playerOnline = true }
@@ -1150,14 +1143,14 @@ regPlayer('deleteCharacter', {
         local identifier = trimString(ctx.payload.identifier)
 
         if not isValidCharacterIdentifier(identifier) then
-            return { success = false, err = 'Missing character identifier.' }
+            return { success = false, err = TranslateCap('missing_character_identifier') }
         end
 
         if ctx.target then
             local targetIdentifier = getOnlineCharacterIdentifier(ctx.target, ctx.targetId)
 
             if targetIdentifier ~= identifier then
-                return { success = false, err = 'Character identifier does not match the selected player.', playerOnline = true }
+                return { success = false, err = TranslateCap('identifier_not_match'), playerOnline = true }
             end
         end
 
@@ -1167,7 +1160,7 @@ regPlayer('deleteCharacter', {
         end)
 
         if ctx.targetId and Helpers.isOnline(ctx.targetId) then
-            DropPlayer(ctx.targetId, 'Character deleted by an admin.')
+            DropPlayer(ctx.targetId, TranslateCap('character_deleted_by_admin'))
         end
 
         return { success = true, playerOnline = ctx.targetId and Helpers.isOnline(ctx.targetId) or false }
@@ -1203,13 +1196,13 @@ regPlayer('setArmor', {
 regPlayer('cleanInventory', {
     handler = function(ctx)
         if not Helpers.isCallable(ctx.target.getInventory) then
-            return { success = false, err = 'This ESX version does not expose getInventory.', playerOnline = true }
+            return { success = false, err = TranslateCap('version_not_expose') .. ' ' .. 'getInventory', playerOnline = true }
         end
 
         local inventory = ctx.target.getInventory()
 
         if type(inventory) ~= 'table' then
-            return { success = false, err = 'Failed to read inventory.', playerOnline = true }
+            return { success = false, err = TranslateCap('failed_read_inventory'), playerOnline = true }
         end
 
         for i = 1, #inventory do
@@ -1252,7 +1245,7 @@ regPlayer('setModel', {
         local model = limitString(ctx.payload.model, 64)
 
         if model == '' then
-            return { success = false, err = 'Missing model.', playerOnline = true }
+            return { success = false, err = TranslateCap('missing_model'), playerOnline = true }
         end
 
         TriggerClientEvent('esx-adminmenu:client:setModel', ctx.targetId, model)
@@ -1316,15 +1309,15 @@ regPlayer('setJob', {
         local grade = math.floor(clampNumber(ctx.payload.grade, 0, 100, 0))
 
         if job == '' or not job:match('^[%w_%-]+$') then
-            return { success = false, err = 'Missing job name.', playerOnline = true }
+            return { success = false, err = TranslateCap('missing_job_name'), playerOnline = true }
         end
 
         if ESX.DoesJobExist and not ESX.DoesJobExist(job, grade) then
-            return { success = false, err = 'Invalid job or grade.', playerOnline = true }
+            return { success = false, err = TranslateCap('invalid_job_or_grade'), playerOnline = true }
         end
 
         if not ctx.target.setJob then
-            return { success = false, err = 'This ESX version does not expose setJob.', playerOnline = true }
+            return { success = false, err = TranslateCap('version_not_expose') .. ' ' .. 'setJob', playerOnline = true }
         end
 
         local ok, err = pcall(function()
@@ -1332,7 +1325,7 @@ regPlayer('setJob', {
         end)
 
         if not ok then
-            return { success = false, err = err or 'Failed to set job.', playerOnline = true }
+            return { success = false, err = err or TranslateCap('failed_set_job'), playerOnline = true }
         end
 
         return { success = true, playerOnline = true }
@@ -1345,13 +1338,13 @@ regPlayer('setName', {
         local lastName = limitString(trimString(ctx.payload.lastName), 32)
 
         if firstName == '' or lastName == '' then
-            return { success = false, err = 'Missing first or last name.', playerOnline = true }
+            return { success = false, err = TranslateCap('missing_first_or_last_name'), playerOnline = true }
         end
 
         local identifier = getPlayerIdentifier(ctx.target)
 
         if not identifier then
-            return { success = false, err = 'Missing character identifier.', playerOnline = true }
+            return { success = false, err = TranslateCap('missing_character_identifier'), playerOnline = true }
         end
 
         Helpers.safeUpdate('UPDATE users SET firstname = ?, lastname = ? WHERE identifier = ?', {
@@ -1391,17 +1384,17 @@ local function aceHandler(ctx, isAdd)
     local group = normalizeAceGroup(ctx.payload.group or ctx.payload.permission)
 
     if not group then
-        return { success = false, err = 'Invalid ACE group.', playerOnline = true }
+        return { success = false, err = TranslateCap('invalid_ace_group'), playerOnline = true }
     end
 
     if not isAllowedAceGroup(group) then
-        return { success = false, err = 'ACE group not allowed.', playerOnline = true }
+        return { success = false, err = TranslateCap('ace_group_not_allowed'), playerOnline = true }
     end
 
     local identifier = Helpers.getPlayerLicenseIdentifier(ctx.targetId)
 
     if not isValidIdentifier(identifier) then
-        return { success = false, err = 'Missing player identifier.', playerOnline = true }
+        return { success = false, err = TranslateCap('missing_player_identifier'), playerOnline = true }
     end
 
     local command = isAdd and 'add_principal' or 'remove_principal'
@@ -1429,7 +1422,7 @@ regPlayer('troll', {
         local allowedTrollActions = Config.TrollActions or {}
 
         if not allowedTrollActions[trollAction] then
-            return { success = false, err = 'Invalid troll action.', playerOnline = true }
+            return { success = false, err = TranslateCap('invalid_troll_action'), playerOnline = true }
         end
 
         TriggerClientEvent('esx-adminmenu:client:troll', ctx.targetId, trollAction)
@@ -1446,14 +1439,14 @@ function Actions.PlayerAction(src, data)
     local action = type(data.action) == 'string' and data.action or 'unknown'
 
     if not Helpers.hasPermission(src) then
-        Logs.record({ namespace = 'playerActions', action = action, actor = src, success = false, err = 'Insufficient Permissions' })
-        return { success = false, err = 'Insufficient Permissions' }
+        Logs.record({namespace = 'playerActions', action = action, actor = src, success = false, err = TranslateCap('insufficient_permissions')})
+        return { success = false, err = TranslateCap('insufficient_permissions') }
     end
 
     local spec = PlayerHandlers[action]
 
     if not spec then
-        return { success = false, err = 'Unknown player action.', playerOnline = true }
+        return { success = false, err = TranslateCap('unknown_player_action'), playerOnline = true }
     end
 
     local targetId = getTargetId(data)
@@ -1462,24 +1455,17 @@ function Actions.PlayerAction(src, data)
     local permission = Helpers.getActionPermission('playerActions', action)
 
     if not permission then
-        Logs.record({
-            namespace = 'playerActions',
-            action = action,
-            actor = src,
-            target = targetId,
-            success = false,
-            err = 'Action permission not configured',
-        })
-        return { success = false, err = 'Action permission not configured.', playerOnline = target ~= nil }
+        Logs.record({namespace = 'playerActions', action = action, actor = src, target = targetId, success = false, err = TranslateCap('action_permission_not_configured')})
+        return { success = false, err = TranslateCap('action_permission_not_configured'), playerOnline = target ~= nil }
     end
 
     if not Helpers.hasFeaturePermission(src, permission) then
-        Logs.record({ namespace = 'playerActions', action = action, actor = src, target = targetId, success = false, err = 'Insufficient Permissions' })
-        return { success = false, err = 'Insufficient Permissions', playerOnline = target ~= nil }
+        Logs.record({namespace = 'playerActions', action = action, actor = src, target = targetId, success = false, err = TranslateCap('insufficient_permissions')})
+        return { success = false, err = TranslateCap('insufficient_permissions'), playerOnline = target ~= nil }
     end
 
     if not spec.offline and not target then
-        return { success = false, err = 'Player Not Online', playerOnline = false }
+        return { success = false, err = TranslateCap('player_not_online'), playerOnline = false }
     end
 
     -- Resolved before the handler runs: deleteCharacter and friends drop the
@@ -1496,16 +1482,7 @@ function Actions.PlayerAction(src, data)
         Helpers.addRecentPlayer(targetId, 'online')
     end
 
-    Logs.record({
-        namespace = 'playerActions',
-        action = action,
-        actor = src,
-        target = targetIdentifier,
-        targetName = targetName,
-        success = type(result) ~= 'table' or result.success ~= false,
-        err = type(result) == 'table' and result.err or nil,
-        payload = data.payload,
-    })
+    Logs.record({namespace = 'playerActions', action = action, actor = src, target = targetIdentifier, targetName = targetName, success = type(result) ~= 'table' or result.success ~= false, err = type(result) == 'table' and result.err or nil, payload = data.payload})
 
     return result
 end

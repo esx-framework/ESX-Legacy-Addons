@@ -9,7 +9,7 @@ local function showActionError(result, showError)
 		return
 	end
 
-	showError((result and result.err) or "Action failed.")
+	showError((result and result.err) or TranslateCap("action_failed"))
 end
 
 -- Helper commands that copy a computed string to the clipboard all share the
@@ -17,24 +17,24 @@ end
 local function registerCopyCommand(names, help, computeText)
 	ESX.RegisterCommand(names, allowedPermissions, function(xPlayer, args, showError)
 		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
+			showError(TranslateCap("invalid_player"))
 			return
 		end
 
 		if not Helpers.hasFeaturePermission(xPlayer.source, "helperCommands") then
-			showError("You do not have permission to use this command.")
+			showError(TranslateCap("no_permission_command"))
 			return
 		end
 
 		local ped = GetPlayerPed(xPlayer.source)
 		if ped == 0 then
-			showError("Failed to get player ped.")
+			showError(TranslateCap("failed_get_player_ped"))
 			return
 		end
 
 		local text, err = computeText(xPlayer, ped)
 		if not text then
-			showError(err or "Action failed.")
+			showError(err or TranslateCap("action_failed"))
 			return
 		end
 
@@ -42,46 +42,46 @@ local function registerCopyCommand(names, help, computeText)
 	end, false, { help = help })
 end
 
-registerCopyCommand("vec2", "Copy your current position as vec2(x, y)", function(_, ped)
+registerCopyCommand("vec2", TranslateCap("copy_position_as_vec2"), function(_, ped)
 	local coords = GetEntityCoords(ped)
 	return string.format("vec2(%.2f, %.2f)", coords.x, coords.y)
 end)
 
-registerCopyCommand("vec3", "Copy your current position as vec3(x, y, z)", function(_, ped)
+registerCopyCommand("vec3", TranslateCap("copy_position_as_vec3"), function(_, ped)
 	local coords = GetEntityCoords(ped)
 	return string.format("vec3(%.2f, %.2f, %.2f)", coords.x, coords.y, coords.z)
 end)
 
-registerCopyCommand("vec4", "Copy your current position as vec4(x, y, z, heading)", function(_, ped)
+registerCopyCommand("vec4", TranslateCap("copy_position_as_vec4"), function(_, ped)
 	local coords = GetEntityCoords(ped)
 	return string.format("vec4(%.2f, %.2f, %.2f, %.2f)", coords.x, coords.y, coords.z, GetEntityHeading(ped))
 end)
 
-registerCopyCommand("heading", "Copy your current heading.", function(_, ped)
+registerCopyCommand("heading", TranslateCap("copy_heading"), function(_, ped)
 	return string.format("%.2f", GetEntityHeading(ped))
 end)
 
-registerCopyCommand({ "copycoords" }, "Copy your current coordinates and heading as fields.", function(_, ped)
+registerCopyCommand({ "copycoords" }, TranslateCap("copy_coords_and_heading"), function(_, ped)
 	local coords = GetEntityCoords(ped)
 	local heading = GetEntityHeading(ped)
 	return string.format("x = %.2f, y = %.2f, z = %.2f, heading = %.2f", coords.x, coords.y, coords.z, heading)
 end)
 
-registerCopyCommand({ "rot", "rotation" }, "Copy your current rotation as vec3(x, y, z).", function(_, ped)
+registerCopyCommand({ "rot", "rotation" }, TranslateCap("copy_rotation"), function(_, ped)
 	local rotation = GetEntityRotation(ped, 2)
 	return string.format("vec3(%.2f, %.2f, %.2f)", rotation.x, rotation.y, rotation.z)
 end)
 
-registerCopyCommand({ "model", "entitymodel" }, "Copy your current ped or vehicle model hash.", function(_, ped)
+registerCopyCommand({ "model", "entitymodel" }, TranslateCap("copy_ped_or_vehicle_model"), function(_, ped)
 	local vehicle = GetVehiclePedIsIn(ped, false)
 	local entity = vehicle ~= 0 and vehicle or ped
 	return tostring(GetEntityModel(entity))
 end)
 
-registerCopyCommand({ "vehplate", "copyplate" }, "Copy the current vehicle plate.", function(_, ped)
+registerCopyCommand({ "vehplate", "copyplate" }, TranslateCap("copy_vehicle_plate"), function(_, ped)
 	local vehicle = GetVehiclePedIsIn(ped, false)
 	if vehicle == 0 then
-		return nil, "You must be in a vehicle."
+		return nil, TranslateCap("must_be_in_vehicle")
 	end
 	return ESX.Math.Trim(GetVehicleNumberPlateText(vehicle))
 end)
@@ -91,12 +91,12 @@ ESX.RegisterCommand(
 	allowedPermissions,
 	function(xPlayer, args, showError)
 		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
+			showError(TranslateCap("invalid_player"))
 			return
 		end
 
 		if not Helpers.hasPermission(xPlayer.source) then
-			showError("You do not have permission to open the admin menu.")
+			showError(TranslateCap("no_permission_open_menu"))
 			return
 		end
 
@@ -104,7 +104,7 @@ ESX.RegisterCommand(
 	end,
 	true,
 	{
-		help = "Opens the ESX Admin Menu",
+		help = TranslateCap("open_admin_menu"),
 	}
 )
 
@@ -113,17 +113,17 @@ ESX.RegisterCommand(
 	allowedPermissions,
 	function(xPlayer, args, showError)
 		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
+			showError(TranslateCap("invalid_player"))
 			return
 		end
 
 		if not Helpers.hasPermission(xPlayer.source) then
-			showError("You do not have permission to open player information.")
+			showError(TranslateCap("no_permission_open_player_info"))
 			return
 		end
 
 		if not Helpers.isOnline(args.playerId) then
-			showError("Player is not online.")
+			showError(TranslateCap("player_not_online"))
 			return
 		end
 
@@ -135,9 +135,9 @@ ESX.RegisterCommand(
 	end,
 	true,
 	{
-		help = "Open the admin dashboard directly to a player's information panel.",
+		help = TranslateCap("open_admin_dashboard_player_info"),
 		arguments = {
-			{ name = "playerId", help = "Target player ID", type = "number" },
+			{ name = "playerId", help = TranslateCap("target_player_id"), type = "number" },
 		},
 	}
 )
@@ -147,19 +147,19 @@ ESX.RegisterCommand(
 	allowedPermissions,
 	function(xPlayer, args, showError)
 		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
+			showError(TranslateCap("invalid_player"))
 			return
 		end
 
 		if not Helpers.hasFeaturePermission(xPlayer.source, "banManagement") then
-			showError("You do not have permission to refresh the ban cache.")
+			showError(TranslateCap("no_permission_refresh_ban_cache"))
 			return
 		end
 		BanCache.load()
 	end,
 	true,
 	{
-		help = "Refreshes the ban cache if manual changes were made to the database.",
+		help = TranslateCap("refreshes_ban_cache"),
 	}
 )
 
@@ -168,17 +168,17 @@ ESX.RegisterCommand(
 	allowedPermissions,
 	function(xPlayer, args, showError)
 		if not xPlayer or xPlayer.source == 0 then
-			showError("Invalid player.")
+			showError(TranslateCap("invalid_player"))
 			return
 		end
 
 		if not Helpers.hasPermission(xPlayer.source) then
-			showError("No permission.")
+			showError(TranslateCap("insufficient_permissions"))
 			return
 		end
 
 		if not Helpers.hasFeaturePermission(xPlayer.source, "vehicleOwnership") then
-			showError("You do not have permission to save admin vehicles.")
+			showError(TranslateCap("no_permission_save_admin_vehicles"))
 			return
 		end
 
@@ -191,12 +191,12 @@ ESX.RegisterCommand(
 		local vehicle = GetVehiclePedIsIn(ped, false)
 
 		if (not model or model == "") and (not vehicle or vehicle == 0) then
-			showError("You must be in a vehicle.")
+			showError(TranslateCap("must_be_in_vehicle"))
 			return
 		end
 
 		if (not model or model == "") and GetPedInVehicleSeat(vehicle, -1) ~= ped then
-			showError("You must be the driver.")
+			showError(TranslateCap("must_be_driver"))
 			return
 		end
 
@@ -208,12 +208,12 @@ ESX.RegisterCommand(
 
 		xLib.callback("esx-adminmenu:client:adminCarVehicleProps", xPlayer.source, function(props)
 			if not props or type(props) ~= "table" then
-				showError("Failed to get vehicle properties.")
+				showError(TranslateCap("failed_get_vehicle_properties"))
 				return
 			end
 
 			if Helpers.isPlateTaken(plate) then
-				showError("Generated plate was already taken. Try again.")
+				showError(TranslateCap("generated_plate_already_taken"))
 				return
 			end
 
@@ -223,7 +223,7 @@ ESX.RegisterCommand(
 			end
 
 			if not props.model then
-				showError("Failed to validate vehicle model.")
+				showError(TranslateCap("failed_validate_vehicle_model"))
 				return
 			end
 
@@ -232,7 +232,7 @@ ESX.RegisterCommand(
 			local maxBytes = tonumber(Config.AdminLimits and Config.AdminLimits.MaxVehiclePropsBytes) or 16384
 			local encoded = json.encode(props)
 			if type(encoded) ~= "string" or #encoded > maxBytes then
-				showError("Vehicle properties are too large.")
+				showError(TranslateCap("vehicle_properties_too_large"))
 				return
 			end
 
@@ -241,7 +241,7 @@ ESX.RegisterCommand(
 				plate,
 				encoded,
 			}, function()
-				xPlayer.showNotification("Vehicle registered to you.")
+				xPlayer.showNotification(TranslateCap("vehicle_registered_to_you"))
 			end)
 		end, {
 			model = model,
@@ -250,16 +250,16 @@ ESX.RegisterCommand(
 	end,
 	false,
 	{
-		help = "Spawn and own a vehicle, or register the vehicle you are driving.",
+		help = TranslateCap("spawn_and_own_or_register_vehicle"),
 		arguments = {
-			{ name = "model", help = "Vehicle model to spawn (optional)", type = "string" },
+			{ name = "model", help = TranslateCap("vehicle_model_to_spawn"), type = "string" },
 		},
 	}
 )
 
 ESX.RegisterCommand({ "setmodel" }, allowedPermissions, function(xPlayer, args, showError)
 	if not xPlayer or xPlayer.source == 0 then
-		showError("Invalid player.")
+		showError(TranslateCap("invalid_player"))
 		return
 	end
 
@@ -273,10 +273,10 @@ ESX.RegisterCommand({ "setmodel" }, allowedPermissions, function(xPlayer, args, 
 
 	showActionError(result, showError)
 end, true, {
-	help = "Change a player's model.",
+	help = TranslateCap("change_player_model"),
 	arguments = {
-		{ name = "playerId", help = "Target player ID", type = "number" },
-		{ name = "model", help = "Model name", type = "string" },
+		{ name = "playerId", help = TranslateCap("target_player_id"), type = "number" },
+		{ name = "model",    help = TranslateCap("model_name"),       type = "string" },
 	},
 })
 
@@ -287,9 +287,9 @@ ESX.RegisterCommand({ "goto" }, allowedPermissions, function(xPlayer, args, show
 
 	showActionError(result, showError)
 end, true, {
-	help = "Teleport to a player.",
+	help = TranslateCap("teleport_to_player"),
 	arguments = {
-		{ name = "playerId", help = "Target player ID", type = "number" },
+		{ name = "playerId", help = TranslateCap("target_player_id"), type = "number" },
 	},
 })
 
@@ -298,9 +298,9 @@ ESX.RegisterCommand({ "bring" }, allowedPermissions, function(xPlayer, args, sho
 
 	showActionError(result, showError)
 end, true, {
-	help = "Bring a player to you.",
+	help = TranslateCap("bring_player_to_you"),
 	arguments = {
-		{ name = "playerId", help = "Target player ID", type = "number" },
+		{ name = "playerId", help = TranslateCap("target_player_id"), type = "number" },
 	},
 })
 
@@ -309,9 +309,9 @@ ESX.RegisterCommand({ "spectate" }, allowedPermissions, function(xPlayer, args, 
 
 	showActionError(result, showError)
 end, true, {
-	help = "Spectate a player.",
+	help = TranslateCap("spectate_player"),
 	arguments = {
-		{ name = "playerId", help = "Target player ID", type = "number" },
+		{ name = "playerId", help = TranslateCap("target_player_id"), type = "number" },
 	},
 })
 
@@ -320,7 +320,7 @@ ESX.RegisterCommand({ "stopspectate" }, allowedPermissions, function(xPlayer, ar
 
 	showActionError(result, showError)
 end, true, {
-	help = "Stop spectating.",
+	help = TranslateCap("stop_spectating"),
 })
 
 ESX.RegisterCommand({ "kick" }, allowedPermissions, function(xPlayer, args, showError)
@@ -331,10 +331,10 @@ ESX.RegisterCommand({ "kick" }, allowedPermissions, function(xPlayer, args, show
 
 	showActionError(result, showError)
 end, true, {
-	help = "Kick a player.",
+	help = TranslateCap("kick_player"),
 	arguments = {
-		{ name = "playerId", help = "Target player ID", type = "number" },
-		{ name = "reason", help = "Reason for kick", type = "string" },
+		{ name = "playerId", help = TranslateCap("target_player_id"), type = "number" },
+		{ name = "reason",   help = TranslateCap("kick_reason"),      type = "string" },
 	},
 })
 
@@ -347,11 +347,11 @@ ESX.RegisterCommand({ "ban" }, allowedPermissions, function(xPlayer, args, showE
 
 	showActionError(result, showError)
 end, true, {
-	help = "Ban a player.",
+	help = TranslateCap("ban_player"),
 	arguments = {
-		{ name = "playerId", help = "Target player ID", type = "number" },
-		{ name = "duration", help = "Duration in minutes", type = "number" },
-		{ name = "reason", help = "Reason for ban", type = "string" },
+		{ name = "playerId", help = TranslateCap("target_player_id"),    type = "number" },
+		{ name = "duration", help = TranslateCap("duration_in_minutes"), type = "number" },
+		{ name = "reason",   help = TranslateCap("ban_reason"),          type = "string" },
 	},
 })
 
@@ -366,12 +366,12 @@ ESX.RegisterCommand({ "notify" }, allowedPermissions, function(xPlayer, args, sh
 
 	showActionError(result, showError)
 end, true, {
-	help = "Send a notification to a player.",
+	help = TranslateCap("send_notification_to_player"),
 	arguments = {
-		{ name = "playerId", help = "Target player ID", type = "number" },
-		{ name = "message", help = "Notification message", type = "string" },
-		{ name = "type", help = "Notification type (info, error, success)", type = "string" },
-		{ name = "duration", help = "Duration in ms", type = "number" },
-		{ name = "title", help = "Notification title", type = "string" },
+		{ name = "playerId", help = TranslateCap("target_player_id"),     type = "number" },
+		{ name = "message",  help = TranslateCap("notification_message"), type = "string" },
+		{ name = "type",     help = TranslateCap("notification_type"),    type = "string" },
+		{ name = "duration", help = TranslateCap("duration_in_ms"),       type = "number" },
+		{ name = "title",    help = TranslateCap("notification_title"),   type = "string" },
 	},
 })

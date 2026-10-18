@@ -126,7 +126,7 @@ local function getCurrentVehicle()
 	local vehicle = GetVehiclePedIsIn(ped, false)
 
 	if vehicle == 0 or not DoesEntityExist(vehicle) then
-		return nil, "You must be in a vehicle."
+		return nil, TranslateCap("must_be_in_vehicle")
 	end
 
 	return vehicle
@@ -318,7 +318,7 @@ local function applyVehicleCustomizations(vehicle, data)
 		brakeLevel = brakeLevel,
 		transmissionLevel = transmissionLevel,
 		suspensionLevel = suspensionLevel,
-		armorLevel = armorLevel,
+		armorLevel = armorLevel
 	}
 end
 
@@ -330,7 +330,7 @@ local function applyVehiclePerformance(vehicle, engineLevel, brakeLevel, maxPerf
 		suspensionLevel = maxPerformance and 5 or vehicleLevels.suspension,
 		armorLevel = maxPerformance and 5 or vehicleLevels.armor,
 		turbo = maxPerformance and true or nil,
-		maxPerformance = maxPerformance,
+		maxPerformance = maxPerformance
 	})
 
 	return levels.engineLevel, levels.brakeLevel
@@ -394,7 +394,7 @@ local function restoreSpectatePed()
 	SetPlayerInvincible(PlayerId(), false)
 
 	if lastCoords then
-		SetEntityCoords(ped, lastCoords)
+		SetEntityCoords(ped, lastCoords.x, lastCoords.y, lastCoords.z, false, false, false, false)
 	end
 end
 
@@ -606,7 +606,7 @@ local function nativeRevivePlayer()
 	local coords = GetEntityCoords(ped)
 	local heading = GetEntityHeading(ped)
 
-	NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, heading, true, false)
+	NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, heading, 0, false)
 	ped = PlayerPedId()
 	ClearPedTasksImmediately(ped)
 	ClearPedBloodDamage(ped)
@@ -780,7 +780,7 @@ end
 function ClientActions.RepairVehicle()
 	local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 	if vehicle == 0 then
-		return false, "You must be in a vehicle."
+		return false, TranslateCap("must_be_in_vehicle")
 	end
 
 	SetVehicleFixed(vehicle)
@@ -794,7 +794,7 @@ end
 function ClientActions.CleanVehicle()
 	local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 	if vehicle == 0 then
-		return false, "You must be in a vehicle."
+		return false, TranslateCap("must_be_in_vehicle")
 	end
 
 	SetVehicleDirtLevel(vehicle, 0.0)
@@ -805,7 +805,7 @@ end
 function ClientActions.FlipVehicle()
 	local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 	if vehicle == 0 then
-		return false, "You must be in a vehicle."
+		return false, TranslateCap("must_be_in_vehicle")
 	end
 
 	SetVehicleOnGroundProperly(vehicle)
@@ -827,7 +827,7 @@ end
 function ClientActions.DeleteVehicle()
 	local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 	if vehicle == 0 then
-		return false, "You must be in a vehicle."
+		return false, TranslateCap("must_be_in_vehicle")
 	end
 
 	markDeletedVehicleImpounded(vehicle)
@@ -848,7 +848,7 @@ function ClientActions.SpawnVehicle(data)
 
 	local modelHash, err = requestModel(model, { requireVehicle = true })
 	if not modelHash then
-		return false, err or "Invalid vehicle model."
+		return false, err or TranslateCap("invalid_vehicle_model")
 	end
 
 	local ped = PlayerPedId()
@@ -867,7 +867,7 @@ function ClientActions.SpawnVehicle(data)
 
 	if not vehicle or vehicle == 0 then
 		SetModelAsNoLongerNeeded(modelHash)
-		return false, "Failed to spawn vehicle."
+		return false, TranslateCap("failed_spawn_vehicle")
 	end
 
 	SetEntityAsMissionEntity(vehicle, true, true)
@@ -875,6 +875,7 @@ function ClientActions.SpawnVehicle(data)
 	SetVehicleHasBeenOwnedByPlayer(vehicle, true)
 	SetVehicleNeedsToBeHotwired(vehicle, false)
 	SetVehRadioStation(vehicle, "OFF")
+	SetVehicleFuelLevel(vehicle, 100.0)
 
 	local fallbackColor = trimString(data.color)
 	if fallbackColor == "" then
@@ -917,7 +918,7 @@ function ClientActions.SpawnVehicle(data)
 	SetModelAsNoLongerNeeded(modelHash)
 
 	local label = Helpers and Helpers.resolveVehicleName and Helpers.resolveVehicleName(modelHash) or model
-	notifyAction(("Spawned %s%s."):format(label, colorLabel and (" (" .. colorLabel .. ")") or ""))
+	notifyAction((TranslateCap("vehicle_spawned") .. " %s%s"):format(label, colorLabel and (" (" .. colorLabel .. ")") or ""))
 
 	return true
 end
@@ -979,7 +980,7 @@ function ClientActions.CycleVehicleColor()
 
 	local presets = getColorPresets()
 	if #presets == 0 then
-		return false, "No vehicle color presets configured."
+		return false, TranslateCap("no_vehicle_color_presets")
 	end
 
 	vehicleColorIndex = vehicleColorIndex + 1
@@ -1001,7 +1002,7 @@ function ClientActions.CycleVehicleNeonColor()
 
 	local presets = getNeonPresets()
 	if #presets == 0 then
-		return false, "No neon color presets configured."
+		return false, TranslateCap("no_neon_color_presets")
 	end
 
 	neonColorIndex = neonColorIndex + 1
@@ -1162,7 +1163,7 @@ RegisterNetEvent("esx-adminmenu:client:setModel", function(model)
 	local modelHash, err = requestModel(model)
 	if not modelHash then
 		if ESX and ESX.ShowNotification then
-			ESX.ShowNotification(err or "Invalid model.", "error")
+			ESX.ShowNotification(err or TranslateCap("invalid_model"), "error")
 		end
 		return
 	end
@@ -1188,7 +1189,7 @@ RegisterNetEvent("esx-adminmenu:client:setRadioChannel", function(channel)
 	end)
 
 	if not ok and ESX and ESX.ShowNotification then
-		ESX.ShowNotification("pma-voice radio export was not available.", "error")
+		ESX.ShowNotification(TranslateCap("pma_voice_radio_export_info"), "error")
 	end
 end)
 

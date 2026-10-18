@@ -69,7 +69,7 @@ end
 
 local function notifyClientError(err)
     if ESX and ESX.ShowNotification then
-        ESX.ShowNotification(err or "Action failed.", "error")
+        ESX.ShowNotification(err or TranslateCap("action_failed"), "error")
     end
 end
 
@@ -82,7 +82,7 @@ end
 local function openDashboard(cb)
     xLib.callback("esx-adminmenu:server:openDashboard", false, function(res)
         if not res or not res.success then
-            local err = getCallbackError(res, "You do not have permission to open the admin dashboard.")
+            local err = getCallbackError(res, TranslateCap("no_permission_open_dashboard"))
             notifyClientError(err)
 
             if cb then
@@ -111,7 +111,7 @@ end
 local function openAdminMenu(cb)
     xLib.callback("esx-adminmenu:server:canOpen", false, function(res)
         if not res or not res.success then
-            local err = getCallbackError(res, "You do not have permission to open the admin menu.")
+            local err = getCallbackError(res, TranslateCap("no_permission_open_menu"))
             notifyClientError(err)
 
             if cb then
@@ -159,7 +159,7 @@ end
 
 local function runProtectedClientAction(cb, label, action, permissionAction)
     if not permissionAction then
-        cb({ success = false, err = "Missing admin action permission." })
+        cb({ success = false, err = TranslateCap("missing_admin_action_permission") })
         return
     end
 
@@ -176,7 +176,7 @@ local function runProtectedClientAction(cb, label, action, permissionAction)
         end
 
         if not success then
-            cb({ success = false, err = err or "Action failed." })
+            cb({ success = false, err = err or TranslateCap("action_failed") })
             return
         end
 
@@ -205,7 +205,7 @@ end, false)
 local function runAdminCommandAction(action, handler)
     checkAdminAction(action, function(res)
         if not res or not res.success then
-            notifyClientError(getCallbackError(res, "You do not have permission to use this command."))
+            notifyClientError(getCallbackError(res, TranslateCap("no_permission_command")))
             return
         end
 
@@ -218,8 +218,8 @@ local function runAdminCommandAction(action, handler)
     end)
 end
 
-RegisterKeyMapping("adminmenu", "Open Admin Menu", "keyboard", Config.Keybinds.AdminMenu)
-RegisterKeyMapping("admindashboard", "Open Admin Dashboard", "keyboard", Config.Keybinds.AdminDashboard)
+RegisterKeyMapping("adminmenu", TranslateCap("open_admin_menu"), "keyboard", Config.Keybinds.AdminMenu)
+RegisterKeyMapping("admindashboard", TranslateCap("open_admin_dashboard"), "keyboard", Config.Keybinds.AdminDashboard)
 
 xLib.nui.register("openDashboard", function(data, cb)
     openDashboard(cb)
@@ -269,14 +269,32 @@ end
 -- reference bare.
 local directActions = {
     { name = "heal", permission = "heal", run = ClientActions.Heal },
-    { name = "armor", permission = "armor", run = function() return ClientActions.SetArmor(100) end },
+    {
+        name = "armor",
+        permission = "armor",
+        run = function()
+            return ClientActions.SetArmor(100)
+        end
+    },
     { name = "repairVehicle", permission = "repairVehicle", run = ClientActions.RepairVehicle },
     { name = "cleanVehicle", permission = "cleanVehicle", run = ClientActions.CleanVehicle },
     { name = "deleteVehicle", permission = "deleteVehicle", run = ClientActions.DeleteVehicle },
     { name = "waypoint", permission = "waypoint", run = ClientActions.TeleportToWaypoint },
-    { name = "spawnVehicle", permission = "spawnVehicle", run = function(data) return ClientActions.SpawnVehicle(data or {}) end },
+    {
+        name = "spawnVehicle",
+        permission = "spawnVehicle",
+        run = function(data)
+            return ClientActions.SpawnVehicle(data or {})
+        end
+    },
     { name = "flipVehicle", permission = "flipVehicle", run = ClientActions.FlipVehicle },
-    { name = "customizeVehicle", permission = "customizeVehicle", run = function(data) return ClientActions.CustomizeVehicle(data or {}) end },
+    {
+        name = "customizeVehicle",
+        permission = "customizeVehicle",
+        run = function(data)
+            return ClientActions.CustomizeVehicle(data or {})
+        end
+    },
     { name = "copyCoords", permission = "copyCoords", run = ClientActions.CopyCoords },
     { name = "cycleVehicleTransmission", permission = "transmissionLevel", run = ClientActions.CycleVehicleTransmission },
     { name = "cycleVehicleSuspension", permission = "suspensionLevel", run = ClientActions.CycleVehicleSuspension },
@@ -310,10 +328,8 @@ xLib.nui.register("adminMenu:setVehiclePerformance", function(data, cb)
     runProtectedClientAction(cb, "[esx-adminmenu:setVehiclePerformance]", function()
         local success, err, extra = ClientActions.SetVehiclePerformance(data or {})
         if success then
-            sendQuickMenuState("engineLevel", true,
-                data and data.engineLevel and (tostring(data.engineLevel) .. "/5") or nil)
-            sendQuickMenuState("brakeLevel", true,
-                data and data.brakeLevel and (tostring(data.brakeLevel) .. "/5") or nil)
+            sendQuickMenuState("engineLevel", true, data and data.engineLevel and (tostring(data.engineLevel) .. "/5") or nil)
+            sendQuickMenuState("brakeLevel", true, data and data.brakeLevel and (tostring(data.brakeLevel) .. "/5") or nil)
         end
 
         return success, err, extra
@@ -606,7 +622,7 @@ end)
 RegisterNetEvent("esx-adminmenu:client:copyToClipboard", function(text)
     xLib.nui.send({
         action = "copyToClipboard",
-        data = text,
+        data = text
     })
 end)
 
@@ -616,8 +632,8 @@ RegisterNetEvent("esx-adminmenu:client:open", function(data)
     xLib.nui.send({
         action = "openAdminDashboard",
         data = {
-            players = data or {},
-        },
+            players = data or {}
+        }
     })
 end)
 
@@ -634,8 +650,8 @@ RegisterNetEvent("esx-adminmenu:client:openInformation", function(data)
         data = {
             players = data.players or {},
             selectedPlayerId = data.selectedPlayerId,
-            serverData = data.serverData,
-        },
+            serverData = data.serverData
+        }
     })
 end)
 
