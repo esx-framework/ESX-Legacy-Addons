@@ -47,3 +47,11 @@ export function formatMoney(
 ): string {
   return `${currency}${formatNumber(amount, locale)}`;
 }
+
+/**
+ * @param id - Server id of the payment
+ * @returns The id as the player sees it on the bill and the receipt, e.g. "#000042"
+ */
+export function formatReference(id: number): string {
+  return `#${String(id).padStart(6, '0')}`;
+}

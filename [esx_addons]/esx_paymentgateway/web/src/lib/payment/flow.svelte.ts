@@ -7,6 +7,7 @@
  */
 
 import type { ClosePayload, OpenMessage, PayPayload } from '../nui/messages';
+import { formatReference } from './format';
 import { resolveLabels, type DialogLabels } from './labels';
 import type { Balances, Payment, PaymentMethod, PaymentResult } from './types';
 
@@ -117,7 +118,7 @@ export class PaymentFlow {
       this.receipt = {
         method,
         balance: this.balances[method],
-        reference: `#${String(this.payment.id).padStart(6, '0')}`,
+        reference: formatReference(this.payment.id),
       };
       return true;
     }
