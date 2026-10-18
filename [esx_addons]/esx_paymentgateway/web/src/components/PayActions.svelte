@@ -90,7 +90,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
   }
 
   .actions :global(.pay) {
@@ -133,7 +133,7 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    height: 36px;
+    height: 30px;
     padding: 0 12px;
     border: none;
     border-radius: 8px;
