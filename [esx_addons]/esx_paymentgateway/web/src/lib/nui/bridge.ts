@@ -2,8 +2,8 @@
  * Transport between the page and the Lua side of the resource.
  *
  * In game, CEF exposes `GetParentResourceName` and NUI callbacks are plain POST requests to
- * `https://<resource>/<callback>`. Outside the game (vite dev server) callbacks are logged
- * instead, so the UI can be developed in a normal browser.
+ * `https://<resource>/<callback>`. Outside the game the callbacks go to the handler set with
+ * {@link answerOffline}, so the page can play both sides in a normal browser.
  *
  * @see onNuiMessage
  * @see postNui
@@ -29,6 +29,20 @@ export class NuiCallbackError extends Error {
   }
 }
 
+/** Answers callbacks outside the game, in place of Lua. */
+export type OfflineHandler = (callback: string, payload: unknown) => void;
+
+let offlineHandler: OfflineHandler | null = null;
+
+/**
+ * Routes the NUI callbacks to a handler while the page runs outside the game.
+ *
+ * @param handler - Stand-in for the Lua client script
+ */
+export function answerOffline(handler: OfflineHandler): void {
+  offlineHandler = handler;
+}
+
 /**
  * Whether the page runs inside FiveM.
  *
@@ -49,7 +63,7 @@ export function isInGame(): boolean {
 export async function postNui(callback: string, payload: unknown): Promise<unknown> {
   const resource: string | undefined = window.GetParentResourceName?.();
   if (resource === undefined) {
-    if (import.meta.env.DEV) console.info(`[nui] ${callback}`, payload);
+    offlineHandler?.(callback, payload);
     return undefined;
   }
 

@@ -3,8 +3,10 @@
    * Root component. Shows the payment dialog over the transparent page and maps the keyboard
    * onto it; the controller talks to Lua.
    */
+  import DemoBar from './components/DemoBar.svelte';
   import PaymentDialog from './components/PaymentDialog.svelte';
   import { sounds } from './lib/audio/sounds';
+  import { demo } from './lib/demo/server.svelte';
   import { onNuiMessage } from './lib/nui/bridge';
   import type { NuiMessage } from './lib/nui/messages';
   import { controller } from './lib/payment/controller.svelte';
@@ -55,6 +57,8 @@
   $effect((): (() => void) => uiScale.track());
   // Decodes the cues up front, so the first one is not lost to loading.
   $effect((): void => void sounds.load());
+  // Outside FiveM the page opens sample payments itself, so it always shows something.
+  $effect((): void => demo.start());
 </script>
 
 <svelte:window onkeydown={handleKeydown} onkeyup={handleKeyup} />
@@ -69,5 +73,8 @@
       onpay={pay}
       onclose={close}
     />
+  {/if}
+  {#if demo.active}
+    <DemoBar />
   {/if}
 </main>
