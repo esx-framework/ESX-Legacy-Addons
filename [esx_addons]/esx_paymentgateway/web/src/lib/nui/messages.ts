@@ -48,6 +48,8 @@ export interface OpenMessage {
   theme?: Theme;
   /** Dialog texts from the resource's locale; English defaults fill the rest */
   labels?: Labels;
+  /** The resource's locale as a BCP 47 tag ("en", "de"), used to group money */
+  locale?: string;
 }
 
 /** The server's answer to the method the player chose. */
@@ -87,6 +89,7 @@ const MAX_TEXT = 120;
 const MAX_CURRENCY = 4;
 const THEME_COLORS = ['primaryColor', 'secondaryColor', 'backgroundColor', 'accentColor'] as const;
 const LABEL_KEY = /^[a-z][a-z_]{0,39}$/;
+const LOCALE = /^[a-z]{2,3}(?:[-_][A-Za-z]{2})?$/;
 
 /** Keeps the valid fields of a theme; an empty theme is dropped. */
 function parseTheme(value: unknown): Theme | undefined {
@@ -150,6 +153,9 @@ export function parseNuiMessage(data: unknown): NuiMessage | undefined {
       if (theme) message.theme = theme;
       const labels = parseLabels(data.labels);
       if (labels) message.labels = labels;
+      if (typeof data.locale === 'string' && LOCALE.test(data.locale)) {
+        message.locale = data.locale.replace('_', '-');
+      }
       return message;
     }
     case 'result': {

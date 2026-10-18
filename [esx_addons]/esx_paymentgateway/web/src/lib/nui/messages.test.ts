@@ -86,6 +86,15 @@ describe('parseNuiMessage', (): void => {
     expect(message?.action === 'open' && message.labels).toEqual({ pay: 'Bezahlen' });
   });
 
+  it.each([
+    ['de', 'de'],
+    ['pt_BR', 'pt-BR'],
+    ['<b>', undefined],
+  ])('should read the locale %s as %s', (locale: string, expected: string | undefined): void => {
+    const message = parseNuiMessage({ action: 'open', payment, locale });
+    expect(message?.action === 'open' && message.locale).toBe(expected);
+  });
+
   it('should accept a result and drop its invalid fields', (): void => {
     expect(
       parseNuiMessage({
