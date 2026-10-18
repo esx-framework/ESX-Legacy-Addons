@@ -6,7 +6,15 @@
 // @ts-check
 
 import { RESOLUTIONS, settle } from './harness.js';
-import { chooseTile, clickPay, openMessage, openPayment, phaseOf } from './payment.js';
+import {
+  acceptPayment,
+  chooseTile,
+  clickPay,
+  expectReceipt,
+  openMessage,
+  openPayment,
+  phaseOf,
+} from './payment.js';
 
 /**
  * Scenarios for scripts/cef103.js. Each one gets a page that already has the production
@@ -66,11 +74,56 @@ export const scenarios = [
         action: 'result',
         result: { id: 42, ok: true, method: 'card', balances: { cash: 4820, card: 17250 } },
       });
-      await page.waitForSelector('[role="dialog"][data-phase="paid"]', { timeout: 3_000 });
+      await expectReceipt(page, 'card');
       await new Promise((resolve) => setTimeout(resolve, 900));
       await nui.screenshot('receipt');
       const closed = /** @type {{ id: number }} */ (await nui.waitForCallback('close'));
       if (closed.id !== 42) throw new Error('the receipt did not close itself');
+    },
+  },
+  {
+    name: 'pay-in-cash',
+    async run(page, nui) {
+      await openPayment(page, nui, FULL_HD, openMessage());
+      const body = await clickPay(page, nui);
+      if (body.method !== 'cash') throw new Error(`the preselected method paid ${body.method}`);
+      await acceptPayment(nui, 'cash');
+      await expectReceipt(page, 'cash');
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      await nui.screenshot('receipt');
+    },
+  },
+  {
+    name: 'keys-pick-cash',
+    async run(page, nui) {
+      await openPayment(page, nui, FULL_HD, openMessage());
+      await page.keyboard.press('2');
+      await page.keyboard.press('1');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('Enter');
+      const body = /** @type {{ method: string }} */ (await nui.waitForCallback('pay'));
+      if (body.method !== 'cash') throw new Error(`the keys paid ${body.method}`);
+      // A server that leaves the method out still gets the chosen one on the receipt.
+      await acceptPayment(nui, undefined);
+      await expectReceipt(page, 'cash');
+    },
+  },
+  {
+    name: 'hold-in-cash',
+    async run(page, nui) {
+      await openPayment(
+        page,
+        nui,
+        FULL_HD,
+        openMessage({ amount: 60000, hold: true, balances: { cash: 90000, card: 412000 } }),
+      );
+      await page.keyboard.down(' ');
+      const body = /** @type {{ method: string }} */ (await nui.waitForCallback('pay'));
+      await page.keyboard.up(' ');
+      if (body.method !== 'cash') throw new Error(`the held payment used ${body.method}`);
+      await acceptPayment(nui, 'cash');
+      await expectReceipt(page, 'cash');
     },
   },
   {
@@ -139,7 +192,7 @@ export const scenarios = [
         await new Promise((resolve) => setTimeout(resolve, 600));
         await browserPage.screenshot({ path: 'test-results/cef103/browser-demo-open.png' });
         await browserPage.click('button.pay');
-        await browserPage.waitForSelector('[role="dialog"][data-phase="paid"]', { timeout: 5_000 });
+        await expectReceipt(browserPage, 'cash');
       } finally {
         await browserPage.close();
       }

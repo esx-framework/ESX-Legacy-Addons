@@ -85,3 +85,37 @@ export async function clickPay(page, nui) {
 export function phaseOf(page) {
   return page.$eval('[role="dialog"]', (dialog) => dialog.getAttribute('data-phase'));
 }
+
+/**
+ * Checks that the receipt names the method that paid and draws it on the success badge.
+ * @param {Page} page Browser page
+ * @param {'cash' | 'card'} method Method that paid
+ * @returns {Promise<void>}
+ */
+export async function expectReceipt(page, method) {
+  await page.waitForSelector('[role="dialog"][data-phase="paid"]', { timeout: 3_000 });
+  const seen = await page.evaluate(() => {
+    const badge = document.querySelector('.badge svg');
+    const drawing = badge?.querySelector('.bill')
+      ? 'cash'
+      : badge?.querySelector('.card')
+        ? 'card'
+        : 'none';
+    return { drawing, paidWith: document.querySelector('.slip dd')?.textContent?.trim() };
+  });
+  const label = method === 'cash' ? 'Cash' : 'Card';
+  if (seen.drawing !== method || seen.paidWith !== label) {
+    throw new Error(`a ${method} payment's receipt shows ${JSON.stringify(seen)}`);
+  }
+}
+
+/**
+ * Answers a payment the way the server does when it took the money.
+ * @param {NuiHarness} nui Harness
+ * @param {string | undefined} method Method the server names, undefined to leave it out
+ * @returns {Promise<void>}
+ */
+export function acceptPayment(nui, method) {
+  const result = { id: 42, ok: true, balances: { cash: 3570, card: 17250 } };
+  return nui.send({ action: 'result', result: method ? { ...result, method } : result });
+}
