@@ -6,6 +6,9 @@
 
 local Payment = require "server.module.payment.main"
 
+--- Pay attempts a player may make in a burst; refusals let them try another method.
+local limiter = xLib.rateLimiter({ capacity = 4, refill = 1, interval = 1000, staleMs = 60000 })
+
 ---Opens the payment dialog for a player.
 ---@param playerId integer Server id of the player who pays
 ---@param request table amount, title, description?, currency?, methods?, resultEvent?
@@ -21,6 +24,12 @@ end)
 ---@return boolean cancelled
 exports("CancelPayment", function(playerId)
     return Payment.cancelFor(playerId, GetInvokingResource())
+end)
+
+RegisterNetEvent("esx_paymentgateway:pay", function(id, method)
+    local playerId = source --[[@as integer]]
+    if not limiter:consume(playerId) then return end
+    Payment.pay(playerId, id, method)
 end)
 
 RegisterNetEvent("esx_paymentgateway:cancel", function(id)

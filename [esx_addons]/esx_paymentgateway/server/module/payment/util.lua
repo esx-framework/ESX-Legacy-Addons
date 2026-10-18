@@ -16,6 +16,7 @@
 ---@field onResult? function Function the requester passed, called when the payment ends
 ---@field resource? string Resource that asked for the payment
 ---@field identifier? string ESX identifier of the character the payment was opened for
+---@field expiresAt? integer GetGameTimer() value at which the payment expires
 
 local Util = {}
 
