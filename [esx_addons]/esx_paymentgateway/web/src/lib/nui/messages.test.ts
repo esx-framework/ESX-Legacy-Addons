@@ -42,6 +42,15 @@ describe('parseNuiMessage', (): void => {
     expect(parseNuiMessage({ action: 'open', payment: { ...payment, ...change } })).toBeUndefined();
   });
 
+  it.each([
+    [true, true],
+    [1, undefined],
+    ['true', undefined],
+  ])('should read hold %j as %j', (hold: unknown, expected?: boolean): void => {
+    const message = parseNuiMessage({ action: 'open', payment: { ...payment, hold } });
+    expect(message?.action === 'open' && message.payment.hold).toBe(expected);
+  });
+
   it('should keep the known methods once and in dialog order', (): void => {
     const message = parseNuiMessage({
       action: 'open',

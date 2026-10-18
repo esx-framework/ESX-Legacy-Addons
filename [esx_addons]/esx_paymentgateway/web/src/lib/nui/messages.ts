@@ -126,6 +126,7 @@ function parsePayment(value: unknown): Payment | undefined {
   if (!isText(currency, MAX_CURRENCY) || !isText(title, MAX_TEXT)) return undefined;
   const payment: Payment = { id, amount, currency, title, methods, balances };
   if (isText(description, MAX_TEXT)) payment.description = description;
+  if (value.hold === true) payment.hold = true;
   return payment;
 }
 

@@ -7,6 +7,7 @@
   import { onNuiMessage, postNui } from './lib/nui/bridge';
   import type { NuiMessage } from './lib/nui/messages';
   import { flow } from './lib/payment/flow.svelte';
+  import { hold } from './lib/payment/hold.svelte';
   import type { PaymentMethod } from './lib/payment/types';
   import { uiScale } from './lib/ui/scale.svelte';
   import { applyTheme } from './lib/ui/theme';
@@ -33,6 +34,7 @@
     switch (message.action) {
       case 'open':
         clearTimers();
+        hold.cancel();
         logo = applyTheme(message.theme);
         closeDelay = message.closeDelay ?? DEFAULT_CLOSE_DELAY;
         flow.open(message);
@@ -92,27 +94,44 @@
     }
   }
 
+  /** Whether a key confirms: Enter always, Space only while a payment needs holding. */
+  function confirms(event: KeyboardEvent): boolean {
+    return event.key === 'Enter' || (event.key === ' ' && flow.payment?.hold === true);
+  }
+
   function handleKeydown(event: KeyboardEvent): void {
     const payment = flow.payment;
     if (!payment) return;
     if (event.key === 'Escape') {
       event.preventDefault();
       void close();
+    } else if (confirms(event) && flow.phase === 'paid') {
+      event.preventDefault();
+      void close();
+    } else if (confirms(event) && payment.hold) {
+      // Held keys repeat; the gesture ignores starts while it runs.
+      event.preventDefault();
+      if (flow.method && flow.phase === 'choosing') hold.start(pay);
     } else if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) {
       event.preventDefault();
-      if (flow.phase === 'paid') void close();
-      else void pay();
+      void pay();
     } else if (/^[1-9]$/.test(event.key)) {
       const method = payment.methods[Number(event.key) - 1];
       if (method) choose(method);
     }
   }
 
+  function handleKeyup(event: KeyboardEvent): void {
+    if (!confirms(event) || !flow.payment?.hold) return;
+    event.preventDefault();
+    hold.cancel();
+  }
+
   $effect((): (() => void) => onNuiMessage(handleMessage));
   $effect((): (() => void) => uiScale.track());
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} onkeyup={handleKeyup} />
 
 <main class="app">
   {#if flow.payment}

@@ -37,6 +37,8 @@ export interface Payment {
   methods: PaymentMethod[];
   /** Balances at the time the dialog opened */
   balances: Balances;
+  /** Whether the player has to hold the pay button, set by the server for large amounts */
+  hold?: boolean;
 }
 
 /** The server's answer to a chosen method. */
