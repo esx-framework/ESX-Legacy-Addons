@@ -12,7 +12,8 @@ import type { Labels } from '../nui/messages';
 /** English texts, also the list of keys the dialog uses. */
 export const DEFAULT_LABELS = {
   heading: 'Payment',
-  choose: 'Choose how to pay',
+  choose: 'Pay with',
+  total: 'Total',
   cash: 'Cash',
   card: 'Card',
   remaining: 'After paying {amount}',

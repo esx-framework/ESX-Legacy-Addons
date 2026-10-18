@@ -58,7 +58,8 @@ export const BLUE_THEME: Theme = {
 /** The dialog in German, as the resource's de locale sends it. */
 export const GERMAN_LABELS: Labels = {
   heading: 'Zahlung',
-  choose: 'Zahlungsart wählen',
+  choose: 'Bezahlen mit',
+  total: 'Gesamt',
   cash: 'Bargeld',
   card: 'Karte',
   remaining: 'Danach {amount}',
