@@ -3,7 +3,8 @@
 
 --- The payment dialog on the client: opens the page with the server's payment, the theme
 --- and the texts, passes the player's choice to the server and its answer back to the page.
---- The page reports through its `pay` and `close` callbacks.
+--- The page reports through its `shown`, `pay` and `close` callbacks. Focus is only taken once
+--- the page says it shows the payment, so a page that cannot show it never locks the player.
 
 local Payment = {}
 
@@ -30,12 +31,12 @@ local function labels()
     return result
 end
 
----Opens the dialog with a payment the server opened.
+---Sends a payment the server opened to the page; the `shown` callback takes focus.
 ---@param payment table
 function Payment.open(payment)
     current = payment.id
     settled = false
-    xLib.nui.open({
+    xLib.nui.send({
         action = "open",
         payment = payment,
         theme = xLib.colors.getESXTheme(),
@@ -84,6 +85,11 @@ end
 function Payment.isOpen()
     return current ~= nil
 end
+
+xLib.nui.register("shown", function(data)
+    if current and data.id == current then xLib.nui.focus(true, true) end
+    return xLib.nui.ok()
+end)
 
 xLib.nui.register("pay", function(data)
     if current and data.id == current and not settled then
