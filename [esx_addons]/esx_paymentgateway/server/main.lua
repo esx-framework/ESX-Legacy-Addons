@@ -38,3 +38,16 @@ end)
 RegisterNetEvent("esx_paymentgateway:cancel", function(id)
     Payment.cancel(source --[[@as integer]], id)
 end)
+
+--- ESX fires this when a player leaves and when they log out of their character.
+AddEventHandler("esx:playerDropped", function(playerId)
+    Payment.drop(playerId)
+end)
+
+AddEventHandler("onResourceStop", function(resource)
+    if resource == GetCurrentResourceName() then
+        Payment.stopAll()
+    else
+        Payment.forgetResource(resource)
+    end
+end)

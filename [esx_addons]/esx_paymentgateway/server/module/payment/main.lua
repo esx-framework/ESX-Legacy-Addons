@@ -12,7 +12,7 @@ local Util = require "server.module.payment.util"
 local Payment = {}
 
 --- How a payment ended, as the requester hears it.
----@alias PaymentOutcome "paid"|"cancelled"|"expired"|"dropped"
+---@alias PaymentOutcome "paid"|"cancelled"|"expired"|"dropped"|"stopped"
 
 ---@type table<integer, PaymentRequest>
 local open = {}
@@ -222,6 +222,33 @@ function Payment.cancelFor(playerId, resource)
     open[playerId] = nil
     abandon(playerId, request, "cancelled")
     return true
+end
+
+---Ends the payment of a player who left or logged out of their character. A player who only
+---logged out is still connected, so their dialog is closed too.
+---@param playerId integer
+function Payment.drop(playerId)
+    local request = take(playerId)
+    if request then abandon(playerId, request, "dropped") end
+end
+
+---Closes the payments a stopped resource asked for; nobody is left to hear their result.
+---@param resource string
+function Payment.forgetResource(resource)
+    for playerId, request in pairs(open) do
+        if request.resource == resource then
+            open[playerId] = nil
+            TriggerClientEvent("esx_paymentgateway:close", playerId)
+        end
+    end
+end
+
+---Ends every open payment because the gateway itself stops, so no requester waits forever.
+function Payment.stopAll()
+    for playerId, request in pairs(open) do
+        open[playerId] = nil
+        report(playerId, request, false, nil, "stopped")
+    end
 end
 
 return Payment
