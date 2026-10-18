@@ -33,7 +33,7 @@ AddEventHandler('esx:onPlayerSpawn', function()
     IsDead = false
 end)
 
-AddEventHandler('esx_status:loaded', function()
+local function registerNeeds()
     local function registerStatus(name, color, removalRate)
         TriggerEvent('esx_status:registerStatus', name, 1000000, color, 
             function() return Config.Visible end,
@@ -43,6 +43,14 @@ AddEventHandler('esx_status:loaded', function()
 
     registerStatus('hunger', '#CFAD0F', 100)
     registerStatus('thirst', '#0C98F1', 75)
+end
+
+AddEventHandler('esx_status:loaded', registerNeeds)
+
+AddEventHandler('onClientResourceStart', function(resource)
+    if resource == GetCurrentResourceName() and ESX.PlayerLoaded then
+        registerNeeds()
+    end
 end)
 
 AddEventHandler('esx_status:onTick', function(statuses)

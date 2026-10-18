@@ -9,7 +9,7 @@ author 'ESX-Framework'
 description 'A banking system that adds interactable banks and ATMs'
 lua54 'yes'
 version '1.0.1'
-legacyversion '1.16.2'
+legacyversion '1.16.3'
 
 shared_scripts {
     '@esx_lib/imports.lua',

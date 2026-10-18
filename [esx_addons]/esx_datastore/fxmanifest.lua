@@ -8,7 +8,7 @@ game 'gta5'
 author 'ESX-Framework'
 description 'Used for storing Data, such as society inventories'
 version '1.0'
-legacyversion '1.16.2'
+legacyversion '1.16.3'
 
 lua54 'yes'
 
