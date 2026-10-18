@@ -23,6 +23,7 @@ export const DEFAULT_LABELS = {
   hold_cash: 'Hold to pay {amount} in cash',
   hold_card: 'Hold to pay {amount} by card',
   unaffordable: 'Not enough money for this payment',
+  unreachable: 'The payment did not go through. Try again.',
   processing: 'Processing',
   cancel: 'Cancel',
   close: 'Close',

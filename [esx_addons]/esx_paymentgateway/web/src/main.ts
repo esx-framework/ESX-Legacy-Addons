@@ -9,6 +9,7 @@ import 'esx-ui-kit-svelte/style.css';
 import App from './App.svelte';
 import './styles/fonts.css';
 import './styles/global.css';
+import './styles/kit.css';
 
 const target: HTMLElement | null = document.getElementById('app');
 if (!target) {
