@@ -27,6 +27,15 @@ function numberFormat(locale: string): Intl.NumberFormat {
 
 /**
  * @param amount - Money in whole units; fractions are cut off, never rounded up
+ * @param locale - BCP 47 tag of the server's locale, English when left out
+ * @returns The number grouped the way the locale writes it, without a currency
+ */
+export function formatNumber(amount: number, locale: string = FALLBACK_LOCALE): string {
+  return numberFormat(locale).format(Math.floor(amount));
+}
+
+/**
+ * @param amount - Money in whole units; fractions are cut off, never rounded up
  * @param currency - Symbol shown before the number
  * @param locale - BCP 47 tag of the server's locale, English when left out
  * @returns The amount as the dialog shows it
@@ -36,5 +45,5 @@ export function formatMoney(
   currency: string,
   locale: string = FALLBACK_LOCALE,
 ): string {
-  return `${currency}${numberFormat(locale).format(Math.floor(amount))}`;
+  return `${currency}${formatNumber(amount, locale)}`;
 }

@@ -1,10 +1,10 @@
 <script lang="ts">
   /**
-   * What the payment is for and how much it is.
+   * Who is paid, what for and how much, read top to bottom like a price tag.
    */
   import { flow } from '../lib/payment/flow.svelte';
-  import { formatMoney } from '../lib/payment/format';
   import type { Payment } from '../lib/payment/types';
+  import Money from './Money.svelte';
 
   interface Props {
     /** The payment on screen */
@@ -15,45 +15,34 @@
 </script>
 
 <section class="summary">
-  <div class="what">
-    <h4 class="title">{payment.title}</h4>
-    {#if payment.description}
-      <p class="description">{payment.description}</p>
-    {/if}
-  </div>
-  <p class="amount">{formatMoney(payment.amount, payment.currency, flow.locale)}</p>
+  {#if payment.description}
+    <p class="merchant">{payment.description}</p>
+  {/if}
+  <h4 class="title">{payment.title}</h4>
+  <p class="amount">
+    <Money amount={payment.amount} currency={payment.currency} locale={flow.locale} />
+  </p>
 </section>
 
 <style>
   .summary {
     display: flex;
     flex-direction: column;
-    gap: 14px;
   }
 
-  .what {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .title {
-    font-weight: 600;
-    line-height: 1.3;
-    overflow-wrap: anywhere;
-  }
-
-  .description {
+  .merchant {
     font-size: var(--font-size-body-small);
     color: var(--light-color);
     overflow-wrap: anywhere;
   }
 
+  .title {
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
   .amount {
-    font-size: var(--font-size-h1);
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-    font-variant-numeric: tabular-nums;
+    margin-top: 8px;
   }
 </style>
