@@ -1,98 +1,19 @@
 <script lang="ts">
   /**
-   * Root component. Listens for NUI messages, shows the payment dialog over the transparent
-   * page and sends the player's choices back to Lua.
+   * Root component. Shows the payment dialog over the transparent page and maps the keyboard
+   * onto it; the controller talks to Lua.
    */
   import PaymentDialog from './components/PaymentDialog.svelte';
-  import { onNuiMessage, postNui } from './lib/nui/bridge';
+  import { onNuiMessage } from './lib/nui/bridge';
   import type { NuiMessage } from './lib/nui/messages';
+  import { controller } from './lib/payment/controller.svelte';
   import { flow } from './lib/payment/flow.svelte';
   import { hold } from './lib/payment/hold.svelte';
   import type { PaymentMethod } from './lib/payment/types';
   import { uiScale } from './lib/ui/scale.svelte';
-  import { applyTheme } from './lib/ui/theme';
 
-  /** How long the receipt stays when Lua does not say, in milliseconds. */
-  const DEFAULT_CLOSE_DELAY = 2600;
-  /** Shortest time the pay button shows that it is working, so an instant answer reads as one. */
-  const MIN_PAYING_MS = 650;
-  /** Longest the page waits for the server's answer before it lets the player try again. */
-  const ANSWER_TIMEOUT_MS = 10_000;
-
-  let logo: string | null = $state(null);
-  let closeDelay: number = $state(DEFAULT_CLOSE_DELAY);
-  let payingSince = 0;
-  let answerTimer: ReturnType<typeof setTimeout> | undefined;
-  let closeTimer: ReturnType<typeof setTimeout> | undefined;
-
-  function clearTimers(): void {
-    clearTimeout(answerTimer);
-    clearTimeout(closeTimer);
-  }
-
-  function handleMessage(message: NuiMessage): void {
-    switch (message.action) {
-      case 'open':
-        clearTimers();
-        hold.cancel();
-        logo = applyTheme(message.theme);
-        closeDelay = message.closeDelay ?? DEFAULT_CLOSE_DELAY;
-        flow.open(message);
-        break;
-      case 'result': {
-        const { result } = message;
-        clearTimeout(answerTimer);
-        answerTimer = setTimeout(
-          (): void => {
-            if (flow.answer(result) && flow.phase === 'paid' && closeDelay > 0) {
-              closeTimer = setTimeout(close, closeDelay);
-            }
-          },
-          Math.max(0, payingSince + MIN_PAYING_MS - Date.now()),
-        );
-        break;
-      }
-      case 'close':
-        clearTimers();
-        flow.close();
-        break;
-      default:
-        break;
-    }
-  }
-
-  function choose(method: PaymentMethod): void {
-    flow.choose(method);
-  }
-
-  async function pay(): Promise<void> {
-    const body = flow.pay();
-    if (!body) return;
-    payingSince = Date.now();
-    const giveUp = (): void => {
-      flow.answer({ id: body.id, ok: false, message: flow.labels.unreachable });
-    };
-    answerTimer = setTimeout(giveUp, ANSWER_TIMEOUT_MS);
-    try {
-      await postNui('pay', body);
-    } catch (err: unknown) {
-      console.error('[esx_paymentgateway] pay callback failed', err);
-      clearTimeout(answerTimer);
-      giveUp();
-    }
-  }
-
-  async function close(): Promise<void> {
-    if (flow.phase === 'paying') return;
-    clearTimers();
-    const body = flow.close();
-    if (!body) return;
-    try {
-      await postNui('close', body);
-    } catch (err: unknown) {
-      console.error('[esx_paymentgateway] close callback failed', err);
-    }
-  }
+  const pay = (): void => void controller.pay();
+  const close = (): void => void controller.close();
 
   /** Whether a key confirms: Enter always, Space only while a payment needs holding. */
   function confirms(event: KeyboardEvent): boolean {
@@ -104,20 +25,20 @@
     if (!payment) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      void close();
+      close();
     } else if (confirms(event) && flow.phase === 'paid') {
       event.preventDefault();
-      void close();
+      close();
     } else if (confirms(event) && payment.hold) {
       // Held keys repeat; the gesture ignores starts while it runs.
       event.preventDefault();
       if (flow.method && flow.phase === 'choosing') hold.start(pay);
     } else if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) {
       event.preventDefault();
-      void pay();
+      pay();
     } else if (/^[1-9]$/.test(event.key)) {
       const method = payment.methods[Number(event.key) - 1];
-      if (method) choose(method);
+      if (method) controller.choose(method);
     }
   }
 
@@ -127,7 +48,9 @@
     hold.cancel();
   }
 
-  $effect((): (() => void) => onNuiMessage(handleMessage));
+  $effect((): (() => void) =>
+    onNuiMessage((message: NuiMessage): void => controller.handle(message)),
+  );
   $effect((): (() => void) => uiScale.track());
 </script>
 
@@ -137,9 +60,9 @@
   {#if flow.payment}
     <PaymentDialog
       payment={flow.payment}
-      {logo}
-      {closeDelay}
-      onchoose={choose}
+      logo={controller.logo}
+      closeDelay={controller.closeDelay}
+      onchoose={(method: PaymentMethod): void => controller.choose(method)}
       onpay={pay}
       onclose={close}
     />
