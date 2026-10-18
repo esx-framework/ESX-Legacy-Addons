@@ -171,7 +171,8 @@ local function applyVehicleColors(vehicle, primaryColorId, secondaryColorId)
 	SetVehicleColours(
 		vehicle,
 		tonumber(primaryPreset.primary) or 0,
-		tonumber(secondaryPreset.secondary) or tonumber(secondaryPreset.primary) or tonumber(primaryPreset.secondary) or tonumber(primaryPreset.primary) or 0
+		tonumber(secondaryPreset.secondary) or tonumber(secondaryPreset.primary) or tonumber(primaryPreset.secondary) or
+		tonumber(primaryPreset.primary) or 0
 	)
 	vehicleColorIndex = primaryIndex
 
@@ -211,7 +212,8 @@ local function applyVehicleNeon(vehicle, enabled, colorId)
 
 	local preset, index = findNeonPreset(colorId)
 	if preset then
-		SetVehicleNeonLightsColour(vehicle, tonumber(preset.r) or 255, tonumber(preset.g) or 255, tonumber(preset.b) or 255)
+		SetVehicleNeonLightsColour(vehicle, tonumber(preset.r) or 255, tonumber(preset.g) or 255,
+			tonumber(preset.b) or 255)
 		neonColorIndex = index
 		return preset.label or preset.id or "Neon"
 	end
@@ -265,11 +267,16 @@ local function applyVehicleCustomizations(vehicle, data)
 	data = data or {}
 	local useMaxPerformance = data.maxPerformance == true
 
-	local engineLevel = applyVehicleModLevel(vehicle, MOD.engine, useMaxPerformance and 5 or data.engineLevel or vehicleLevels.engine)
-	local brakeLevel = applyVehicleModLevel(vehicle, MOD.brakes, useMaxPerformance and 5 or data.brakeLevel or vehicleLevels.brake)
-	local transmissionLevel = applyVehicleModLevel(vehicle, MOD.transmission, useMaxPerformance and 5 or data.transmissionLevel or vehicleLevels.transmission)
-	local suspensionLevel = applyVehicleModLevel(vehicle, MOD.suspension, useMaxPerformance and 5 or data.suspensionLevel or vehicleLevels.suspension)
-	local armorLevel = applyVehicleModLevel(vehicle, MOD.armor, useMaxPerformance and 5 or data.armorLevel or vehicleLevels.armor)
+	local engineLevel = applyVehicleModLevel(vehicle, MOD.engine,
+		useMaxPerformance and 5 or data.engineLevel or vehicleLevels.engine)
+	local brakeLevel = applyVehicleModLevel(vehicle, MOD.brakes,
+		useMaxPerformance and 5 or data.brakeLevel or vehicleLevels.brake)
+	local transmissionLevel = applyVehicleModLevel(vehicle, MOD.transmission,
+		useMaxPerformance and 5 or data.transmissionLevel or vehicleLevels.transmission)
+	local suspensionLevel = applyVehicleModLevel(vehicle, MOD.suspension,
+		useMaxPerformance and 5 or data.suspensionLevel or vehicleLevels.suspension)
+	local armorLevel = applyVehicleModLevel(vehicle, MOD.armor,
+		useMaxPerformance and 5 or data.armorLevel or vehicleLevels.armor)
 
 	vehicleLevels.engine = engineLevel
 	vehicleLevels.brake = brakeLevel
@@ -716,7 +723,8 @@ function ClientActions.ToggleNames()
 
 						if distance <= maxDistance then
 							local serverId = GetPlayerServerId(player)
-							drawWorldText(coords + vector3(0.0, 0.0, 1.05), ("[%s] %s"):format(serverId, GetPlayerName(player)))
+							drawWorldText(coords + vector3(0.0, 0.0, 1.05),
+								("[%s] %s"):format(serverId, GetPlayerName(player)))
 						end
 					end
 				end
@@ -780,7 +788,7 @@ end
 function ClientActions.RepairVehicle()
 	local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 	if vehicle == 0 then
-		return false, "You must be in a vehicle."
+		return false, TranslateCap("must_be_in_vehicle")
 	end
 
 	SetVehicleFixed(vehicle)
@@ -794,7 +802,7 @@ end
 function ClientActions.CleanVehicle()
 	local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 	if vehicle == 0 then
-		return false, "You must be in a vehicle."
+		return false, TranslateCap("must_be_in_vehicle")
 	end
 
 	SetVehicleDirtLevel(vehicle, 0.0)
@@ -805,7 +813,7 @@ end
 function ClientActions.FlipVehicle()
 	local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 	if vehicle == 0 then
-		return false, "You must be in a vehicle."
+		return false, TranslateCap("must_be_in_vehicle")
 	end
 
 	SetVehicleOnGroundProperly(vehicle)
@@ -827,7 +835,7 @@ end
 function ClientActions.DeleteVehicle()
 	local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 	if vehicle == 0 then
-		return false, "You must be in a vehicle."
+		return false, TranslateCap("must_be_in_vehicle")
 	end
 
 	markDeletedVehicleImpounded(vehicle)
@@ -848,7 +856,7 @@ function ClientActions.SpawnVehicle(data)
 
 	local modelHash, err = requestModel(model, { requireVehicle = true })
 	if not modelHash then
-		return false, err or "Invalid vehicle model."
+		return false, err or TranslateCap("invalid_vehicle_model")
 	end
 
 	local ped = PlayerPedId()
@@ -867,7 +875,7 @@ function ClientActions.SpawnVehicle(data)
 
 	if not vehicle or vehicle == 0 then
 		SetModelAsNoLongerNeeded(modelHash)
-		return false, "Failed to spawn vehicle."
+		return false, TranslateCap("failed_spawn_vehicle")
 	end
 
 	SetEntityAsMissionEntity(vehicle, true, true)
@@ -875,6 +883,7 @@ function ClientActions.SpawnVehicle(data)
 	SetVehicleHasBeenOwnedByPlayer(vehicle, true)
 	SetVehicleNeedsToBeHotwired(vehicle, false)
 	SetVehRadioStation(vehicle, "OFF")
+	SetVehicleFuelLevel(vehicle, 100.0)
 
 	local fallbackColor = trimString(data.color)
 	if fallbackColor == "" then
@@ -917,7 +926,7 @@ function ClientActions.SpawnVehicle(data)
 	SetModelAsNoLongerNeeded(modelHash)
 
 	local label = Helpers and Helpers.resolveVehicleName and Helpers.resolveVehicleName(modelHash) or model
-	notifyAction(("Spawned %s%s."):format(label, colorLabel and (" (" .. colorLabel .. ")") or ""))
+	notifyAction((TranslateCap("vehicle_spawned") .. " %s%s"):format(label, colorLabel and (" (" .. colorLabel .. ")") or ""))
 
 	return true
 end
@@ -930,7 +939,11 @@ function ClientActions.SetVehiclePerformance(data)
 	end
 
 	local levels = applyVehicleCustomizations(vehicle, data)
-	return true, nil, { value = ("E%s B%s T%s S%s A%s"):format(levels.engineLevel, levels.brakeLevel, levels.transmissionLevel, levels.suspensionLevel, levels.armorLevel) }
+	return true, nil,
+		{
+			value = ("E%s B%s T%s S%s A%s"):format(levels.engineLevel, levels.brakeLevel, levels.transmissionLevel,
+				levels.suspensionLevel, levels.armorLevel)
+		}
 end
 
 function ClientActions.CustomizeVehicle(data)
@@ -979,7 +992,7 @@ function ClientActions.CycleVehicleColor()
 
 	local presets = getColorPresets()
 	if #presets == 0 then
-		return false, "No vehicle color presets configured."
+		return false, TranslateCap("no_vehicle_color_presets")
 	end
 
 	vehicleColorIndex = vehicleColorIndex + 1
@@ -1001,7 +1014,7 @@ function ClientActions.CycleVehicleNeonColor()
 
 	local presets = getNeonPresets()
 	if #presets == 0 then
-		return false, "No neon color presets configured."
+		return false, TranslateCap("no_neon_color_presets")
 	end
 
 	neonColorIndex = neonColorIndex + 1
@@ -1022,7 +1035,12 @@ function ClientActions.MaxVehiclePerformance()
 	end
 
 	local levels = applyVehicleCustomizations(vehicle, { maxPerformance = true })
-	return true, nil, { active = true, value = ("E%s B%s T%s S%s A%s"):format(levels.engineLevel, levels.brakeLevel, levels.transmissionLevel, levels.suspensionLevel, levels.armorLevel) }
+	return true, nil,
+		{
+			active = true,
+			value = ("E%s B%s T%s S%s A%s"):format(levels.engineLevel, levels.brakeLevel,
+				levels.transmissionLevel, levels.suspensionLevel, levels.armorLevel)
+		}
 end
 
 function ClientActions.TeleportToWaypoint()
@@ -1162,7 +1180,7 @@ RegisterNetEvent("esx-adminmenu:client:setModel", function(model)
 	local modelHash, err = requestModel(model)
 	if not modelHash then
 		if ESX and ESX.ShowNotification then
-			ESX.ShowNotification(err or "Invalid model.", "error")
+			ESX.ShowNotification(err or TranslateCap("invalid_model"), "error")
 		end
 		return
 	end
@@ -1188,7 +1206,7 @@ RegisterNetEvent("esx-adminmenu:client:setRadioChannel", function(channel)
 	end)
 
 	if not ok and ESX and ESX.ShowNotification then
-		ESX.ShowNotification("pma-voice radio export was not available.", "error")
+		ESX.ShowNotification(TranslateCap("pma_voice_radio_export_info"), "error")
 	end
 end)
 

@@ -69,7 +69,7 @@ end
 
 local function notifyClientError(err)
     if ESX and ESX.ShowNotification then
-        ESX.ShowNotification(err or "Action failed.", "error")
+        ESX.ShowNotification(err or TranslateCap("action_failed"), "error")
     end
 end
 
@@ -82,7 +82,7 @@ end
 local function openDashboard(cb)
     xLib.callback("esx-adminmenu:server:openDashboard", false, function(res)
         if not res or not res.success then
-            local err = getCallbackError(res, "You do not have permission to open the admin dashboard.")
+            local err = getCallbackError(res, TranslateCap("no_permission_open_dashboard"))
             notifyClientError(err)
 
             if cb then
@@ -111,7 +111,7 @@ end
 local function openAdminMenu(cb)
     xLib.callback("esx-adminmenu:server:canOpen", false, function(res)
         if not res or not res.success then
-            local err = getCallbackError(res, "You do not have permission to open the admin menu.")
+            local err = getCallbackError(res, TranslateCap("no_permission_open_menu"))
             notifyClientError(err)
 
             if cb then
@@ -205,7 +205,7 @@ end, false)
 local function runAdminCommandAction(action, handler)
     checkAdminAction(action, function(res)
         if not res or not res.success then
-            notifyClientError(getCallbackError(res, "You do not have permission to use this command."))
+            notifyClientError(getCallbackError(res, TranslateCap("no_permission_command")))
             return
         end
 
@@ -218,8 +218,8 @@ local function runAdminCommandAction(action, handler)
     end)
 end
 
-RegisterKeyMapping("adminmenu", "Open Admin Menu", "keyboard", Config.Keybinds.AdminMenu)
-RegisterKeyMapping("admindashboard", "Open Admin Dashboard", "keyboard", Config.Keybinds.AdminDashboard)
+RegisterKeyMapping("adminmenu", TranslateCap("open_admin_menu"), "keyboard", Config.Keybinds.AdminMenu)
+RegisterKeyMapping("admindashboard", TranslateCap("open_admin_dashboard"), "keyboard", Config.Keybinds.AdminDashboard)
 
 xLib.nui.register("openDashboard", function(data, cb)
     openDashboard(cb)
@@ -236,11 +236,11 @@ end)
 -- sendQuickMenuState and return the { active } extra. Entries flagged with
 -- command = true also expose the same permission-gated command path.
 local toggleActions = {
-    { action = "noclip", toggle = ClientActions.ToggleNoClip, command = true, mirrorInvisible = true },
-    { action = "names", toggle = ClientActions.ToggleNames, command = true },
-    { action = "blips", toggle = ClientActions.ToggleBlips, command = true },
-    { action = "godmode", toggle = ClientActions.ToggleGodmode },
-    { action = "invisible", toggle = ClientActions.ToggleInvisible },
+    { action = "noclip",       toggle = ClientActions.ToggleNoClip,      command = true, mirrorInvisible = true },
+    { action = "names",        toggle = ClientActions.ToggleNames,       command = true },
+    { action = "blips",        toggle = ClientActions.ToggleBlips,       command = true },
+    { action = "godmode",      toggle = ClientActions.ToggleGodmode },
+    { action = "invisible",    toggle = ClientActions.ToggleInvisible },
     { action = "infiniteAmmo", toggle = ClientActions.ToggleInfiniteAmmo },
 }
 
@@ -268,20 +268,41 @@ end
 -- run receives the raw NUI data; functions that ignore arguments are safe to
 -- reference bare.
 local directActions = {
-    { name = "heal", permission = "heal", run = ClientActions.Heal },
-    { name = "armor", permission = "armor", run = function() return ClientActions.SetArmor(100) end },
+    { name = "heal",          permission = "heal",          run = ClientActions.Heal },
+    {
+        name = "armor",
+        permission = "armor",
+        run = function()
+            return ClientActions
+                .SetArmor(100)
+        end
+    },
     { name = "repairVehicle", permission = "repairVehicle", run = ClientActions.RepairVehicle },
-    { name = "cleanVehicle", permission = "cleanVehicle", run = ClientActions.CleanVehicle },
+    { name = "cleanVehicle",  permission = "cleanVehicle",  run = ClientActions.CleanVehicle },
     { name = "deleteVehicle", permission = "deleteVehicle", run = ClientActions.DeleteVehicle },
-    { name = "waypoint", permission = "waypoint", run = ClientActions.TeleportToWaypoint },
-    { name = "spawnVehicle", permission = "spawnVehicle", run = function(data) return ClientActions.SpawnVehicle(data or {}) end },
-    { name = "flipVehicle", permission = "flipVehicle", run = ClientActions.FlipVehicle },
-    { name = "customizeVehicle", permission = "customizeVehicle", run = function(data) return ClientActions.CustomizeVehicle(data or {}) end },
-    { name = "copyCoords", permission = "copyCoords", run = ClientActions.CopyCoords },
+    { name = "waypoint",      permission = "waypoint",      run = ClientActions.TeleportToWaypoint },
+    {
+        name = "spawnVehicle",
+        permission = "spawnVehicle",
+        run = function(data)
+            return ClientActions
+                .SpawnVehicle(data or {})
+        end
+    },
+    { name = "flipVehicle",              permission = "flipVehicle",       run = ClientActions.FlipVehicle },
+    {
+        name = "customizeVehicle",
+        permission = "customizeVehicle",
+        run = function(data)
+            return ClientActions
+                .CustomizeVehicle(data or {})
+        end
+    },
+    { name = "copyCoords",               permission = "copyCoords",        run = ClientActions.CopyCoords },
     { name = "cycleVehicleTransmission", permission = "transmissionLevel", run = ClientActions.CycleVehicleTransmission },
-    { name = "cycleVehicleSuspension", permission = "suspensionLevel", run = ClientActions.CycleVehicleSuspension },
-    { name = "cycleVehicleArmor", permission = "armorLevel", run = ClientActions.CycleVehicleArmor },
-    { name = "cycleVehicleNeonColor", permission = "neonColorCycle", run = ClientActions.CycleVehicleNeonColor },
+    { name = "cycleVehicleSuspension",   permission = "suspensionLevel",   run = ClientActions.CycleVehicleSuspension },
+    { name = "cycleVehicleArmor",        permission = "armorLevel",        run = ClientActions.CycleVehicleArmor },
+    { name = "cycleVehicleNeonColor",    permission = "neonColorCycle",    run = ClientActions.CycleVehicleNeonColor },
 }
 
 for _, entry in ipairs(directActions) do
