@@ -8,7 +8,7 @@ author 'ESX-Framework'
 description 'Adds a way for resources to store items for players'
 lua54 'yes'
 version '1.0'
-legacyversion '1.16.2'
+legacyversion '1.16.3'
 
 server_scripts {
     '@esx_lib/imports.lua',

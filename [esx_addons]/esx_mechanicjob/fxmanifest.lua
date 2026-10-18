@@ -9,7 +9,7 @@ author 'ESX-Framework'
 description 'Allows players to RP as a mechanic (repair and modify vehicles)'
 lua54 'yes'
 version '1.0'
-legacyversion '1.16.2'
+legacyversion '1.16.3'
 
 shared_scripts {
     '@esx_lib/imports.lua',

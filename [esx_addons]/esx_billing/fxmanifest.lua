@@ -8,7 +8,7 @@ lua54 'yes'
 author 'ESX-Framework'
 description 'Allows Players to recieve and Send Bills'
 version '1.0'
-legacyversion '1.16.2'
+legacyversion '1.16.3'
 
 shared_scripts {
     '@esx_lib/imports.lua',
