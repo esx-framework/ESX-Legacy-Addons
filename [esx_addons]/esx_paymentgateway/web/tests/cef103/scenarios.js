@@ -45,9 +45,12 @@ export const scenarios = [
       await nui.send('open');
       await nui.send({ action: 'open' });
       await nui.send({ action: 'open', payment: { amount: -5 } });
+      await nui.send({ action: 'open', payment: { id: 9, amount: -5 } });
       await settle(page);
       const shown = await page.$eval('.app', (app) => app.childElementCount);
       if (shown !== 0) throw new Error('a broken open message showed the dialog');
+      const closed = /** @type {{ id: number }} */ (await nui.waitForCallback('close'));
+      if (closed.id !== 9) throw new Error(`the refused payment was closed as ${closed.id}`);
     },
   },
   ...RESOLUTIONS.map(
@@ -56,6 +59,8 @@ export const scenarios = [
         name: `open-${viewport.label}`,
         async run(page, nui) {
           await openPayment(page, nui, viewport, openMessage());
+          const shown = /** @type {{ id: number }} */ (await nui.waitForCallback('shown'));
+          if (shown.id !== 42) throw new Error(`the page reported ${shown.id} as shown`);
           await nui.screenshot('open');
         },
       }),

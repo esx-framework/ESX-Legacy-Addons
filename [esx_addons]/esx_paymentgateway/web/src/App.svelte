@@ -63,7 +63,10 @@
   }
 
   $effect((): (() => void) =>
-    onNuiMessage((message: NuiMessage): void => controller.handle(message)),
+    onNuiMessage(
+      (message: NuiMessage): void => controller.handle(message),
+      (data: unknown): void => controller.refuse(data),
+    ),
   );
   $effect((): (() => void) => uiScale.track());
   // Decodes the cues up front, so the first one is not lost to loading.

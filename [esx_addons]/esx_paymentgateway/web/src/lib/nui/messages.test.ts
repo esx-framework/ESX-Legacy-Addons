@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { parseNuiMessage } from './messages';
+import { parseNuiMessage, refusedPaymentId } from './messages';
 
 const payment = {
   id: 7,
@@ -157,4 +157,19 @@ describe('parseNuiMessage', (): void => {
       expect(parseNuiMessage(data)).toBeUndefined();
     },
   );
+});
+
+describe('refusedPaymentId', (): void => {
+  it('should find the id of an open message that cannot be shown', (): void => {
+    expect(refusedPaymentId({ action: 'open', payment: { id: 9, amount: -5 } })).toBe(9);
+  });
+
+  it.each([
+    ['a result', { action: 'result', result: { id: 9 } }],
+    ['an open message without an id', { action: 'open', payment: { amount: 5 } }],
+    ['an open message with a broken id', { action: 'open', payment: { id: '9' } }],
+    ['no message', null],
+  ])('should find nothing in %s', (_label: string, data: unknown): void => {
+    expect(refusedPaymentId(data)).toBeUndefined();
+  });
 });

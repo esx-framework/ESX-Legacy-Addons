@@ -87,6 +87,12 @@ export interface ClosePayload {
   id: number;
 }
 
+/** Body of the `shown` NUI callback. */
+export interface ShownPayload {
+  /** Id of the payment the dialog now shows */
+  id: number;
+}
+
 /** Longest title, description and label the page shows, in characters. */
 const MAX_TEXT = 120;
 /** Longest currency symbol, e.g. "$" or "USD". */
@@ -146,6 +152,19 @@ function parseResult(value: unknown): PaymentResult | undefined {
   const balances = parseBalances(value.balances);
   if (balances) result.balances = balances;
   return result;
+}
+
+/**
+ * Finds the payment of an open message the page refused, so Lua can end that payment instead of
+ * leaving it open with nothing on screen.
+ *
+ * @param data - `event.data` of a message {@link parseNuiMessage} refused
+ * @returns The payment id, or undefined when the data is no open message with a usable id
+ */
+export function refusedPaymentId(data: unknown): number | undefined {
+  if (!isRecord(data) || data.action !== 'open' || !isRecord(data.payment)) return undefined;
+  const { id } = data.payment;
+  return isId(id) ? id : undefined;
 }
 
 /**

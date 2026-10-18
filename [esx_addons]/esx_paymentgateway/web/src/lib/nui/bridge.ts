@@ -77,15 +77,20 @@ export async function postNui(callback: string, payload: unknown): Promise<unkno
 }
 
 /**
- * Subscribes to messages sent by SendNUIMessage. Invalid messages are dropped.
+ * Subscribes to messages sent by SendNUIMessage.
  *
  * @param handler - Called for every valid message
+ * @param onRefused - Called with the raw data of every invalid message
  * @returns Function that removes the listener
  */
-export function onNuiMessage(handler: (message: NuiMessage) => void): () => void {
+export function onNuiMessage(
+  handler: (message: NuiMessage) => void,
+  onRefused: (data: unknown) => void,
+): () => void {
   const listener = (event: MessageEvent<unknown>): void => {
     const message: NuiMessage | undefined = parseNuiMessage(event.data);
     if (message) handler(message);
+    else onRefused(event.data);
   };
   window.addEventListener('message', listener);
   return (): void => window.removeEventListener('message', listener);

@@ -8,7 +8,12 @@
 
 import { DEFAULT_VOLUME, sounds } from '../audio/sounds';
 import { postNui } from '../nui/bridge';
-import type { NuiMessage } from '../nui/messages';
+import {
+  refusedPaymentId,
+  type ClosePayload,
+  type NuiMessage,
+  type ShownPayload,
+} from '../nui/messages';
 import { applyTheme } from '../ui/theme';
 import { flow } from './flow.svelte';
 import { hold } from './hold.svelte';
@@ -47,6 +52,7 @@ class PaymentController {
         sounds.setVolume(message.volume ?? DEFAULT_VOLUME);
         flow.open(message);
         sounds.play('open');
+        void this.notify('shown', { id: message.payment.id });
         break;
       case 'result': {
         const { result } = message;
@@ -71,6 +77,19 @@ class PaymentController {
       default:
         break;
     }
+  }
+
+  /**
+   * Ends a payment the page cannot show, e.g. after Lua and the page got out of step, so the
+   * server cancels it right away instead of the player waiting for nothing until it expires.
+   *
+   * @param data - Raw data of a message the page refused
+   */
+  refuse(data: unknown): void {
+    const id = refusedPaymentId(data);
+    if (id === undefined) return;
+    console.warn(`[esx_paymentgateway] cannot show payment ${id}, cancelling it`);
+    void this.notify('close', { id });
   }
 
   /**
@@ -115,6 +134,23 @@ class PaymentController {
       await postNui('close', body);
     } catch (err: unknown) {
       console.error('[esx_paymentgateway] close callback failed', err);
+    }
+  }
+
+  /**
+   * Sends a callback whose answer the page does not wait for.
+   *
+   * @param callback - Name of the NUI callback
+   * @param body - Payment it is about
+   */
+  private async notify(
+    callback: 'shown' | 'close',
+    body: ShownPayload | ClosePayload,
+  ): Promise<void> {
+    try {
+      await postNui(callback, body);
+    } catch (err: unknown) {
+      console.error(`[esx_paymentgateway] ${callback} callback failed`, err);
     }
   }
 
