@@ -30,4 +30,10 @@ return {
     ["payment_failed"] = "The payment could not be completed. Try again.",
     ["method_unavailable"] = "This way of paying is not accepted here.",
     ["payment_expired"] = "The payment expired.",
+
+    -- /testpayment
+    ["command_testpayment"] = "Open a test payment on yourself",
+    ["command_amount"] = "Amount, whole dollars",
+    ["command_method"] = "cash or card, both when left out",
+    ["command_invalid_amount"] = "Give a whole amount of at least 1.",
 }

@@ -30,4 +30,10 @@ return {
     ["payment_failed"] = "Die Zahlung konnte nicht abgeschlossen werden. Versuch es noch einmal.",
     ["method_unavailable"] = "Diese Zahlungsart wird hier nicht angenommen.",
     ["payment_expired"] = "Die Zahlung ist abgelaufen.",
+
+    -- /testpayment
+    ["command_testpayment"] = "Eine Testzahlung für dich selbst öffnen",
+    ["command_amount"] = "Betrag in ganzen Dollar",
+    ["command_method"] = "cash oder card, ohne Angabe beide",
+    ["command_invalid_amount"] = "Gib einen ganzen Betrag von mindestens 1 an.",
 }

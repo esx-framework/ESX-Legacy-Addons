@@ -51,3 +51,7 @@ AddEventHandler("onResourceStop", function(resource)
         Payment.forgetResource(resource)
     end
 end)
+
+if Config.TestCommand then
+    require "server.module.test.main"
+end

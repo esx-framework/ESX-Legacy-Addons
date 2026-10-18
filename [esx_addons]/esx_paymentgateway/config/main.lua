@@ -32,3 +32,6 @@ Config.CloseDelay = 2600
 
 --- Volume of the dialog's sounds, 0 silent to 1 full.
 Config.Volume = 0.5
+
+--- Registers /testpayment for admins, to try amounts, methods and the server theme.
+Config.TestCommand = false
