@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
-   * A large amount: the number in full size, the currency symbol smaller and quieter in front,
-   * the way price tags set it.
+   * A large amount: the number in full size, the currency symbol smaller and quieter in front of
+   * it and centred on the height of the digits, the way checkout pages set a total.
    */
   import { formatNumber } from '../lib/payment/format';
 
@@ -17,22 +17,27 @@
   let { amount, currency, locale }: Props = $props();
 </script>
 
-<span class="money"><span class="currency">{currency}</span>{formatNumber(amount, locale)}</span>
+<span class="money">
+  <span class="currency">{currency}</span>
+  <span class="value">{formatNumber(amount, locale)}</span>
+</span>
 
 <style>
   .money {
-    font-size: 40px;
-    font-weight: 700;
-    line-height: 1.05;
-    letter-spacing: -0.015em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 38px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
   }
 
   .currency {
-    margin-right: 3px;
-    font-size: 0.6em;
-    font-weight: 600;
+    font-size: 0.5em;
+    font-weight: 500;
+    letter-spacing: 0;
     color: var(--light-color);
-    vertical-align: 0.5em;
   }
 </style>
