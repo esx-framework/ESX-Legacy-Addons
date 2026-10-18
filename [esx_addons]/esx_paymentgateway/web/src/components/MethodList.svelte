@@ -1,15 +1,16 @@
 <script lang="ts">
   /**
-   * The methods the payment offers, one tile each, and the reason the last attempt failed.
+   * The methods the payment offers, side by side so they compare at a glance, and the reason
+   * the last attempt failed.
    */
   import CircleAlert from 'lucide-svelte/icons/circle-alert';
   import { slide } from 'svelte/transition';
   import { flow } from '../lib/payment/flow.svelte';
   import { formatMoney } from '../lib/payment/format';
-  import { fill } from '../lib/payment/labels';
+  import { fillParts, type TextPart } from '../lib/payment/labels';
   import type { Payment, PaymentMethod } from '../lib/payment/types';
   import { DURATION } from '../lib/ui/motion';
-  import MethodTile from './MethodTile.svelte';
+  import MethodCard from './MethodCard.svelte';
 
   interface Props {
     /** The payment on screen */
@@ -23,11 +24,11 @@
   const labels = $derived(flow.labels);
   const money = (amount: number): string => formatMoney(amount, payment.currency, flow.locale);
 
-  function note(method: PaymentMethod): string {
+  function note(method: PaymentMethod): TextPart[] {
     const left = flow.balances[method] - payment.amount;
     return left >= 0
-      ? fill(labels.remaining, { amount: money(left) })
-      : fill(labels.short, { amount: money(-left) });
+      ? fillParts(labels.remaining, { amount: money(left) })
+      : fillParts(labels.short, { amount: money(-left) });
   }
 
   const problem = $derived(
@@ -36,21 +37,24 @@
 </script>
 
 <div class="methods">
-  <p class="caption" id="methods-caption">{labels.choose}</p>
-  <div class="list" role="radiogroup" aria-labelledby="methods-caption">
+  <div
+    class="grid"
+    class:single={payment.methods.length === 1}
+    role="radiogroup"
+    aria-label={labels.choose}
+  >
     {#each payment.methods as method, index (method)}
-      <MethodTile
+      <MethodCard
         {method}
         label={labels[method]}
         balance={money(flow.balances[method])}
-        balanceLabel={labels.balance}
         note={note(method)}
         affordable={flow.canAfford(method)}
         selected={flow.method === method}
         locked={flow.phase !== 'choosing'}
-        hotkey={String(index + 1)}
         refusals={flow.refusals}
         delay={120 + index * DURATION.stagger}
+        wide={payment.methods.length === 1}
         {onchoose}
       />
     {/each}
@@ -67,21 +71,17 @@
   .methods {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
   }
 
-  .caption {
-    font-size: var(--font-size-caption);
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--light-color);
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
 
-  .list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  .single {
+    grid-template-columns: 1fr;
   }
 
   .problem {
