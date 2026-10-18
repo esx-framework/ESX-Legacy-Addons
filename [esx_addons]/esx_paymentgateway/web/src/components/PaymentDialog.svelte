@@ -48,13 +48,7 @@
       aria-label={flow.labels.heading}
       data-phase={flow.phase}
     >
-      <DialogHeader
-        {logo}
-        heading={flow.labels.heading}
-        closeLabel={flow.labels.close}
-        canClose={flow.phase !== 'paying'}
-        {onclose}
-      />
+      <DialogHeader {logo} heading={flow.labels.heading} />
       {#if flow.phase === 'paid' && flow.receipt}
         <ReceiptView {payment} receipt={flow.receipt} {closeDelay} ondone={onclose} />
       {:else}

@@ -25,7 +25,6 @@ export const DEFAULT_LABELS = {
   unreachable: 'The payment did not go through. Try again.',
   processing: 'Processing',
   cancel: 'Cancel',
-  close: 'Close',
   success: 'Payment complete',
   paid_with: 'Paid with',
   new_balance: 'New balance',

@@ -1,8 +1,8 @@
 <script lang="ts">
   /**
-   * Bottom of the dialog: cancel, and the pay button that names the amount and the chosen
-   * method, so the player knows exactly what one click does. For payments the server marks as
-   * large, the button has to be held until it has filled.
+   * Bottom of the dialog: the pay button that names the amount and the chosen method, so the
+   * player knows exactly what one click does, and a quiet way out. For payments the server marks
+   * as large, the button has to be held until it has filled.
    */
   import { Button } from 'esx-ui-kit-svelte';
   import CornerDownLeft from 'lucide-svelte/icons/corner-down-left';
@@ -28,13 +28,11 @@
   const labels = $derived(flow.labels);
   const paying = $derived(flow.phase === 'paying');
   const card = $derived(flow.method === 'card');
+  const key = $derived(
+    payment.hold ? (card ? 'hold_card' : 'hold_cash') : card ? 'pay_card' : 'pay_cash',
+  );
   const payLabel = $derived(
-    fill(
-      labels[payment.hold ? (card ? 'hold_card' : 'hold_cash') : card ? 'pay_card' : 'pay_cash'],
-      {
-        amount: formatMoney(payment.amount, payment.currency, flow.locale),
-      },
-    ),
+    fill(labels[key], { amount: formatMoney(payment.amount, payment.currency, flow.locale) }),
   );
 
   function press(event: PointerEvent): void {
@@ -47,19 +45,11 @@
 </script>
 
 <footer class="actions">
-  <Button
-    variant="secondary"
-    size="lg"
-    class="esx-button esx-button-secondary cancel"
-    disabled={paying}
-    onclick={oncancel}
-  >
-    {labels.cancel}
-  </Button>
   {#if payment.hold && !paying}
     <Button
       variant="primary"
       size="lg"
+      fullWidth
       class="esx-button pay hold"
       disabled={!flow.method}
       onpointerdown={press}
@@ -67,43 +57,43 @@
       onpointerleave={release}
     >
       <span class="fill" style:transform="scaleX({hold.progress})"></span>
-      <span class="hand"><Hand size={17} strokeWidth={2.5} /></span>
+      <span class="glyph"><Hand size={17} strokeWidth={2.5} /></span>
       {payLabel}
     </Button>
   {:else}
     <Button
       variant="primary"
       size="lg"
+      fullWidth
       class="esx-button pay {paying ? 'busy' : ''}"
       disabled={!flow.method && !paying}
       aria-busy={paying}
       onclick={onpay}
     >
       {#if paying}
-        <span class="spin"><LoaderCircle size={18} strokeWidth={2.5} /></span>
+        <span class="glyph spin"><LoaderCircle size={18} strokeWidth={2.5} /></span>
         {labels.processing}
       {:else}
         {payLabel}
-        <span class="enter"><CornerDownLeft size={16} strokeWidth={2.5} /></span>
+        <span class="glyph"><CornerDownLeft size={16} strokeWidth={2.5} /></span>
       {/if}
     </Button>
   {/if}
+  <button type="button" class="cancel" disabled={paying} onclick={oncancel}>
+    {labels.cancel}
+    <kbd>Esc</kbd>
+  </button>
 </footer>
 
 <style>
   .actions {
     display: flex;
-    gap: 12px;
-  }
-
-  .actions :global(.cancel) {
-    flex: none;
-    padding-inline: 24px;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
   }
 
   .actions :global(.pay) {
-    flex: 1;
-    min-width: 0;
     padding-inline: 20px;
     white-space: nowrap;
   }
@@ -129,15 +119,54 @@
     transform-origin: left center;
   }
 
-  .spin {
+  .glyph {
     display: inline-grid;
+    opacity: 0.75;
+  }
+
+  .spin {
+    opacity: 1;
     animation: spin 800ms linear infinite;
   }
 
-  .enter,
-  .hand {
+  .cancel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--light-color);
+    font: 500 var(--font-size-body-small) / 1 var(--font-family);
+    cursor: pointer;
+    transition: color 150ms ease;
+  }
+
+  .cancel:hover:not(:disabled) {
+    color: var(--lightest-color);
+  }
+
+  .cancel:focus-visible {
+    outline: 2px solid var(--brand-color);
+    outline-offset: 2px;
+  }
+
+  .cancel:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  kbd {
     display: inline-grid;
-    opacity: 0.75;
+    place-items: center;
+    height: 18px;
+    padding: 0 5px;
+    border: 1px solid var(--mid-color);
+    border-radius: 4px;
+    font: 500 11px / 1 var(--font-family);
+    color: var(--light-color);
   }
 
   @keyframes spin {

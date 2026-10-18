@@ -71,7 +71,6 @@ export const GERMAN_LABELS: Labels = {
   unreachable: 'Die Zahlung ist nicht durchgegangen. Versuch es noch einmal.',
   processing: 'Wird bezahlt',
   cancel: 'Abbrechen',
-  close: 'Schließen',
   success: 'Zahlung erfolgreich',
   paid_with: 'Bezahlt mit',
   new_balance: 'Neues Guthaben',
