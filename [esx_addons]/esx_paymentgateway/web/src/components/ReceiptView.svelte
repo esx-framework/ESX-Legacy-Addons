@@ -39,7 +39,7 @@
 </script>
 
 <section class="receipt" in:rise={{ distance: 6 }}>
-  <SuccessMark />
+  <SuccessMark method={receipt.method} />
   <div class="headline">
     <p class="status">{labels.success}</p>
     <Money amount={payment.amount} currency={payment.currency} locale={flow.locale} />
@@ -51,7 +51,9 @@
     {#each rows as row, index (row.label)}
       <div class="row" in:rise={{ delay: 280 + index * DURATION.stagger, distance: 6 }}>
         <dt>{row.label}</dt>
-        <dd>{row.value}</dd>
+        <dd>
+          {row.value}
+        </dd>
       </div>
     {/each}
   </dl>
@@ -95,11 +97,27 @@
   }
 
   .slip {
+    position: relative;
     width: 100%;
-    margin: 0;
+    margin: 7px 0 0;
     padding: 4px 16px;
-    border-radius: 12px;
+    border-radius: 0 0 12px 12px;
     background: var(--darkest-color);
+  }
+
+  /* The torn top edge of a till slip. */
+  .slip::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -7px;
+    height: 7px;
+    background: var(--darkest-color);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='7'%3E%3Cpath d='M0 7 7 0l7 7z'/%3E%3C/svg%3E")
+      center bottom / 14px 7px repeat-x;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='7'%3E%3Cpath d='M0 7 7 0l7 7z'/%3E%3C/svg%3E")
+      center bottom / 14px 7px repeat-x;
   }
 
   .row {

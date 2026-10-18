@@ -1,8 +1,17 @@
 <script lang="ts">
   /**
    * The mark of a payment that went through: the circle pops in, the check draws itself and a
-   * ring pulses out once.
+   * ring pulses out once, then the drawing of the method that paid settles on it as a badge.
    */
+  import type { PaymentMethod } from '../lib/payment/types';
+  import MethodIcon from './MethodIcon.svelte';
+
+  interface Props {
+    /** Method that paid, shown as the badge */
+    method: PaymentMethod;
+  }
+
+  let { method }: Props = $props();
 </script>
 
 <div class="mark" aria-hidden="true">
@@ -11,9 +20,28 @@
     <circle class="disc" cx="32" cy="32" r="29" />
     <path class="check" d="M20 33.5 L28.5 42 L44.5 24.5" />
   </svg>
+  <span class="badge"><MethodIcon {method} active /></span>
 </div>
 
 <style>
+  .badge {
+    position: absolute;
+    right: -14px;
+    bottom: -6px;
+    display: grid;
+    place-items: center;
+    padding: 5px 6px;
+    border: 2px solid var(--dark-color);
+    border-radius: 10px;
+    background: var(--darkest-color);
+    animation: mark-in 420ms cubic-bezier(0.3, 1.5, 0.5, 1) 350ms backwards;
+  }
+
+  .badge :global(svg) {
+    width: 26px;
+    height: 18px;
+  }
+
   .mark {
     position: relative;
     display: grid;
