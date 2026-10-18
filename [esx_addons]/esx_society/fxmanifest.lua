@@ -9,7 +9,7 @@ author 'ESX-Framework'
 description 'Provides a way for Jobs to have a society system. (boss menu, salaries, funding etc)'
 lua54 'yes'
 version '1.0'
-legacyversion '1.16.2'
+legacyversion '1.16.3'
 
 shared_script '@es_extended/imports.lua'
 

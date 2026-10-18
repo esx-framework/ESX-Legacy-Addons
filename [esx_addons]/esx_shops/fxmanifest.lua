@@ -9,7 +9,7 @@ description 'ESX Shops - Modern modular shop system with NUI for ESX Legacy'
 lua54 'yes'
 use_fxv2_oal 'yes'
 version '2.0.0'
-legacyversion '1.16.2'
+legacyversion '1.16.3'
 
 shared_scripts {
 	'@esx_lib/imports.lua',

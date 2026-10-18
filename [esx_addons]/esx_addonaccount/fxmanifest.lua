@@ -8,7 +8,7 @@ author 'ESX-Framework'
 description 'Allows resources to store account data, such as society funds'
 lua54 'yes'
 version '1.1'
-legacyversion '1.16.2'
+legacyversion '1.16.3'
 
 server_scripts {
     '@esx_lib/imports.lua',

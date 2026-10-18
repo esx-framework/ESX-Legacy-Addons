@@ -8,7 +8,7 @@ author 'ESX-Framework'
 description 'ESX Weapon Shop - Modern modular weapon shop with NUI for ESX Legacy'
 lua54 'yes'
 version '1.0'
-legacyversion '1.16.2'
+legacyversion '1.16.3'
 
 shared_scripts {
     '@esx_lib/imports.lua',
