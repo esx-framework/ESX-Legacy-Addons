@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
-   * The payment dialog over a dimmed game: header, what is paid and the choice of method. It is
-   * zoomed with the screen height so it reads the same from 720p to 4K.
+   * The payment dialog over a dimmed game: header, then either the choice of method or the
+   * receipt. It is zoomed with the screen height so it reads the same from 720p to 4K.
    */
   import { Card } from 'esx-ui-kit-svelte';
   import { fade } from 'svelte/transition';
@@ -13,21 +13,24 @@
   import MethodList from './MethodList.svelte';
   import PayActions from './PayActions.svelte';
   import PaymentSummary from './PaymentSummary.svelte';
+  import ReceiptView from './ReceiptView.svelte';
 
   interface Props {
     /** The payment on screen */
     payment: Payment;
     /** Server logo URL, null for the ESX mark */
     logo: string | null;
+    /** Milliseconds the receipt stays before the dialog closes itself, 0 to wait for Done */
+    closeDelay: number;
     /** Called when the player picks a method */
     onchoose: (method: PaymentMethod) => void;
     /** Called when the player pays */
     onpay: () => void;
-    /** Called when the player closes the dialog */
+    /** Called when the player closes the dialog, before or after paying */
     onclose: () => void;
   }
 
-  let { payment, logo, onchoose, onpay, onclose }: Props = $props();
+  let { payment, logo, closeDelay, onchoose, onpay, onclose }: Props = $props();
 </script>
 
 <div class="backdrop" transition:fade={{ duration: DURATION.enter }}>
@@ -52,9 +55,13 @@
         canClose={flow.phase !== 'paying'}
         {onclose}
       />
-      <PaymentSummary {payment} />
-      <MethodList {payment} {onchoose} />
-      <PayActions {payment} {onpay} oncancel={onclose} />
+      {#if flow.phase === 'paid' && flow.receipt}
+        <ReceiptView {payment} receipt={flow.receipt} {closeDelay} ondone={onclose} />
+      {:else}
+        <PaymentSummary {payment} />
+        <MethodList {payment} {onchoose} />
+        <PayActions {payment} {onpay} oncancel={onclose} />
+      {/if}
     </Card>
   </div>
 </div>

@@ -95,6 +95,16 @@ describe('parseNuiMessage', (): void => {
     expect(message?.action === 'open' && message.locale).toBe(expected);
   });
 
+  it.each([
+    [2500, 2500],
+    [0, 0],
+    [-1, undefined],
+    [60_000, undefined],
+  ])('should read a close delay of %s as %s', (closeDelay: number, expected?: number): void => {
+    const message = parseNuiMessage({ action: 'open', payment, closeDelay });
+    expect(message?.action === 'open' && message.closeDelay).toBe(expected);
+  });
+
   it('should accept a result and drop its invalid fields', (): void => {
     expect(
       parseNuiMessage({

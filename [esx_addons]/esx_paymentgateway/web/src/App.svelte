@@ -11,17 +11,22 @@
   import { uiScale } from './lib/ui/scale.svelte';
   import { applyTheme } from './lib/ui/theme';
 
+  /** How long the receipt stays when Lua does not say, in milliseconds. */
+  const DEFAULT_CLOSE_DELAY = 2600;
   /** Shortest time the pay button shows that it is working, so an instant answer reads as one. */
   const MIN_PAYING_MS = 650;
   /** Longest the page waits for the server's answer before it lets the player try again. */
   const ANSWER_TIMEOUT_MS = 10_000;
 
   let logo: string | null = $state(null);
+  let closeDelay: number = $state(DEFAULT_CLOSE_DELAY);
   let payingSince = 0;
   let answerTimer: ReturnType<typeof setTimeout> | undefined;
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
 
   function clearTimers(): void {
     clearTimeout(answerTimer);
+    clearTimeout(closeTimer);
   }
 
   function handleMessage(message: NuiMessage): void {
@@ -29,6 +34,7 @@
       case 'open':
         clearTimers();
         logo = applyTheme(message.theme);
+        closeDelay = message.closeDelay ?? DEFAULT_CLOSE_DELAY;
         flow.open(message);
         break;
       case 'result': {
@@ -36,7 +42,9 @@
         clearTimeout(answerTimer);
         answerTimer = setTimeout(
           (): void => {
-            if (flow.answer(result) && flow.phase === 'paid') void close();
+            if (flow.answer(result) && flow.phase === 'paid' && closeDelay > 0) {
+              closeTimer = setTimeout(close, closeDelay);
+            }
           },
           Math.max(0, payingSince + MIN_PAYING_MS - Date.now()),
         );
@@ -108,6 +116,13 @@
 
 <main class="app">
   {#if flow.payment}
-    <PaymentDialog payment={flow.payment} {logo} onchoose={choose} onpay={pay} onclose={close} />
+    <PaymentDialog
+      payment={flow.payment}
+      {logo}
+      {closeDelay}
+      onchoose={choose}
+      onpay={pay}
+      onclose={close}
+    />
   {/if}
 </main>

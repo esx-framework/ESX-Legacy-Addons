@@ -50,6 +50,8 @@ export interface OpenMessage {
   labels?: Labels;
   /** The resource's locale as a BCP 47 tag ("en", "de"), used to group money */
   locale?: string;
+  /** Milliseconds the receipt stays before the dialog closes itself, 0 to wait for Done */
+  closeDelay?: number;
 }
 
 /** The server's answer to the method the player chose. */
@@ -90,6 +92,8 @@ const MAX_CURRENCY = 4;
 const THEME_COLORS = ['primaryColor', 'secondaryColor', 'backgroundColor', 'accentColor'] as const;
 const LABEL_KEY = /^[a-z][a-z_]{0,39}$/;
 const LOCALE = /^[a-z]{2,3}(?:[-_][A-Za-z]{2})?$/;
+/** Longest the receipt may stay on its own, in milliseconds. */
+const MAX_CLOSE_DELAY = 30_000;
 
 /** Keeps the valid fields of a theme; an empty theme is dropped. */
 function parseTheme(value: unknown): Theme | undefined {
@@ -155,6 +159,10 @@ export function parseNuiMessage(data: unknown): NuiMessage | undefined {
       if (labels) message.labels = labels;
       if (typeof data.locale === 'string' && LOCALE.test(data.locale)) {
         message.locale = data.locale.replace('_', '-');
+      }
+      const { closeDelay } = data;
+      if (typeof closeDelay === 'number' && closeDelay >= 0 && closeDelay <= MAX_CLOSE_DELAY) {
+        message.closeDelay = Math.round(closeDelay);
       }
       return message;
     }
