@@ -159,7 +159,7 @@ end
 
 local function runProtectedClientAction(cb, label, action, permissionAction)
     if not permissionAction then
-        cb({ success = false, err = "Missing admin action permission." })
+        cb({ success = false, err = TranslateCap("missing_admin_action_permission") })
         return
     end
 
@@ -176,7 +176,7 @@ local function runProtectedClientAction(cb, label, action, permissionAction)
         end
 
         if not success then
-            cb({ success = false, err = err or "Action failed." })
+            cb({ success = false, err = err or TranslateCap("action_failed") })
             return
         end
 
@@ -236,11 +236,11 @@ end)
 -- sendQuickMenuState and return the { active } extra. Entries flagged with
 -- command = true also expose the same permission-gated command path.
 local toggleActions = {
-    { action = "noclip",       toggle = ClientActions.ToggleNoClip,      command = true, mirrorInvisible = true },
-    { action = "names",        toggle = ClientActions.ToggleNames,       command = true },
-    { action = "blips",        toggle = ClientActions.ToggleBlips,       command = true },
-    { action = "godmode",      toggle = ClientActions.ToggleGodmode },
-    { action = "invisible",    toggle = ClientActions.ToggleInvisible },
+    { action = "noclip", toggle = ClientActions.ToggleNoClip, command = true, mirrorInvisible = true },
+    { action = "names", toggle = ClientActions.ToggleNames, command = true },
+    { action = "blips", toggle = ClientActions.ToggleBlips, command = true },
+    { action = "godmode", toggle = ClientActions.ToggleGodmode },
+    { action = "invisible", toggle = ClientActions.ToggleInvisible },
     { action = "infiniteAmmo", toggle = ClientActions.ToggleInfiniteAmmo },
 }
 
@@ -268,41 +268,38 @@ end
 -- run receives the raw NUI data; functions that ignore arguments are safe to
 -- reference bare.
 local directActions = {
-    { name = "heal",          permission = "heal",          run = ClientActions.Heal },
+    { name = "heal", permission = "heal", run = ClientActions.Heal },
     {
         name = "armor",
         permission = "armor",
         run = function()
-            return ClientActions
-                .SetArmor(100)
+            return ClientActions.SetArmor(100)
         end
     },
     { name = "repairVehicle", permission = "repairVehicle", run = ClientActions.RepairVehicle },
-    { name = "cleanVehicle",  permission = "cleanVehicle",  run = ClientActions.CleanVehicle },
+    { name = "cleanVehicle", permission = "cleanVehicle", run = ClientActions.CleanVehicle },
     { name = "deleteVehicle", permission = "deleteVehicle", run = ClientActions.DeleteVehicle },
-    { name = "waypoint",      permission = "waypoint",      run = ClientActions.TeleportToWaypoint },
+    { name = "waypoint", permission = "waypoint", run = ClientActions.TeleportToWaypoint },
     {
         name = "spawnVehicle",
         permission = "spawnVehicle",
         run = function(data)
-            return ClientActions
-                .SpawnVehicle(data or {})
+            return ClientActions.SpawnVehicle(data or {})
         end
     },
-    { name = "flipVehicle",              permission = "flipVehicle",       run = ClientActions.FlipVehicle },
+    { name = "flipVehicle", permission = "flipVehicle", run = ClientActions.FlipVehicle },
     {
         name = "customizeVehicle",
         permission = "customizeVehicle",
         run = function(data)
-            return ClientActions
-                .CustomizeVehicle(data or {})
+            return ClientActions.CustomizeVehicle(data or {})
         end
     },
-    { name = "copyCoords",               permission = "copyCoords",        run = ClientActions.CopyCoords },
+    { name = "copyCoords", permission = "copyCoords", run = ClientActions.CopyCoords },
     { name = "cycleVehicleTransmission", permission = "transmissionLevel", run = ClientActions.CycleVehicleTransmission },
-    { name = "cycleVehicleSuspension",   permission = "suspensionLevel",   run = ClientActions.CycleVehicleSuspension },
-    { name = "cycleVehicleArmor",        permission = "armorLevel",        run = ClientActions.CycleVehicleArmor },
-    { name = "cycleVehicleNeonColor",    permission = "neonColorCycle",    run = ClientActions.CycleVehicleNeonColor },
+    { name = "cycleVehicleSuspension", permission = "suspensionLevel", run = ClientActions.CycleVehicleSuspension },
+    { name = "cycleVehicleArmor", permission = "armorLevel", run = ClientActions.CycleVehicleArmor },
+    { name = "cycleVehicleNeonColor", permission = "neonColorCycle", run = ClientActions.CycleVehicleNeonColor },
 }
 
 for _, entry in ipairs(directActions) do
@@ -331,10 +328,8 @@ xLib.nui.register("adminMenu:setVehiclePerformance", function(data, cb)
     runProtectedClientAction(cb, "[esx-adminmenu:setVehiclePerformance]", function()
         local success, err, extra = ClientActions.SetVehiclePerformance(data or {})
         if success then
-            sendQuickMenuState("engineLevel", true,
-                data and data.engineLevel and (tostring(data.engineLevel) .. "/5") or nil)
-            sendQuickMenuState("brakeLevel", true,
-                data and data.brakeLevel and (tostring(data.brakeLevel) .. "/5") or nil)
+            sendQuickMenuState("engineLevel", true, data and data.engineLevel and (tostring(data.engineLevel) .. "/5") or nil)
+            sendQuickMenuState("brakeLevel", true, data and data.brakeLevel and (tostring(data.brakeLevel) .. "/5") or nil)
         end
 
         return success, err, extra
@@ -627,7 +622,7 @@ end)
 RegisterNetEvent("esx-adminmenu:client:copyToClipboard", function(text)
     xLib.nui.send({
         action = "copyToClipboard",
-        data = text,
+        data = text
     })
 end)
 
@@ -637,8 +632,8 @@ RegisterNetEvent("esx-adminmenu:client:open", function(data)
     xLib.nui.send({
         action = "openAdminDashboard",
         data = {
-            players = data or {},
-        },
+            players = data or {}
+        }
     })
 end)
 
@@ -655,8 +650,8 @@ RegisterNetEvent("esx-adminmenu:client:openInformation", function(data)
         data = {
             players = data.players or {},
             selectedPlayerId = data.selectedPlayerId,
-            serverData = data.serverData,
-        },
+            serverData = data.serverData
+        }
     })
 end)
 

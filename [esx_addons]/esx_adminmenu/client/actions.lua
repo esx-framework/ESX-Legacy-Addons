@@ -126,7 +126,7 @@ local function getCurrentVehicle()
 	local vehicle = GetVehiclePedIsIn(ped, false)
 
 	if vehicle == 0 or not DoesEntityExist(vehicle) then
-		return nil, "You must be in a vehicle."
+		return nil, TranslateCap("must_be_in_vehicle")
 	end
 
 	return vehicle
@@ -171,8 +171,7 @@ local function applyVehicleColors(vehicle, primaryColorId, secondaryColorId)
 	SetVehicleColours(
 		vehicle,
 		tonumber(primaryPreset.primary) or 0,
-		tonumber(secondaryPreset.secondary) or tonumber(secondaryPreset.primary) or tonumber(primaryPreset.secondary) or
-		tonumber(primaryPreset.primary) or 0
+		tonumber(secondaryPreset.secondary) or tonumber(secondaryPreset.primary) or tonumber(primaryPreset.secondary) or tonumber(primaryPreset.primary) or 0
 	)
 	vehicleColorIndex = primaryIndex
 
@@ -212,8 +211,7 @@ local function applyVehicleNeon(vehicle, enabled, colorId)
 
 	local preset, index = findNeonPreset(colorId)
 	if preset then
-		SetVehicleNeonLightsColour(vehicle, tonumber(preset.r) or 255, tonumber(preset.g) or 255,
-			tonumber(preset.b) or 255)
+		SetVehicleNeonLightsColour(vehicle, tonumber(preset.r) or 255, tonumber(preset.g) or 255, tonumber(preset.b) or 255)
 		neonColorIndex = index
 		return preset.label or preset.id or "Neon"
 	end
@@ -267,16 +265,11 @@ local function applyVehicleCustomizations(vehicle, data)
 	data = data or {}
 	local useMaxPerformance = data.maxPerformance == true
 
-	local engineLevel = applyVehicleModLevel(vehicle, MOD.engine,
-		useMaxPerformance and 5 or data.engineLevel or vehicleLevels.engine)
-	local brakeLevel = applyVehicleModLevel(vehicle, MOD.brakes,
-		useMaxPerformance and 5 or data.brakeLevel or vehicleLevels.brake)
-	local transmissionLevel = applyVehicleModLevel(vehicle, MOD.transmission,
-		useMaxPerformance and 5 or data.transmissionLevel or vehicleLevels.transmission)
-	local suspensionLevel = applyVehicleModLevel(vehicle, MOD.suspension,
-		useMaxPerformance and 5 or data.suspensionLevel or vehicleLevels.suspension)
-	local armorLevel = applyVehicleModLevel(vehicle, MOD.armor,
-		useMaxPerformance and 5 or data.armorLevel or vehicleLevels.armor)
+	local engineLevel = applyVehicleModLevel(vehicle, MOD.engine, useMaxPerformance and 5 or data.engineLevel or vehicleLevels.engine)
+	local brakeLevel = applyVehicleModLevel(vehicle, MOD.brakes, useMaxPerformance and 5 or data.brakeLevel or vehicleLevels.brake)
+	local transmissionLevel = applyVehicleModLevel(vehicle, MOD.transmission, useMaxPerformance and 5 or data.transmissionLevel or vehicleLevels.transmission)
+	local suspensionLevel = applyVehicleModLevel(vehicle, MOD.suspension, useMaxPerformance and 5 or data.suspensionLevel or vehicleLevels.suspension)
+	local armorLevel = applyVehicleModLevel(vehicle, MOD.armor, useMaxPerformance and 5 or data.armorLevel or vehicleLevels.armor)
 
 	vehicleLevels.engine = engineLevel
 	vehicleLevels.brake = brakeLevel
@@ -325,7 +318,7 @@ local function applyVehicleCustomizations(vehicle, data)
 		brakeLevel = brakeLevel,
 		transmissionLevel = transmissionLevel,
 		suspensionLevel = suspensionLevel,
-		armorLevel = armorLevel,
+		armorLevel = armorLevel
 	}
 end
 
@@ -337,7 +330,7 @@ local function applyVehiclePerformance(vehicle, engineLevel, brakeLevel, maxPerf
 		suspensionLevel = maxPerformance and 5 or vehicleLevels.suspension,
 		armorLevel = maxPerformance and 5 or vehicleLevels.armor,
 		turbo = maxPerformance and true or nil,
-		maxPerformance = maxPerformance,
+		maxPerformance = maxPerformance
 	})
 
 	return levels.engineLevel, levels.brakeLevel
@@ -401,7 +394,7 @@ local function restoreSpectatePed()
 	SetPlayerInvincible(PlayerId(), false)
 
 	if lastCoords then
-		SetEntityCoords(ped, lastCoords)
+		SetEntityCoords(ped, lastCoords.x, lastCoords.y, lastCoords.z, false, false, false, false)
 	end
 end
 
@@ -613,7 +606,7 @@ local function nativeRevivePlayer()
 	local coords = GetEntityCoords(ped)
 	local heading = GetEntityHeading(ped)
 
-	NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, heading, true, false)
+	NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, heading, 0, false)
 	ped = PlayerPedId()
 	ClearPedTasksImmediately(ped)
 	ClearPedBloodDamage(ped)
@@ -723,8 +716,7 @@ function ClientActions.ToggleNames()
 
 						if distance <= maxDistance then
 							local serverId = GetPlayerServerId(player)
-							drawWorldText(coords + vector3(0.0, 0.0, 1.05),
-								("[%s] %s"):format(serverId, GetPlayerName(player)))
+							drawWorldText(coords + vector3(0.0, 0.0, 1.05), ("[%s] %s"):format(serverId, GetPlayerName(player)))
 						end
 					end
 				end
@@ -939,11 +931,7 @@ function ClientActions.SetVehiclePerformance(data)
 	end
 
 	local levels = applyVehicleCustomizations(vehicle, data)
-	return true, nil,
-		{
-			value = ("E%s B%s T%s S%s A%s"):format(levels.engineLevel, levels.brakeLevel, levels.transmissionLevel,
-				levels.suspensionLevel, levels.armorLevel)
-		}
+	return true, nil, { value = ("E%s B%s T%s S%s A%s"):format(levels.engineLevel, levels.brakeLevel, levels.transmissionLevel, levels.suspensionLevel, levels.armorLevel) }
 end
 
 function ClientActions.CustomizeVehicle(data)
@@ -1035,12 +1023,7 @@ function ClientActions.MaxVehiclePerformance()
 	end
 
 	local levels = applyVehicleCustomizations(vehicle, { maxPerformance = true })
-	return true, nil,
-		{
-			active = true,
-			value = ("E%s B%s T%s S%s A%s"):format(levels.engineLevel, levels.brakeLevel,
-				levels.transmissionLevel, levels.suspensionLevel, levels.armorLevel)
-		}
+	return true, nil, { active = true, value = ("E%s B%s T%s S%s A%s"):format(levels.engineLevel, levels.brakeLevel, levels.transmissionLevel, levels.suspensionLevel, levels.armorLevel) }
 end
 
 function ClientActions.TeleportToWaypoint()
