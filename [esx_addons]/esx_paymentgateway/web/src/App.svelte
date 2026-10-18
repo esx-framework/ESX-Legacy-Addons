@@ -39,6 +39,17 @@
     } else if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) {
       event.preventDefault();
       pay();
+    } else if (
+      (event.key === 'ArrowLeft' || event.key === 'ArrowRight') &&
+      flow.phase === 'choosing'
+    ) {
+      const options = flow.affordable;
+      const at = flow.method ? options.indexOf(flow.method) : -1;
+      const step = event.key === 'ArrowRight' ? 1 : -1;
+      const next = options[(at + step + options.length) % options.length];
+      if (!next) return;
+      event.preventDefault();
+      controller.choose(next);
     } else if (/^[1-9]$/.test(event.key)) {
       const method = payment.methods[Number(event.key) - 1];
       if (method) controller.choose(method);
