@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { formatMoney, formatReference } from './format';
+import { formatClock, formatMoney, formatReference } from './format';
 
 describe('formatMoney', (): void => {
   it('should group thousands in English by default', (): void => {
@@ -22,6 +22,19 @@ describe('formatMoney', (): void => {
 
   it('should fall back to English for a tag Intl does not accept', (): void => {
     expect(formatMoney(1250, '$', 'not a locale')).toBe('$1,250');
+  });
+});
+
+describe('formatClock', (): void => {
+  it.each([
+    [120_000, '2:00'],
+    [65_000, '1:05'],
+    [14_200, '0:15'],
+    [400, '0:01'],
+    [0, '0:00'],
+    [-500, '0:00'],
+  ])('should show %i ms as %s', (ms: number, clock: string): void => {
+    expect(formatClock(ms)).toBe(clock);
   });
 });
 

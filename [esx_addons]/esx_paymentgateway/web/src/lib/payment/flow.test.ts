@@ -35,6 +35,14 @@ describe('PaymentFlow', (): void => {
     expect(flow.affordable).toEqual(['card']);
   });
 
+  it('should keep the deadline of the server on the performance clock', (): void => {
+    const message = openMessage(5000, 5000);
+    flow.open({ ...message, payment: { ...message.payment, expiresIn: 120_000 } }, 1000);
+    expect(flow.deadline).toBe(121_000);
+    flow.open(openMessage(5000, 5000), 1000);
+    expect(flow.deadline).toBeNull();
+  });
+
   it('should preselect nothing when no balance covers the payment', (): void => {
     flow.open(openMessage(10, 20));
     expect(flow.method).toBeNull();

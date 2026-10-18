@@ -51,6 +51,16 @@ describe('parseNuiMessage', (): void => {
     expect(message?.action === 'open' && message.payment.hold).toBe(expected);
   });
 
+  it.each([
+    [120_000, 120_000],
+    [500, undefined],
+    [7_200_000, undefined],
+    ['120000', undefined],
+  ])('should read an expiry of %j as %j', (expiresIn: unknown, expected?: number): void => {
+    const message = parseNuiMessage({ action: 'open', payment: { ...payment, expiresIn } });
+    expect(message?.action === 'open' && message.payment.expiresIn).toBe(expected);
+  });
+
   it('should keep the known methods once and in dialog order', (): void => {
     const message = parseNuiMessage({
       action: 'open',

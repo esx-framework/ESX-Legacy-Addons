@@ -39,6 +39,8 @@ export interface Payment {
   balances: Balances;
   /** Whether the player has to hold the pay button, set by the server for large amounts */
   hold?: boolean;
+  /** Milliseconds until the server lets the payment expire, counted from when it opened */
+  expiresIn?: number;
 }
 
 /** The server's answer to a chosen method. */

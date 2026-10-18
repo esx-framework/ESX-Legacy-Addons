@@ -38,6 +38,8 @@ export class PaymentFlow {
   error: string | null = $state(null);
   /** Counts refused attempts, so the dialog can replay its refusal cue on every one */
   refusals: number = $state(0);
+  /** performance.now() at which the server lets the payment expire, null when it did not say */
+  deadline: number | null = $state(null);
   /** Set once the server took the money */
   receipt: Receipt | null = $state(null);
   /** Texts of the dialog */
@@ -54,8 +56,9 @@ export class PaymentFlow {
    * Shows a payment, replacing whatever was open.
    *
    * @param message - Open message from Lua
+   * @param now - Current time on the performance clock
    */
-  open(message: OpenMessage): void {
+  open(message: OpenMessage, now: number = performance.now()): void {
     this.payment = message.payment;
     this.balances = message.payment.balances;
     this.labels = resolveLabels(message.labels);
@@ -64,6 +67,7 @@ export class PaymentFlow {
     this.error = null;
     this.refusals = 0;
     this.receipt = null;
+    this.deadline = message.payment.expiresIn ? now + message.payment.expiresIn : null;
     this.method = this.affordable[0] ?? null;
   }
 

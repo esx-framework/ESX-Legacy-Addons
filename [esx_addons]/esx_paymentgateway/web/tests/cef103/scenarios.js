@@ -127,6 +127,28 @@ export const scenarios = [
     },
   },
   {
+    name: 'countdown',
+    async run(page, nui) {
+      await openPayment(page, nui, FULL_HD, openMessage({ expiresIn: 120_000 }));
+      const calm = await page.$eval('[role="timer"]', (clock) => ({
+        text: clock.textContent?.trim(),
+        low: clock.classList.contains('low'),
+      }));
+      if (!/^(2:00|1:59)$/.test(calm.text ?? '') || calm.low) {
+        throw new Error(`a fresh payment shows ${JSON.stringify(calm)}`);
+      }
+      await nui.screenshot('calm');
+      await openPayment(page, nui, FULL_HD, openMessage({ id: 43, expiresIn: 9_000 }));
+      const low = await page.$eval('[role="timer"]', (clock) => clock.classList.contains('low'));
+      if (!low) throw new Error('the last seconds do not warn');
+      await nui.screenshot('low');
+      await clickPay(page, nui);
+      await nui.send({ action: 'result', result: { id: 43, ok: true, method: 'cash' } });
+      await page.waitForSelector('[role="dialog"][data-phase="paid"]', { timeout: 3_000 });
+      if (await page.$('[role="timer"]')) throw new Error('the receipt still counts down');
+    },
+  },
+  {
     name: 'refused',
     async run(page, nui) {
       await openPayment(page, nui, FULL_HD, openMessage());

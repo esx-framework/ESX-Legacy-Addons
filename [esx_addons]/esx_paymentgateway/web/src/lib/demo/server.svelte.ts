@@ -16,6 +16,8 @@ import { BLUE_THEME, GERMAN_LABELS, SAMPLES } from './samples';
 const ANSWER_MS = 700;
 /** Pause between one payment closing and the next opening, in milliseconds. */
 const NEXT_MS = 900;
+/** How long a demo payment stays open, like Config.Timeout on a server, in milliseconds. */
+const EXPIRES_MS = 120_000;
 /** Balances the demo starts with and tops up to. */
 const START_BALANCES: Balances = { cash: 4820, card: 412000 };
 
@@ -33,6 +35,7 @@ class DemoServer {
   private balances: Balances = { ...START_BALANCES };
   private nextId = 1;
   private timer: ReturnType<typeof setTimeout> | undefined;
+  private expiry: ReturnType<typeof setTimeout> | undefined;
 
   /** Starts the demo when the page is not inside FiveM. */
   start(): void {
@@ -51,12 +54,25 @@ class DemoServer {
   /** Reopens the current sample, e.g. after switching theme or language. */
   open(): void {
     clearTimeout(this.timer);
+    clearTimeout(this.expiry);
     const sample = SAMPLES[this.sample] ?? SAMPLES[0];
     if (!sample) return;
     if (this.balances.card < sample.amount) this.balances = { ...START_BALANCES };
+    // Like the server, the demo lets an untouched payment expire and moves on.
+    this.expiry = setTimeout((): void => {
+      send({ action: 'close' });
+      this.sample = (this.sample + 1) % SAMPLES.length;
+      this.timer = setTimeout((): void => this.open(), NEXT_MS);
+    }, EXPIRES_MS);
     send({
       action: 'open',
-      payment: { ...sample, id: this.nextId++, currency: '$', balances: { ...this.balances } },
+      payment: {
+        ...sample,
+        id: this.nextId++,
+        currency: '$',
+        balances: { ...this.balances },
+        expiresIn: EXPIRES_MS,
+      },
       ...(this.blue ? { theme: BLUE_THEME } : {}),
       ...(this.german ? { labels: GERMAN_LABELS, locale: 'de' } : {}),
       volume: 0.5,
@@ -65,6 +81,7 @@ class DemoServer {
 
   private answer(callback: string, payload: unknown): void {
     if (callback === 'close') {
+      clearTimeout(this.expiry);
       this.sample = (this.sample + 1) % SAMPLES.length;
       this.timer = setTimeout((): void => this.open(), NEXT_MS);
       return;
@@ -79,6 +96,7 @@ class DemoServer {
         send({ action: 'result', result: { id, ok: false, message, balances: this.balances } });
         return;
       }
+      clearTimeout(this.expiry);
       this.balances = { ...this.balances, [method]: this.balances[method] - sample.amount };
       send({ action: 'result', result: { id, ok: true, method, balances: { ...this.balances } } });
     }, ANSWER_MS);
