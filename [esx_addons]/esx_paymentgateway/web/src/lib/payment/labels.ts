@@ -1,0 +1,70 @@
+/**
+ * Texts of the dialog. Lua sends them from the resource's locale with every payment; English
+ * defaults stand in for anything a locale leaves out. `{amount}` in a text is replaced with the
+ * formatted money it refers to.
+ *
+ * @see resolveLabels
+ * @see fill
+ */
+
+import type { Labels } from '../nui/messages';
+
+/** English texts, also the list of keys the dialog uses. */
+export const DEFAULT_LABELS = {
+  heading: 'Payment',
+  choose: 'Choose how to pay',
+  cash: 'Cash',
+  card: 'Card',
+  balance: 'Balance',
+  remaining: '{amount} left after paying',
+  short: '{amount} short',
+  pay_cash: 'Pay {amount} in cash',
+  pay_card: 'Pay {amount} by card',
+  hold_cash: 'Hold to pay {amount} in cash',
+  hold_card: 'Hold to pay {amount} by card',
+  unaffordable: 'Not enough money for this payment',
+  processing: 'Processing',
+  cancel: 'Cancel',
+  close: 'Close',
+  success: 'Payment complete',
+  paid_with: 'Paid with',
+  new_balance: 'New balance',
+  reference: 'Reference',
+  done: 'Done',
+} as const;
+
+/** Key of a dialog text. */
+export type LabelKey = keyof typeof DEFAULT_LABELS;
+
+/** Every dialog text, resolved. */
+export type DialogLabels = Record<LabelKey, string>;
+
+/**
+ * Merges the texts Lua sent over the English defaults. Unknown keys are ignored.
+ *
+ * @param overrides - Texts from the open message
+ * @returns A text for every key
+ */
+export function resolveLabels(overrides: Labels | undefined): DialogLabels {
+  const labels: DialogLabels = { ...DEFAULT_LABELS };
+  if (!overrides) return labels;
+  for (const key of Object.keys(DEFAULT_LABELS) as LabelKey[]) {
+    const text = overrides[key];
+    if (text !== undefined) labels[key] = text;
+  }
+  return labels;
+}
+
+/**
+ * Replaces `{name}` placeholders. Placeholders without a value stay as they are.
+ *
+ * @param template - Text with placeholders
+ * @param values - Replacement by placeholder name
+ * @returns The filled text
+ */
+export function fill(template: string, values: Readonly<Record<string, string>>): string {
+  return template.replace(
+    /\{(\w+)\}/g,
+    (match: string, name: string): string => values[name] ?? match,
+  );
+}
