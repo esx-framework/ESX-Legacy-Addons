@@ -2,7 +2,7 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 --- Server entry: the exports other resources open and cancel payments with, and the player's
---- answers from the dialog.
+--- answers from the dialog. README.md documents the exports and the events.
 
 local Payment = require "server.module.payment.main"
 local Util = require "server.module.payment.util"
