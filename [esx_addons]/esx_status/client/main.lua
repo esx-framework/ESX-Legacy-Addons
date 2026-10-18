@@ -2,6 +2,7 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 local OriginalStatus, Status, isPaused = {}, {}, false
+local statusLoaded = false
 
 function GetStatusData(minimal)
 	local status = {}
@@ -58,43 +59,71 @@ RegisterNetEvent('esx:onPlayerLogout', function()
 	end
 end)
 
+local function loadPlayerStatus(status)
+    if statusLoaded then return end
+
+    while not ESX.PlayerLoaded do
+        Wait(100)
+    end
+
+    statusLoaded = true
+    OriginalStatus = type(status) == 'table' and status or {}
+
+    TriggerEvent('esx_status:loaded')
+
+    if Config.Display then
+        TriggerEvent('esx_status:setDisplay', 0.5)
+    end
+
+    CreateThread(function()
+        local data = {}
+
+        while ESX.PlayerLoaded do
+            for i = 1, #Status do
+                Status[i].onTick()
+
+                data[#data + 1] = {
+                    name = Status[i].name,
+                    val = Status[i].val,
+                    percent = (Status[i].val / Config.StatusMax) * 100
+                }
+            end
+
+            if Config.Display then
+                for i = 1, #data do
+                    data[i].color = Status[i].color
+                    data[i].visible = Status[i].visible(Status[i])
+                end
+
+                SendNUIMessage({
+                    update = true,
+                    status = data
+                })
+            end
+
+            TriggerEvent('esx_status:onTick', data)
+            table.wipe(data)
+
+            Wait(Config.TickTime)
+        end
+    end)
+end
+
 RegisterNetEvent('esx_status:load', function(status)
-	while not ESX.PlayerLoaded do Wait(0) end
+    loadPlayerStatus(status)
+end)
 
-	OriginalStatus = status
-	TriggerEvent('esx_status:loaded')
+CreateThread(function()
+    while not ESX.PlayerLoaded do
+        Wait(500)
+    end
 
-	if Config.Display then TriggerEvent('esx_status:setDisplay', 0.5) end
+    Wait(5000)
 
-	CreateThread(function()
-		local data = {}
-		while ESX.PlayerLoaded do
-			for i=1, #Status do
-				Status[i].onTick()
-				table.insert(data, {
-					name = Status[i].name,
-					val = Status[i].val,
-					percent = (Status[i].val / Config.StatusMax) * 100
-				})
-			end
-
-			if Config.Display then
-				local fullData = data
-				for i=1, #data, 1 do
-					fullData[i].color = Status[i].color
-					fullData[i].visible = Status[i].visible(Status[i])
-				end
-				SendNUIMessage({
-					update = true,
-					status = fullData
-				})
-			end
-
-			TriggerEvent('esx_status:onTick', data)
-			table.wipe(data)
-			Wait(Config.TickTime)
-		end
-	end)
+    if not statusLoaded then
+        print('[esx_status] Using fallback status initialization.')
+        loadPlayerStatus({})
+    end
 end)
 
 RegisterNetEvent('esx_status:set', function(name, val)
