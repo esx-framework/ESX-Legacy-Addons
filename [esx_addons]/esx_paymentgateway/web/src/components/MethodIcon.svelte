@@ -2,7 +2,8 @@
   /**
    * A small drawing of the method: a stack of bank notes for cash, a card with a chip for card.
    * The drawing takes the brand color when the method is chosen and stays muted otherwise, so
-   * only the chosen side catches the eye.
+   * only the chosen side catches the eye. Each method is drawn only for its own name, so a value
+   * that is missing for a moment draws nothing rather than the wrong method.
    */
   import type { PaymentMethod } from '../lib/payment/types';
 
@@ -23,7 +24,7 @@
     <rect class="note front" x="2" y="9" width="38" height="21" rx="3.5" />
     <circle class="mark" cx="21" cy="19.5" r="4.25" />
     <path class="mark" d="M8.5 19.5h.01M33.5 19.5h.01" />
-  {:else}
+  {:else if method === 'card'}
     <rect class="card" x="2" y="2" width="44" height="30" rx="5" />
     <path class="shine" d="M7 2h24L2 26V7a5 5 0 0 1 5-5z" />
     <rect class="chip" x="8" y="10" width="9" height="7.5" rx="1.75" />
