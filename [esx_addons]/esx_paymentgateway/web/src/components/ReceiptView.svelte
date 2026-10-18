@@ -1,15 +1,16 @@
 <script lang="ts">
   /**
    * What the player sees once the money is taken: the success mark, the amount and a short
-   * receipt. The dialog closes on its own after the configured delay; the Done button drains
-   * to show the time left, and pressing it closes at once.
+   * receipt. The headline has three levels only (status, amount, what for) and every line of the
+   * slip is set the same way, so the screen reads calm. The dialog closes on its own after the
+   * configured delay; the Done button drains to show the time left, and pressing it closes at
+   * once.
    */
   import { Button } from 'esx-ui-kit-svelte';
   import { flow, type Receipt } from '../lib/payment/flow.svelte';
   import { formatMoney } from '../lib/payment/format';
   import type { Payment } from '../lib/payment/types';
   import { DURATION, rise } from '../lib/ui/motion';
-  import MethodIcon from './MethodIcon.svelte';
   import Money from './Money.svelte';
   import SuccessMark from './SuccessMark.svelte';
 
@@ -27,34 +28,32 @@
   let { payment, receipt, closeDelay, ondone }: Props = $props();
 
   const labels = $derived(flow.labels);
+  const rows = $derived([
+    { label: labels.paid_with, value: labels[receipt.method] },
+    {
+      label: labels.new_balance,
+      value: formatMoney(receipt.balance, payment.currency, flow.locale),
+    },
+    { label: labels.reference, value: receipt.reference },
+  ]);
 </script>
 
 <section class="receipt" in:rise={{ distance: 6 }}>
   <SuccessMark />
   <div class="headline">
-    <p class="success">{labels.success}</p>
+    <p class="status">{labels.success}</p>
     <Money amount={payment.amount} currency={payment.currency} locale={flow.locale} />
-    <p class="title">
+    <p class="what">
       {payment.description ? `${payment.title} · ${payment.description}` : payment.title}
     </p>
   </div>
   <dl class="slip">
-    <div class="row" in:rise={{ delay: 280, distance: 6 }}>
-      <dt>{labels.paid_with}</dt>
-      <dd class="method">
-        <span class="mini"><MethodIcon method={receipt.method} active /></span>{labels[
-          receipt.method
-        ]}
-      </dd>
-    </div>
-    <div class="row" in:rise={{ delay: 280 + DURATION.stagger, distance: 6 }}>
-      <dt>{labels.new_balance}</dt>
-      <dd>{formatMoney(receipt.balance, payment.currency, flow.locale)}</dd>
-    </div>
-    <div class="row" in:rise={{ delay: 280 + DURATION.stagger * 2, distance: 6 }}>
-      <dt>{labels.reference}</dt>
-      <dd>{receipt.reference}</dd>
-    </div>
+    {#each rows as row, index (row.label)}
+      <div class="row" in:rise={{ delay: 280 + index * DURATION.stagger, distance: 6 }}>
+        <dt>{row.label}</dt>
+        <dd>{row.value}</dd>
+      </div>
+    {/each}
   </dl>
   <Button variant="primary" size="lg" fullWidth class="esx-button done" onclick={ondone}>
     {labels.done}
@@ -69,7 +68,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 18px;
+    gap: 20px;
     padding-top: 4px;
   }
 
@@ -77,40 +76,30 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
     text-align: center;
   }
 
-  .success {
-    font-size: var(--font-size-h5);
+  .status {
+    margin-bottom: 4px;
+    font-size: var(--font-size-caption);
     font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brand-color);
   }
 
-  .title {
-    margin-top: 2px;
+  .what {
+    margin-top: 6px;
     font-size: var(--font-size-body-small);
     color: var(--light-color);
   }
 
   .slip {
-    position: relative;
     width: 100%;
     margin: 0;
-    padding: 14px 16px;
+    padding: 4px 16px;
     border-radius: 12px;
     background: var(--darkest-color);
-  }
-
-  /* A row of punched holes along the top, like the tear-off edge of a till slip. */
-  .slip::before {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: 14px;
-    right: 14px;
-    height: 10px;
-    background: radial-gradient(circle, var(--dark-color) 4px, transparent 4.5px) 0 0 / 16px 10px
-      repeat-x;
   }
 
   .row {
@@ -118,12 +107,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    min-height: 30px;
+    height: 40px;
     font-size: var(--font-size-body-small);
   }
 
   .row + .row {
-    border-top: 1px dashed var(--mid-color);
+    border-top: 1px solid var(--mid-color);
   }
 
   dt {
@@ -134,17 +123,6 @@
     margin: 0;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
-  }
-
-  .method {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .mini :global(svg) {
-    width: 24px;
-    height: 17px;
   }
 
   .receipt :global(.done) {
