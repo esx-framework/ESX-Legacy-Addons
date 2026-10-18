@@ -18,6 +18,17 @@ ensure esx_paymentgateway
 
 The page is served from `web/dist`, which is committed, so nothing has to be built on the server.
 
+## In game
+
+The player picks a method with the mouse, the arrow keys or `1` and `2`, and pays with Enter.
+Payments of `Config.HoldAmount` or more need the pay button, Enter or Space held until it has
+filled. Esc cancels. The dialog also closes when the payment expires, when the player dies or logs
+out of their character, and when the resource that opened it stops. After paying, the receipt
+closes itself after `Config.CloseDelay`.
+
+The dialog only takes the mouse and keyboard once it shows the payment. Should the page ever be
+unable to show one, the payment ends as `cancelled` right away instead of leaving the player stuck.
+
 ## Opening a payment
 
 ```lua
@@ -87,3 +98,56 @@ AddEventHandler("esx_paymentgateway:paid", function(payment)
     -- payment.account, payment.title, payment.resource
 end)
 ```
+
+## Config
+
+| Option | Default | |
+|---|---|---|
+| `Config.Accounts` | `cash = "money", card = "bank"` | ESX account each method takes the money from |
+| `Config.Methods` | `{ "cash", "card" }` | Order of the methods, and the default set |
+| `Config.Currency` | `"$"` | Symbol when a request names none |
+| `Config.HoldAmount` | `50000` | From this amount the pay button has to be held; `0` turns it off |
+| `Config.Timeout` | `120` | Seconds before an open payment expires, at least `10`; the dialog shows the time left |
+| `Config.CloseDelay` | `2600` | Milliseconds the receipt stays; `0` waits for the player |
+| `Config.Volume` | `0.5` | Volume of the dialog's sounds, `0` to `1` |
+| `Config.TestCommand` | `false` | Registers `/testpayment <amount> [cash\|card]` for admins |
+
+The config is checked at start: values that would break a payment are reported in the console and
+replaced by their defaults.
+
+## Languages
+
+The texts follow the `esx:locale` convar; English and German are included, and amounts are grouped
+the same way. For another language, copy `locales/en.lua` to `locales/<code>.lua` and translate
+the values. Keys it leaves out fall back to English.
+
+## Theme
+
+The dialog follows the ESX UI convars. Set them with `setr` so clients can read them:
+
+```cfg
+setr esx:ui:primaryColor "#FB9B04"
+setr esx:ui:secondaryColor "#252525"
+setr esx:ui:backgroundColor "#161616"
+setr esx:ui:accentColor "#383838"
+setr esx:ui:logoUrl "https://example.com/logo.png"
+```
+
+Colors are `#rgb` or `#rrggbb`; the logo has to be an `https://` or `nui://` URL.
+
+## Working on the page
+
+The page is Svelte 5 with the ESX UI kit, built for FiveM's CEF 103.
+
+```sh
+cd web
+npm ci
+npm run dev        # http://localhost:3000, plays a demo payment
+npm test           # unit tests
+npm run test:cef   # builds and plays the dialog in Chromium 103
+npm run build      # type check, build to dist/, Chromium 103 feature check
+```
+
+Outside FiveM the page runs a demo by itself: it opens sample payments, answers like the server
+and offers a server theme and the German texts. `npm run build` fails on CSS or JavaScript
+features Chromium 103 lacks and on source files over 400 lines.
