@@ -19,11 +19,11 @@
 
 <svg class="icon" class:active viewBox="0 0 48 34" width="54" height="38" aria-hidden="true">
   {#if method === 'cash'}
-    <rect class="note back" x="7" y="2" width="38" height="21" rx="3.5" />
-    <rect class="note base" x="2" y="9" width="38" height="21" rx="3.5" />
-    <rect class="note front" x="2" y="9" width="38" height="21" rx="3.5" />
-    <circle class="mark" cx="21" cy="19.5" r="4.25" />
-    <path class="mark" d="M8.5 19.5h.01M33.5 19.5h.01" />
+    <rect class="bill under" x="8" y="2" width="38" height="22" rx="3.5" />
+    <rect class="bill" x="2" y="9" width="38" height="23" rx="3.5" />
+    <rect class="engrave" x="6" y="13" width="30" height="15" rx="2" />
+    <circle class="engrave" cx="21" cy="20.5" r="4" />
+    <path class="engrave dot" d="M10.5 20.5h.01M31.5 20.5h.01" />
   {:else if method === 'card'}
     <rect class="card" x="2" y="2" width="44" height="30" rx="5" />
     <path class="shine" d="M7 2h24L2 26V7a5 5 0 0 1 5-5z" />
@@ -35,46 +35,39 @@
 
 <style>
   .icon {
-    --ink: var(--light-color);
-    --paper: rgba(var(--mid-color-rgb), 0.55);
     --plastic: var(--mid-color);
+    --etch: rgba(242, 242, 242, 0.25);
     display: block;
     flex: none;
     transition: transform 200ms cubic-bezier(0.3, 1.4, 0.5, 1);
   }
 
   .active {
-    --ink: var(--brand-color);
-    --paper: rgba(var(--brand-color-rgb), 0.16);
     --plastic: var(--brand-color);
+    --etch: rgba(22, 22, 22, 0.45);
     transform: translateY(-1px);
   }
 
-  .note {
-    fill: var(--darkest-color);
-    stroke: var(--ink);
-    stroke-width: 2;
-    transition: stroke 200ms ease;
+  .bill {
+    fill: var(--plastic);
+    stroke: var(--dark-color);
+    stroke-width: 2.5;
+    transition: fill 200ms ease;
   }
 
-  .base {
-    stroke: none;
+  .under {
+    opacity: 0.5;
   }
 
-  .front {
-    fill: var(--paper);
-  }
-
-  .back {
-    opacity: 0.55;
-  }
-
-  .mark {
+  .engrave {
     fill: none;
-    stroke: var(--ink);
-    stroke-width: 2;
+    stroke: var(--etch);
+    stroke-width: 1.75;
     stroke-linecap: round;
-    transition: stroke 200ms ease;
+  }
+
+  .dot {
+    stroke-width: 3;
   }
 
   .card {
@@ -94,13 +87,8 @@
   .wave,
   .digits {
     fill: none;
-    stroke: rgba(22, 22, 22, 0.45);
+    stroke: var(--etch);
     stroke-width: 2;
     stroke-linecap: round;
-  }
-
-  .icon:not(.active) .wave,
-  .icon:not(.active) .digits {
-    stroke: rgba(242, 242, 242, 0.25);
   }
 </style>
