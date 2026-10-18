@@ -1,0 +1,27 @@
+{
+  "name": "esx_paymentgateway-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run check && vite build && node scripts/check-compat.js",
+    "check": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p tsconfig.node.json && node scripts/check-size.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^22.20.5",
+    "prettier": "^3.9.10",
+    "prettier-plugin-svelte": "^4.1.1",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.6",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
