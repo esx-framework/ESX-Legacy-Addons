@@ -74,6 +74,48 @@ function Util.isCallable(value)
     return type(meta) == "table" and meta.__call ~= nil
 end
 
+---Checks the config once at start and puts back defaults for anything that would break a
+---payment at runtime, with a warning for each.
+function Util.checkConfig()
+    ---@param message string
+    local function warn(message)
+        print(("[^3WARNING^7] esx_paymentgateway: %s"):format(message))
+    end
+
+    if type(Config.Accounts) ~= "table" then
+        warn("Config.Accounts must be a table, using cash = money and card = bank")
+        Config.Accounts = { cash = "money", card = "bank" }
+    end
+    for method, account in pairs(Config.Accounts) do
+        if (method ~= "cash" and method ~= "card") or not isText(account, 64) then
+            warn(("Config.Accounts.%s is not a known method with an account name, ignored"):format(method))
+            Config.Accounts[method] = nil
+        end
+    end
+
+    local methods = {}
+    for _, method in ipairs(type(Config.Methods) == "table" and Config.Methods or {}) do
+        if Config.Accounts[method] then methods[#methods + 1] = method end
+    end
+    if #methods == 0 then
+        warn("Config.Methods names no method with an account; payments cannot open")
+    end
+    Config.Methods = methods
+
+    if not isText(Config.Currency, MAX_CURRENCY) then
+        warn("Config.Currency must be a short symbol, using $")
+        Config.Currency = "$"
+    end
+    if type(Config.HoldAmount) ~= "number" or Config.HoldAmount < 0 then
+        warn("Config.HoldAmount must be 0 or more, turning holding off")
+        Config.HoldAmount = 0
+    end
+    if type(Config.Timeout) ~= "number" or Config.Timeout < 10 then
+        warn("Config.Timeout must be at least 10 seconds, using 120")
+        Config.Timeout = 120
+    end
+end
+
 ---Turns the table a resource passed into a payment request.
 ---@param input any Request from the export
 ---@return PaymentRequest|nil request

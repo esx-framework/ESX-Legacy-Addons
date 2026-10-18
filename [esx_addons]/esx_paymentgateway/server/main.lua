@@ -5,6 +5,9 @@
 --- answers from the dialog.
 
 local Payment = require "server.module.payment.main"
+local Util = require "server.module.payment.util"
+
+Util.checkConfig()
 
 --- Pay attempts a player may make in a burst; refusals let them try another method.
 local limiter = xLib.rateLimiter({ capacity = 4, refill = 1, interval = 1000, staleMs = 60000 })
