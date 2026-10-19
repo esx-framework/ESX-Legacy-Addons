@@ -24,7 +24,7 @@ return {
     ["ui_reference"] = "Beleg",
     ["ui_done"] = "Fertig",
 
-    -- Messages Charge hands back.
+    -- Why a payment was refused; the dialog also shows these for xPlayer.chargeAccount's failure codes.
     ["insufficient_cash"] = "Du hast nicht genug Bargeld.",
     ["insufficient_card"] = "Dein Bankkonto deckt diese Zahlung nicht.",
     ["payment_failed"] = "Die Zahlung konnte nicht abgeschlossen werden. Versuch es noch einmal.",

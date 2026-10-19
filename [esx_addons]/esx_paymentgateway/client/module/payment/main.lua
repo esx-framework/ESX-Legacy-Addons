@@ -25,6 +25,15 @@ local LABEL_KEYS <const> = {
 local MAX_MESSAGE <const> = 120
 local MAX_REFERENCE <const> = 40
 
+--- Locale key of the text for each failure code of xPlayer.chargeAccount, except
+--- insufficient_funds, whose text depends on the method.
+local FAILURE_KEYS <const> = {
+    invalid_account = "method_unavailable",
+    invalid_amount = "payment_failed",
+    session_closing = "payment_failed",
+    failed = "payment_failed",
+}
+
 ---@class OpenPayment
 ---@field id integer Id of the dialog, so answers for an older one are ignored
 ---@field allowed table<PaymentMethod, boolean> Methods the dialog offers
@@ -53,6 +62,16 @@ local function labels()
         result[key] = Translate("ui_" .. key)
     end
     return result
+end
+
+---Text for the player about a failure code of xPlayer.chargeAccount.
+---@param method PaymentMethod Method the charge was for
+---@param code any
+---@return string|nil text Nil when the value is no such code
+function Payment.failureText(method, code)
+    if code == "insufficient_funds" then return Translate("insufficient_" .. method) end
+    local key = FAILURE_KEYS[code]
+    return key and Translate(key) or nil
 end
 
 ---The player's money per method, as ESX last told this client. Only shown; the resource that
@@ -108,12 +127,14 @@ local function ask(payment, method)
 end
 
 ---Reads what the handler returned: true, false and a reason, or a result table as server
----callbacks usually send it.
+---callbacks usually send it. A refusal may name a failure code of xPlayer.chargeAccount instead
+---of a text; a text the handler wrote itself wins.
 ---@param payment OpenPayment
+---@param method PaymentMethod
 ---@param answer table From ask
 ---@return "paid"|"refused"|"unconfirmed" verdict
 ---@return string|nil detail The refusal text or the receipt reference
-local function verdictOf(payment, answer)
+local function verdictOf(payment, method, answer)
     if answer.timeout then
         warn(("the payment handler of %s did not answer within %ss"):format(payment.owner, Config.PayTimeout))
         return "unconfirmed"
@@ -127,9 +148,17 @@ local function verdictOf(payment, answer)
     if type(ok) == "table" then
         local result = ok
         ok = result.ok
-        if ok == true then detail = result.reference else detail = result.message end
+        if ok == true then
+            detail = result.reference
+        elseif Validate.isText(result.message, MAX_MESSAGE) then
+            detail = result.message
+        else
+            detail = Payment.failureText(method, result.reason)
+        end
     elseif ok == true and type(detail) == "table" then
         detail = detail.reference
+    elseif ok == false then
+        detail = Payment.failureText(method, detail) or detail
     end
 
     if ok == true then
@@ -149,7 +178,7 @@ end
 ---@param method PaymentMethod
 local function sell(payment, method)
     payment.paying = true
-    local verdict, detail = verdictOf(payment, ask(payment, method))
+    local verdict, detail = verdictOf(payment, method, ask(payment, method))
     payment.paying = false
 
     if verdict == "unconfirmed" then
