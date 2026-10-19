@@ -1,7 +1,7 @@
 /**
  * Runs a payment between Lua and the dialog: takes the messages Lua sends, sends the player's
  * choices back, plays the cues that go with them and owns the timers around them (the shortest
- * working time of the pay button, the wait for the server's answer and the receipt's own close).
+ * working time of the pay button and the receipt's own close).
  *
  * @see controller
  */
@@ -23,8 +23,6 @@ import type { PaymentMethod } from './types';
 const DEFAULT_CLOSE_DELAY = 2600;
 /** Shortest time the pay button shows that it is working, so an instant answer reads as one. */
 const MIN_PAYING_MS = 650;
-/** Longest the page waits for the server's answer before it lets the player try again. */
-const ANSWER_TIMEOUT_MS = 10_000;
 
 /** Glue between Lua, the flow and the dialog. */
 class PaymentController {
@@ -102,24 +100,24 @@ class PaymentController {
     if (flow.choose(method) && changed) sounds.play('select');
   }
 
-  /** Pays with the chosen method and waits for the server's answer. */
+  /**
+   * Pays with the chosen method. Lua answers once the seller's handler did, or closes the dialog
+   * on a plain pick. How long a handler may take is Lua's call, so the page does not give up on
+   * its own: a player who tried again could buy twice.
+   */
   async pay(): Promise<void> {
     const body = flow.pay();
     if (!body) return;
     this.payingSince = Date.now();
     sounds.play('press');
-    const giveUp = (): void => {
-      if (flow.answer({ id: body.id, ok: false, message: flow.labels.unreachable })) {
-        sounds.play('refuse');
-      }
-    };
-    this.answerTimer = setTimeout(giveUp, ANSWER_TIMEOUT_MS);
     try {
       await postNui('pay', body);
     } catch (err: unknown) {
+      // Lua never got the choice, so nothing was sold and trying again is safe.
       console.error('[esx_paymentgateway] pay callback failed', err);
-      clearTimeout(this.answerTimer);
-      giveUp();
+      if (flow.answer({ id: body.id, ok: false, message: flow.labels.unreachable })) {
+        sounds.play('refuse');
+      }
     }
   }
 
