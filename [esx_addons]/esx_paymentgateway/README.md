@@ -30,7 +30,7 @@ filled. Esc cancels. The dialog also closes when the player dies or logs out of 
 and when the resource that opened it stops.
 
 The dialog only takes the mouse and keyboard once it shows the payment. Should the page ever be
-unable to show one, the export returns `nil, "cancelled"` right away instead of leaving the player
+unable to show one, the export returns `false, "cancelled"` right away instead of leaving the player
 stuck.
 
 ## Opening the dialog
@@ -49,7 +49,7 @@ CreateThread(function()
 end)
 ```
 
-It returns the method, `"cash"` or `"card"`, or `nil` and a reason:
+It returns the method, `"cash"` or `"card"`, or `false` and a reason:
 
 | Reason | |
 |---|---|

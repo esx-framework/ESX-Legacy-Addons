@@ -188,4 +188,4 @@ again. The dealer may well have sold in that case, and then the car is in their 
   did not offer. `Charge` only refuses methods the whole server does not take.
 - Take prices from your server's data. The amount the dialog showed came from the client.
 - Only one dialog is open at a time. A second `RequestPayment` while one is up returns
-  `nil, "busy"`.
+  `false, "busy"`.

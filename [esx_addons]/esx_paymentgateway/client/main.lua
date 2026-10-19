@@ -14,7 +14,7 @@ Validate.config()
 ---on your server and shows the receipt or the refusal.
 ---@param request table amount, title, description?, currency?, methods?
 ---@param onPay? fun(method: PaymentMethod): boolean|table, string|table|nil
----@return PaymentMethod|nil method
+---@return PaymentMethod|false method
 ---@return string|nil reason
 exports("RequestPayment", function(request, onPay)
     return Payment.request(request, onPay, GetInvokingResource())

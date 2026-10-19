@@ -175,19 +175,21 @@ local function sell(payment, method)
     })
 end
 
----Opens the dialog and waits until the player paid or walked away.
+---Opens the dialog and waits until the player paid or walked away. Without a method it returns
+---false, not nil: the export sends its results through msgpack, which turns a leading nil into
+---a hole and drops the reason behind it.
 ---@param input any Request from the export
 ---@param onPay? function Handler that sells with the chosen method
 ---@param owner? string Resource that asked
----@return PaymentMethod|nil method
+---@return PaymentMethod|false method
 ---@return string|nil reason Why there is no method: "cancelled", "unconfirmed", "busy" or what is wrong with the request
 function Payment.request(input, onPay, owner)
-    if current then return nil, "busy" end
-    if not ESX.IsPlayerLoaded() then return nil, "The player is not loaded." end
-    if onPay ~= nil and not Request.isCallable(onPay) then return nil, "onPay must be a function." end
+    if current then return false, "busy" end
+    if not ESX.IsPlayerLoaded() then return false, "The player is not loaded." end
+    if onPay ~= nil and not Request.isCallable(onPay) then return false, "onPay must be a function." end
 
     local request, reason = Request.normalize(input)
-    if not request then return nil, reason end
+    if not request then return false, reason end
 
     lastId = lastId + 1
     local payment = { id = lastId, allowed = request.allowed, onPay = onPay, owner = owner, done = promise.new() }
@@ -213,7 +215,7 @@ function Payment.request(input, onPay, owner)
     })
 
     local outcome = Citizen.Await(payment.done)
-    return outcome.method, outcome.reason
+    return outcome.method or false, outcome.reason
 end
 
 ---Closes the dialog from this side, e.g. when the player dies or logs out. While the handler
