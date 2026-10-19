@@ -3,8 +3,8 @@
 A cash or card payment dialog for other resources. The player sees what they pay for, their
 balances and what stays after paying, and picks how to pay. That is all the gateway decides.
 Whether the sale happens is up to the resource that opened the dialog: it checks price, stock,
-distance and the chosen method on its own server and takes the money there, with `Charge` if
-it likes.
+distance and the chosen account on its own server and takes the money there with
+`xPlayer.chargeAccount`.
 
 The groundwork comes from cs0ng0r's first version.
 
@@ -21,6 +21,7 @@ ensure esx_paymentgateway
 ```
 
 The page is served from `web/dist`, which is committed, so nothing has to be built on the server.
+Selling needs an es_extended that has `xPlayer.chargeAccount`.
 
 ## In game
 
@@ -39,17 +40,18 @@ stuck.
 
 ```lua
 CreateThread(function()
-    local method, reason = exports.esx_paymentgateway:RequestPayment({
+    local account, reason = exports.esx_paymentgateway:RequestPayment({
         amount = 1250,                          -- whole number, at least 1
         title = "Vehicle repair",               -- what is paid for
         description = "Los Santos Customs",     -- optional, who is paid
         currency = "$",                         -- optional, Config.Currency by default
-        methods = { "cash", "card" },           -- optional, every configured method by default
+        methods = { "money", "bank" },          -- optional, ESX accounts, every configured one by default
     }, onPay)                                   -- optional, see below
 end)
 ```
 
-It returns the method, `"cash"` or `"card"`, or `false` and a reason:
+It returns the ESX account the player chose, `"money"` (shown as cash) or `"bank"` (shown as
+card), or `false` and a reason:
 
 | Reason | |
 |---|---|
@@ -64,64 +66,70 @@ player to read, nothing more: the real check happens on your server when you cha
 ### Just the method
 
 Without `onPay`, the dialog closes as soon as the player confirms a method and the export
-returns it. You send it to your server, sell there and tell the player how it went yourself, usually
-with a notification. Good for small things where a receipt would be in the way.
+returns its account. You send it to your server, sell there and tell the player how it went
+yourself, usually with a notification. Good for small things where a receipt would be in the way.
 
 ### With a receipt
 
 With `onPay`, the dialog stays open after the pick and shows Processing while `onPay` runs.
-`onPay` gets the method, asks your server to sell, and returns how that went:
+`onPay` gets the account, asks your server to sell, and returns how that went:
 
 | `onPay` returns | The dialog |
 |---|---|
 | `true`, or `{ ok = true }` | Shows the receipt |
 | `true, { reference = "LSC-0042" }`, or `{ ok = true, reference = "LSC-0042" }` | Shows the receipt with your reference on it |
 | `false, "Sold out"`, or `{ ok = false, message = "Sold out" }` | Shows the reason; the player can pick another method or cancel |
+| `false, "insufficient_funds"`, or `{ ok = false, reason = "insufficient_funds" }` | The same, with the dialog's own text for that failure of `chargeAccount` |
 | anything else, an error, or nothing within `Config.PayTimeout` | Closes and tells the player to check before paying again |
 
 The table form is there so `onPay` can hand back what your server callback returned without
 unpacking it. Only return `false` when you know no money was taken. If the answer is unclear,
 let it error or time out: the player then cannot pay a second time from the same dialog.
 
-The export returns the method once the player closes the receipt, or when they die or log out
+The export returns the account once the player closes the receipt, or when they die or log out
 while `onPay` still runs and it sold.
 
 ## Charging on the server
 
+The resource that sells takes the money itself, with es_extended's `xPlayer.chargeAccount`:
+
 ```lua
-local charged, failure, message = exports.esx_paymentgateway:Charge(playerId, method, amount, "Vehicle repair")
+--- The accounts your shop takes. The client sends whatever it likes, black_money too.
+local ACCOUNTS = { money = true, bank = true }
+
+local player = ESX.Player(source)
+if not player or not ACCOUNTS[account] then
+    return { ok = false, reason = "invalid_account" }
+end
+
+local charged, failure = player.chargeAccount(account, price, "Vehicle repair")
+if not charged then
+    return { ok = false, reason = failure }
+end
 ```
 
-Takes `amount` from the ESX account of `method` (`Config.Accounts`) and proves it left the
-account. Call it after your own checks, with the price from your server's data, never one the
-client sent. The method comes from the client too, so make sure your shop takes it.
-
-On failure, `message` is a text for the player in the server's language, and `failure` says why:
+Call it after your own checks, with the price from your server's data, never one the client sent.
+It takes the money only when the account covers it and never throws. When it does not charge,
+`failure` says why, and `{ ok = false, reason = failure }` is what the dialog explains:
 
 | `failure` | |
 |---|---|
-| `"insufficient"` | Not enough money for that method |
-| `"method"` | Not a method this server takes payments in |
-| `"amount"` | Not a whole number of at least 1 |
-| `"player"` | No such player |
-| `"failed"` | ESX refused or the balance did not move by the amount, see the console |
+| `"insufficient_funds"` | The account holds less than the price |
+| `"invalid_account"` | The player has no such account |
+| `"invalid_amount"` | Not a positive number, or a fraction on an account that rounds |
+| `"session_closing"` | The player is leaving and being saved |
+| `"failed"` | ESX or the inventory refused, see the console |
 
-```lua
-exports.esx_paymentgateway:Refund(playerId, method, amount, "Vehicle repair")
-```
+Treat anything but `true` as not charged: a player looked up with `ESX.Player` who left in the
+meantime gets the call back with nothing at all.
 
-Gives money back to the same account, for when you charged but could not hand over what was
-bought. It returns `false` and warns in the console when ESX refuses, since that money is then
-lost unless an admin steps in.
+To give money back, for when you charged but could not hand over what was bought, use
+`player.addAccountMoney(account, amount, reason)`. It returns `false` when it cannot, for example
+when ox_inventory has no room for the cash; log that, since the money is then lost unless an admin
+steps in.
 
-Every successful `Charge` fires a local server event, for logging and audit resources:
-
-```lua
-AddEventHandler("esx_paymentgateway:paid", function(payment)
-    -- payment.playerId, payment.identifier, payment.amount, payment.method,
-    -- payment.account, payment.reason, payment.resource
-end)
-```
+For logging and audit, ESX fires `esx:removeAccountMoney` on the server with the player, the
+account, the amount and your reason for every charge.
 
 ### Why the gateway keeps no payments
 
@@ -131,24 +139,29 @@ shop, only later: a payment opened two minutes ago says nothing about whether th
 still in stock when the player finally presses pay. Your server has to check that at the moment
 it takes the money anyway, so it might as well take it. The gateway stays a dialog.
 
+Taking the money lives in es_extended for a similar reason. From any other resource, every step
+of a safe charge (is the player loaded, the balance, the account guard, the removal, the guard
+again, the balance again) is a separate trip through msgpack. `chargeAccount` does all of it
+inside es_extended, so your server pays two trips: `ESX.Player` and the call.
+
 ## Config
 
 | Option | Default | |
 |---|---|---|
-| `Config.Accounts` | `cash = "money", card = "bank"` | ESX account each method shows and charges |
-| `Config.Methods` | `{ "cash", "card" }` | Order of the methods, and the ones the server takes at all |
+| `Config.Accounts` | `cash = "money", card = "bank"` | ESX account behind each look, one account each; requests and answers use these names |
+| `Config.Methods` | `{ "cash", "card" }` | Order of the looks, and the ones offered at all |
 | `Config.Currency` | `"$"` | Symbol when a request names none |
 | `Config.HoldAmount` | `50000` | From this amount the pay button has to be held; `0` turns it off |
 | `Config.PayTimeout` | `20` | Seconds the dialog waits for `onPay`, at least `3`; keep it longer than your callback timeout |
 | `Config.CloseDelay` | `2600` | Milliseconds the receipt stays; `0` waits for the player |
 | `Config.Volume` | `0.5` | Volume of the dialog's sounds, `0` to `1` |
-| `Config.TestCommand` | `false` | Registers `/testpayment <amount> [cash\|card\|both] [select]` for admins |
+| `Config.TestCommand` | `false` | Registers `/testpayment <amount> [money\|bank\|both] [select]` for admins |
 
 The config is checked at start on both sides: values that would break a payment are reported in
 the console and replaced by their defaults.
 
-`/testpayment` charges the admin's own money through `Charge`. It shows the receipt, or with
-`select` only picks and reports the result as a notification.
+`/testpayment` charges the admin's own money through `xPlayer.chargeAccount`. It shows the
+receipt, or with `select` only picks and reports the result as a notification.
 
 ## Languages
 
