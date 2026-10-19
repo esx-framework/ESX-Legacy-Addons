@@ -81,7 +81,7 @@ class PaymentController {
 
   /**
    * Ends a payment the page cannot show, e.g. after Lua and the page got out of step, so the
-   * server cancels it right away instead of the player waiting for nothing until it expires.
+   * resource that asked hears right away that nothing was paid instead of waiting for good.
    *
    * @param data - Raw data of a message the page refused
    */

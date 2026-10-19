@@ -10,7 +10,6 @@
   import type { Payment, PaymentMethod } from '../lib/payment/types';
   import { DURATION, rise } from '../lib/ui/motion';
   import { uiScale } from '../lib/ui/scale.svelte';
-  import Countdown from './Countdown.svelte';
   import DialogHeader from './DialogHeader.svelte';
   import MethodList from './MethodList.svelte';
   import PayActions from './PayActions.svelte';
@@ -60,9 +59,6 @@
         {:else}
           <div class="pane-head">
             <h5>{flow.labels.choose}</h5>
-            {#if flow.deadline !== null}
-              <Countdown deadline={flow.deadline} />
-            {/if}
           </div>
           <div class="choices">
             <MethodList {payment} {onchoose} />

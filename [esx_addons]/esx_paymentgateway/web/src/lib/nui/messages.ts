@@ -64,7 +64,7 @@ export interface ResultMessage {
   result: PaymentResult;
 }
 
-/** Closes the dialog without an answer, e.g. when the payment expired on the server. */
+/** Closes the dialog without an answer, e.g. after a plain pick or when the player died. */
 export interface CloseMessage {
   /** Discriminator */
   action: 'close';
@@ -102,8 +102,6 @@ const LABEL_KEY = /^[a-z][a-z_]{0,39}$/;
 const LOCALE = /^[a-z]{2,3}(?:[-_][A-Za-z]{2})?$/;
 /** Longest the receipt may stay on its own, in milliseconds. */
 const MAX_CLOSE_DELAY = 30_000;
-/** Longest a payment may stay open, in milliseconds. */
-const MAX_EXPIRY = 3_600_000;
 
 /** Keeps the valid fields of a theme; an empty theme is dropped. */
 function parseTheme(value: unknown): Theme | undefined {
@@ -137,10 +135,6 @@ function parsePayment(value: unknown): Payment | undefined {
   const payment: Payment = { id, amount, currency, title, methods, balances };
   if (isText(description, MAX_TEXT)) payment.description = description;
   if (value.hold === true) payment.hold = true;
-  const { expiresIn } = value;
-  if (typeof expiresIn === 'number' && expiresIn >= 1000 && expiresIn <= MAX_EXPIRY) {
-    payment.expiresIn = Math.round(expiresIn);
-  }
   return payment;
 }
 

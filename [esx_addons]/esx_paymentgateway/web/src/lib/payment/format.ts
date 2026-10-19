@@ -49,15 +49,6 @@ export function formatMoney(
 }
 
 /**
- * @param ms - Time left in milliseconds
- * @returns The time as minutes and seconds ("1:05"), rounded up so 0:00 means it is over
- */
-export function formatClock(ms: number): string {
-  const seconds = Math.max(0, Math.ceil(ms / 1000));
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-}
-
-/**
  * @param id - Server id of the payment
  * @returns The id as the player sees it on the bill and the receipt, e.g. "#000042"
  */
