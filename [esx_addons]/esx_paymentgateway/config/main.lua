@@ -1,13 +1,15 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
+--- How the dialog shows a way to pay. Resources name a method by its ESX account instead.
 ---@alias PaymentMethod "cash"|"card"
 
 Config = {}
 
 Config.Locale = GetConvar("esx:locale", "en")
 
---- ESX account each payment method takes the money from.
+--- ESX account behind each way to pay, one account per way. RequestPayment takes and returns
+--- these account names, so a seller hands the result straight to xPlayer.chargeAccount.
 ---@type table<PaymentMethod, string>
 Config.Accounts = {
     cash = "money",

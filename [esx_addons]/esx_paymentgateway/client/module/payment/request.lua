@@ -21,21 +21,21 @@ local MAX_TEXT <const> = 120
 --- Longest currency symbol, in bytes.
 local MAX_CURRENCY <const> = 4
 
----Keeps the configured methods a list names, each once, in the configured order.
----@param value any Methods from the request
+---Keeps the configured methods whose ESX account a list names, each once, in the configured order.
+---@param value any Accounts from the request, e.g. { "money", "bank" }
 ---@return PaymentMethod[] methods
 ---@return table<PaymentMethod, boolean> allowed
 local function methodsOf(value)
     local wanted = {}
     if type(value) == "table" then
-        for _, method in ipairs(value) do
-            wanted[method] = true
+        for _, account in ipairs(value) do
+            wanted[account] = true
         end
     end
 
     local methods, allowed = {}, {}
     for _, method in ipairs(Config.Methods) do
-        if type(value) ~= "table" or wanted[method] then
+        if type(value) ~= "table" or wanted[Config.Accounts[method]] then
             methods[#methods + 1] = method
             allowed[method] = true
         end
@@ -63,7 +63,9 @@ function Request.normalize(input)
     if not Validate.isText(input.title, MAX_TEXT) then return nil, "A payment title is required." end
 
     local methods, allowed = methodsOf(input.methods)
-    if #methods == 0 then return nil, "None of the requested methods is available." end
+    if #methods == 0 then
+        return nil, "None of the requested methods is available; name them by ESX account, e.g. \"money\" or \"bank\"."
+    end
 
     return {
         amount = math.tointeger(input.amount) or input.amount,

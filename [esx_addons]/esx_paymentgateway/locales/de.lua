@@ -36,7 +36,7 @@ return {
     -- /testpayment
     ["command_testpayment"] = "Eine Testzahlung für dich selbst öffnen",
     ["command_amount"] = "Betrag in ganzen Dollar",
-    ["command_method"] = "cash, card oder both, ohne Angabe beide",
+    ["command_method"] = "money, bank oder both, ohne Angabe beide",
     ["command_mode"] = "select schließt bei der Wahl, sonst mit Beleg",
     ["command_invalid_amount"] = "Gib einen ganzen Betrag von mindestens 1 an.",
     ["test_paid"] = "Testzahlung über %s mit %s bezahlt.",

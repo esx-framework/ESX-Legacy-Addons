@@ -12,9 +12,9 @@ Validate.config()
 ---Opens the payment dialog and waits for the player; call it from a thread. Without onPay the
 ---dialog closes as soon as the player picks a method. With it, the dialog waits while onPay sells
 ---on your server and shows the receipt or the refusal.
----@param request table amount, title, description?, currency?, methods?
----@param onPay? fun(method: PaymentMethod): boolean|table, string|table|nil
----@return PaymentMethod|false method
+---@param request table amount, title, description?, currency?, methods? (ESX accounts, e.g. { "money", "bank" })
+---@param onPay? fun(account: string): boolean|table, string|table|nil
+---@return string|false account ESX account the player paid with
 ---@return string|nil reason
 exports("RequestPayment", function(request, onPay)
     return Payment.request(request, onPay, GetInvokingResource())

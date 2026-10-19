@@ -36,7 +36,7 @@ return {
     -- /testpayment
     ["command_testpayment"] = "Open a test payment on yourself",
     ["command_amount"] = "Amount, whole dollars",
-    ["command_method"] = "cash, card or both, both when left out",
+    ["command_method"] = "money, bank or both, both when left out",
     ["command_mode"] = "select to close on the pick, the receipt otherwise",
     ["command_invalid_amount"] = "Give a whole amount of at least 1.",
     ["test_paid"] = "Test payment of %s paid with %s.",

@@ -2,8 +2,9 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 --- The payment dialog. Other resources open it with the RequestPayment export and the player
---- picks a method. Without a handler the dialog closes on that pick and the export returns the
---- method. With one, the dialog waits while the handler asks the caller's server to sell, then
+--- picks a method. Resources name methods by their ESX account; the page only knows how each one
+--- looks, cash or card. Without a handler the dialog closes on that pick and the export returns
+--- the account. With one, the dialog waits while the handler asks the caller's server to sell, then
 --- shows the receipt or the refusal. Either way the dialog never moves money and keeps nothing
 --- once it closes: checking the purchase and taking the money is the job of the resource that
 --- asked, on its own server. Focus is only taken once the page says it shows the payment, so a
@@ -64,12 +65,25 @@ local function labels()
     return result
 end
 
+---The way to pay that stands for an ESX account.
+---@param account any
+---@return PaymentMethod|nil
+function Payment.methodOf(account)
+    for method, name in pairs(Config.Accounts) do
+        if name == account then return method end
+    end
+    return nil
+end
+
 ---Text for the player about a failure code of xPlayer.chargeAccount.
----@param method PaymentMethod Method the charge was for
+---@param account string ESX account the charge was for
 ---@param code any
 ---@return string|nil text Nil when the value is no such code
-function Payment.failureText(method, code)
-    if code == "insufficient_funds" then return Translate("insufficient_" .. method) end
+function Payment.failureText(account, code)
+    if code == "insufficient_funds" then
+        local method = Payment.methodOf(account)
+        return Translate(method and "insufficient_" .. method or "payment_failed")
+    end
     local key = FAILURE_KEYS[code]
     return key and Translate(key) or nil
 end
@@ -100,7 +114,7 @@ local function finish(method, reason)
     local payment = current
     if not payment then return end
     current = nil
-    payment.done:resolve({ method = method, reason = reason })
+    payment.done:resolve({ account = method and Config.Accounts[method], reason = reason })
 end
 
 ---Runs the handler for the chosen method and waits for it, but no longer than
@@ -118,7 +132,7 @@ local function ask(payment, method)
     end
 
     CreateThread(function()
-        settle(table.pack(pcall(payment.onPay, method)))
+        settle(table.pack(pcall(payment.onPay, Config.Accounts[method])))
     end)
     SetTimeout(Config.PayTimeout * 1000, function()
         settle({ timeout = true })
@@ -153,12 +167,12 @@ local function verdictOf(payment, method, answer)
         elseif Validate.isText(result.message, MAX_MESSAGE) then
             detail = result.message
         else
-            detail = Payment.failureText(method, result.reason)
+            detail = Payment.failureText(Config.Accounts[method], result.reason)
         end
     elseif ok == true and type(detail) == "table" then
         detail = detail.reference
     elseif ok == false then
-        detail = Payment.failureText(method, detail) or detail
+        detail = Payment.failureText(Config.Accounts[method], detail) or detail
     end
 
     if ok == true then
@@ -204,14 +218,14 @@ local function sell(payment, method)
     })
 end
 
----Opens the dialog and waits until the player paid or walked away. Without a method it returns
----false, not nil: the export sends its results through msgpack, which turns a leading nil into
----a hole and drops the reason behind it.
+---Opens the dialog and waits until the player paid or walked away. Without an account it
+---returns false, not nil: the export sends its results through msgpack, which turns a leading
+---nil into a hole and drops the reason behind it.
 ---@param input any Request from the export
----@param onPay? function Handler that sells with the chosen method
+---@param onPay? function Handler that sells with the chosen account
 ---@param owner? string Resource that asked
----@return PaymentMethod|false method
----@return string|nil reason Why there is no method: "cancelled", "unconfirmed", "busy" or what is wrong with the request
+---@return string|false account ESX account of the method the player paid with
+---@return string|nil reason Why there is none: "cancelled", "unconfirmed", "busy" or what is wrong with the request
 function Payment.request(input, onPay, owner)
     if current then return false, "busy" end
     if not ESX.IsPlayerLoaded() then return false, "The player is not loaded." end
@@ -244,7 +258,7 @@ function Payment.request(input, onPay, owner)
     })
 
     local outcome = Citizen.Await(payment.done)
-    return outcome.method or false, outcome.reason
+    return outcome.account or false, outcome.reason
 end
 
 ---Closes the dialog from this side, e.g. when the player dies or logs out. While the handler

@@ -41,9 +41,16 @@ function Validate.config()
         end
     end
 
-    local methods = {}
+    -- Requests and answers name a method by its account, so no two methods may share one.
+    local methods, taken = {}, {}
     for _, method in ipairs(type(Config.Methods) == "table" and Config.Methods or {}) do
-        if Config.Accounts[method] then methods[#methods + 1] = method end
+        local account = Config.Accounts[method]
+        if account and taken[account] then
+            warn(("Config.Methods lists %s, but %s already takes the account %s; ignored"):format(method, taken[account], account))
+        elseif account then
+            taken[account] = method
+            methods[#methods + 1] = method
+        end
     end
     if #methods == 0 then
         warn("Config.Methods names no method with an account; payments cannot open")
