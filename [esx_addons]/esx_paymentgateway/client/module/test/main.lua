@@ -10,7 +10,7 @@ local Payment = require "client.module.payment.main"
 
 ---@param amount integer
 ---@param method PaymentMethod
----@return table result ok, and message or reference
+---@return table result ok, and reason or reference
 local function charge(amount, method)
     return xLib.callback.await("esx_paymentgateway:testCharge", false, amount, method)
 end
@@ -43,7 +43,8 @@ ESX.SecureNetEvent("esx_paymentgateway:test", function(test)
         if type(result) == "table" and result.ok then
             ESX.ShowNotification(TranslateCap("test_paid", test.amount, Translate("ui_" .. method)), "success")
         else
-            ESX.ShowNotification(type(result) == "table" and result.message or TranslateCap("payment_failed"), "error")
+            local reason = type(result) == "table" and result.reason
+            ESX.ShowNotification(Payment.failureText(method, reason) or TranslateCap("payment_failed"), "error")
         end
     end)
 end)

@@ -34,5 +34,5 @@ Config.CloseDelay = 2600
 --- Volume of the dialog's sounds, 0 silent to 1 full.
 Config.Volume = 0.5
 
---- Registers /testpayment for admins, to try the dialog and Charge with their own money.
+--- Registers /testpayment for admins, to try the dialog and xPlayer.chargeAccount with their own money.
 Config.TestCommand = false
