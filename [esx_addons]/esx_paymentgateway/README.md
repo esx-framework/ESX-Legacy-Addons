@@ -1,10 +1,14 @@
 # esx_paymentgateway
 
-A cash or card payment dialog that other resources open from the server. The player sees what
-they pay for, their balances and what stays after paying, and picks a method; the server checks
-the balance, takes the money and tells the resource that asked how the payment ended.
+A cash or card payment dialog for other resources. The player sees what they pay for, their
+balances and what stays after paying, and picks how to pay. That is all the gateway decides.
+Whether the sale happens is up to the resource that opened the dialog: it checks price, stock,
+distance and the chosen method on its own server and takes the money there, with `Charge` if
+it likes.
 
-The groundwork, the export and its result event, comes from cs0ng0r's first version.
+The groundwork comes from cs0ng0r's first version.
+
+[EXAMPLES.md](EXAMPLES.md) has two complete shops, one for each way of using it.
 
 ## Setup
 
@@ -22,98 +26,129 @@ The page is served from `web/dist`, which is committed, so nothing has to be bui
 
 The player picks a method with the mouse, the arrow keys or `1` and `2`, and pays with Enter.
 Payments of `Config.HoldAmount` or more need the pay button, Enter or Space held until it has
-filled. Esc cancels. The dialog also closes when the payment expires, when the player dies or logs
-out of their character, and when the resource that opened it stops. After paying, the receipt
-closes itself after `Config.CloseDelay`.
+filled. Esc cancels. The dialog also closes when the player dies or logs out of their character,
+and when the resource that opened it stops.
 
 The dialog only takes the mouse and keyboard once it shows the payment. Should the page ever be
-unable to show one, the payment ends as `cancelled` right away instead of leaving the player stuck.
+unable to show one, the export returns `nil, "cancelled"` right away instead of leaving the player
+stuck.
 
-## Opening a payment
+## Opening the dialog
+
+`RequestPayment` is a client export. It waits until the player is done, so call it from a thread:
 
 ```lua
-local opened, detail = exports.esx_paymentgateway:RequestPayment(playerId, {
-    amount = 1250,                          -- whole number, at least 1
-    title = "Vehicle repair",               -- what is paid for
-    description = "Los Santos Customs",     -- optional, who is paid
-    currency = "$",                         -- optional, Config.Currency by default
-    methods = { "cash", "card" },           -- optional, every configured method by default
-}, function(playerId, success, method, request, outcome)
-    if success then
-        -- method is "cash" or "card"; deliver what was bought
-    end
+CreateThread(function()
+    local method, reason = exports.esx_paymentgateway:RequestPayment({
+        amount = 1250,                          -- whole number, at least 1
+        title = "Vehicle repair",               -- what is paid for
+        description = "Los Santos Customs",     -- optional, who is paid
+        currency = "$",                         -- optional, Config.Currency by default
+        methods = { "cash", "card" },           -- optional, every configured method by default
+    }, onPay)                                   -- optional, see below
 end)
-
-if not opened then
-    print(detail) -- why it did not open
-end
 ```
 
-`RequestPayment` returns `true` and the payment id when the dialog opened, or `false` and a reason
-when the player is not available, already has a payment open, or the request is invalid. A player
-has at most one open payment, and it belongs to the character it was opened for: if the player
-logs out to another character, it ends as `dropped` and the new character is never charged.
+It returns the method, `"cash"` or `"card"`, or `nil` and a reason:
 
-### The result
-
-The function passed as third argument is called once when the payment ends. This is the safe way
-to hear the result, since nothing outside the server can call it.
-
-| Argument | |
+| Reason | |
 |---|---|
-| `playerId` | The player who paid or did not |
-| `success` | `true` once the money was taken |
-| `method` | `"cash"` or `"card"`, `nil` unless paid |
-| `request` | `id`, `amount`, `currency`, `title`, `description`, `methods` |
-| `outcome` | `"paid"`, `"cancelled"`, `"expired"`, `"dropped"` or `"stopped"` |
+| `"cancelled"` | The player closed the dialog, died, logged out, or your resource stopped |
+| `"unconfirmed"` | Your `onPay` failed or did not answer in time; it may have sold anyway |
+| `"busy"` | Another dialog is open on this client |
+| anything else | The request is broken, e.g. `"A payment title is required."` |
 
-`stopped` means esx_paymentgateway itself stopped while the payment was open. Do not wait inside the
-function; start a thread for anything slow. An error in it is logged and does not undo the payment.
+The balances in the dialog come from ESX's player data on the client. They are there for the
+player to read, nothing more: the real check happens on your server when you charge.
 
-A refused method (not enough money, or ESX refusing to take it) does not end the payment; the player
-can pick another method or cancel. `success` is only `true` when ESX confirmed taking the money, or,
-on versions that do not confirm, when the balance dropped by exactly the amount.
+### Just the method
 
-For compatibility, a request may also name a `resultEvent`. It fires on the server with the same
-arguments. Register it with `AddEventHandler`, never `RegisterNetEvent`: a net event of that name
-could be triggered by clients.
+Without `onPay`, the dialog closes as soon as the player confirms a method and the export
+returns it. You send it to your server, sell there and tell the player how it went yourself, usually
+with a notification. Good for small things where a receipt would be in the way.
 
-### Cancelling
+### With a receipt
+
+With `onPay`, the dialog stays open after the pick and shows Processing while `onPay` runs.
+`onPay` gets the method, asks your server to sell, and returns how that went:
+
+| `onPay` returns | The dialog |
+|---|---|
+| `true`, or `{ ok = true }` | Shows the receipt |
+| `true, { reference = "LSC-0042" }`, or `{ ok = true, reference = "LSC-0042" }` | Shows the receipt with your reference on it |
+| `false, "Sold out"`, or `{ ok = false, message = "Sold out" }` | Shows the reason; the player can pick another method or cancel |
+| anything else, an error, or nothing within `Config.PayTimeout` | Closes and tells the player to check before paying again |
+
+The table form is there so `onPay` can hand back what your server callback returned without
+unpacking it. Only return `false` when you know no money was taken. If the answer is unclear,
+let it error or time out: the player then cannot pay a second time from the same dialog.
+
+The export returns the method once the player closes the receipt, or when they die or log out
+while `onPay` still runs and it sold.
+
+## Charging on the server
 
 ```lua
-exports.esx_paymentgateway:CancelPayment(playerId)
+local charged, failure, message = exports.esx_paymentgateway:Charge(playerId, method, amount, "Vehicle repair")
 ```
 
-Ends the player's open payment, e.g. when they walk away from the shop, and returns `true`. Only the
-resource that opened the payment can cancel it; the result arrives as `cancelled`. It returns `false`
-when the player has no open payment or another resource opened it.
+Takes `amount` from the ESX account of `method` (`Config.Accounts`) and proves it left the
+account. Call it after your own checks, with the price from your server's data, never one the
+client sent. The method comes from the client too, so make sure your shop takes it.
 
-### Logging
+On failure, `message` is a text for the player in the server's language, and `failure` says why:
 
-Every payment that went through fires a local server event, for logging and audit resources:
+| `failure` | |
+|---|---|
+| `"insufficient"` | Not enough money for that method |
+| `"method"` | Not a method this server takes payments in |
+| `"amount"` | Not a whole number of at least 1 |
+| `"player"` | No such player |
+| `"failed"` | ESX refused or the balance did not move by the amount, see the console |
+
+```lua
+exports.esx_paymentgateway:Refund(playerId, method, amount, "Vehicle repair")
+```
+
+Gives money back to the same account, for when you charged but could not hand over what was
+bought. It returns `false` and warns in the console when ESX refuses, since that money is then
+lost unless an admin steps in.
+
+Every successful `Charge` fires a local server event, for logging and audit resources:
 
 ```lua
 AddEventHandler("esx_paymentgateway:paid", function(payment)
-    -- payment.playerId, payment.identifier, payment.id, payment.amount, payment.method,
-    -- payment.account, payment.title, payment.resource
+    -- payment.playerId, payment.identifier, payment.amount, payment.method,
+    -- payment.account, payment.reason, payment.resource
 end)
 ```
+
+### Why the gateway keeps no payments
+
+An earlier version held every payment open on the server with an id, an expiry and the
+character it was for, and took the money itself. That still left the real question to the
+shop, only later: a payment opened two minutes ago says nothing about whether the last car is
+still in stock when the player finally presses pay. Your server has to check that at the moment
+it takes the money anyway, so it might as well take it. The gateway stays a dialog.
 
 ## Config
 
 | Option | Default | |
 |---|---|---|
-| `Config.Accounts` | `cash = "money", card = "bank"` | ESX account each method takes the money from |
-| `Config.Methods` | `{ "cash", "card" }` | Order of the methods, and the default set |
+| `Config.Accounts` | `cash = "money", card = "bank"` | ESX account each method shows and charges |
+| `Config.Methods` | `{ "cash", "card" }` | Order of the methods, and the ones the server takes at all |
 | `Config.Currency` | `"$"` | Symbol when a request names none |
 | `Config.HoldAmount` | `50000` | From this amount the pay button has to be held; `0` turns it off |
-| `Config.Timeout` | `120` | Seconds before an open payment expires, at least `10`; the dialog shows the time left |
+| `Config.PayTimeout` | `20` | Seconds the dialog waits for `onPay`, at least `3`; keep it longer than your callback timeout |
 | `Config.CloseDelay` | `2600` | Milliseconds the receipt stays; `0` waits for the player |
 | `Config.Volume` | `0.5` | Volume of the dialog's sounds, `0` to `1` |
-| `Config.TestCommand` | `false` | Registers `/testpayment <amount> [cash\|card]` for admins |
+| `Config.TestCommand` | `false` | Registers `/testpayment <amount> [cash\|card\|both] [select]` for admins |
 
-The config is checked at start: values that would break a payment are reported in the console and
-replaced by their defaults.
+The config is checked at start on both sides: values that would break a payment are reported in
+the console and replaced by their defaults.
+
+`/testpayment` charges the admin's own money through `Charge`. It shows the receipt, or with
+`select` only picks and reports the result as a notification.
 
 ## Languages
 
@@ -148,6 +183,7 @@ npm run test:cef   # builds and plays the dialog in Chromium 103
 npm run build      # type check, build to dist/, Chromium 103 feature check
 ```
 
-Outside FiveM the page runs a demo by itself: it opens sample payments, answers like the server
-and offers a server theme and the German texts. `npm run build` fails on CSS or JavaScript
-features Chromium 103 lacks and on source files over 400 lines.
+Outside FiveM the page runs a demo by itself: it opens sample payments, answers like a shop with
+a receipt (the fuel stop only takes the pick) and offers a server theme and the German texts.
+`npm run build` fails on CSS or JavaScript features Chromium 103 lacks and on source files over
+400 lines.
