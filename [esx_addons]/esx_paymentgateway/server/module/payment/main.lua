@@ -183,7 +183,7 @@ function Payment.pay(playerId, id, method)
 
     -- Claimed before any money moves: whatever happens below, it cannot be paid twice.
     open[playerId] = nil
-    local charged, failure = Account.charge(player, playerId, Config.Accounts[method], request.amount, request.title)
+    local charged, failure = Account.take(player, playerId, Config.Accounts[method], request.amount, request.title)
     if not charged then
         if not reopen(playerId, request) then return end
         local reason = failure == "insufficient" and "insufficient_" .. method or "payment_failed"

@@ -4,6 +4,7 @@
 --- Server entry: the exports other resources open and cancel payments with, and the player's
 --- answers from the dialog. README.md documents the exports and the events.
 
+local Account = require "server.module.account.main"
 local Payment = require "server.module.payment.main"
 local Util = require "server.module.payment.util"
 
@@ -27,6 +28,29 @@ end)
 ---@return boolean cancelled
 exports("CancelPayment", function(playerId)
     return Payment.cancelFor(playerId, GetInvokingResource())
+end)
+
+---Takes the price of a purchase for the method the player chose. Call it from your own server
+---code, after checking price, stock and everything else the purchase depends on.
+---@param playerId integer
+---@param method PaymentMethod
+---@param amount integer
+---@param reason? string Shown in ESX's account logs
+---@return boolean charged
+---@return ChargeFailure|nil failure
+---@return string|nil message Why, ready to show the player
+exports("Charge", function(playerId, method, amount, reason)
+    return Account.charge(playerId, method, amount, reason, GetInvokingResource())
+end)
+
+---Gives money back, e.g. when what was paid for could not be handed over.
+---@param playerId integer
+---@param method PaymentMethod
+---@param amount integer
+---@param reason? string Shown in ESX's account logs
+---@return boolean refunded
+exports("Refund", function(playerId, method, amount, reason)
+    return Account.refund(playerId, method, amount, reason)
 end)
 
 RegisterNetEvent("esx_paymentgateway:pay", function(id, method)
