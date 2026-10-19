@@ -30,10 +30,14 @@ return {
     ["payment_failed"] = "The payment could not be completed. Try again.",
     ["method_unavailable"] = "This way of paying is not accepted here.",
 
+    -- A payment handler that failed or did not answer; it may have sold anyway.
+    ["payment_unconfirmed"] = "The payment was not confirmed. Check whether it went through before you pay again.",
+
     -- /testpayment
     ["command_testpayment"] = "Open a test payment on yourself",
     ["command_amount"] = "Amount, whole dollars",
     ["command_method"] = "cash or card, both when left out",
+    ["command_mode"] = "select to close on the pick, the receipt otherwise",
     ["command_invalid_amount"] = "Give a whole amount of at least 1.",
     ["test_paid"] = "Test payment of %s paid with %s.",
 }

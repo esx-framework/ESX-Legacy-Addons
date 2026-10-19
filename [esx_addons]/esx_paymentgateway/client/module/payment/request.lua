@@ -43,6 +43,16 @@ local function methodsOf(value)
     return methods, allowed
 end
 
+---Whether a value can be called: a function, or a function from another resource, which
+---arrives as a table with a __call metamethod.
+---@param value any
+---@return boolean
+function Request.isCallable(value)
+    if type(value) == "function" then return true end
+    local meta = type(value) == "table" and getmetatable(value)
+    return type(meta) == "table" and meta.__call ~= nil
+end
+
 ---Turns the table a resource passed into the payment the dialog shows.
 ---@param input any Request from the export
 ---@return PaymentRequest|nil request

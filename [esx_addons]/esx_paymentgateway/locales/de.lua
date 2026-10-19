@@ -30,10 +30,14 @@ return {
     ["payment_failed"] = "Die Zahlung konnte nicht abgeschlossen werden. Versuch es noch einmal.",
     ["method_unavailable"] = "Diese Zahlungsart wird hier nicht angenommen.",
 
+    -- A payment handler that failed or did not answer; it may have sold anyway.
+    ["payment_unconfirmed"] = "Die Zahlung wurde nicht bestätigt. Prüf erst, ob sie durchgegangen ist, bevor du nochmal bezahlst.",
+
     -- /testpayment
     ["command_testpayment"] = "Eine Testzahlung für dich selbst öffnen",
     ["command_amount"] = "Betrag in ganzen Dollar",
     ["command_method"] = "cash oder card, ohne Angabe beide",
+    ["command_mode"] = "select schließt bei der Wahl, sonst mit Beleg",
     ["command_invalid_amount"] = "Gib einen ganzen Betrag von mindestens 1 an.",
     ["test_paid"] = "Testzahlung über %s mit %s bezahlt.",
 }

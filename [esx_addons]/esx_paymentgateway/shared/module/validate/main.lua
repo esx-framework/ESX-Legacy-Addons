@@ -58,6 +58,10 @@ function Validate.config()
         warn("Config.HoldAmount must be 0 or more, turning holding off")
         Config.HoldAmount = 0
     end
+    if type(Config.PayTimeout) ~= "number" or Config.PayTimeout < 3 then
+        warn("Config.PayTimeout must be at least 3 seconds, using 20")
+        Config.PayTimeout = 20
+    end
 end
 
 return Validate

@@ -1,13 +1,16 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
---- The payment dialog. Other resources open it with the RequestPayment export, the player picks
---- a method, and the export returns it. The dialog never moves money and keeps nothing once it
---- closes: checking the purchase and taking the money is the job of the resource that asked,
---- on its own server. Focus is only taken once the page says it shows the payment, so a page
---- that cannot show it never locks the player.
+--- The payment dialog. Other resources open it with the RequestPayment export and the player
+--- picks a method. Without a handler the dialog closes on that pick and the export returns the
+--- method. With one, the dialog waits while the handler asks the caller's server to sell, then
+--- shows the receipt or the refusal. Either way the dialog never moves money and keeps nothing
+--- once it closes: checking the purchase and taking the money is the job of the resource that
+--- asked, on its own server. Focus is only taken once the page says it shows the payment, so a
+--- page that cannot show it never locks the player.
 
 local Request = require "client.module.payment.request"
+local Validate = require "shared.module.validate.main"
 
 local Payment = {}
 
@@ -18,16 +21,29 @@ local LABEL_KEYS <const> = {
     "paid_with", "new_balance", "reference", "done",
 }
 
+--- Longest refusal text and receipt reference a handler may hand back, in bytes.
+local MAX_MESSAGE <const> = 120
+local MAX_REFERENCE <const> = 40
+
 ---@class OpenPayment
 ---@field id integer Id of the dialog, so answers for an older one are ignored
 ---@field allowed table<PaymentMethod, boolean> Methods the dialog offers
+---@field onPay? function Handler of the resource that opened it
 ---@field owner? string Resource that opened it
 ---@field done table Promise the export waits on
+---@field paying? boolean Whether the handler is running
+---@field paid? PaymentMethod Method the handler sold with
+---@field closed? boolean Whether the dialog was closed while the handler ran
 
 --- The payment on screen, nil while the dialog is closed.
 ---@type OpenPayment|nil
 local current = nil
 local lastId = 0
+
+---@param message string
+local function warn(message)
+    print(("[^3WARNING^7] esx_paymentgateway: %s"):format(message))
+end
 
 ---@return table<string, string>
 local function labels()
@@ -59,7 +75,7 @@ local function balances()
 end
 
 ---Ends the payment on screen and wakes the resource that waits for it.
----@param method PaymentMethod|nil Method the player chose, nil when they did not
+---@param method PaymentMethod|nil Method the player paid with, nil when they did not
 ---@param reason? string Why not
 local function finish(method, reason)
     local payment = current
@@ -68,20 +84,113 @@ local function finish(method, reason)
     payment.done:resolve({ method = method, reason = reason })
 end
 
----Opens the dialog and waits until the player chose a method or walked away.
+---Runs the handler for the chosen method and waits for it, but no longer than
+---Config.PayTimeout. The handler cannot be stopped; after the timeout its answer is ignored.
+---@param payment OpenPayment
+---@param method PaymentMethod
+---@return table answer `timeout`, or `ok` from pcall with what the handler returned
+local function ask(payment, method)
+    local answer = promise.new()
+    local settled = false
+    local function settle(value)
+        if settled then return end
+        settled = true
+        answer:resolve(value)
+    end
+
+    CreateThread(function()
+        settle(table.pack(pcall(payment.onPay, method)))
+    end)
+    SetTimeout(Config.PayTimeout * 1000, function()
+        settle({ timeout = true })
+    end)
+    return Citizen.Await(answer)
+end
+
+---Reads what the handler returned: true, false and a reason, or a result table as server
+---callbacks usually send it.
+---@param payment OpenPayment
+---@param answer table From ask
+---@return "paid"|"refused"|"unconfirmed" verdict
+---@return string|nil detail The refusal text or the receipt reference
+local function verdictOf(payment, answer)
+    if answer.timeout then
+        warn(("the payment handler of %s did not answer within %ss"):format(payment.owner, Config.PayTimeout))
+        return "unconfirmed"
+    end
+    if not answer[1] then
+        warn(("the payment handler of %s failed: %s"):format(payment.owner, answer[2]))
+        return "unconfirmed"
+    end
+
+    local ok, detail = answer[2], answer[3]
+    if type(ok) == "table" then
+        local result = ok
+        ok = result.ok
+        if ok == true then detail = result.reference else detail = result.message end
+    elseif ok == true and type(detail) == "table" then
+        detail = detail.reference
+    end
+
+    if ok == true then
+        return "paid", Validate.isText(detail, MAX_REFERENCE) and detail or nil
+    end
+    if ok == false then
+        return "refused", Validate.isText(detail, MAX_MESSAGE) and detail or nil
+    end
+    warn(("the payment handler of %s returned neither true nor false"):format(payment.owner))
+    return "unconfirmed"
+end
+
+---Lets the handler sell with the chosen method and shows how that went. Only a clear no lets
+---the player try again; an error or no answer at all may have sold anyway, so the dialog closes
+---instead of risking a second purchase.
+---@param payment OpenPayment
+---@param method PaymentMethod
+local function sell(payment, method)
+    payment.paying = true
+    local verdict, detail = verdictOf(payment, ask(payment, method))
+    payment.paying = false
+
+    if verdict == "unconfirmed" then
+        if not payment.closed then xLib.nui.close({ action = "close" }) end
+        ESX.ShowNotification(TranslateCap("payment_unconfirmed"), "error")
+        return finish(nil, "unconfirmed")
+    end
+    if payment.closed then
+        return finish(verdict == "paid" and method or nil, verdict == "paid" and nil or "cancelled")
+    end
+
+    if verdict == "paid" then payment.paid = method end
+    xLib.nui.send({
+        action = "result",
+        result = {
+            id = payment.id,
+            ok = verdict == "paid",
+            method = verdict == "paid" and method or nil,
+            message = verdict == "refused" and (detail or Translate("ui_unreachable")) or nil,
+            reference = verdict == "paid" and detail or nil,
+            balances = balances(),
+        },
+    })
+end
+
+---Opens the dialog and waits until the player paid or walked away.
 ---@param input any Request from the export
+---@param onPay? function Handler that sells with the chosen method
 ---@param owner? string Resource that asked
 ---@return PaymentMethod|nil method
----@return string|nil reason Why there is no method: "cancelled", "busy" or what is wrong with the request
-function Payment.request(input, owner)
+---@return string|nil reason Why there is no method: "cancelled", "unconfirmed", "busy" or what is wrong with the request
+function Payment.request(input, onPay, owner)
     if current then return nil, "busy" end
     if not ESX.IsPlayerLoaded() then return nil, "The player is not loaded." end
+    if onPay ~= nil and not Request.isCallable(onPay) then return nil, "onPay must be a function." end
 
     local request, reason = Request.normalize(input)
     if not request then return nil, reason end
 
     lastId = lastId + 1
-    local payment = { id = lastId, allowed = request.allowed, owner = owner, done = promise.new() }
+    local payment = { id = lastId, allowed = request.allowed, onPay = onPay, owner = owner, done = promise.new() }
     current = payment
 
     xLib.nui.send({
@@ -107,11 +216,17 @@ function Payment.request(input, owner)
     return outcome.method, outcome.reason
 end
 
----Closes the dialog from this side, e.g. when the player dies or logs out.
+---Closes the dialog from this side, e.g. when the player dies or logs out. While the handler
+---runs, the export still waits for its answer, since it may have sold already.
 function Payment.cancel()
-    if not current then return end
+    local payment = current
+    if not payment or payment.closed then return end
     xLib.nui.close({ action = "close" })
-    finish(nil, "cancelled")
+    if payment.paying then
+        payment.closed = true
+    else
+        finish(payment.paid, not payment.paid and "cancelled" or nil)
+    end
 end
 
 ---Closes the dialog when the resource that opened it stops; nobody is left to hear the answer.
@@ -132,15 +247,27 @@ end)
 
 xLib.nui.register("pay", function(data)
     local payment = current
-    if payment and data.id == payment.id and payment.allowed[data.method] then
+    if not payment or data.id ~= payment.id or not payment.allowed[data.method] then
+        return xLib.nui.ok()
+    end
+    if not payment.onPay then
         xLib.nui.close({ action = "close" })
         finish(data.method)
+    elseif not payment.paying and not payment.paid and not payment.closed then
+        CreateThread(function() sell(payment, data.method) end)
     end
     return xLib.nui.ok()
 end)
 
 xLib.nui.register("close", function(data)
-    if current and data.id == current.id then finish(nil, "cancelled") end
+    local payment = current
+    if payment and data.id == payment.id and not payment.closed then
+        if payment.paying then
+            payment.closed = true
+        else
+            finish(payment.paid, not payment.paid and "cancelled" or nil)
+        end
+    end
     xLib.nui.focus(false, false)
     return xLib.nui.ok()
 end)
