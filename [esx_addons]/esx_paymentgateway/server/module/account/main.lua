@@ -7,6 +7,8 @@
 --- override takes from non-item accounts without checking cover. So every charge is checked
 --- before, guarded while it runs and proven after.
 
+local Validate = require "shared.module.validate.main"
+
 local Account = {}
 
 --- Why a charge took nothing: no such player, a method that is not enabled, an amount that is no
@@ -17,9 +19,6 @@ local Account = {}
 ---@class StaticPlayer
 ---@field beginAccountOperation fun(): boolean
 ---@field endAccountOperation fun()
-
---- Largest amount; above it doubles lose whole units.
-local MAX_AMOUNT <const> = 9007199254740991
 
 ---@param message string
 local function warn(message)
@@ -33,20 +32,6 @@ local function money(player, account)
     local ok, data = pcall(player.getAccount, account)
     if not ok or type(data) ~= "table" then return nil end
     return tonumber(data.money)
-end
-
----@param player StaticPlayer
----@param method PaymentMethod
----@return number
-local function balanceOf(player, method)
-    local account = Config.Accounts[method]
-    return account and math.max(0, money(player, account) or 0) or 0
-end
-
----@param value any
----@return boolean
-local function isAmount(value)
-    return type(value) == "number" and value >= 1 and value <= MAX_AMOUNT and value % 1 == 0
 end
 
 ---The ESX account of a method the server takes payments in.
@@ -88,19 +73,8 @@ local function resolve(playerId, method, amount)
     if not player then return nil, "player" end
     local account = accountOf(method)
     if not account then return nil, "method" end
-    if not isAmount(amount) then return nil, "amount" end
+    if not Validate.isAmount(amount) then return nil, "amount" end
     return player, account
-end
-
----The player's balance for both methods. A method without an account shows 0, so the dialog
----always gets both, also on servers that pay only in cash or only by card.
----@param player StaticPlayer
----@return table<PaymentMethod, number>
-function Account.balances(player)
-    return {
-        cash = balanceOf(player, "cash"),
-        card = balanceOf(player, "card"),
-    }
 end
 
 ---Takes money from a player's account and proves it was taken.
@@ -111,7 +85,7 @@ end
 ---@param reason string Shown in ESX's account logs
 ---@return boolean charged
 ---@return "insufficient"|"failed"|nil failure Why nothing was taken
-function Account.take(player, playerId, account, amount, reason)
+local function take(player, playerId, account, amount, reason)
     local before = money(player, account)
     if not before or before < amount then return false, "insufficient" end
 
@@ -162,7 +136,7 @@ function Account.charge(playerId, method, amount, reason, resource)
     ---@cast account string
 
     reason = type(reason) == "string" and reason or "Payment"
-    local charged, failure = Account.take(player, playerId, account, amount, reason)
+    local charged, failure = take(player, playerId, account, amount, reason)
     if not charged then return false, failure, messageOf(failure, method) end
 
     TriggerEvent("esx_paymentgateway:paid", {

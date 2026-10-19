@@ -24,16 +24,16 @@ return {
     ["ui_reference"] = "Reference",
     ["ui_done"] = "Done",
 
-    -- Answers of the server.
+    -- Messages Charge hands back.
     ["insufficient_cash"] = "You do not have enough cash.",
     ["insufficient_card"] = "Your bank account does not cover this payment.",
     ["payment_failed"] = "The payment could not be completed. Try again.",
     ["method_unavailable"] = "This way of paying is not accepted here.",
-    ["payment_expired"] = "The payment expired.",
 
     -- /testpayment
     ["command_testpayment"] = "Open a test payment on yourself",
     ["command_amount"] = "Amount, whole dollars",
     ["command_method"] = "cash or card, both when left out",
     ["command_invalid_amount"] = "Give a whole amount of at least 1.",
+    ["test_paid"] = "Test payment of %s paid with %s.",
 }

@@ -24,14 +24,11 @@ Config.Currency = "$"
 --- Payments of at least this amount have to be held to confirm; 0 turns holding off.
 Config.HoldAmount = 50000
 
---- Seconds a payment stays open before it expires and the dialog closes.
-Config.Timeout = 120
-
 --- Milliseconds the receipt stays before the dialog closes itself; 0 waits for the player.
 Config.CloseDelay = 2600
 
 --- Volume of the dialog's sounds, 0 silent to 1 full.
 Config.Volume = 0.5
 
---- Registers /testpayment for admins, to try amounts, methods and the server theme.
+--- Registers /testpayment for admins, to try the dialog and Charge with their own money.
 Config.TestCommand = false

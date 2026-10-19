@@ -7,7 +7,7 @@ lua54 "yes"
 use_fxv2_oal "yes"
 
 author "ESX-Framework"
-description "Payment gateway: a cash or card payment dialog other resources open from the server"
+description "Payment gateway: a cash or card payment dialog, opened by other resources on the client"
 version "1.0.0"
 legacyversion "1.16.3"
 
@@ -18,6 +18,7 @@ files {
     "web/dist/**/*",
     "locales/*.lua",
     "client/module/**/*.lua",
+    "shared/module/**/*.lua",
 }
 
 shared_scripts {

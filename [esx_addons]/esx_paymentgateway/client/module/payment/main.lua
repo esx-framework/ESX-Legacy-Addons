@@ -1,10 +1,13 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
---- The payment dialog on the client: opens the page with the server's payment, the theme
---- and the texts, passes the player's choice to the server and its answer back to the page.
---- The page reports through its `shown`, `pay` and `close` callbacks. Focus is only taken once
---- the page says it shows the payment, so a page that cannot show it never locks the player.
+--- The payment dialog. Other resources open it with the RequestPayment export, the player picks
+--- a method, and the export returns it. The dialog never moves money and keeps nothing once it
+--- closes: checking the purchase and taking the money is the job of the resource that asked,
+--- on its own server. Focus is only taken once the page says it shows the payment, so a page
+--- that cannot show it never locks the player.
+
+local Request = require "client.module.payment.request"
 
 local Payment = {}
 
@@ -15,11 +18,16 @@ local LABEL_KEYS <const> = {
     "paid_with", "new_balance", "reference", "done",
 }
 
---- Id of the payment on screen, nil while the dialog is closed.
----@type integer|nil
+---@class OpenPayment
+---@field id integer Id of the dialog, so answers for an older one are ignored
+---@field allowed table<PaymentMethod, boolean> Methods the dialog offers
+---@field owner? string Resource that opened it
+---@field done table Promise the export waits on
+
+--- The payment on screen, nil while the dialog is closed.
+---@type OpenPayment|nil
 local current = nil
---- Whether the payment on screen went through, so closing it is no cancel.
-local settled = false
+local lastId = 0
 
 ---@return table<string, string>
 local function labels()
@@ -31,54 +39,85 @@ local function labels()
     return result
 end
 
----Sends a payment the server opened to the page; the `shown` callback takes focus.
----@param payment table
-function Payment.open(payment)
-    current = payment.id
-    settled = false
+---The player's money per method, as ESX last told this client. Only shown; the resource that
+---charges checks the real balance on its server.
+---@return table<PaymentMethod, number>
+local function balances()
+    local result = { cash = 0, card = 0 }
+    local data = ESX.GetPlayerData()
+    local accounts = type(data) == "table" and data.accounts
+    if type(accounts) ~= "table" then return result end
+
+    for _, account in pairs(accounts) do
+        for method, name in pairs(Config.Accounts) do
+            if type(account) == "table" and account.name == name then
+                result[method] = math.max(0, tonumber(account.money) or 0)
+            end
+        end
+    end
+    return result
+end
+
+---Ends the payment on screen and wakes the resource that waits for it.
+---@param method PaymentMethod|nil Method the player chose, nil when they did not
+---@param reason? string Why not
+local function finish(method, reason)
+    local payment = current
+    if not payment then return end
+    current = nil
+    payment.done:resolve({ method = method, reason = reason })
+end
+
+---Opens the dialog and waits until the player chose a method or walked away.
+---@param input any Request from the export
+---@param owner? string Resource that asked
+---@return PaymentMethod|nil method
+---@return string|nil reason Why there is no method: "cancelled", "busy" or what is wrong with the request
+function Payment.request(input, owner)
+    if current then return nil, "busy" end
+    if not ESX.IsPlayerLoaded() then return nil, "The player is not loaded." end
+
+    local request, reason = Request.normalize(input)
+    if not request then return nil, reason end
+
+    lastId = lastId + 1
+    local payment = { id = lastId, allowed = request.allowed, owner = owner, done = promise.new() }
+    current = payment
+
     xLib.nui.send({
         action = "open",
-        payment = payment,
+        payment = {
+            id = payment.id,
+            amount = request.amount,
+            currency = request.currency,
+            title = request.title,
+            description = request.description,
+            methods = request.methods,
+            balances = balances(),
+            hold = Config.HoldAmount > 0 and request.amount >= Config.HoldAmount,
+        },
         theme = xLib.colors.getESXTheme(),
         labels = labels(),
         locale = Config.Locale,
         closeDelay = Config.CloseDelay,
         volume = Config.Volume,
     })
+
+    local outcome = Citizen.Await(payment.done)
+    return outcome.method, outcome.reason
 end
 
----Passes the server's answer to the page.
----@param result table
-function Payment.result(result)
-    if result.id ~= current then return end
-    settled = result.ok == true
-    xLib.nui.send({
-        action = "result",
-        result = {
-            id = result.id,
-            ok = result.ok,
-            method = result.method,
-            message = result.error and TranslateCap(result.error) or nil,
-            balances = result.balances,
-        },
-    })
-end
-
----Closes the dialog because the server ended the payment.
----@param reason? string Locale key to tell the player why
-function Payment.close(reason)
-    if not current then return end
-    current = nil
-    xLib.nui.close({ action = "close" })
-    if reason then ESX.ShowNotification(TranslateCap(reason), "error") end
-end
-
----Closes the dialog from this side, e.g. when the player dies, and tells the server.
+---Closes the dialog from this side, e.g. when the player dies or logs out.
 function Payment.cancel()
     if not current then return end
-    if not settled then TriggerServerEvent("esx_paymentgateway:cancel", current) end
-    current = nil
     xLib.nui.close({ action = "close" })
+    finish(nil, "cancelled")
+end
+
+---Closes the dialog when the resource that opened it stops; nobody is left to hear the answer.
+---@param resource string
+function Payment.forgetResource(resource)
+    if current and current.owner == resource then Payment.cancel() end
 end
 
 ---@return boolean
@@ -87,22 +126,21 @@ function Payment.isOpen()
 end
 
 xLib.nui.register("shown", function(data)
-    if current and data.id == current then xLib.nui.focus(true, true) end
+    if current and data.id == current.id then xLib.nui.focus(true, true) end
     return xLib.nui.ok()
 end)
 
 xLib.nui.register("pay", function(data)
-    if current and data.id == current and not settled then
-        TriggerServerEvent("esx_paymentgateway:pay", current, data.method)
+    local payment = current
+    if payment and data.id == payment.id and payment.allowed[data.method] then
+        xLib.nui.close({ action = "close" })
+        finish(data.method)
     end
     return xLib.nui.ok()
 end)
 
 xLib.nui.register("close", function(data)
-    if current and data.id == current then
-        if not settled then TriggerServerEvent("esx_paymentgateway:cancel", current) end
-        current = nil
-    end
+    if current and data.id == current.id then finish(nil, "cancelled") end
     xLib.nui.focus(false, false)
     return xLib.nui.ok()
 end)
