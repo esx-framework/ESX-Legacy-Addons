@@ -133,6 +133,15 @@ describe('parseNuiMessage', (): void => {
     ).toEqual({ action: 'result', result: { id: 7, ok: true, method: 'card', message: 'Paid.' } });
   });
 
+  it.each([
+    ['LSC-004211', 'LSC-004211'],
+    ['x'.repeat(41), undefined],
+    [42, undefined],
+  ])('should read the reference %j as %j', (reference: unknown, expected?: string): void => {
+    const message = parseNuiMessage({ action: 'result', result: { id: 7, ok: true, reference } });
+    expect(message?.action === 'result' && message.result.reference).toBe(expected);
+  });
+
   it('should refuse a result without an outcome', (): void => {
     expect(parseNuiMessage({ action: 'result', result: { id: 7 } })).toBeUndefined();
   });

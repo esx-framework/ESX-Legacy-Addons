@@ -56,7 +56,7 @@ export interface OpenMessage {
   volume?: number;
 }
 
-/** The server's answer to the method the player chose. */
+/** The seller's answer to the method the player chose. */
 export interface ResultMessage {
   /** Discriminator */
   action: 'result';
@@ -100,6 +100,8 @@ const MAX_CURRENCY = 4;
 const THEME_COLORS = ['primaryColor', 'secondaryColor', 'backgroundColor', 'accentColor'] as const;
 const LABEL_KEY = /^[a-z][a-z_]{0,39}$/;
 const LOCALE = /^[a-z]{2,3}(?:[-_][A-Za-z]{2})?$/;
+/** Longest receipt reference, e.g. "LSC-004211". */
+const MAX_REFERENCE = 40;
 /** Longest the receipt may stay on its own, in milliseconds. */
 const MAX_CLOSE_DELAY = 30_000;
 
@@ -145,6 +147,7 @@ function parseResult(value: unknown): PaymentResult | undefined {
   if (isText(value.message, MAX_TEXT)) result.message = value.message;
   const balances = parseBalances(value.balances);
   if (balances) result.balances = balances;
+  if (isText(value.reference, MAX_REFERENCE)) result.reference = value.reference;
   return result;
 }
 

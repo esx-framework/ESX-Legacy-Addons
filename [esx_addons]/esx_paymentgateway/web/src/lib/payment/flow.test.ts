@@ -1,5 +1,5 @@
 /**
- * Tests for the payment flow: choosing, paying, the server's answer and closing.
+ * Tests for the payment flow: choosing, paying, the seller's answer and closing.
  *
  * @see PaymentFlow
  */
@@ -55,15 +55,22 @@ describe('PaymentFlow', (): void => {
     expect(flow.choose('cash')).toBe(false);
   });
 
-  it('should show the receipt when the server took the money', (): void => {
+  it('should show the receipt when the seller took the money', (): void => {
     flow.open(openMessage(5000, 5000));
     flow.pay();
     flow.answer({ id: 42, ok: true, method: 'cash', balances: { cash: 4000, card: 5000 } });
     expect(flow.phase).toBe('paid');
-    expect(flow.receipt).toEqual({ method: 'cash', balance: 4000, reference: '#000042' });
+    expect(flow.receipt).toEqual({ method: 'cash', balance: 4000, reference: null });
   });
 
-  it('should go back to choosing with the reason when the server refused', (): void => {
+  it('should put the reference the seller gave on the receipt', (): void => {
+    flow.open(openMessage(5000, 5000));
+    flow.pay();
+    flow.answer({ id: 42, ok: true, method: 'card', reference: 'LSC-004211' });
+    expect(flow.receipt?.reference).toBe('LSC-004211');
+  });
+
+  it('should go back to choosing with the reason when the seller refused', (): void => {
     flow.open(openMessage(5000, 5000));
     flow.pay();
     flow.answer({

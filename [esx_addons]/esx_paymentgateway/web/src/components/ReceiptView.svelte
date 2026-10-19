@@ -2,7 +2,7 @@
   /**
    * The right side of the dialog once the money is taken: the success mark, the status and a
    * short slip. The bill next to it keeps the amount and what it was for, so the slip only adds
-   * what changed, and every line of it is set the same way. The dialog closes on its own after
+   * what changed, and the seller's reference when it gave one. Every line is set the same way. The dialog closes on its own after
    * the configured delay; the Done button drains to show the time left, and pressing it closes
    * at once.
    */
@@ -33,7 +33,7 @@
       label: labels.new_balance,
       value: formatMoney(receipt.balance, payment.currency, flow.locale),
     },
-    { label: labels.reference, value: receipt.reference },
+    ...(receipt.reference ? [{ label: labels.reference, value: receipt.reference }] : []),
   ]);
 </script>
 

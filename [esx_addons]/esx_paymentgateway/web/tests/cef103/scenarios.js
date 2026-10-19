@@ -77,9 +77,17 @@ export const scenarios = [
       await nui.screenshot('paying');
       await nui.send({
         action: 'result',
-        result: { id: 42, ok: true, method: 'card', balances: { cash: 4820, card: 17250 } },
+        result: {
+          id: 42,
+          ok: true,
+          method: 'card',
+          balances: { cash: 4820, card: 17250 },
+          reference: 'LSC-004211',
+        },
       });
       await expectReceipt(page, 'card');
+      const reference = await page.$$eval('.slip dd', (cells) => cells.at(-1)?.textContent?.trim());
+      if (reference !== 'LSC-004211') throw new Error(`the receipt shows ${reference}`);
       await new Promise((resolve) => setTimeout(resolve, 900));
       await nui.screenshot('receipt');
       const closed = /** @type {{ id: number }} */ (await nui.waitForCallback('close'));
@@ -94,8 +102,22 @@ export const scenarios = [
       if (body.method !== 'cash') throw new Error(`the preselected method paid ${body.method}`);
       await acceptPayment(nui, 'cash');
       await expectReceipt(page, 'cash');
+      // A seller without a reference gets no empty reference line.
+      const rows = await page.$$eval('.slip .row', (lines) => lines.length);
+      if (rows !== 2) throw new Error(`the receipt has ${rows} lines`);
       await new Promise((resolve) => setTimeout(resolve, 900));
       await nui.screenshot('receipt');
+    },
+  },
+  {
+    name: 'plain-pick',
+    async run(page, nui) {
+      await openPayment(page, nui, FULL_HD, openMessage());
+      const body = await clickPay(page, nui);
+      if (body.method !== 'cash') throw new Error(`the pick sent ${body.method}`);
+      // Without a handler Lua closes the dialog on the pick and sends no result.
+      await nui.send({ action: 'close' });
+      await page.waitForSelector('[role="dialog"]', { hidden: true, timeout: 3_000 });
     },
   },
   {

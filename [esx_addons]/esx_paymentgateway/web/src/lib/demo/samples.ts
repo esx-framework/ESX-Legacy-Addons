@@ -20,6 +20,10 @@ export interface DemoPayment {
   methods: PaymentMethod[];
   /** Whether the amount is large enough to hold the pay button */
   hold?: boolean;
+  /** Reference the shop puts on the receipt */
+  reference?: string;
+  /** Whether the shop only wants the method, so the dialog closes on the pick */
+  pick?: boolean;
 }
 
 /** Payments the demo cycles through. */
@@ -29,14 +33,22 @@ export const SAMPLES: readonly DemoPayment[] = [
     description: 'Los Santos Customs',
     amount: 1250,
     methods: ['cash', 'card'],
+    reference: 'LSC-004211',
   },
-  { title: 'Fuel', description: 'Globe Oil, Mirror Park', amount: 86, methods: ['cash', 'card'] },
+  {
+    title: 'Fuel',
+    description: 'Globe Oil, Mirror Park',
+    amount: 86,
+    methods: ['cash', 'card'],
+    pick: true,
+  },
   {
     title: 'Pegassi Zentorno',
     description: 'Premium Deluxe Motorsport',
     amount: 185000,
     methods: ['card'],
     hold: true,
+    reference: 'PDM-1187',
   },
   { title: 'Burger Shot meal', description: 'Del Perro Pier', amount: 24, methods: ['cash'] },
   {
@@ -44,6 +56,7 @@ export const SAMPLES: readonly DemoPayment[] = [
     description: 'Dynasty 8 Real Estate',
     amount: 4200,
     methods: ['card'],
+    reference: 'D8-2026-10',
   },
 ];
 

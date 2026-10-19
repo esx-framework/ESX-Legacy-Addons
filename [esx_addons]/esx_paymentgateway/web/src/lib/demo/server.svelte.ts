@@ -1,8 +1,9 @@
 /**
  * The page plays both sides when it is opened in a normal browser: this stands in for the Lua
- * client and the server, opens sample payments, takes the money from demo balances and answers
- * the way the resource does. After a payment closes the next one opens, so the dialog always
- * shows. In game none of this runs.
+ * client and for the shops that open payments. It opens sample payments, takes the money from
+ * demo balances and answers the way a seller's handler does, or closes on the pick like a plain
+ * picker. After a payment closes the next one opens, so the dialog always shows. In game none of
+ * this runs.
  *
  * @see demo
  */
@@ -19,7 +20,7 @@ const NEXT_MS = 900;
 /** Balances the demo starts with and tops up to. */
 const START_BALANCES: Balances = { cash: 4820, card: 412000 };
 
-/** Stand-in for the Lua client and the server. */
+/** Stand-in for the Lua client and the shops. */
 class DemoServer {
   /** Whether the demo runs, that is whether the page is outside the game */
   active: boolean = $state(false);
@@ -54,13 +55,18 @@ class DemoServer {
     const sample = SAMPLES[this.sample] ?? SAMPLES[0];
     if (!sample) return;
     if (this.balances.card < sample.amount) this.balances = { ...START_BALANCES };
+    const { title, description, amount, methods, hold } = sample;
     send({
       action: 'open',
       payment: {
-        ...sample,
         id: this.nextId++,
+        amount,
         currency: '$',
+        title,
+        description,
+        methods,
         balances: { ...this.balances },
+        ...(hold ? { hold } : {}),
       },
       ...(this.blue ? { theme: BLUE_THEME } : {}),
       ...(this.german ? { labels: GERMAN_LABELS, locale: 'de' } : {}),
@@ -69,24 +75,39 @@ class DemoServer {
   }
 
   private answer(callback: string, payload: unknown): void {
-    if (callback === 'close') {
-      this.sample = (this.sample + 1) % SAMPLES.length;
-      this.timer = setTimeout((): void => this.open(), NEXT_MS);
-      return;
-    }
+    if (callback === 'close') return this.later();
     if (callback !== 'pay' || !isRecord(payload)) return;
     const { id, method } = payload;
     if (!isId(id) || !isPaymentMethod(method)) return;
     const sample = SAMPLES[this.sample];
+    if (!sample) return;
+
+    if (sample.pick) {
+      // A plain picker: Lua closes on the pick, and the shop charges after on its own.
+      send({ action: 'close' });
+      this.balances = { ...this.balances, [method]: this.balances[method] - sample.amount };
+      return this.later();
+    }
+
     this.timer = setTimeout((): void => {
-      if (!sample || this.balances[method] < sample.amount) {
+      if (this.balances[method] < sample.amount) {
         const message = this.german ? 'Dafür reicht das Geld nicht.' : 'Not enough money for that.';
         send({ action: 'result', result: { id, ok: false, message, balances: this.balances } });
         return;
       }
       this.balances = { ...this.balances, [method]: this.balances[method] - sample.amount };
-      send({ action: 'result', result: { id, ok: true, method, balances: { ...this.balances } } });
+      const reference = sample.reference ? { reference: sample.reference } : {};
+      send({
+        action: 'result',
+        result: { id, ok: true, method, balances: { ...this.balances }, ...reference },
+      });
     }, ANSWER_MS);
+  }
+
+  /** Moves on to the next sample after a short pause. */
+  private later(): void {
+    this.sample = (this.sample + 1) % SAMPLES.length;
+    this.timer = setTimeout((): void => this.open(), NEXT_MS);
   }
 }
 

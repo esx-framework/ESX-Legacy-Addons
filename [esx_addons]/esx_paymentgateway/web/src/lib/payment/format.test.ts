@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { formatMoney, formatReference } from './format';
+import { formatMoney } from './format';
 
 describe('formatMoney', (): void => {
   it('should group thousands in English by default', (): void => {
@@ -22,11 +22,5 @@ describe('formatMoney', (): void => {
 
   it('should fall back to English for a tag Intl does not accept', (): void => {
     expect(formatMoney(1250, '$', 'not a locale')).toBe('$1,250');
-  });
-});
-
-describe('formatReference', (): void => {
-  it('should pad the id to six digits', (): void => {
-    expect(formatReference(42)).toBe('#000042');
   });
 });

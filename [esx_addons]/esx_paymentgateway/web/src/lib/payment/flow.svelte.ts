@@ -7,21 +7,20 @@
  */
 
 import type { ClosePayload, OpenMessage, PayPayload } from '../nui/messages';
-import { formatReference } from './format';
 import { resolveLabels, type DialogLabels } from './labels';
 import type { Balances, Payment, PaymentMethod, PaymentResult } from './types';
 
 /** Where the player is with the payment. */
 export type Phase = 'choosing' | 'paying' | 'paid';
 
-/** What the receipt shows once the server took the money. */
+/** What the receipt shows once the seller took the money. */
 export interface Receipt {
   /** Method that paid */
   method: PaymentMethod;
   /** Balance of that method afterwards */
   balance: number;
-  /** Payment id as the player sees it, e.g. "#000042" */
-  reference: string;
+  /** Reference the seller gave, e.g. an invoice number; null leaves the line out */
+  reference: string | null;
 }
 
 /** The dialog's state. */
@@ -118,7 +117,7 @@ export class PaymentFlow {
       this.receipt = {
         method,
         balance: this.balances[method],
-        reference: formatReference(this.payment.id),
+        reference: result.reference ?? null,
       };
       return true;
     }
