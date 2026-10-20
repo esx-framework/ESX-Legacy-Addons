@@ -30,9 +30,9 @@ Payments of `Config.HoldAmount` or more need the pay button, Enter or Space held
 filled. Esc cancels. The dialog also closes when the player dies or logs out of their character,
 and when the resource that opened it stops.
 
-The dialog only takes the mouse and keyboard once it shows the payment. Should the page ever be
-unable to show one, the export returns `false, "cancelled"` right away instead of leaving the player
-stuck.
+The dialog only takes the mouse and keyboard once it shows the payment. Should the page be unable
+to show one, or not confirm it within 10 seconds, the export returns `false, "cancelled"` instead
+of leaving the player stuck.
 
 ## Opening the dialog
 
@@ -58,7 +58,10 @@ card), or `false` and a reason:
 | `"cancelled"` | The player closed the dialog, died, logged out, or your resource stopped |
 | `"unconfirmed"` | Your `onPay` failed or did not answer in time; it may have sold anyway |
 | `"busy"` | Another dialog is open on this client |
-| anything else | The request is broken, e.g. `"A payment title is required."` |
+| anything else | The request is broken, e.g. `"A title is required, at most 120 bytes."` |
+
+Title and description take up to 120 bytes of UTF-8, the currency up to 4. Optional fields you
+pass are checked like the required ones: a broken one refuses the request instead of being left out.
 
 The balances in the dialog come from ESX's player data on the client. They are there for the
 player to read, nothing more: the real check happens on your server when you charge.
@@ -116,7 +119,7 @@ It takes the money only when the account covers it and never throws. When it doe
 |---|---|
 | `"insufficient_funds"` | The account holds less than the price |
 | `"invalid_account"` | The player has no such account |
-| `"invalid_amount"` | Not a positive number, or a fraction on an account that rounds |
+| `"invalid_amount"` | Not a whole number from 1 up |
 | `"session_closing"` | The player is leaving and being saved |
 | `"failed"` | ESX or the inventory refused, see the console |
 
@@ -152,8 +155,8 @@ inside es_extended, so your server pays two trips: `ESX.Player` and the call.
 | `Config.Methods` | `{ "cash", "card" }` | Order of the looks, and the ones offered at all |
 | `Config.Currency` | `"$"` | Symbol when a request names none |
 | `Config.HoldAmount` | `50000` | From this amount the pay button has to be held; `0` turns it off |
-| `Config.PayTimeout` | `20` | Seconds the dialog waits for `onPay`, at least `3`; keep it longer than your callback timeout |
-| `Config.CloseDelay` | `2600` | Milliseconds the receipt stays; `0` waits for the player |
+| `Config.PayTimeout` | `20` | Seconds the dialog waits for `onPay`, `3` to `300`; after that the payment is unconfirmed |
+| `Config.CloseDelay` | `2600` | Milliseconds the receipt stays, up to `30000`; `0` waits for the player |
 | `Config.Volume` | `0.5` | Volume of the dialog's sounds, `0` to `1` |
 | `Config.TestCommand` | `false` | Registers `/testpayment <amount> [money\|bank\|both] [select]` for admins |
 
@@ -161,7 +164,8 @@ The config is checked at start on both sides: values that would break a payment 
 the console and replaced by their defaults.
 
 `/testpayment` charges the admin's own money through `xPlayer.chargeAccount`. It shows the
-receipt, or with `select` only picks and reports the result as a notification.
+receipt, or with `select` only picks and reports the result as a notification. The amount stays on
+the server, the way a shop keeps its prices; the client only names the account.
 
 ## Languages
 
@@ -181,7 +185,7 @@ setr esx:ui:accentColor "#383838"
 setr esx:ui:logoUrl "https://example.com/logo.png"
 ```
 
-Colors are `#rgb` or `#rrggbb`; the logo has to be an `https://` or `nui://` URL.
+Colors are `#rgb` or `#rrggbb`; the logo has to be an `http(s)://` or `nui://` URL.
 
 ## Working on the page
 
