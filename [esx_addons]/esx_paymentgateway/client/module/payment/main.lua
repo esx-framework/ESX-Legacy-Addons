@@ -26,6 +26,10 @@ local LABEL_KEYS <const> = {
 local MAX_MESSAGE <const> = 120
 local MAX_REFERENCE <const> = 40
 
+--- Milliseconds the page has to say it shows a payment. A message that never arrived would
+--- otherwise keep the export waiting and every later request busy.
+local SHOWN_TIMEOUT <const> = 10000
+
 --- Locale key of the text for each failure code of xPlayer.chargeAccount, except
 --- insufficient_funds, whose text depends on the method.
 local FAILURE_KEYS <const> = {
@@ -41,6 +45,7 @@ local FAILURE_KEYS <const> = {
 ---@field onPay? function Handler of the resource that opened it
 ---@field owner? string Resource that opened it
 ---@field done table Promise the export waits on
+---@field shown? boolean Whether the page said it shows the payment
 ---@field paying? boolean Whether the handler is running
 ---@field paid? PaymentMethod Method the handler sold with
 ---@field closed? boolean Whether the dialog was closed while the handler ran
@@ -107,12 +112,12 @@ local function balances()
     return result
 end
 
----Ends the payment on screen and wakes the resource that waits for it.
+---Ends a payment and wakes the resource that waits for it, unless it already ended.
+---@param payment OpenPayment
 ---@param method PaymentMethod|nil Method the player paid with, nil when they did not
 ---@param reason? string Why not
-local function finish(method, reason)
-    local payment = current
-    if not payment then return end
+local function finish(payment, method, reason)
+    if current ~= payment then return end
     current = nil
     payment.done:resolve({ account = method and Config.Accounts[method], reason = reason })
 end
@@ -198,10 +203,10 @@ local function sell(payment, method)
     if verdict == "unconfirmed" then
         if not payment.closed then xLib.nui.close({ action = "close" }) end
         ESX.ShowNotification(TranslateCap("payment_unconfirmed"), "error")
-        return finish(nil, "unconfirmed")
+        return finish(payment, nil, "unconfirmed")
     end
     if payment.closed then
-        return finish(verdict == "paid" and method or nil, verdict == "paid" and nil or "cancelled")
+        return finish(payment, verdict == "paid" and method or nil, verdict == "paid" and nil or "cancelled")
     end
 
     if verdict == "paid" then payment.paid = method end
@@ -257,6 +262,13 @@ function Payment.request(input, onPay, owner)
         volume = Config.Volume,
     })
 
+    SetTimeout(SHOWN_TIMEOUT, function()
+        if current == payment and not payment.shown then
+            warn(("the page did not show payment %s in time, cancelling it"):format(payment.id))
+            Payment.cancel()
+        end
+    end)
+
     local outcome = Citizen.Await(payment.done)
     return outcome.account or false, outcome.reason
 end
@@ -270,7 +282,7 @@ function Payment.cancel()
     if payment.paying then
         payment.closed = true
     else
-        finish(payment.paid, not payment.paid and "cancelled" or nil)
+        finish(payment, payment.paid, not payment.paid and "cancelled" or nil)
     end
 end
 
@@ -286,18 +298,22 @@ function Payment.isOpen()
 end
 
 xLib.nui.register("shown", function(data)
-    if current and data.id == current.id then xLib.nui.focus(true, true) end
+    local payment = current
+    if payment and data.id == payment.id and not payment.closed then
+        payment.shown = true
+        xLib.nui.focus(true, true)
+    end
     return xLib.nui.ok()
 end)
 
 xLib.nui.register("pay", function(data)
     local payment = current
-    if not payment or data.id ~= payment.id or not payment.allowed[data.method] then
+    if not payment or data.id ~= payment.id or type(data.method) ~= "string" or not payment.allowed[data.method] then
         return xLib.nui.ok()
     end
     if not payment.onPay then
         xLib.nui.close({ action = "close" })
-        finish(data.method)
+        finish(payment, data.method)
     elseif not payment.paying and not payment.paid and not payment.closed then
         CreateThread(function() sell(payment, data.method) end)
     end
@@ -306,11 +322,14 @@ end)
 
 xLib.nui.register("close", function(data)
     local payment = current
-    if payment and data.id == payment.id and not payment.closed then
+    -- A late close for an earlier dialog must not take the focus from the one on screen.
+    if payment and data.id ~= payment.id then return xLib.nui.ok() end
+
+    if payment and not payment.closed then
         if payment.paying then
             payment.closed = true
         else
-            finish(payment.paid, not payment.paid and "cancelled" or nil)
+            finish(payment, payment.paid, not payment.paid and "cancelled" or nil)
         end
     end
     xLib.nui.focus(false, false)
