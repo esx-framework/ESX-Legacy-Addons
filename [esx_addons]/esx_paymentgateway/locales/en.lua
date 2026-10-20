@@ -39,5 +39,7 @@ return {
     ["command_method"] = "money, bank or both, both when left out",
     ["command_mode"] = "select to close on the pick, the receipt otherwise",
     ["command_invalid_amount"] = "Give a whole amount of at least 1.",
+    ["command_invalid_method"] = "Give an account the dialog offers, or both.",
+    ["command_invalid_mode"] = "The mode is select, or leave it out.",
     ["test_paid"] = "Test payment of %s paid with %s.",
 }

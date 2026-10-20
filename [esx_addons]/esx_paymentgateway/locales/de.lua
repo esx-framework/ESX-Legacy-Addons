@@ -39,5 +39,7 @@ return {
     ["command_method"] = "money, bank oder both, ohne Angabe beide",
     ["command_mode"] = "select schließt bei der Wahl, sonst mit Beleg",
     ["command_invalid_amount"] = "Gib einen ganzen Betrag von mindestens 1 an.",
+    ["command_invalid_method"] = "Gib ein Konto an, das der Dialog anbietet, oder both.",
+    ["command_invalid_mode"] = "Der Modus ist select, oder lass ihn weg.",
     ["test_paid"] = "Testzahlung über %s mit %s bezahlt.",
 }

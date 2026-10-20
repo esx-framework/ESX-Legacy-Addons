@@ -8,11 +8,11 @@
 
 local Payment = require "client.module.payment.main"
 
----@param amount integer
+---Asks the server to charge the test it opened. The amount stays on the server.
 ---@param account string ESX account the player chose
 ---@return table result ok, and reason or reference
-local function charge(amount, account)
-    return xLib.callback.await("esx_paymentgateway:testCharge", false, amount, account)
+local function charge(account)
+    return xLib.callback.await("esx_paymentgateway:testCharge", false, account)
 end
 
 ESX.SecureNetEvent("esx_paymentgateway:test", function(test)
@@ -28,9 +28,7 @@ ESX.SecureNetEvent("esx_paymentgateway:test", function(test)
 
     CreateThread(function()
         if not test.select then
-            local account, reason = Payment.request(request, function(account)
-                return charge(test.amount, account)
-            end, owner)
+            local account, reason = Payment.request(request, charge, owner)
             return print(("[esx_paymentgateway] test payment: %s"):format(account or reason))
         end
 
@@ -39,9 +37,15 @@ ESX.SecureNetEvent("esx_paymentgateway:test", function(test)
             return print(("[esx_paymentgateway] test payment: %s"):format(reason))
         end
 
-        local result = charge(test.amount, account)
-        if type(result) == "table" and result.ok then
-            ESX.ShowNotification(TranslateCap("test_paid", test.amount, Translate("ui_" .. Payment.methodOf(account))), "success")
+        -- A callback that fails or times out may still have charged.
+        local answered, result = pcall(charge, account)
+        if not answered then
+            return ESX.ShowNotification(TranslateCap("payment_unconfirmed"), "error")
+        end
+
+        if type(result) == "table" and result.ok == true then
+            local method = Payment.methodOf(account)
+            ESX.ShowNotification(TranslateCap("test_paid", test.amount, method and Translate("ui_" .. method) or account), "success")
         else
             local code = type(result) == "table" and result.reason
             ESX.ShowNotification(Payment.failureText(account, code) or TranslateCap("payment_failed"), "error")
