@@ -100,7 +100,7 @@ local function balances()
     for _, account in pairs(accounts) do
         for method, name in pairs(Config.Accounts) do
             if type(account) == "table" and account.name == name then
-                result[method] = math.max(0, tonumber(account.money) or 0)
+                result[method] = Validate.balance(account.money)
             end
         end
     end

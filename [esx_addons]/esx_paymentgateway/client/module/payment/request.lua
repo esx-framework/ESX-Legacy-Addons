@@ -22,20 +22,21 @@ local MAX_TEXT <const> = 120
 local MAX_CURRENCY <const> = 4
 
 ---Keeps the configured methods whose ESX account a list names, each once, in the configured order.
----@param value any Accounts from the request, e.g. { "money", "bank" }
+---@param value? table Accounts from the request, e.g. { "money", "bank" }; nil for every configured one
 ---@return PaymentMethod[] methods
 ---@return table<PaymentMethod, boolean> allowed
 local function methodsOf(value)
     local wanted = {}
-    if type(value) == "table" then
+    if value then
         for _, account in ipairs(value) do
-            wanted[account] = true
+            -- Only names count; anything else, NaN too, could not be a table key anyway.
+            if type(account) == "string" then wanted[account] = true end
         end
     end
 
     local methods, allowed = {}, {}
     for _, method in ipairs(Config.Methods) do
-        if type(value) ~= "table" or wanted[Config.Accounts[method]] then
+        if not value or wanted[Config.Accounts[method]] then
             methods[#methods + 1] = method
             allowed[method] = true
         end
@@ -53,14 +54,26 @@ function Request.isCallable(value)
     return type(meta) == "table" and meta.__call ~= nil
 end
 
----Turns the table a resource passed into the payment the dialog shows.
+---Turns the table a resource passed into the payment the dialog shows. Optional fields that are
+---given but broken refuse the request too, so a mistake shows up instead of being dropped.
 ---@param input any Request from the export
 ---@return PaymentRequest|nil request
 ---@return string|nil reason Why the request was refused
 function Request.normalize(input)
     if type(input) ~= "table" then return nil, "The request must be a table." end
     if not Validate.isAmount(input.amount) then return nil, "Amount must be a positive whole number." end
-    if not Validate.isText(input.title, MAX_TEXT) then return nil, "A payment title is required." end
+    if not Validate.isText(input.title, MAX_TEXT) then
+        return nil, ("A title is required, at most %s bytes."):format(MAX_TEXT)
+    end
+    if input.description ~= nil and not Validate.isText(input.description, MAX_TEXT) then
+        return nil, ("The description must be text of at most %s bytes."):format(MAX_TEXT)
+    end
+    if input.currency ~= nil and not Validate.isText(input.currency, MAX_CURRENCY) then
+        return nil, ("The currency must be a symbol of at most %s bytes."):format(MAX_CURRENCY)
+    end
+    if input.methods ~= nil and type(input.methods) ~= "table" then
+        return nil, "Methods must be a list of ESX accounts, e.g. { \"money\", \"bank\" }."
+    end
 
     local methods, allowed = methodsOf(input.methods)
     if #methods == 0 then
@@ -68,10 +81,10 @@ function Request.normalize(input)
     end
 
     return {
-        amount = math.tointeger(input.amount) or input.amount,
-        currency = Validate.isText(input.currency, MAX_CURRENCY) and input.currency or Config.Currency,
+        amount = math.tointeger(input.amount),
+        currency = input.currency or Config.Currency,
         title = input.title,
-        description = Validate.isText(input.description, MAX_TEXT) and input.description or nil,
+        description = input.description,
         methods = methods,
         allowed = allowed,
     }

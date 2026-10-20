@@ -26,11 +26,11 @@ Config.Currency = "$"
 --- Payments of at least this amount have to be held to confirm; 0 turns holding off.
 Config.HoldAmount = 50000
 
---- Seconds the dialog waits for a payment handler before it gives up on the answer. Keep it
---- longer than the callback timeout your handlers use, so theirs runs out first.
+--- Seconds the dialog waits for a payment handler, 3 to 300. After that it closes and calls the
+--- payment unconfirmed, since the seller's server may still sell.
 Config.PayTimeout = 20
 
---- Milliseconds the receipt stays before the dialog closes itself; 0 waits for the player.
+--- Milliseconds the receipt stays before the dialog closes itself, up to 30000; 0 waits for the player.
 Config.CloseDelay = 2600
 
 --- Volume of the dialog's sounds, 0 silent to 1 full.
