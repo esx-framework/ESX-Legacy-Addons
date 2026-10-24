@@ -88,6 +88,11 @@ local function setWorkshopAction(source, actionName, active)
 	return true
 end
 
+local function hasCraftingMaterials(xPlayer, action)
+	local item = xPlayer.getInventoryItem(action.input)
+	return item and (item.count or 0) > 0
+end
+
 local function processWorkshopAction(source, actionName)
 	local action = WORK_ACTIONS[actionName]
 	if not action then
@@ -116,9 +121,7 @@ local function processWorkshopAction(source, actionName)
 
 			xPlayer.addInventoryItem(action.item, 1)
 		elseif action.mode == 'craft' then
-			local item = xPlayer.getInventoryItem(action.input)
-
-			if not item or (item.count or 0) <= 0 then
+			if not hasCraftingMaterials(xPlayer, action) then
 				TriggerClientEvent('esx:showNotification', source, TranslateCap(action.missingNotification))
 				setWorkshopAction(source, actionName, false)
 				return
@@ -141,11 +144,21 @@ local function startWorkshopAction(source, actionName)
 		return
 	end
 
-	if not MechanicJob.getWorkshopMechanicPlayer(source) then
+	local xPlayer = MechanicJob.getWorkshopMechanicPlayer(source)
+	if not xPlayer then
 		return
 	end
 
 	if not MechanicJob.isPlayerNearZone(source, action.zone, WORK_ACTION_DISTANCE) then
+		return
+	end
+
+	if PlayerWorkStates[source] then
+		return
+	end
+
+	if action.mode == 'craft' and not hasCraftingMaterials(xPlayer, action) then
+		TriggerClientEvent('esx:showNotification', source, TranslateCap(action.missingNotification))
 		return
 	end
 
