@@ -216,6 +216,8 @@ end)
 
 -- Display markers
 CreateThread(function()
+	local TextUI = false
+
 	while true do
 		local sleep = 1500
 		local playerPed = PlayerPedId()
@@ -280,12 +282,19 @@ CreateThread(function()
 
 		if CurrentAction then
 			sleep = 0
-			ESX.ShowHelpNotification(CurrentActionMsg)
+
+			if not TextUI then
+				ESX.TextUI(CurrentActionMsg)
+				TextUI = true
+			end
 
 			if (IsControlJustReleased(0, 38)) and (CurrentAction == 'dmvschool_menu') then
 				OpenDMVSchoolMenu()
 				CurrentAction = nil
 			end
+		elseif TextUI then
+			ESX.HideUI()
+			TextUI = false
 		end
 		
 		local isInMarker  = false

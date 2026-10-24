@@ -4,6 +4,7 @@
 local spawnedWeeds = 0
 local weedPlants = {}
 local isPickingUp, isProcessing = false, false
+local processTextUIShown, pickupTextUIShown = false, false
 
 CreateThread(function()
 	while true do
@@ -25,7 +26,13 @@ CreateThread(function()
 		if #(coords - Config.CircleZones.WeedProcessing.coords) < 1 then
 			wait = 2
 			if not isProcessing then
-				ESX.ShowHelpNotification(TranslateCap('weed_processprompt'))
+				if not processTextUIShown then
+					ESX.TextUI(TranslateCap('weed_processprompt'))
+					processTextUIShown = true
+				end
+			elseif processTextUIShown then
+				ESX.HideUI()
+				processTextUIShown = false
 			end
 
 			if IsControlJustReleased(0, 38) and not isProcessing then
@@ -43,6 +50,9 @@ CreateThread(function()
 					end
 				end)
 			end
+		elseif processTextUIShown then
+			ESX.HideUI()
+			processTextUIShown = false
 		end
 		Wait(wait)
 	end
@@ -90,7 +100,13 @@ CreateThread(function()
 		if nearbyObject and IsPedOnFoot(playerPed) then
 			Sleep = 0
 			if not isPickingUp then
-				ESX.ShowHelpNotification(TranslateCap('weed_pickupprompt'))
+				if not pickupTextUIShown then
+					ESX.TextUI(TranslateCap('weed_pickupprompt'))
+					pickupTextUIShown = true
+				end
+			elseif pickupTextUIShown then
+				ESX.HideUI()
+				pickupTextUIShown = false
 			end
 
 			if IsControlJustReleased(0, 38) and not isPickingUp then
@@ -118,6 +134,9 @@ CreateThread(function()
 					isPickingUp = false
 				end, 'cannabis')
 			end
+		elseif pickupTextUIShown then
+			ESX.HideUI()
+			pickupTextUIShown = false
 		end
 	Wait(Sleep)
 	end
@@ -125,6 +144,10 @@ end)
 
 AddEventHandler('onResourceStop', function(resource)
 	if resource == GetCurrentResourceName() then
+		if processTextUIShown or pickupTextUIShown then
+			ESX.HideUI()
+			processTextUIShown, pickupTextUIShown = false, false
+		end
 		for k, v in pairs(weedPlants) do
 			xLib.game.deleteObject(v)
 		end
