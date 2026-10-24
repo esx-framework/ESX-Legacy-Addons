@@ -75,7 +75,7 @@ local function getLocationData()
     }
 end
 
-local function closeMenu()
+local function closeMenu(restoreDeathFocus)
     if not isOpen and not isOpening then
         return
     end
@@ -85,6 +85,10 @@ local function closeMenu()
     closedAt = GetGameTimer()
     xLib.nui.close({ type = "close" })
     TriggerScreenblurFadeOut(Config.ScreenBlurMs + 0.0)
+
+    if restoreDeathFocus then
+        TriggerEvent("esx_pausemenu:closed")
+    end
 end
 
 local function buildConfigForNui()
@@ -163,8 +167,8 @@ local function openMenu()
 end
 
 local function openNativePause(openMap)
-    closeMenu()
     nativePauseOpen = true
+    closeMenu()
 
     CreateThread(function()
         Wait(120)
@@ -189,16 +193,17 @@ local function openNativePause(openMap)
         end
 
         nativePauseOpen = false
+        TriggerEvent("esx_pausemenu:closed")
     end)
 end
 
 xLib.nui.register("close", function()
-    closeMenu()
+    closeMenu(true)
     return xLib.nui.ok()
 end)
 
 xLib.nui.register("resume", function()
-    closeMenu()
+    closeMenu(true)
     return xLib.nui.ok()
 end)
 
@@ -230,7 +235,7 @@ end)
 
 RegisterCommand("esx_pausemenu", function()
     if isOpen then
-        closeMenu()
+        closeMenu(true)
     else
         openMenu()
     end

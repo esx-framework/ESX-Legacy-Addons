@@ -105,6 +105,12 @@ local function setCursor(enabled)
     dbg('setCursor', { enabled = enabled, cursor = cursor, dead = dead })
 end
 
+AddEventHandler('esx_pausemenu:closed', function()
+    if dead then
+        setCursor(true)
+    end
+end)
+
 local function remaining()
     local elapsed = math.max(0, (GetGameTimer() - syncedAt) / 1000)
 
