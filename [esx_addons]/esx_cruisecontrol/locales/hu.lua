@@ -1,15 +1,16 @@
+
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales['hu'] = {
-  ['activated']   = 'Bekapcsolva',
-  ['deactivated'] = 'Kikapcsolva',
-  ['increaseSpeed'] = 'Sebbeség növelése',
-  ['decreaseSpeed'] = 'Sebbeség csökkenentése',
-  ['cruiseControl'] = 'Tempomat',
+    ['activated'] = 'Tempomat bekapcsolva',
+    ['deactivated'] = 'Tempomat kikapcsolva',
+    ['increaseSpeed'] = 'Sebesség növelése',
+    ['decreaseSpeed'] = 'Sebesség csökkentése',
+    ['cruiseControl'] = 'Tempomat',
 
-  --Seatbelt
-  ['toggleSeatbelt'] = "Toggle Seatbelt",
-  ["seatbeltOn"] = "Seatbelt ON",
-  ["seatbeltOff"] = "Seatbelt OFF"
+    -- Biztonsági öv
+    ['toggleSeatbelt'] = 'Biztonsági öv be- és kikapcsolása',
+    ['seatbeltOn'] = 'Biztonsági öv bekapcsolva',
+    ['seatbeltOff'] = 'Biztonsági öv kikapcsolva'
 }
