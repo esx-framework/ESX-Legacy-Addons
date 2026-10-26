@@ -23,8 +23,6 @@ Locales['de'] = {
 
   -- license
   ['license_menu'] = 'Bootschein Kaufen',
-  ['license_buy_no'] = 'Ja',
-  ['license_buy_yes'] = 'Bootschein Kaufen für <span style="color: green;">%sEUR</span>',
   ['license_bought'] = 'Du kaufst den Bootschein für %sEUR',
   ['license_nomoney'] = 'Du kannst dir ~r~den Bootschein nicht leisten!',
 

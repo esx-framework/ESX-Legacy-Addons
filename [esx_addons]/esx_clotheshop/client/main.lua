@@ -17,6 +17,7 @@ local function restoreSkin()
     end
 end
 
+
 function OpenShopMenu()
     if purchasePending then
         return
@@ -24,161 +25,138 @@ function OpenShopMenu()
 
     ESX.HideUI()
     hasPaid = false
+
     TriggerEvent('skinchanger:getSkin', function(skin)
         oldSkin = skin
     end)
+
+    while not oldSkin do
+        Wait(10)
+    end
+
     TriggerEvent('esx_skin:openRestrictedMenu', function(data, menu)
         menu.close()
 
-        local elements = {
-            {
-                unselectable = true,
-                icon = 'fas fa-check-double',
-                title = TranslateCap('valid_this_purchase'),
-            },
-            { icon = 'fas fa-check-circle', title = TranslateCap('yes'), value = 'yes' },
-            { icon = 'fas fa-window-close', title = TranslateCap('no'), value = 'no' },
-        }
+        if purchasePending then
+            return
+        end
 
-        ESX.OpenContext('right', elements, function(menu, element)
-            if element.value == 'yes' then
-                if purchasePending then
+        local newSkin
+
+        TriggerEvent('skinchanger:getSkin', function(skin)
+            newSkin = skin
+        end)
+
+        while not newSkin do
+            Wait(10)
+        end
+
+        purchasePending = true
+
+        PaymentGateway.Pay({
+            quote = 'esx_clotheshop:quoteClothes',
+            title = TranslateCap('clothes'),
+        }, 'esx_clotheshop:buyClothes', function(bought, failure)
+            purchasePending = false
+
+            if bought then
+                hasPaid = true
+                TriggerEvent('esx_skin:setLastSkin', newSkin)
+
+                if not hasAlreadyEnteredMarker then
+                    ESX.CloseContext()
                     return
                 end
 
-                TriggerEvent('skinchanger:getSkin', function(skin)
-                    newSkin = skin
-                end)
-                purchasePending = true
-
-                PaymentGateway.Pay({
-                    quote = 'esx_clotheshop:quoteClothes',
-                    title = TranslateCap('clothes'),
-                }, 'esx_clotheshop:buyClothes', function(bought, failure)
-                    purchasePending = false
-
-                    if bought then
-                        hasPaid = true
-                        TriggerEvent('esx_skin:setLastSkin', newSkin)
-
-                        if not hasAlreadyEnteredMarker then
-                            ESX.CloseContext()
+                xLib.callback(
+                    'esx_clotheshop:checkPropertyDataStore',
+                    false,
+                    function(foundStore)
+                        if not foundStore then
                             return
                         end
 
-                        xLib.callback(
-                            'esx_clotheshop:checkPropertyDataStore',
-                            false,
-                            function(foundStore)
-                                if foundStore then
-                                    local elements2 = {
-                                        {
-                                            unselectable = true,
-                                            icon = 'fas fa-check-double',
-                                            title = TranslateCap('save_in_dressing'),
-                                        },
-                                        {
-                                            icon = 'fas fa-check-circle',
-                                            title = TranslateCap('yes'),
-                                            value = 'yes',
-                                        },
-                                        {
-                                            icon = 'fas fa-window-close',
-                                            title = TranslateCap('no'),
-                                            value = 'no',
-                                        },
-                                    }
+                        local elements2 = {
+                            {
+                                unselectable = true,
+                                icon = 'fas fa-check-double',
+                                title = TranslateCap('save_in_dressing'),
+                            },
+                            {
+                                icon = 'fas fa-check-circle',
+                                title = TranslateCap('yes'),
+                                value = 'yes',
+                            },
+                            {
+                                icon = 'fas fa-window-close',
+                                title = TranslateCap('no'),
+                                value = 'no',
+                            },
+                        }
 
-                                    ESX.OpenContext('right', elements2, function(menu2, element2)
-                                        if element2.value == 'yes' then
-                                            local elements3 = {
-                                                {
-                                                    unselectable = true,
-                                                    icon = 'fas fa-shirt',
-                                                    title = TranslateCap('name_outfit'),
-                                                },
-                                                {
-                                                    title = TranslateCap('outfit_name'),
-                                                    input = true,
-                                                    inputType = 'text',
-                                                    inputPlaceholder = TranslateCap(
-                                                        'outfit_placeholder'
-                                                    ),
-                                                },
-                                                {
-                                                    icon = 'fas fa-check-circle',
-                                                    title = TranslateCap('confirm'),
-                                                    value = 'confirm',
-                                                },
-                                            }
+                        ESX.OpenContext('right', elements2, function(menu2, element2)
+                            if element2.value == 'yes' then
+                                local elements3 = {
+                                    {
+                                        unselectable = true,
+                                        icon = 'fas fa-shirt',
+                                        title = TranslateCap('name_outfit'),
+                                    },
+                                    {
+                                        title = TranslateCap('outfit_name'),
+                                        input = true,
+                                        inputType = 'text',
+                                        inputPlaceholder = TranslateCap('outfit_placeholder'),
+                                    },
+                                    {
+                                        icon = 'fas fa-check-circle',
+                                        title = TranslateCap('confirm'),
+                                        value = 'confirm',
+                                    },
+                                }
 
-                                            ESX.OpenContext(
-                                                'right',
-                                                elements3,
-                                                function(menu3, element3)
-                                                    TriggerEvent(
-                                                        'skinchanger:getSkin',
-                                                        function(skin)
-                                                            ESX.CloseContext()
-                                                            TriggerServerEvent(
-                                                                'esx_clotheshop:saveOutfit',
-                                                                menu3.eles[2].inputValue,
-                                                                skin
-                                                            )
-                                                            ESX.ShowNotification(
-                                                                TranslateCap('saved_outfit')
-                                                            )
-                                                        end
-                                                    )
-                                                end,
-                                                function()
-                                                    hasAlreadyEnteredMarker = false
-                                                end
-                                            )
-                                        elseif element2.value == 'no' then
-                                            ESX.CloseContext()
-                                        end
-                                    end, function()
-                                        hasAlreadyEnteredMarker = false
+                                ESX.OpenContext('right', elements3, function(menu3, element3)
+                                    TriggerEvent('skinchanger:getSkin', function(skin)
+                                        local outfitName = menu3.eles[2].inputValue
+                                        ESX.CloseContext()
+                                        TriggerServerEvent('esx_clotheshop:saveOutfit', outfitName, skin)
+
+                                        ESX.ShowNotification(TranslateCap('saved_outfit'))
                                     end)
-                                end
+                                end, function()
+                                    hasAlreadyEnteredMarker = false
+                                end)
+                            elseif element2.value == 'no' then
+                                ESX.CloseContext()
                             end
-                        )
-                    else
-                        ESX.CloseContext()
-                        restoreSkin()
-
-                        local message = TranslateCap('not_enough_money')
-
-                        if failure ~= 'insufficient_funds' then
-                            local translations = Locales[Config.Locale] or Locales.en
-                            message = translations.save_failed or Locales.en.save_failed
-                        end
-
-                        PaymentGateway.NotifyFailure(failure, message)
+                        end, function()
+                            hasAlreadyEnteredMarker = false
+                        end)
                     end
-                end, newSkin, oldSkin)
-            elseif element.value == 'no' then
-                restoreSkin()
+                )
+            else
                 ESX.CloseContext()
-            end
-            currentAction = 'shop_menu'
-            currentActionMsg = TranslateCap('press_menu')
-            currentActionData = {}
-        end, function(menu)
-            if not purchasePending and not hasPaid then
                 restoreSkin()
+
+                local message = TranslateCap('not_enough_money')
+
+                if failure ~= 'insufficient_funds' then
+                    local translations = Locales[Config.Locale] or Locales.en
+                    message = translations.save_failed or Locales.en.save_failed
+                end
+
+                PaymentGateway.NotifyFailure(failure, message)
             end
 
-            hasAlreadyEnteredMarker = false
             currentAction = 'shop_menu'
             currentActionMsg = TranslateCap('press_menu')
             currentActionData = {}
-        end)
+        end, newSkin, oldSkin)
 
     end, function(data, menu)
         menu.close()
         restoreSkin()
+
         hasAlreadyEnteredMarker = false
         currentAction = 'shop_menu'
         currentActionMsg = TranslateCap('press_menu')

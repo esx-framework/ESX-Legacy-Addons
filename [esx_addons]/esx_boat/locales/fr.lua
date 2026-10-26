@@ -23,8 +23,6 @@ Locales['fr'] = {
 
   -- license
   ['license_menu'] = 'acheter un permis de naviguer',
-  ['license_buy_no'] = 'non',
-  ['license_buy_yes'] = 'acheter le permis pour <span style="color: green;">$%s</span>',
   ['license_bought'] = 'vous avez acheté le permis de naviguer pour $%s',
   ['license_nomoney'] = 'vous n\'avez pas les moyens ~r~pour acheter ce permis !',
 

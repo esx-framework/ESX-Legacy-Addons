@@ -214,7 +214,7 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 				DeleteSpawnedVehicles()
 				WaitForVehicleToLoad(data.current.model)
 
-				xLib.game.spawnLocalVehicle(data.current.model, shopCoords, 0.0, function(vehicle)
+				xLib.game.spawnLocalVehicle(data.current.model, shopCoords.xyz, shopCoords.w, function(vehicle)
 					table.insert(spawnedVehicles, vehicle)
 					TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
 					FreezeEntityPosition(vehicle, true)
@@ -232,6 +232,8 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 					if data3.current.value == 'stop' then
 						isInShopMenu = false
 						menu3.close()
+						menu2.close()
+						menu.close()
 
 						DeleteSpawnedVehicles()
 						FreezeEntityPosition(playerPed, false)
@@ -274,6 +276,8 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 				end, function(data3, menu3)
 					isInShopMenu = false
 					menu3.close()
+					menu2.close()
+					menu.close()
 
 					DeleteSpawnedVehicles()
 					FreezeEntityPosition(playerPed, false)

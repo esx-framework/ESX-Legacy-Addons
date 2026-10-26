@@ -143,51 +143,27 @@ function OpenBoatGarage(garage)
 end
 
 function OpenLicenceMenu(shop)
-	local elements = {
-		{unselectable = true, icon = "fas fa-ship", title = TranslateCap('license_menu')},
-		{icon = "fas fa-ship", title = "Purchase Boat License"}
-	}
+    PaymentGateway.Pay({
+        amount = Config.LicensePrice,
+        title = TranslateCap('license_menu'),
+    }, 'esx_boat:buyBoatLicense', function(boughtLicense, paymentFailure)
+        if boughtLicense then
+            ESX.ShowNotification(TranslateCap(
+                'license_bought',
+                ESX.Math.GroupDigits(Config.LicensePrice)
+            ))
 
-	ESX.OpenContext("right", elements, function(menu,element)
-		local elements2 = {
-			{unselectable = true, icon = "fas fa-ship", title = element.title},
-			{icon = "fas fa-check-double", title = TranslateCap('license_buy_yes', Config.LicensePrice), val = "yes"},
-			{icon = "fas fa-window-close", title = TranslateCap('license_buy_no'), val = "no"}
-		}
+            OpenBoatShop(shop)
+        else
+            PaymentGateway.NotifyFailure(
+                paymentFailure,
+                TranslateCap('license_nomoney')
+            )
 
-		ESX.OpenContext("right", elements2, function(menu2,element2)
-			-- If the value is no, close the menu and stop the script. 
-			if element2.val == "no" then
-                ESX.CloseContext()
-                return;
-            end
-
-            PaymentGateway.Pay(
-                {
-                    amount = Config.LicensePrice,
-                    title = TranslateCap('license_menu'),
-                },
-                'esx_boat:buyBoatLicense',
-                function (boughtLicense, paymentFailure)
-				if boughtLicense then
-					ESX.ShowNotification(TranslateCap('license_bought', ESX.Math.GroupDigits(Config.LicensePrice)))
-					ESX.CloseContext()
-
-					OpenBoatShop(shop) -- parse current shop
-				else
-                    PaymentGateway.NotifyFailure(
-                        paymentFailure,
-                        TranslateCap('license_nomoney'))
-				end
-			end)
-		end, function(menu)
-			CurrentAction = 'boat_shop'
-			CurrentActionMsg = TranslateCap('boat_shop_open')
-		end)
-	end, function(menu)
-		CurrentAction = 'boat_shop'	
-		CurrentActionMsg = TranslateCap('boat_shop_open')
-	end)
+            CurrentAction = 'boat_shop'
+            CurrentActionMsg = TranslateCap('boat_shop_open')
+        end
+    end)
 end
 
 function StoreBoatInGarage(vehicle, teleportCoords)

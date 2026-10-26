@@ -115,31 +115,23 @@ AddEventHandler('onResourceStop', function(resource)
 end)
 
 function OpenBuyLicenseMenu(licenseName)
-	menuOpen = true
-	local license = Config.LicensePrices[licenseName]
-
-	local elements = {
-		{unselectable = true, title = TranslateCap('purchase_license')},
-		{title = ('%s - <span style="color:green;">%s</span>'):format(license.label, TranslateCap('dealer_item', ESX.Math.GroupDigits(license.price))), value = licenseName, price = license.price, licenseName = license.label}
-	}
-
-	ESX.OpenContext("right", elements, function(menu,element)
-        PaymentGateway.Pay({
-            amount = element.price,
-            title = element.licenseName,
-        }, 'esx_drugs:buyLicense', function(boughtLicense, paymentFailure)
-			if boughtLicense then
-				ESX.CloseContext()
-				ESX.ShowNotification(TranslateCap('license_bought', element.licenseName, ESX.Math.GroupDigits(element.price)))
-			else
-                PaymentGateway.NotifyFailure(
-                    paymentFailure,
-                    TranslateCap('license_bought_fail', element.licenseName))
-			end
-		end, element.value)
-	end, function(menu)
-		menuOpen = false
-	end)
+    menuOpen = true
+    local license = Config.LicensePrices[licenseName]
+    PaymentGateway.Pay({
+        amount = license.price,
+        title = license.label,
+    }, 'esx_drugs:buyLicense', function(boughtLicense, paymentFailure)
+        if boughtLicense then
+            ESX.CloseContext()
+            menuOpen = false
+            ESX.ShowNotification(TranslateCap('license_bought', license.label, ESX.Math.GroupDigits(license.price)))
+        else
+            PaymentGateway.NotifyFailure(
+                paymentFailure,
+                TranslateCap('license_bought_fail', license.label)
+            )
+        end
+    end, licenseName)
 end
 
 function CreateBlipCircle(coords, text, radius, color, sprite)

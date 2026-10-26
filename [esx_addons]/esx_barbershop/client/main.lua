@@ -51,7 +51,6 @@ function OpenShopMenu()
                 if reason == 'insufficient_funds' then
                     ESX.ShowNotification(TranslateCap('not_enough_money'))
                 else
-                    print(('[esx_barbershop] Purchase failed: %s'):format(reason or 'unknown'))
                     PaymentGateway.NotifyFailure(
                         reason,
                         TranslateCap('purchase_failed')

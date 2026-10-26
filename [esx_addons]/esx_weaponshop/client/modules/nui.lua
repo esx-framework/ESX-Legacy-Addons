@@ -3,6 +3,7 @@
 
 local currentShop = nil
 local uiOpen = false
+local payAtShop
 
 local function NormalizeUiInteger(value)
 	value = tonumber(value)
@@ -241,7 +242,18 @@ end
 ---Opens the weapon license purchase view
 ---@param zone string Shop zone name
 function OpenBuyLicenseMenu(zone)
-	OpenNui(zone, 'license')
+	currentShop = zone
+	uiOpen = false
+
+	local bought = payAtShop(
+		Config.LicensePrice,
+		TranslateCap('shop_menu_title'),
+		'esx_weaponshop:buyLicense'
+	)
+
+	if bought then
+		OpenShop(zone)
+	end
 end
 
 function CloseShop()
@@ -287,7 +299,7 @@ local function upgradePrice(data)
     end
 end
 
-local function payAtShop(amount, title, callbackName, ...)
+payAtShop = function(amount, title, callbackName, ...)
     local shop = currentShop
     local zone = shop and Config.Zones[shop]
 

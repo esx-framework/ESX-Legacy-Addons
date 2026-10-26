@@ -86,7 +86,6 @@ function GetShopLocales()
 		noImageAvailable = TranslateCap('no_image_available'),
 		licenseTitle = TranslateCap('license_shop_title'),
 		licenseDescription = TranslateCap('license_description'),
-		buyLicense = TranslateCap('buy_license'),
 		cancel = TranslateCap('menu_cancel'),
 		tabWeapon = TranslateCap('tab_weapon'),
 		tabAmmo = TranslateCap('tab_ammo'),
