@@ -13,6 +13,7 @@ legacyversion '1.16.3'
 lua54 'yes'
 
 shared_script '@es_extended/imports.lua'
+shared_script '@esx_paymentgateway/imports.lua'
 
 shared_script '@esx_lib/imports.lua'
 server_scripts {
@@ -33,5 +34,6 @@ client_scripts {
 dependencies {
 	'esx_lib',
 	'es_extended',
+	'esx_paymentgateway',
 	'esx_skin'
 }

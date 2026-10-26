@@ -1,0 +1,7 @@
+node_modules/
+*.local
+*.tsbuildinfo
+.vite/
+test-results/
+
+# dist/ is committed on purpose: FiveM serves the built files straight from the resource folder.

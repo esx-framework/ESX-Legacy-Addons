@@ -13,6 +13,7 @@ legacyversion '1.16.3'
 shared_scripts {
     '@esx_lib/imports.lua',
     '@es_extended/imports.lua',
+    '@esx_paymentgateway/imports.lua',
     '@es_extended/locale.lua',
     'locales/*.lua',
     'shared/config/main.lua',
@@ -51,5 +52,6 @@ dependencies {
     'esx_lib',
     'es_extended',
     'esx_license',
+    'esx_paymentgateway',
     '/onesync',
 }

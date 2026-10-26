@@ -67,89 +67,47 @@ end
 ---@param isBlackMarket boolean
 ---@param price number
 ---@return boolean
-function CanPayForWeapon(xPlayer, isBlackMarket, price)
-	price = NormalizeMoneyAmount(price)
-	if not price then
-		return false
-	end
+local function paymentAccount(isBlackMarket, account)
+    if isBlackMarket then
+        return account == 'black_money' and account or nil
+    end
 
-	if isBlackMarket then
-		local balance = GetPaymentBalance(xPlayer, true) or 0
-		if balance < price then
-			xPlayer.showNotification(TranslateCap('not_enough_black'))
-			return false
-		end
+    if account == 'money' or account == 'bank' then
+        return account
+    end
+end
 
-		return true
-	end
+function CanPayForWeapon(xPlayer, isBlackMarket, price, account)
+    local selected = paymentAccount(isBlackMarket, account)
+    local amount = NormalizeMoneyAmount(price)
+    local balance = selected and xPlayer.getAccount(selected)
 
-	if (GetPaymentBalance(xPlayer, false) or 0) < price then
-		xPlayer.showNotification(TranslateCap('not_enough'))
-		return false
-	end
+    if not amount or not balance or balance.money < amount then
+        xPlayer.showNotification(TranslateCap(isBlackMarket and 'not_enough_black' or 'not_enough'))
+        return false
+    end
 
 	return true
 end
 
----Deducts purchase amount from the corresponding account
----@param xPlayer table ESX player object
----@param isBlackMarket boolean
----@param price number
----@param reason string|nil
----@return boolean
-function TakeWeaponPayment(xPlayer, isBlackMarket, price, reason)
-	price = NormalizeMoneyAmount(price)
-	if not price then
-		return false
-	end
+function TakeWeaponPayment(xPlayer, isBlackMarket, price, reason, account)
+    local selected = paymentAccount(isBlackMarket, account)
+    local amount = NormalizeMoneyAmount(price)
 
-	local beforeBalance = GetPaymentBalance(xPlayer, isBlackMarket)
-	if not beforeBalance or beforeBalance < price then
-		return false
-	end
+    if not selected or not amount then
+        return false
+    end
 
-	if isBlackMarket then
-		local removed = pcall(function()
-			xPlayer.removeAccountMoney('black_money', price, reason or 'Black Weapons Deal')
-		end)
-
-		if not removed then
-			return false
-		end
-	elseif type(xPlayer.removeMoney) == 'function' then
-		local removed = pcall(function()
-			xPlayer.removeMoney(price, reason or 'Weapons Deal')
-		end)
-
-		if not removed then
-			return false
-		end
-	else
-		return false
-	end
-
-	local afterBalance = GetPaymentBalance(xPlayer, isBlackMarket)
-	return afterBalance ~= nil and afterBalance <= beforeBalance - price
+    return xPlayer.chargeAccount(selected, amount, reason or 'Weapons Deal') == true
 end
 
----Refunds a failed weapon purchase
----@param xPlayer table ESX player object
----@param isBlackMarket boolean
----@param price number
----@param reason string|nil
-function RefundWeaponPayment(xPlayer, isBlackMarket, price, reason)
-	price = NormalizeMoneyAmount(price)
-	if not price then
-		return
-	end
+function RefundWeaponPayment(xPlayer, isBlackMarket, price, reason, account)
+    local selected = paymentAccount(isBlackMarket, account)
+    local amount = NormalizeMoneyAmount(price)
 
-	if isBlackMarket then
-		pcall(function()
-			xPlayer.addAccountMoney('black_money', price, reason or 'Black Weapons Deal Refund')
-		end)
-	else
-		pcall(function()
-			xPlayer.addMoney(price, reason or 'Weapons Deal Refund')
-		end)
-	end
+    if selected and amount then
+        return PaymentGateway.Refund(xPlayer, selected, amount, reason or 'Weapons Deal Refund')
+    end
+
+    return false
 end

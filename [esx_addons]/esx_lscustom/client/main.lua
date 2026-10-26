@@ -390,7 +390,27 @@ local function CheckoutCart()
     local netId = NetworkGetNetworkIdFromEntity(vehicle)
 
     CreateThread(function()
-        local ok, success, message = pcall(xLib.callback.await, 'esx_lscustom:buyCart', false, payload, netId)
+        local account = 'money'
+
+        if not Config.IsMechanicJobOnly then
+            xLib.nui.focus(false, false)
+            account = PaymentGateway.Select({
+                amount = ESX.Math.Round(GetCartTotal()),
+                title = 'Los Santos Customs',
+            })
+
+            if nuiIsOpen then
+                xLib.nui.focus(true, true)
+            end
+
+            if not account then
+                pendingCartPurchase = false
+                SendNuiState()
+                return
+            end
+        end
+
+        local ok, success, message = pcall(xLib.callback.await, 'esx_lscustom:buyCart', false, payload, netId, account)
         HandleCartPurchaseResult(ok and success == true, ok and message or nil, vehicleProps)
     end)
 end

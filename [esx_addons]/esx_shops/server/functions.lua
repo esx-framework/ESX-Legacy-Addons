@@ -10,7 +10,7 @@ function ValidatePlayer(source)
 		return nil
 	end
 
-	local xPlayer = ESX.Player(source)
+	local xPlayer = ESX.GetPlayerFromId(source)
 	if not xPlayer then
 		DebugPrint(_U('invalid_player', source))
 	end
@@ -59,7 +59,7 @@ end
 ---@param source number Player source for logging
 ---@return boolean valid
 function ValidatePaymentMethod(method, source)
-	if not Verify(method, 'string') or (method ~= 'cash' and method ~= 'bank') then
+	if not Verify(method, 'string') or (method ~= 'cash' and method ~= 'money' and method ~= 'bank') then
 		DebugPrint(_U('invalid_payment_method', source or 'unknown', tostring(method)))
 		return false
 	end
@@ -106,7 +106,7 @@ end
 function CheckPlayerMoney(xPlayer, paymentMethod, total)
 	local currentMoney = 0
 
-	if paymentMethod == 'cash' then
+	if paymentMethod == 'cash' or paymentMethod == 'money' then
 		currentMoney = xPlayer.getMoney()
 	elseif paymentMethod == 'bank' then
 		local bankAccount = xPlayer.getAccount('bank')
@@ -124,11 +124,9 @@ end
 ---@param paymentMethod string Payment method ('cash' or 'bank')
 ---@param amount number Amount to deduct
 function DeductMoney(xPlayer, paymentMethod, amount)
-	if paymentMethod == 'cash' then
-		xPlayer.removeMoney(amount, 'Shop Purchase')
-	elseif paymentMethod == 'bank' then
-		xPlayer.removeAccountMoney('bank', amount, 'Shop Purchase')
-	end
+    local account = paymentMethod == 'cash' and 'money' or paymentMethod
+
+    return PaymentGateway.Charge(xPlayer, account, amount, 'Shop Purchase')
 end
 
 ---Refunds money to player
@@ -136,9 +134,7 @@ end
 ---@param paymentMethod string Payment method ('cash' or 'bank')
 ---@param amount number Amount to refund
 function RefundMoney(xPlayer, paymentMethod, amount)
-	if paymentMethod == 'cash' then
-		xPlayer.addMoney(amount, 'Shop Refund')
-	elseif paymentMethod == 'bank' then
-		xPlayer.addAccountMoney('bank', amount, 'Shop Refund')
-	end
+    local account = paymentMethod == 'cash' and 'money' or paymentMethod
+
+    return PaymentGateway.Refund(xPlayer, account, amount, 'Shop Refund')
 end

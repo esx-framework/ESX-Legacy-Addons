@@ -277,7 +277,10 @@ if Config.Furniture.Enabled then
                             { title = TranslateCap('no'), icon = 'fas fa-minus' },
                         }, function(menu, element)
                             if element.value and element.value == 'buy' then
-                                xLib.callback('esx_property:buyFurniture', false, function(response)
+                                PaymentGateway.Pay({
+                                    amount = Config.FurnitureCatagories[PropCatagory][PropIndex].price,
+                                    title = Config.FurnitureCatagories[PropCatagory][PropIndex].title,
+                                }, 'esx_property:buyFurniture', function(response, paymentFailure)
                                     if response then
                                         DeleteEntity(CurrentlyEditing)
                                         ESX.ShowNotification(TranslateCap('bought_furni', Config.FurnitureCatagories[PropCatagory][PropIndex].title), 'success')

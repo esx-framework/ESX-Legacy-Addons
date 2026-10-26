@@ -290,7 +290,7 @@ xLib.callback.registerCompat('esx_ambulancejob:getItemAmount', function(source, 
     cb(quantity)
 end)
 
-xLib.callback.registerCompat('esx_ambulancejob:buyJobVehicle', function(source, cb, vehicleProps, type)
+xLib.callback.registerCompat('esx_ambulancejob:buyJobVehicle', function(source, cb, vehicleProps, type, account)
     local xPlayer = ESX.GetPlayerFromId(source)
     local model = _G.type(vehicleProps) == 'table' and tonumber(vehicleProps.model)
     local authorizedVehicle = xPlayer and model and getAuthorizedVehicle(model, xPlayer.job.grade_name, type)
@@ -300,10 +300,6 @@ xLib.callback.registerCompat('esx_ambulancejob:buyJobVehicle', function(source, 
     if not isAmbulanceOnDuty(xPlayer) or price == 0 or not isNearAmbulanceVehicleShop(source, type) then
         cb(false)
         return
-    end
-
-    if xPlayer.getMoney() < price then
-        return cb(false)
     end
 
     local plate = generateJobVehiclePlate()
@@ -320,14 +316,19 @@ xLib.callback.registerCompat('esx_ambulancejob:buyJobVehicle', function(source, 
         end
     end
 
-    xPlayer.removeMoney(price, 'Job Vehicle Purchase')
+    local charged, failure =
+        PaymentGateway.Charge(xPlayer, account, price, 'Job Vehicle Purchase')
+
+    if not charged then
+        return cb(false, failure)
+    end
 
     MySQL.insert(
         'INSERT INTO owned_vehicles (owner, vehicle, plate, type, job, `stored`) VALUES (?, ?, ?, ?, ?, ?)',
         { xPlayer.identifier, json.encode(storedProps), plate, type, xPlayer.job.name, true },
         function(insertId)
             if not insertId then
-                xPlayer.addMoney(price, 'Job Vehicle Refund')
+                PaymentGateway.Refund(xPlayer, account, price, 'Job Vehicle Refund')
                 return cb(false)
             end
 

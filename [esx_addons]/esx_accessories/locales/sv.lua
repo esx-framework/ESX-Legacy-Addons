@@ -2,9 +2,6 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales ['sv'] = {
-    ['valid_purchase'] = 'Vill du köpa detta?',
-    ['yes'] = 'Ja (<span style="color: green;">%skr</span>)',
-    ['no'] = 'Nej',
     ['helmet'] = 'Hjälm / Hatt',
     ['glasses'] = 'Glasögon',
     ['mask'] = 'Mask',

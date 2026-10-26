@@ -28,7 +28,7 @@ description 'Allows players to buy/sell houses, aswell as furnish them'
 version '2.0'
 legacyversion '1.16.3'
 
-shared_scripts { '@esx_lib/imports.lua', '@es_extended/imports.lua', '@es_extended/locale.lua', 'locales/*.lua' }
+shared_scripts { '@esx_lib/imports.lua', '@es_extended/imports.lua', '@esx_paymentgateway/imports.lua', '@es_extended/locale.lua', 'locales/*.lua' }
 file "client/html/copy.html"
 ui_page "client/html/copy.html"
 
@@ -49,5 +49,6 @@ client_scripts {
 dependencies {
 	'esx_lib',
 	'es_extended',
+    'esx_paymentgateway',
     'oxmysql'
 }

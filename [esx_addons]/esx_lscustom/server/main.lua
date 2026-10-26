@@ -201,7 +201,7 @@ local function getPurchaseSession(source, xPlayer, plate, model, netId)
 	return session, nil, vehicle
 end
 
-local function chargeCartPurchase(xPlayer, total)
+local function chargeCartPurchase(xPlayer, total, account)
 	if Config.IsMechanicJobOnly then
 		local societyAccount
 
@@ -217,12 +217,7 @@ local function chargeCartPurchase(xPlayer, total)
 		return true
 	end
 
-	if total > xPlayer.getMoney() then
-		return false
-	end
-
-	xPlayer.removeMoney(total, "LSC Purchase")
-	return true
+    return PaymentGateway.Charge(xPlayer, account, total, "LSC Purchase")
 end
 
 local function prepareCartPurchase(source, payload, netId)
@@ -265,7 +260,8 @@ local function prepareCartPurchase(source, payload, netId)
 	end
 
 	return {
-		cart = payload.cart,
+        identifier = xPlayer.getIdentifier(),
+        cart = payload.cart,
 		vehicleProps = vehicleProps,
 		plate = vehicleProps.plate,
 		model = model,
@@ -274,11 +270,11 @@ local function prepareCartPurchase(source, payload, netId)
 	}
 end
 
-local function completeCartPurchase(source, purchase)
+local function completeCartPurchase(source, purchase, account)
 	local record, recordError = getOwnedVehicleRecord(purchase.plate, purchase.model)
 
 	local xPlayer = ESX.Player(source)
-	if not xPlayer then
+	if not xPlayer or xPlayer.getIdentifier() ~= purchase.identifier then
 		return false, TranslateCap('purchase_invalid')
 	end
 
@@ -313,7 +309,7 @@ local function completeCartPurchase(source, purchase)
 		return false, TranslateCap('purchase_vehicle_mismatch')
 	end
 
-	if not chargeCartPurchase(xPlayer, purchase.total) then
+	if not chargeCartPurchase(xPlayer, purchase.total, account) then
 		return false, TranslateCap('not_enough_money')
 	end
 
@@ -384,7 +380,7 @@ RegisterNetEvent('esx_lscustom:stopModing', function(plate)
 	end
 end)
 
-xLib.callback.register('esx_lscustom:buyCart', function(source, payload, netId)
+xLib.callback.register('esx_lscustom:buyCart', function(source, payload, netId, account)
 	local purchase, purchaseError = prepareCartPurchase(source, payload, netId)
 	if not purchase then
 		return false, TranslateCap(purchaseError)
@@ -397,7 +393,7 @@ xLib.callback.register('esx_lscustom:buyCart', function(source, payload, netId)
 	PurchasingPlayers[source] = true
 	PurchasingPlates[purchase.plate] = true
 
-	local ok, success, message = pcall(completeCartPurchase, source, purchase)
+	local ok, success, message = pcall(completeCartPurchase, source, purchase, account)
 
 	PurchasingPlayers[source] = nil
 	PurchasingPlates[purchase.plate] = nil

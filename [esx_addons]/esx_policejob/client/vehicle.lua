@@ -244,7 +244,13 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 						local props    = xLib.game.getVehicleProperties(vehicle)
 						props.plate    = newPlate
 
-						xLib.callback('esx_policejob:buyJobVehicle', false, function (bought)
+                        PaymentGateway.Pay(
+                            {
+                                amount = data.current.price,
+                                title = data.current.name,
+                            },
+                            'esx_policejob:buyJobVehicle',
+                            function (bought, paymentFailure)
 							if bought then
 								ESX.ShowNotification(TranslateCap('vehicleshop_bought', data.current.name, ESX.Math.GroupDigits(data.current.price)))
 
@@ -258,7 +264,9 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 
 								xLib.entity.Teleport(playerPed, restoreCoords)
 							else
-								ESX.ShowNotification(TranslateCap('vehicleshop_money'))
+                                PaymentGateway.NotifyFailure(
+                                    paymentFailure,
+                                    TranslateCap('vehicleshop_money'))
 								menu3.close()
 							end
 						end, props, data.current.type)

@@ -79,7 +79,9 @@ export async function fetchNui<T = unknown>(
   const resourceName = window.GetParentResourceName?.() ?? 'esx_shops';
 
   // Setup timeout
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const timeoutId = timeout > 0
+        ? setTimeout(() => controller.abort(), timeout)
+        : undefined;
 
   // Combine signals if external signal provided
   if (signal) {

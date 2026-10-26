@@ -91,12 +91,12 @@ function OpenDrugShop()
 
 		ESX.OpenContext("right", elements2, function(menu2,element2)
 			ESX.CloseContext()
-			local count = tonumber(menu2.eles[2].inputValue) 
+			local count = tonumber(menu2.eles[2].inputValue)
 
-			if count < 1 then 
-				return 
-			end 
-			
+			if count < 1 then
+				return
+			end
+
 			TriggerServerEvent('esx_drugs:sellDrug',tostring(element.name), count)
 		end, function(menu)
 			menuOpen = false
@@ -124,12 +124,17 @@ function OpenBuyLicenseMenu(licenseName)
 	}
 
 	ESX.OpenContext("right", elements, function(menu,element)
-		xLib.callback('esx_drugs:buyLicense', false, function(boughtLicense)
+        PaymentGateway.Pay({
+            amount = element.price,
+            title = element.licenseName,
+        }, 'esx_drugs:buyLicense', function(boughtLicense, paymentFailure)
 			if boughtLicense then
 				ESX.CloseContext()
 				ESX.ShowNotification(TranslateCap('license_bought', element.licenseName, ESX.Math.GroupDigits(element.price)))
 			else
-				ESX.ShowNotification(TranslateCap('license_bought_fail', element.licenseName))
+                PaymentGateway.NotifyFailure(
+                    paymentFailure,
+                    TranslateCap('license_bought_fail', element.licenseName))
 			end
 		end, element.value)
 	end, function(menu)

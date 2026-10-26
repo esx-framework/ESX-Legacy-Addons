@@ -55,7 +55,10 @@ function OpenBoatShop(shop)
 							local props = xLib.game.getVehicleProperties(vehicle)
 							props.plate = plate
 
-							xLib.callback('esx_boat:buyBoat', false, function(bought)
+                            PaymentGateway.Pay({
+                                amount = element.price,
+                                title = element.name,
+                            }, 'esx_boat:buyBoat', function(bought, paymentFailure)
 								if bought then
 									ESX.ShowNotification(TranslateCap('boat_shop_bought', element.name, ESX.Math.GroupDigits(element.price)))
 
@@ -70,7 +73,9 @@ function OpenBoatShop(shop)
 									SetEntityVisible(playerPed, true)
 									SetEntityCoords(playerPed, shop.Outside.x, shop.Outside.y, shop.Outside.z)
 								else
-									ESX.ShowNotification(TranslateCap('boat_shop_nomoney'))
+                                    PaymentGateway.NotifyFailure(
+                                        paymentFailure,
+                                        TranslateCap('boat_shop_nomoney'))
 								end
 							end, props)
 						elseif element3.value == "stop" then
@@ -157,14 +162,22 @@ function OpenLicenceMenu(shop)
                 return;
             end
 
-			xLib.callback('esx_boat:buyBoatLicense', false, function (boughtLicense)
+            PaymentGateway.Pay(
+                {
+                    amount = Config.LicensePrice,
+                    title = TranslateCap('license_menu'),
+                },
+                'esx_boat:buyBoatLicense',
+                function (boughtLicense, paymentFailure)
 				if boughtLicense then
 					ESX.ShowNotification(TranslateCap('license_bought', ESX.Math.GroupDigits(Config.LicensePrice)))
 					ESX.CloseContext()
 
 					OpenBoatShop(shop) -- parse current shop
 				else
-					ESX.ShowNotification(TranslateCap('license_nomoney'))
+                    PaymentGateway.NotifyFailure(
+                        paymentFailure,
+                        TranslateCap('license_nomoney'))
 				end
 			end)
 		end, function(menu)

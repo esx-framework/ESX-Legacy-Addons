@@ -1,0 +1,29 @@
+/*
+ * Corrections to esx-ui-kit-svelte buttons, for the ones the page marks with .esx-button.
+ * These rules are unlayered, so they win over the kit's utility classes.
+ */
+
+/* ESX UI kit guideline: a disabled button is light gray with white text; the kit only fades it. */
+.esx-button:disabled {
+  opacity: 1;
+  background-color: var(--light-color);
+  border-color: var(--light-color);
+  color: var(--lightest-color);
+}
+
+/* The kit tints the secondary hover with color-mix(), which CEF 103 does not have. */
+.esx-button-secondary:hover:not(:disabled) {
+  background-color: var(--mid-color);
+  border-color: var(--light-color);
+  color: var(--lightest-color);
+}
+
+/* While the server answers the button keeps its look but takes no clicks. */
+.esx-button.busy {
+  pointer-events: none;
+}
+
+.esx-button:focus-visible {
+  outline: 2px solid var(--brand-color);
+  outline-offset: 3px;
+}

@@ -65,7 +65,8 @@ export async function fetchNui<T = unknown>(
   data: Record<string, unknown> = {},
   options: FetchNuiOptions = {}
 ): Promise<NuiResponse<T>> {
-  const { timeout = 5000, signal } = options;
+    const paymentEvent = ['buyWeapon', 'buyUpgrade', 'buyLicense'].includes(eventName);
+    const { timeout = paymentEvent ? 0 : 5000, signal } = options;
 
   // Development mode mock
   if (isEnvBrowser()) {
@@ -79,7 +80,9 @@ export async function fetchNui<T = unknown>(
   const resourceName = window.GetParentResourceName?.() ?? 'esx_weaponshop';
 
   // Setup timeout
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const timeoutId = timeout > 0
+        ? setTimeout(() => controller.abort(), timeout)
+        : undefined;
 
   // Combine signals if external signal provided
   if (signal) {

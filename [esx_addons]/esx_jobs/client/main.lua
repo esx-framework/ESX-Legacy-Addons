@@ -220,8 +220,24 @@ end
 
 
 function spawnVehicle(zoneKey)
-	hintIsShowed = false
-	TriggerServerEvent('esx_jobs:caution', 'take', zoneKey)
+    hintIsShowed = false
+    local job = Config.Jobs[ESX.PlayerData.job.name]
+    local zone = job and job.Zones[zoneKey]
+
+    if not zone then
+        return
+    end
+
+    CreateThread(function()
+        local account = PaymentGateway.Select({
+            amount = ESX.Math.Round(tonumber(zone.Caution) or 0),
+            title = TranslateCap('service_vh'),
+        })
+
+        if account then
+            TriggerServerEvent('esx_jobs:caution', 'take', zoneKey, account)
+        end
+    end)
 end
 
 RegisterNetEvent('esx_jobs:spawnJobVehicle', function(netId, spawnPoint, vehicle)

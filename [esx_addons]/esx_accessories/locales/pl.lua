@@ -2,9 +2,6 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales ['pl'] = {
-  ['valid_purchase'] = 'czy napewno chcesz to zakupić?',
-  ['yes'] = 'tak (<span style="color: green;">%s $</span>)',
-  ['no'] = 'nie',
   ['helmet'] = 'hełm / Czapka',
   ['glasses'] = 'okulary',
   ['mask'] = 'maska',

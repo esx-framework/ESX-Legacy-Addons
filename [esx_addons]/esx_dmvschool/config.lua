@@ -7,6 +7,8 @@ Config.MaxErrors       = 5
 Config.SpeedMultiplier = 3.6
 Config.SpeedingErrorDelay = 5000 --Min: 5000ms
 Config.Locale = GetConvar('esx:locale', 'en')
+Config.TheoryQuestionsFile = 'html/questions.js'
+Config.TheoryMinimumDuration = 30000
 
 Config.Prices = {
 	dmv         = 500,

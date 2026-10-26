@@ -18,7 +18,7 @@ local function isNearBarberShop(source)
     return false
 end
 
-local function payHaircut(source, cb, skin)
+local function payHaircut(source, cb, skin, account)
     local player = ESX.GetPlayerFromId(source)
 
     if not player then return cb(false, 'player_unavailable') end
@@ -33,16 +33,16 @@ local function payHaircut(source, cb, skin)
 
     local identifier = player.identifier
 
-    if player.getMoney() < Config.Price then return cb(false, 'insufficient_funds') end
-
     if player.beginAccountOperation() ~= true then return cb(false, 'player_unavailable') end
 
     payments[identifier] = true
 
-    if player.removeMoney(Config.Price, 'Haircut') ~= true then
+    local charged, failure = PaymentGateway.Charge(player, account, Config.Price, 'Haircut')
+
+    if not charged then
         payments[identifier] = nil
         player.endAccountOperation()
-        return cb(false, 'payment_failed')
+        return cb(false, failure)
     end
 
     local finished = false
@@ -56,12 +56,12 @@ local function payHaircut(source, cb, skin)
         if saved ~= true then
             reason = reason or 'appearance_save_failed'
 
-            if player.addMoney(Config.Price, 'Haircut Refund') ~= true then
+            if PaymentGateway.Refund(player, account, Config.Price, 'Haircut Refund') ~= true then
                 print(('[esx_barbershop] Refund failed for %s'):format(identifier))
             end
 
             print(('[esx_barbershop] Appearance save failed for player %s: %s'):format(source, reason))
-        elseif ESX.GetPlayerFromId(source) == player then
+        elseif player.isCurrent() == true then
             TriggerClientEvent('esx:showNotification', source, TranslateCap('you_paid', ESX.Math.GroupDigits(Config.Price)))
         end
 

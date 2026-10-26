@@ -54,43 +54,65 @@ end
 ---@param source number Player source
 ---@param items table[] Items to add
 ---@return boolean success Whether all items were added successfully
-function AddItemsToInventory(source, items)
-	local itemCount = #items
-	local useOx = GetShopInventoryBackend() == 'ox_inventory'
-	local xPlayer
+function AddItemsToInventory(source, items, player)
+    local itemCount = #items
+    local useOx = GetShopInventoryBackend() == 'ox_inventory'
+    local xPlayer
 
-	if not useOx then
-		xPlayer = ESX.Player(source)
-		if not xPlayer then
-			return false
-		end
-	end
+    if not useOx then
+        xPlayer = player or ESX.GetPlayerFromId(source)
+        if not xPlayer then
+            return false
+        end
+    end
 
-	for i = 1, itemCount do
-		local item = items[i]
-		local success
+    for i = 1, itemCount do
+        local item = items[i]
+        local success
 
-		if useOx then
-			success = exports.ox_inventory:AddItem(source, item.name, item.quantity)
-		else
-			success = xPlayer.addInventoryItem(item.name, item.quantity) ~= false
-		end
+        local ok, result = pcall(function()
+            if player and player.isCurrent() ~= true then
+                return false
+            end
 
-		if not success then
-			DebugPrint(_U('item_add_failed', item.name, source))
+            if useOx then
+                return exports.ox_inventory:AddItem(source, item.name, item.quantity)
+            end
 
-			for j = i - 1, 1, -1 do
-				local delivered = items[j]
-				if useOx then
-					exports.ox_inventory:RemoveItem(source, delivered.name, delivered.quantity)
-				else
-					xPlayer.removeInventoryItem(delivered.name, delivered.quantity)
-				end
-			end
+            return xPlayer.addInventoryItem(item.name, item.quantity)
+        end)
 
-			return false
-		end
-	end
+        success = ok and result == true
 
-	return true
+        if not success then
+            DebugPrint(_U('item_add_failed', item.name, source))
+
+            local recovered = ok and result == false
+
+            for j = i - 1, 1, -1 do
+                local delivered = items[j]
+                local removedOk, removed = pcall(function()
+                    if player and player.isCurrent() ~= true then
+                        return false
+                    end
+
+                    if useOx then
+                        return exports.ox_inventory:RemoveItem(
+                            source, delivered.name, delivered.quantity
+                        )
+                    end
+
+                    return xPlayer.removeInventoryItem(delivered.name, delivered.quantity)
+                end)
+
+                if not removedOk or removed ~= true then
+                    recovered = false
+                end
+            end
+
+            return false, recovered
+        end
+    end
+
+    return true
 end

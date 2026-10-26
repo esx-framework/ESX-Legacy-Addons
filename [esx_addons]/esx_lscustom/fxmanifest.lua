@@ -13,7 +13,8 @@ legacyversion '1.16.3'
 
 shared_scripts {
 	'@esx_lib/imports.lua',
-	'@es_extended/imports.lua'
+	'@es_extended/imports.lua',
+    '@esx_paymentgateway/imports.lua',
 }
 
 server_scripts {
@@ -51,4 +52,7 @@ files {
 	'html/assets/*'
 }
 
-dependency 'esx_lib'
+dependencies {
+	'esx_lib',
+	'esx_paymentgateway'
+}

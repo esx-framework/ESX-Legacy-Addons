@@ -142,7 +142,7 @@ local function getVehicleCondition(entity)
 	return ESX.Math.Round((engineHealth + bodyHealth) / 2000.0, 2)
 end
 
-local function settleCaution(playerId, amount, ratio)
+local function settleCaution(playerId, amount, ratio, paymentAccount)
 	if amount <= 0 then
 		return
 	end
@@ -165,7 +165,7 @@ local function settleCaution(playerId, amount, ratio)
 		end
 
 		if toGive > 0 then
-			xPlayer.addAccountMoney('bank', toGive, "Caution Return")
+            PaymentGateway.Refund(xPlayer, paymentAccount or 'bank', toGive, "Caution Return")
 		end
 
 		xPlayer.showNotification(TranslateCap('bank_deposit_returned', ESX.Math.GroupDigits(toGive)))
@@ -185,7 +185,7 @@ local function releaseCaution(playerId, spawner)
 	end
 
 	clearCaution(playerId, spawner)
-	settleCaution(playerId, entry.amount, ratio)
+	settleCaution(playerId, entry.amount, ratio, entry.paymentAccount)
 end
 
 local function releasePlayerCautions(playerId)
@@ -209,7 +209,7 @@ local function spawnCautionVehicle(playerId, entry, spawnPoint, vehicle)
 		if not entity or entity == 0 or not DoesEntityExist(entity) then
 			if isCurrent then
 				clearCaution(playerId, entry.spawner)
-				settleCaution(playerId, entry.amount, 1.0)
+				settleCaution(playerId, entry.amount, 1.0, entry.paymentAccount)
 			end
 
 			return
@@ -330,7 +330,7 @@ RegisterServerEvent('esx_jobs:stopWork', function()
 	end
 end)
 
-RegisterNetEvent('esx_jobs:caution', function(cautionType, requestValue)
+RegisterNetEvent('esx_jobs:caution', function(cautionType, requestValue, paymentAccount)
 	local playerId = source
 	local xPlayer = ESX.Player(playerId)
 	if not xPlayer then
@@ -364,7 +364,9 @@ RegisterNetEvent('esx_jobs:caution', function(cautionType, requestValue)
 			return
 		end
 
-		local entry = { amount = cautionAmount, spawner = spawner, pending = true }
+		local entry = { amount = cautionAmount, spawner = spawner, pending = true,
+            paymentAccount = paymentAccount,
+        }
 		setCaution(playerId, spawner, entry)
 
 		if cautionAmount == 0 then
@@ -373,8 +375,13 @@ RegisterNetEvent('esx_jobs:caution', function(cautionType, requestValue)
 		end
 
 		TriggerEvent('esx_addonaccount:getAccount', 'caution', xPlayer.getIdentifier(), function(account)
-			if account and xPlayer.getAccount('bank').money >= cautionAmount then
-				xPlayer.removeAccountMoney('bank', cautionAmount, "Caution Fine")
+			if account and PaymentGateway.Charge(
+				xPlayer,
+                paymentAccount,
+                cautionAmount,
+                'Job Vehicle Deposit'
+            )
+        then
 				account.addMoney(cautionAmount)
 				xPlayer.showNotification(TranslateCap('bank_deposit_taken', ESX.Math.GroupDigits(cautionAmount)))
 				spawnCautionVehicle(playerId, entry, spawnPoint, vehicle)
@@ -408,7 +415,7 @@ RegisterNetEvent('esx_jobs:caution', function(cautionType, requestValue)
 		local condition = getVehicleCondition(entity)
 
 		clearCaution(playerId, returnZone.Spawner)
-		settleCaution(playerId, entry.amount, condition)
+		settleCaution(playerId, entry.amount, condition, entry.paymentAccount)
 		TriggerClientEvent('esx_jobs:vehicleReturned', playerId, entry.netId, returnZone.Teleport)
 	end
 end)

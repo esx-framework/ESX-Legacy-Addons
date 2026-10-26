@@ -798,7 +798,10 @@ function OpenBuyWeaponsMenu()
 				OpenWeaponComponentShop(data.current.components, data.current.name, menu)
 			end
 		else
-			xLib.callback('esx_policejob:buyWeapon', false, function(bought)
+            PaymentGateway.Pay({
+                amount = data.current.price,
+                title = data.current.weaponLabel,
+            }, 'esx_policejob:buyWeapon', function(bought, paymentFailure)
 				if bought then
 					if data.current.price > 0 then
 						ESX.ShowNotification(TranslateCap('armory_bought', data.current.weaponLabel, ESX.Math.GroupDigits(data.current.price)))
@@ -807,9 +810,13 @@ function OpenBuyWeaponsMenu()
 					menu.close()
 					OpenBuyWeaponsMenu()
 				else
-					ESX.ShowNotification(TranslateCap('armory_money'))
+                    PaymentGateway.NotifyFailure(
+                        paymentFailure,
+                        TranslateCap('armory_money'))
 				end
-			end, data.current.name, 1)
+			end, data.current.name, 1,
+            nil
+        )
 		end
 	end, function(data, menu)
 		menu.close()
@@ -821,7 +828,10 @@ function OpenWeaponComponentShop(components, weaponName, parentShop)
 		if data.current.hasComponent then
 			ESX.ShowNotification(TranslateCap('armory_hascomponent'))
 		else
-			xLib.callback('esx_policejob:buyWeapon', false, function(bought)
+            PaymentGateway.Pay({
+                amount = data.current.price,
+                title = data.current.componentLabel,
+            }, 'esx_policejob:buyWeapon', function(bought, paymentFailure)
 				if bought then
 					if data.current.price > 0 then
 						ESX.ShowNotification(TranslateCap('armory_bought', data.current.componentLabel, ESX.Math.GroupDigits(data.current.price)))
@@ -831,7 +841,9 @@ function OpenWeaponComponentShop(components, weaponName, parentShop)
 					parentShop.close()
 					OpenBuyWeaponsMenu()
 				else
-					ESX.ShowNotification(TranslateCap('armory_money'))
+                    PaymentGateway.NotifyFailure(
+                        paymentFailure,
+                        TranslateCap('armory_money'))
 				end
 			end, weaponName, 2, data.current.componentNum)
 		end

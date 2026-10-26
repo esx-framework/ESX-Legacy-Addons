@@ -368,45 +368,130 @@ AddEventHandler('esx_vehicleshop:putStockItems', function(itemName, count)
     end)
 end)
 
-xLib.callback.registerCompat('esx_vehicleshop:buyVehicle', function(source, cb, model, plate)
-    local xPlayer = ESX.Player(source)
+local vehiclePurchases = {}
+local vehiclePurchaseLimiter = xLib.rateLimiter({ capacity = 1, refill = 1, interval = 2000 })
+
+xLib.callback.registerCompat('esx_vehicleshop:buyVehicle', function(source, cb, model, plate, account)
+    local xPlayer = ESX.GetPlayerFromId(source)
     local vehicleData = type(model) == 'string' and getVehicleFromModel(model)
     local modelPrice = vehicleData and tonumber(vehicleData.price)
 
-    plate = generateServerPlate()
-
-    if not xPlayer or not modelPrice or not plate or not isNear(source, Config.Zones.ShopInside.Pos, 30.0) then
-        return cb(false)
+    if not xPlayer or not modelPrice or xLib.validation.money(modelPrice, 1) ~= modelPrice then
+        return cb(false, 'invalid_vehicle')
     end
 
-    if modelPrice and xPlayer.getMoney() >= modelPrice then
-        xPlayer.removeMoney(modelPrice, 'Vehicle Purchase')
+    if account ~= 'money' and account ~= 'bank' then
+        return cb(false, 'invalid_account')
+    end
 
-        MySQL.insert(
-            'INSERT INTO owned_vehicles (owner, plate, vehicle) VALUES (?, ?, ?)',
-            { xPlayer.getIdentifier(), plate, json.encode({ model = joaat(model), plate = plate }) },
-            function(insertId)
-                if not insertId then
-                    xPlayer.addMoney(modelPrice, 'Vehicle Purchase Refund')
-                    return cb(false)
-                end
+    if not isNear(source, Config.Zones.ShopInside.Pos, 30.0) then
+        return cb(false, 'not_near_shop')
+    end
 
+    local identifier = xPlayer.getIdentifier()
+
+    if vehiclePurchases[identifier] or not vehiclePurchaseLimiter:consume(source) then
+        return cb(false, 'busy')
+    end
+
+    vehiclePurchases[identifier] = xPlayer
+
+    local function isCurrentBuyer()
+        return xPlayer.isCurrent() == true
+    end
+
+    local plateOk, generated = pcall(generateServerPlate)
+
+    if not plateOk or not generated then
+        vehiclePurchases[identifier] = nil
+        return cb(false, 'plate_unavailable')
+    end
+
+    if not isCurrentBuyer() or not isNear(source, Config.Zones.ShopInside.Pos, 30.0) then
+        vehiclePurchases[identifier] = nil
+        return cb(false, 'purchase_invalidated')
+    end
+
+    plate = generated
+
+    if not xPlayer.beginAccountOperation() then
+        vehiclePurchases[identifier] = nil
+        return cb(false, 'session_closing')
+    end
+
+    local finished = false
+    local function finish(success, failure)
+        if finished then
+            return
+        end
+
+        finished = true
+        vehiclePurchases[identifier] = nil
+        xPlayer.endAccountOperation()
+
+        if isCurrentBuyer() then
+            cb(success, failure)
+        end
+    end
+
+    local charged, failure =
+        PaymentGateway.Charge(xPlayer, account, modelPrice, 'Vehicle Purchase')
+
+    if not charged then
+        return finish(false, failure)
+    end
+
+    local function logUnconfirmed(reason)
+        local message = '[esx_vehicleshop] Purchase requires review: %s, plate=%s, '
+            .. 'account=%s, amount=%s, error=%s'
+
+        print(message:format(identifier, plate, account, modelPrice, tostring(reason)))
+    end
+
+    SetTimeout(15000, function()
+        if not finished then
+            logUnconfirmed('database timeout')
+            finish(false, 'unconfirmed')
+        end
+    end)
+
+    local insertOk, insertError = pcall(MySQL.insert,
+        'INSERT INTO owned_vehicles (owner, plate, vehicle) VALUES (?, ?, ?)',
+        { identifier, plate, json.encode({ model = joaat(model), plate = plate }) },
+        function(insertId)
+            if finished then
+                return
+            end
+
+            if not insertId then
+                PaymentGateway.Refund(xPlayer, account, modelPrice, 'Vehicle Purchase Refund')
+                return finish(false, 'persistence_failed')
+            end
+
+            finish(true)
+
+            if isCurrentBuyer() then
                 xPlayer.showNotification(TranslateCap('vehicle_belongs', plate))
 
-                ESX.OneSync.SpawnVehicle(joaat(model), Config.Zones.ShopOutside.Pos, Config.Zones.ShopOutside.Heading, { plate = plate }, function(vehicle)
-                    Wait(100)
+                ESX.OneSync.SpawnVehicle(joaat(model), Config.Zones.ShopOutside.Pos,
+                    Config.Zones.ShopOutside.Heading, { plate = plate }, function(networkId)
+                        Wait(100)
 
-                    local vehicle = NetworkGetEntityFromNetworkId(vehicle)
+                        local vehicle = NetworkGetEntityFromNetworkId(networkId)
 
-                    Wait(300)
-                    TaskWarpPedIntoVehicle(GetPlayerPed(source), vehicle, -1)
-                end)
+                        Wait(300)
 
-                cb(true)
+                        if isCurrentBuyer() and vehicle ~= 0 and DoesEntityExist(vehicle) then
+                            TaskWarpPedIntoVehicle(GetPlayerPed(source), vehicle, -1)
+                        end
+                    end)
             end
-        )
-    else
-        cb(false)
+        end
+    )
+
+    if not insertOk and not finished then
+        logUnconfirmed(insertError)
+        finish(false, 'unconfirmed')
     end
 end)
 

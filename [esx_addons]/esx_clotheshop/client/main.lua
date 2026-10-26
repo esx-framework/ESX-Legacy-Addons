@@ -51,7 +51,10 @@ function OpenShopMenu()
                 end)
                 purchasePending = true
 
-                xLib.callback('esx_clotheshop:buyClothes', false, function(bought, failure)
+                PaymentGateway.Pay({
+                    quote = 'esx_clotheshop:quoteClothes',
+                    title = TranslateCap('clothes'),
+                }, 'esx_clotheshop:buyClothes', function(bought, failure)
                     purchasePending = false
 
                     if bought then
@@ -147,12 +150,12 @@ function OpenShopMenu()
 
                         local message = TranslateCap('not_enough_money')
 
-                        if failure ~= 'not_enough_money' then
+                        if failure ~= 'insufficient_funds' then
                             local translations = Locales[Config.Locale] or Locales.en
                             message = translations.save_failed or Locales.en.save_failed
                         end
 
-                        ESX.ShowNotification(message)
+                        PaymentGateway.NotifyFailure(failure, message)
                     end
                 end, newSkin, oldSkin)
             elseif element.value == 'no' then

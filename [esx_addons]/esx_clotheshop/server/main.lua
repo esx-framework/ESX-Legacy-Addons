@@ -103,7 +103,25 @@ AddEventHandler('esx_clotheshop:saveOutfit', function(label, skin)
     end)
 end)
 
-xLib.callback.registerCompat('esx_clotheshop:buyClothes', function(source, cb, newSkin, oldSkin)
+xLib.callback.registerCompat('esx_clotheshop:quoteClothes', function(source, cb, newSkin)
+    local player = ESX.GetPlayerFromId(source)
+
+    if not player or not isNearClothesShop(source) then
+        return cb(false)
+    end
+
+    local validated = exports.esx_skin:ValidateSkin(newSkin)
+    local current = exports.esx_skin:GetSkin(source)
+
+    if not validated or not isCurrentPlayer(source, player) or type(current) ~= 'table' then
+        return cb(false)
+    end
+
+    cb(calculatePurchaseCost(validated, current))
+end)
+
+xLib.callback.registerCompat(
+    'esx_clotheshop:buyClothes', function(source, cb, newSkin, oldSkin, account)
     local xPlayer = ESX.GetPlayerFromId(source)
 
     if not xPlayer or ClothesPayments[xPlayer.getIdentifier()] or not isNearClothesShop(source) then
@@ -129,10 +147,6 @@ xLib.callback.registerCompat('esx_clotheshop:buyClothes', function(source, cb, n
         return cb(false)
     end
 
-    if xPlayer.getMoney() < purchaseCost then
-        return cb(false, 'not_enough_money')
-    end
-
     local identifier = xPlayer.getIdentifier()
 
     if ClothesPayments[identifier] or xPlayer.beginAccountOperation() ~= true then
@@ -141,10 +155,13 @@ xLib.callback.registerCompat('esx_clotheshop:buyClothes', function(source, cb, n
 
     ClothesPayments[identifier] = true
 
-    if xPlayer.removeMoney(purchaseCost, 'Outfit Purchase') ~= true then
+    local charged, failure =
+        PaymentGateway.Charge(xPlayer, account, purchaseCost, 'Outfit Purchase')
+
+    if not charged then
         ClothesPayments[identifier] = nil
         xPlayer.endAccountOperation()
-        return cb(false, 'not_enough_money')
+        return cb(false, failure)
     end
 
     local finished = false
@@ -158,7 +175,8 @@ xLib.callback.registerCompat('esx_clotheshop:buyClothes', function(source, cb, n
         ClothesPayments[identifier] = nil
 
         if saved ~= true then
-            if xPlayer.addMoney(purchaseCost, 'Outfit Purchase Refund') ~= true then
+            if
+                PaymentGateway.Refund(xPlayer, account, purchaseCost, 'Outfit Purchase Refund') ~= true then
                 print(('[esx_clotheshop] Outfit refund failed for %s'):format(identifier))
             end
         elseif isCurrentPlayer(source, xPlayer) then

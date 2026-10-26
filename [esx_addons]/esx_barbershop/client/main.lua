@@ -1,3 +1,4 @@
+
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
@@ -11,7 +12,7 @@ function OpenShopMenu()
     hasPaid = false
 
     TriggerEvent('skinchanger:getSkin', function(skin)
-        cachedSkin = skin;
+        cachedSkin = skin
     end)
 
     while not cachedSkin do
@@ -21,62 +22,49 @@ function OpenShopMenu()
     TriggerEvent('esx_skin:openRestrictedMenu', function(data, menu)
         menu.close()
 
-        local elements = {
-            {unselectable = true, icon = "fas fa-check-double", title = TranslateCap("valid_purchase")},
-            {icon = "fas fa-check-circle", title = TranslateCap("yes"), value = "yes"},
-            {icon = "fas fa-window-close", title = TranslateCap("no"), value = "no"},
-        }
+        if purchasePending then return end
 
-        ESX.OpenContext("right", elements, function(menu, element)
-            if purchasePending then return end
+        local selectedSkin
 
-            if element.value == "yes" then
-                local selectedSkin
+        TriggerEvent('skinchanger:getSkin', function(skin)
+            selectedSkin = skin
+        end)
 
-                TriggerEvent('skinchanger:getSkin', function(skin) selectedSkin = skin end)
-                purchasePending = true
+        while not selectedSkin do
+            Wait(10)
+        end
 
-                xLib.callback('esx_barbershop:pay', false, function(paid, reason)
-                    purchasePending = false
+        purchasePending = true
 
-                    if paid then
-                        ESX.CloseContext()
-                        TriggerEvent('esx_skin:setLastSkin', selectedSkin)
+        PaymentGateway.Pay({
+            amount = Config.Price,
+            title = TranslateCap('barber_blip'),
+        }, 'esx_barbershop:pay', function(paid, reason)
+            purchasePending = false
 
-                        hasPaid = true
-                    else
-                        ESX.CloseContext()
-                        TriggerEvent('skinchanger:loadSkin', cachedSkin)
-
-                        if reason == 'insufficient_funds' then
-                            ESX.ShowNotification(TranslateCap('not_enough_money'))
-                        else
-                            print(('[esx_barbershop] Purchase failed: %s'):format(reason or 'unknown'))
-                            ESX.ShowNotification(TranslateCap('purchase_failed'))
-                        end
-                    end
-
-                    if hasAlreadyEnteredMarker then
-                        currentAction = 'shop_menu'
-                        currentActionMsg = TranslateCap('press_access')
-                        ESX.TextUI(currentActionMsg)
-                    end
-                end, selectedSkin)
-            elseif element.value == "no" then
+            if paid then
+                TriggerEvent('esx_skin:setLastSkin', selectedSkin)
+                hasPaid = true
+            else
                 TriggerEvent('skinchanger:loadSkin', cachedSkin)
-                ESX.CloseContext()
+
+                if reason == 'insufficient_funds' then
+                    ESX.ShowNotification(TranslateCap('not_enough_money'))
+                else
+                    print(('[esx_barbershop] Purchase failed: %s'):format(reason or 'unknown'))
+                    PaymentGateway.NotifyFailure(
+                        reason,
+                        TranslateCap('purchase_failed')
+                    )
+                end
             end
 
-            if purchasePending or not hasAlreadyEnteredMarker then return end
-
-            currentAction = 'shop_menu'
-            currentActionMsg = TranslateCap('press_access')
-            ESX.TextUI(currentActionMsg)
-        end, function(menu)
-            currentAction = 'shop_menu'
-            currentActionMsg = TranslateCap('press_access')
-            ESX.TextUI(currentActionMsg)
-        end)
+            if hasAlreadyEnteredMarker then
+                currentAction = 'shop_menu'
+                currentActionMsg = TranslateCap('press_access')
+                ESX.TextUI(currentActionMsg)
+            end
+        end, selectedSkin)
     end, function(data, menu)
         menu.close()
 
@@ -118,7 +106,6 @@ end)
 
 AddEventHandler('esx_barbershop:hasExitedMarker', function(zone)
     hasAlreadyEnteredMarker = false
-    ESX.CloseContext()
     currentAction = nil
     ESX.HideUI()
 

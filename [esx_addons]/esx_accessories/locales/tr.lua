@@ -2,9 +2,6 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales ['tr'] = {
-    ['valid_purchase'] = 'Değişiklikleri onaylıyor musun?',
-    ['yes'] = 'Evet (<span style="color: green;">$%s</span>)',
-    ['no'] = 'Hayır',
     ['helmet'] = 'Kask / Şapka',
     ['glasses'] = 'Gözlük',
     ['mask'] = 'Maske',

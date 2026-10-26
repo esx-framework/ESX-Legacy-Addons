@@ -33,6 +33,8 @@ local function showBillsMenu(afterId, history)
                     TranslateCap('invoices_item', ESX.Math.GroupDigits(v.amount))
                 ),
                 billId = v.id,
+                amount = v.amount,
+                paymentTitle = v.label,
             }
         end
 
@@ -60,7 +62,10 @@ local function showBillsMenu(afterId, history)
                 return
             end
 
-            xLib.callback('esx_billing:payBill', false, function(resp)
+            PaymentGateway.Pay({
+                amount = element.amount,
+                title = element.paymentTitle,
+            }, 'esx_billing:payBill', function(resp)
                 SetTimeout(1000, function()
                     showBillsMenu(afterId, history)
                 end)

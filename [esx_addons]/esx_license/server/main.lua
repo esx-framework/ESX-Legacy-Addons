@@ -166,18 +166,20 @@ local function canReadTargetLicenses(source, target)
 end
 
 AddEventHandler('esx_license:addLicense', function(target, licenseType, cb)
-    local xPlayer = ESX.Player(target)
+    local xPlayer = ESX.GetPlayerFromId(target)
     if xPlayer then
         if isValidLicense(licenseType) then
-            CheckLicense(xPlayer.getIdentifier(), licenseType, function(hasLicense)
-                if hasLicense then
+            local identifier = xPlayer.getIdentifier()
+
+            CheckLicense(identifier, licenseType, function(hasLicense)
+                if hasLicense or xPlayer.isCurrent() ~= true then
                     if cb then
                         cb(false)
                     end
                     return
                 end
 
-                AddLicense(xPlayer.getIdentifier(), licenseType, cb)
+                AddLicense(identifier, licenseType, cb)
             end)
         else
             print(

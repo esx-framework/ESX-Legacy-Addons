@@ -230,7 +230,10 @@ function OpenShopMenu()
                 else
                     local generatedPlate = GeneratePlate()
 
-                    xLib.callback('esx_vehicleshop:buyVehicle', false, function(success)
+                    PaymentGateway.Pay({
+                        amount = vehicleData.price,
+                        title = vehicleData.name,
+                    }, 'esx_vehicleshop:buyVehicle', function(success, paymentFailure)
                         if success then
                             IsInShopMenu = false
                             menu2.close()
@@ -239,7 +242,9 @@ function OpenShopMenu()
                             FreezeEntityPosition(playerPed, false)
                             SetEntityVisible(playerPed, true)
                         else
-                            ESX.ShowNotification(TranslateCap('not_enough_money'))
+                            PaymentGateway.NotifyFailure(
+                                paymentFailure,
+                                TranslateCap('not_enough_money'))
                         end
                     end, vehicleData.model, generatedPlate)
                 end
