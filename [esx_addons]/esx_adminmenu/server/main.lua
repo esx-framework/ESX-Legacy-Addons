@@ -3,7 +3,7 @@
 
 Helpers.registerCallback("esx-adminmenu:server:getInitData", function(source)
 	if not Helpers.hasPermission(source) then
-		return { err = "Insufficient Permissions." }
+		return { err = TranslateCap("insufficient_permissions") }
 	end
 
 	local impounds = Helpers.getImpounds()
@@ -26,7 +26,7 @@ end)
 
 Helpers.registerCallback("esx-adminmenu:server:canOpen", function(source)
 	if not Helpers.hasPermission(source) then
-		return { success = false, err = "Insufficient Permissions." }
+		return { success = false, err = TranslateCap("insufficient_permissions") }
 	end
 
 	return {
@@ -38,21 +38,21 @@ end)
 
 Helpers.registerCallback("esx-adminmenu:server:canUseAdminAction", function(source, data)
 	if not Helpers.hasPermission(source) then
-		return { success = false, err = "Insufficient Permissions." }
+		return { success = false, err = TranslateCap("insufficient_permissions") }
 	end
 
 	local action = type(data) == "table" and data.action or data
 	if type(action) ~= "string" or action == "" then
-		return { success = false, err = "Invalid admin action." }
+		return { success = false, err = TranslateCap("invalid_admin_action") }
 	end
 
 	local feature = Helpers.getActionPermission("adminMenu", action)
 	if not feature then
-		return { success = false, err = "Invalid admin action." }
+		return { success = false, err = TranslateCap("invalid_admin_action") }
 	end
 
 	if not Helpers.hasFeaturePermission(source, feature) then
-		return { success = false, err = "Insufficient Permissions." }
+		return { success = false, err = TranslateCap("insufficient_permissions") }
 	end
 
 	return {
@@ -63,7 +63,7 @@ end)
 
 Helpers.registerCallback("esx-adminmenu:server:openDashboard", function(source)
 	if not Helpers.hasPermission(source) then
-		return { success = false, err = "Insufficient Permissions." }
+		return { success = false, err = TranslateCap("insufficient_permissions") }
 	end
 
 	return {
@@ -76,7 +76,7 @@ end)
 
 Helpers.registerCallback("esx-adminmenu:server:getVehicles", function(source, data)
 	if not Helpers.hasPermission(source) then
-		return { success = false, err = "Insufficient Permissions." }
+		return { success = false, err = TranslateCap("insufficient_permissions") }
 	end
 
 	local canSeeSensitive = Helpers.hasFeaturePermission(source, "sensitiveInfo")
@@ -88,7 +88,7 @@ end)
 
 Helpers.registerCallback("esx-adminmenu:server:getBans", function(source, data)
 	if not Helpers.hasFeaturePermission(source, "banManagement") then
-		return { success = false, err = "Insufficient Permissions." }
+		return { success = false, err = TranslateCap("insufficient_permissions") }
 	end
 
 	local result = Helpers.getActiveBansPage(data)
@@ -99,7 +99,7 @@ end)
 
 Helpers.registerCallback("esx-adminmenu:server:getRecentPlayers", function(source)
 	if not Helpers.hasPermission(source) then
-		return { success = false, err = "Insufficient Permissions." }
+		return { success = false, err = TranslateCap("insufficient_permissions") }
 	end
 
 	return {
@@ -110,12 +110,12 @@ end)
 
 Helpers.registerCallback("esx-adminmenu:server:getRadioChannelPlayers", function(source, data)
 	if not Helpers.hasFeaturePermission(source, "radioLookup") then
-		return { success = false, err = "Insufficient Permissions." }
+		return { success = false, err = TranslateCap("insufficient_permissions") }
 	end
 
 	local channel = tonumber(data and data.channel) or 0
 	if channel <= 0 then
-		return { success = false, err = "Enter a valid radio channel." }
+		return { success = false, err = TranslateCap("enter_valid_radio_channel") }
 	end
 
 	local players = {}
@@ -142,7 +142,7 @@ end)
 -- which is more sensitive than most actions it records.
 Helpers.registerCallback("esx-adminmenu:server:getAdminLogs", function(source, data)
 	if not Helpers.hasFeaturePermission(source, "logViewer") then
-		return { success = false, err = "Insufficient Permissions", logs = {} }
+		return { success = false, err = TranslateCap("insufficient_permissions"), logs = {} }
 	end
 
 	local result = Logs.query(data)
@@ -292,7 +292,7 @@ local function buildOfflineEntry(row, canSeeSensitive)
 	}
 end
 
---[[ 
+--[[
 We only need this to prevent currently-online characters from also
 appearing as OFFLINE results.
 ]]--
@@ -449,7 +449,7 @@ Helpers.registerCallback(
 		if not Helpers.hasPermission(src) then
 			return {
 				success = false,
-				err = "Insufficient Permissions",
+				err = TranslateCap("insufficient_permissions"),
 				players = {},
 			}
 		end
@@ -481,7 +481,7 @@ Helpers.registerCallback(
 		if isOfflineSearchRateLimited(src) then
 			return {
 				success = false,
-				err = "Search rate limited.",
+				err = TranslateCap("search_rate_limited"),
 				players = {},
 			}
 		end
@@ -510,7 +510,7 @@ Helpers.registerCallback(
 		if rows == nil then
 			return {
 				success = false,
-				err = "Database unavailable.",
+				err = TranslateCap("database_unavailable"),
 				players = {},
 			}
 		end
