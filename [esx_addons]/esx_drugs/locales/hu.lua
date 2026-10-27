@@ -1,34 +1,31 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales ['hu'] = {
-  -- weed
-  ['weed_pickupprompt'] = 'Nyomd meg a [E] gombot a betakarításhoz Kannabisz',
-  ['weed_quitprocess'] = 'Nyomd meg a [E] gombot a betakarítás befejezéséhez',
-  ['weed_inventoryfull'] = 'Nincs több hely a  Kannabisz számára.',
-  ['weed_processprompt'] = 'Nyomd meg a [E] gombot a kezdéshez Kannabisz betakarítása.',
-  ['weed_processingstarted'] = 'Folyamatban Kannabisz into Marihuana...',
-  ['weed_processingfull'] = 'Betakarítás ~r~befejezve a raktár tele',
-  ['weed_processingenough'] = 'Rendelkezned kell 3x Kannabisz a végrehajtáshoz',
-  ['weed_processed'] = 'Feldolgoztad 3x Kannabisz to 1x Marihuana',
-  ['weed_processingtoofar'] = 'A feldolgozás ~r~megszakadt elhagytad a területet.',
-
-  -- drug dealer
-  ['dealer_prompt'] = 'Nyomd meg a [E] gombot a találkozáshoz a ~r~Dílerrel.',
-  ['dealer_title'] = 'Díler',
-  ['dealer_item'] = '$%s',
-  ['dealer_notenough'] = 'Nincs elég anyagod az eladáshoz',
-  ['dealer_sold'] = 'Sikeres eladás %sx %s for $%s',
-
-  -- license
-  ['license_title'] = 'A feldolgozáshoz engedélyek kellenek, melyeket itt megvehetsz',
-  ['license_no'] = 'Nem',
-  ['license_bought'] = 'Megvetted a  %s for ~r~$%s',
-  ['license_bought_fail'] = 'Nincs elég pénzed %s!',
-  ['license_weed'] = 'Kannabisz Feldolgozási Engedély',
-
-  -- blips
-  ['blip_weedfield'] = 'Kannabisz ültetvény',
-  ['blip_weedprocessing'] = 'Kannabisz feldolgozás',
-  ['blip_drugdealer'] = 'Díler',
+Locales["hu"] = {
+  -- Kannabisz
+  ["weed_pickupprompt"] = "Nyomd meg az [E] gombot a kannabisz betakarításához.",
+  ["weed_quitprocess"] = "Nyomd meg az [E] gombot a kannabisz feldolgozásának leállításához.",
+  ["weed_inventoryfull"] = "Nincs több szabad hely a leltáradban a kannabisz számára.",
+  ["weed_processprompt"] = "Nyomd meg az [E] gombot a kannabisz feldolgozásának megkezdéséhez.",
+  ["weed_processingstarted"] = "Kannabisz feldolgozása marihuánává...",
+  ["weed_processingfull"] = "A feldolgozás ~r~megszakítva a megtelt leltár miatt!",
+  ["weed_processingenough"] = "A feldolgozáshoz legalább 3 db kannabiszra van szükséged.",
+  ["weed_processed"] = "3 db kannabiszt 1 db marihuánává dolgoztál fel.",
+  ["weed_processingtoofar"] = "A feldolgozás ~r~megszakítva, mert elhagytad a területet.",
+  -- Drogkereskedő
+  ["dealer_prompt"] = "Nyomd meg az [E] gombot a ~r~drogkereskedővel való beszélgetéshez.",
+  ["dealer_title"] = "Drogkereskedő",
+  ["dealer_item"] = "$%s",
+  ["dealer_notenough"] = "Nincs nálad elegendő mennyiség az eladáshoz!",
+  ["dealer_sold"] = "Eladtál %s db %s terméket $%s összegért.",
+  -- Engedély
+  ["license_title"] = "A termék feldolgozásához feldolgozási engedély szükséges, amely itt megvásárolható.",
+  ["license_no"] = "Nem",
+  ["license_bought"] = "Megvásároltad ezt: %s, ára: ~r~$%s",
+  ["license_bought_fail"] = "Nincs elég pénzed ehhez: %s!",
+  ["license_weed"] = "Kannabisz-feldolgozási engedély",
+  -- Térképjelölők
+  ["blip_weedfield"] = "Kannabiszmező",
+  ["blip_weedprocessing"] = "Kannabisz-feldolgozó",
+  ["blip_drugdealer"] = "Drogkereskedő"
 }

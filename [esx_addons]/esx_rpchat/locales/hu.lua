@@ -1,15 +1,12 @@
--- SPDX-License-Identifier: GPL-3.0-only
--- Copyright (C) 2022-2026 ESX Framework
-
 Locales['hu'] = {
-  ['ooc_prefix'] = 'OOC | %s',
-  ['twt_help'] = 'tweet küldése',
-  ['twt_prefix'] = '^0[^4Twitter^0] (^5@%s^0)',
-  ['me_help'] = 'személyes cselekvés',
-  ['me_prefix'] = 'me | %s',
-  ['do_help'] = 'RP információ',
-  ['do_prefix'] = 'do | %s',
-  ['generic_argument_name'] = 'üzenet',
-  ['generic_argument_help'] = 'az üzenet',
-  ['rate_limited'] = 'Várj %s másodpercet, mielőtt újabb üzenetet küldesz.',
+    ['ooc_prefix'] = 'OOC | %s',
+    ['twt_help'] = 'Tweet küldése',
+    ['twt_prefix'] = '^0[^4Twitter^0] (^5@%s^0)',
+    ['me_help'] = 'Személyes cselekvés',
+    ['me_prefix'] = 'me | %s',
+    ['do_help'] = 'Szerepjáték-információ',
+    ['do_prefix'] = 'do | %s',
+    ['generic_argument_name'] = 'üzenet',
+    ['generic_argument_help'] = 'Az üzenet szövege',
+    ['rate_limited'] = 'Várj %s másodpercet, mielőtt újabb üzenetet küldesz.',
 }
