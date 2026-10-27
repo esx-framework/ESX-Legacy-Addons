@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['pl'] = {
+return {
   -- global menus
   ['not_enough_in_society']   = 'brak tego ~r~przedmiotu w firmie!',
   ['player_cannot_hold']      = '~r~Nie masz wystarczająco wolnego miejsca w ekwipunku!',

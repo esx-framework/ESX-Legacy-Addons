@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['de'] = {
+return {
   -- global menus
   ['not_enough_in_society']   = 'Es gibt nicht genug von dem Item in der Firma!',
   ['player_cannot_hold']      = 'Du hast ~r~nicht~r~ genügend freien Platz im Inventar!',

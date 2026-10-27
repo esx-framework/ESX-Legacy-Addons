@@ -1,6 +1,6 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 
-Locales["nl"] = {
+return {
     ["unemployed"] = "Werkloos",
     ["unknown_job"] = "Onbekend",
     ["leave_reason"] = "Verbinding met de server verbroken via het ESX-pauzemenu",

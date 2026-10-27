@@ -1,4 +1,4 @@
-Locales["hu"] = {
+return {
     -- Öltöző
     ["cloakroom"] = "Öltöző",
     ["citizen_wear"] = "Civil ruha",

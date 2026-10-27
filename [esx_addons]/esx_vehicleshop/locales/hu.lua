@@ -1,4 +1,4 @@
-Locales['hu'] = {
+return {
     -- Általános menük
     ['not_enough_in_society']   = 'Nincs elegendő mennyiség ebből a tárgyból a céges készletben: ~r~!',
     ['player_cannot_hold']      = '~r~Nincs elég szabad hely a leltáradban!',

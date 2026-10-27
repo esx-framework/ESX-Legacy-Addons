@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['it'] = {
+return {
     distress_sent = "Il segnale di emergenza è stato inviato alle unità disponibili!",
     revive_help = "Rianima un giocatore",
     player_id = "Id server del giocatore",

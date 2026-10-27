@@ -1,4 +1,4 @@
-Locales['hu'] = {
+return {
     ['previous_page'] = 'Előző oldal',
     ['next_page'] = 'Következő oldal',
     ['actions'] = 'Műveletek',

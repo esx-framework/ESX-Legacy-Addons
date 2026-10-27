@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['nl'] = {
+return {
     ['new_job'] = 'Nieuwe baan: ~b~%s~s~ !',
     ['access_job_center'] = 'Klik op ~b~[%s]~s~ om het uitzendbureau te openen.',
     ['job_center'] = 'Selecteer een baan.',

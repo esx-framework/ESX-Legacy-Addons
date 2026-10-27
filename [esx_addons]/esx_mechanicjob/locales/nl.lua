@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['nl'] = {
+return {
   ['mechanic']                  = 'monteur',
   ['drive_to_indicated']        = 'Rij naar de aangegeven locatie',
   ['mission_canceled']          = 'opdracht ~r~geannuleerd',

@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['zh-cn'] = {
+return {
     distress_sent = "救援信号成功发送至医护人员!",
     revive_help = "救治玩家",
     player_id = "玩家服务器ID",

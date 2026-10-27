@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
 	-- Általános menük
 	["cloakroom"] = "Öltöző",
 	["cloak_change"] = "Nyomd meg a ~INPUT_PICKUP~ gombot a ruhaváltáshoz.",

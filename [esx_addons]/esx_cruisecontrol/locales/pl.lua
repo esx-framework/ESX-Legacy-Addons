@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['pl'] = {
+return {
   ['activated']   = 'aktywowano',
   ['deactivated'] = 'dezaktywano',
   ['increaseSpeed'] = 'Increase Speed',

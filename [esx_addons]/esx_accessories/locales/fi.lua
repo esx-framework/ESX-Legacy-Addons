@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales ['fi'] = {
+return {
   ['valid_purchase'] = 'varmista ostos?',
   ['yes'] = 'kyllä (<span style="color: green;">$%s</span>)',
   ['no'] = 'ei',

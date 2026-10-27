@@ -1,4 +1,4 @@
-Locales["hu"] = {
+return {
   ["mechanic"] = "szerelő",
   ["drive_to_indicated"] = "Menj a megjelölt helyszínre.",
   ["mission_canceled"] = "A küldetés megszakítva.",

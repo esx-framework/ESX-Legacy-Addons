@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['sl'] = {
+return {
   -- Garderoba
   ['cloakroom'] = 'Garderoba',
   ['ems_clothes_civil'] = 'Vaša Oblačila',

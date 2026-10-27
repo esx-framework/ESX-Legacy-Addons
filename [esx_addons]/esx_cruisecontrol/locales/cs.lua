@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['cs'] = {
+return {
     ['activated']   = 'Tempomat byl aktivován',
     ['deactivated'] = 'Tempomat byl deaktivován',
     ['increaseSpeed'] = 'Zvýšit rychlost',

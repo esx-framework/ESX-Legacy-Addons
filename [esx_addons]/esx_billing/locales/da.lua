@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['da'] = {
+return {
     ['invoices'] = 'regninger',
     ['invoices_item'] = 'DKK%s',
     ['received_invoice'] = 'du har lige ~r~modtaget en faktura',

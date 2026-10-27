@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['zh-cn'] = {
+return {
   -- cloakroom
   ['cloakroom_menu'] = '更衣室',
   ['cloakroom_prompt'] = '键下 [E] 访问更衣室',

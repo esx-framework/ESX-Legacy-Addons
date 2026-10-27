@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales ['nl'] = {
+return {
   -- weed
   ['weed_pickupprompt'] = 'druk op [E] om de Cannabis plant te oogsten.',
   ['weed_quitprocess'] = 'druk op [E] om Proces Cannabis te stoppen.',

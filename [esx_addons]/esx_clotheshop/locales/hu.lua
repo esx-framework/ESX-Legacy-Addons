@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
 	["save_failed"] = "A ruháid mentése nem sikerült. A vásárlás megszakítva. Kérlek, próbáld újra.",
 	["valid_this_purchase"] = "Biztosan jóváhagyod ezt a vásárlást?",
 	["yes"] = "Igen",

@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['zh-cn'] = {
+return {
   -- weed
   ['weed_pickupprompt'] = '键下 [E] 收获大麻原叶.',
   ['weed_quitprocess'] = '键下 [E] 暂时取消加工.',

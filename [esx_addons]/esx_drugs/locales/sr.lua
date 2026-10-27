@@ -2,7 +2,7 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 
-Locales ['sr'] = {
+return {
   -- weed
   ['weed_pickupprompt'] = 'Pritisni [E] da obereš kanabis.',
   ['weed_quitprocess'] = 'Pritisni [E] da prekineš preradu kanabisa.',

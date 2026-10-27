@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['sr'] = {
+return {
   -- shop
   ['boat_shop'] = 'Prodavnica Brodova',
   ['boat_shop_open'] = 'Pritisni [E] da pristupiš prodavnici brodova.',

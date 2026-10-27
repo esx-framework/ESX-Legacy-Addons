@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['fr'] = {
+return {
   ['invoices'] = 'factures',
   ['invoices_item'] = '$%s',
   ['received_invoice'] = 'vous avez ~r~reçu une facture',

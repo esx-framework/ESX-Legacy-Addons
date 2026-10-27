@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['sl'] = {
+return {
   ['valid_this_purchase'] = 'Potrdite nakup',
   ['yes'] = 'Da',
   ['no'] = 'Ne',

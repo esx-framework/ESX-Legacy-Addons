@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['es'] = {
+return {
     ['save_failed'] = 'No se pudo guardar la ropa. La compra se ha cancelado. Vuelve a intentarlo.',
     ['valid_this_purchase'] = '¿Validar esta compra?',
     ['yes'] = 'Si',

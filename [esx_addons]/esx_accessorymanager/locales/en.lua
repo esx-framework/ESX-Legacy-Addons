@@ -1,4 +1,4 @@
-Locales['en'] = {
+return {
     radial_title = 'Accessories',
     radial_watches = 'Watch',
     radial_glasses = 'Glasses',

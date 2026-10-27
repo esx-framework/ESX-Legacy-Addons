@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['nl'] = {
+return {
     distress_sent = "Noodsignaal verzonden naar alle beschikbare eenheden!",
     revive_help = "Revive een speler",
     player_id = "Speler server id",

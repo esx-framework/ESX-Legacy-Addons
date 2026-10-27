@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['en'] = {
+return {
   ['invalid_amount'] = 'That\'s an invalid amount of money',
   ['deposit_money']  = 'you have deposited $%s',
   ['withdraw_money'] = 'you have withdrawn $%s',

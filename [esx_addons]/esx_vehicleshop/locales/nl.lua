@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['nl'] = {
+return {
   -- global menus
   ['not_enough_in_society']   = 'dit zit niet in de inventory van de cardealer !',
   ['player_cannot_hold']      = 'je hebt ~r~niet~s~ genoeg plaats in je inventaris!',

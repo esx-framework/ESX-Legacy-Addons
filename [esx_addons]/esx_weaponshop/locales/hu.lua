@@ -1,4 +1,4 @@
-Locales["hu"] = {
+return {
   ["license_shop_title"] = "Fegyverengedély-üzlet",
   ["weapon_shop_menu_title"] = "Fegyverbolt",
   ["weapon_shop_menu_description"] = "Fegyverek vásárlása",

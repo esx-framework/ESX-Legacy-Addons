@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['nl'] = {
+return {
   ['check_society_balance']  = 'Bekijk genootschap saldo',
   ['check_balance']          = 'Saldo is ~g~€%s',
   ['grade_management']       = 'rang labelbeheer',

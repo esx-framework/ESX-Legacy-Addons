@@ -1,4 +1,4 @@
-Locales['hu'] = {
+return {
     -- Öltöző
     ['cloakroom_menu'] = 'Öltöző',
     ['cloakroom_prompt'] = 'Nyomd meg az [E] gombot az öltöző megnyitásához.',

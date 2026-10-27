@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['en'] = {
+return {
     too_early = "Hospital transfer is not available yet.",
     insufficient_funds = "You do not have enough money in the bank. You can wait for automatic transfer.",
     cooldown = "Your alert has already been received. Wait before sending it again.",

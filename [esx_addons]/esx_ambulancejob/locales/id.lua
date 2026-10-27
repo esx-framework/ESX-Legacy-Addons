@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['id'] = {
+return {
   -- Cloakroom
   ['cloakroom'] = 'Ruang Loker',
   ['ems_clothes_civil'] = 'Pakaian Warga Sipil',
