@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['nl'] = {
+return {
   -- cloakroom
   ['cloakroom_menu'] = 'Vestiaire',
   ['cloakroom_prompt'] = 'Druk op [E] om de vestiaire te gebruiken.',

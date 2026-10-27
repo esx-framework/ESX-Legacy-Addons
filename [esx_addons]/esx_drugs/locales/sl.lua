@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales ['sl'] = {
+return {
   -- trava
   ['weed_pickupprompt'] = 'Pritisnite [E] Da poberete Cannabis liste.',
   ['weed_quitprocess'] = 'Pritisnite [E] Da ustavite Procesiranje Cannabis listov.',

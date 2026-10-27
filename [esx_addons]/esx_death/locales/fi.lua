@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['fi'] = {
+return {
     distress_sent = "Hätäviesti on lähetetty vapaille yksiköille!",
     revive_help = "Elvytä pelaaja",
     player_id = "Pelaajan ID",

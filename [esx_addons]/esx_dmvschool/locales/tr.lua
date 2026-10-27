@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['tr'] = {
+return {
     ['you_paid'] = 'DMV okuluna $%s ödediniz',
     ['go_next_point'] = 'Bir sonraki noktaya git!',
     ['in_town_speed'] = 'Şehre girdiniz, hızınıza dikkat edin! Hız Sınırı: %s km/sa',

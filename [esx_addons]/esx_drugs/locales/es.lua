@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales ['es'] = {
+return {
   -- weed
   ['weed_pickupprompt'] = 'pulsa [E] para recolectar Marijuana húmeda.',
   ['weed_inventoryfull'] = 'no puedes llevar más Marijuana húmeda!',

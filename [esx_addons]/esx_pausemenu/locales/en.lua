@@ -1,6 +1,6 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 
-Locales["en"] = {
+return {
     ["unemployed"] = "Unemployed",
     ["unknown_job"] = "Unknown",
     ["leave_reason"] = "Disconnected from the server via ESX Pause Menu",

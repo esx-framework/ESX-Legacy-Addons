@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
   -- Hajókereskedés
   ["boat_shop"] = "Hajókereskedés",
   ["boat_shop_open"] = "Nyomd meg az [E] gombot a hajókereskedés megnyitásához.",

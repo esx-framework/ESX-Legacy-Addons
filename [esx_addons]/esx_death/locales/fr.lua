@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['fr'] = {
+return {
     distress_sent = "Un signal a été envoyé à toutes les unités disponibles!",
     revive_help = "Relancer un joueur",
     player_id = "Identifiant serveur du joueur",

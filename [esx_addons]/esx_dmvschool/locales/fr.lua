@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['fr'] = {
+return {
   ['you_paid'] = 'Vous avez payé $%s',
   ['go_next_point'] = 'Allez vers le prochain passage!',
   ['in_town_speed'] = 'Entrée en ville, attention à votre vitesse! Vitesse limite: %s km/h',

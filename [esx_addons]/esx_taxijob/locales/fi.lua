@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['fi'] = {
+return {
   -- cloakroom
   ['cloakroom_menu'] = 'Vaatelokero',
   ['cloakroom_prompt'] = 'Paina [E] avataksesi vaatelokero.',

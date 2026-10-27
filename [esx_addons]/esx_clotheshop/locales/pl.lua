@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['pl'] = {
+return {
   ['valid_this_purchase'] = 'potwierdzić ten zakup?',
   ['yes'] = 'tak',
   ['no'] = 'nie',

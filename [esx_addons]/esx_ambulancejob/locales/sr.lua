@@ -2,7 +2,7 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 
-Locales['sr'] = {
+return {
   -- Svlačionica
   ['cloakroom'] = 'Svlačionica',
   ['ems_clothes_civil'] = 'Civilna Odeća',

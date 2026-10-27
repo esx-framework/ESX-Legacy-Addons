@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
     ["invalid_amount"] = "Érvénytelen pénzösszeg.",
     ["deposit_money"] = "Befizettél $%s összeget.",
     ["withdraw_money"] = "Felvettél $%s összeget.",

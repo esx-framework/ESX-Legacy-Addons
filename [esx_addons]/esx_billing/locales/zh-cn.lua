@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['zh-cn'] = {
+return {
   ['invoices'] = '账单',
   ['invoices_item'] = '$%s',
   ['received_invoice'] = '新增一笔~r~新的账单! 请及时支付!',

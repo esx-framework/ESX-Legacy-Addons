@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["fi"] = {
+return {
     toggleHud = "HUD päälle / kiinni",
     indicatorLeft = "Vasen vilkku",
     indicatorRight = "Oikea vilkku",

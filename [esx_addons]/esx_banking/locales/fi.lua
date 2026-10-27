@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['fi'] = {
+return {
   ['invalid_amount'] = 'Virheellinen summa',
   ['deposit_money']  = 'Olet tallettanut $%s',
   ['withdraw_money'] = 'Olet nostanut $%s',

@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
   -- Kannabisz
   ["weed_pickupprompt"] = "Nyomd meg az [E] gombot a kannabisz betakarításához.",
   ["weed_quitprocess"] = "Nyomd meg az [E] gombot a kannabisz feldolgozásának leállításához.",

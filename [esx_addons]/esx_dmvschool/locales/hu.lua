@@ -2,7 +2,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['hu'] = {
+return {
     ['you_paid'] = '$%s összeget fizettél az autósiskolának.',
     ['go_next_point'] = 'Haladj a következő ponthoz!',
     ['in_town_speed'] = 'Beértél a városba, figyelj a sebességedre! Sebességhatár: %s km/h',

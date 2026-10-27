@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['es'] = {
+return {
   ['mechanic']                  = 'Mecánico',
   ['drive_to_indicated']        = 'Conduce a la ubicación indicada.',
   ['mission_canceled']          = 'Misión cancelada',

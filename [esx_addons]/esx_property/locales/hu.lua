@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
     ["take_picture"] = "Fénykép készítése",
     ["rot_left_right"] = "Balra/Jobbra",
     ["rot_up_down"] = "Fel/Le",

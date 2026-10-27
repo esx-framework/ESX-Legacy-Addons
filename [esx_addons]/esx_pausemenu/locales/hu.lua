@@ -1,4 +1,4 @@
-Locales["hu"] = {
+return {
     ["unemployed"] = "Munkanélküli",
     ["unknown_job"] = "Ismeretlen",
     ["leave_reason"] = "Kiléptél a szerverről az ESX szünet menüjén keresztül",

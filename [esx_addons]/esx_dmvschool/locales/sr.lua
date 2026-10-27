@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['sr'] = {
+return {
   ['you_paid'] = 'Platili ste $%s AutoŠkoli',
   ['go_next_point'] = 'Idite do sledeće tačke!',
   ['in_town_speed'] = 'Ušli ste u grad, obratite pažnju na brzinu! Ograničenje Brzine: %s km/h',

@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
   ["valid_purchase"] = "Biztosan meg szeretnéd vásárolni ezt a változtatást?",
   ["yes"] = "Igen",
   ["no"] = "Nem",

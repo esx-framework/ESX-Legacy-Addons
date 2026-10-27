@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['cs'] = {
+return {
   -- Global menus
   ['cloakroom'] = 'satna',
   ['cloak_change'] = 'stiskni ~INPUT_PICKUP~ pro prevleceni.',

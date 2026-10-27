@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['cs'] = {
+return {
     distress_sent = "Tísňový signál byl vyslán dostupným jednotkám!",
     revive_help = "Oživit hráče",
     player_id = "Id hráče",

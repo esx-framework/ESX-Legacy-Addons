@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
     ["new_job"] = "Új munkakör: ~b~%s~s~!",
     ["access_job_center"] = "Nyomd meg a ~b~[%s]~s~ gombot a munkaválasztó megnyitásához.",
     ["job_center"] = "Válassz munkát.",

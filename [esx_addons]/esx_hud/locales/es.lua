@@ -1,5 +1,5 @@
 -- SPDX-License-Identifier: GPL-3.0-only
-Locales["es"] = {
+return {
     toggleHud = "Mostrar / ocultar HUD",
     indicatorLeft = "Intermitente izquierdo",
     indicatorRight = "Intermitente derecho",

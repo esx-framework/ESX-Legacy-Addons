@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales ['en'] = {
+return {
   ['valid_purchase'] = 'validate this purchase?',
   ['yes'] = 'yes (<span style="color: green;">$%s</span>)',
   ['no'] = 'no',

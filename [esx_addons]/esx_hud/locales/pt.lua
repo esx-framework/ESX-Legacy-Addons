@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["pt"] = {
+return {
     toggleHud = "Ligar o HUD, on / off",
     indicatorLeft = "Pisca esquerdo",
     indicatorRight = "Pisca direito",

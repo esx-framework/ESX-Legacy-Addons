@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['en'] = {
+return {
   -- UI strings
   ['ui_title'] = 'Animations',
   ['ui_category_placeholder'] = 'Select a category',

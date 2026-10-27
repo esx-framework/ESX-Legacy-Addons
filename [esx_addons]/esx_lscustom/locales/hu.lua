@@ -2,7 +2,7 @@
 
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
   ["by_default"] = "Alapértelmezett",
   ["installed"] = "Beszerelve",
   ["already_own"] = "Már rendelkezel ezzel: %s",

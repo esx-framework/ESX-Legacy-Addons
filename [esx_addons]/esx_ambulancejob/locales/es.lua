@@ -3,7 +3,7 @@
 
 -- Traducción by https://github.com/ItsManueh
 
-Locales['es'] = {
+return {
   -- Cloakroom
   ['cloakroom'] = 'Guardarropa',
   ['ems_clothes_civil'] = 'Camiseta',

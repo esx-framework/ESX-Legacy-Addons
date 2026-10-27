@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales ['fr'] = {
+return {
   -- weed
   ['weed_pickupprompt'] = 'appuyez sur [E] pour récolter un plan de Cannabis.',
   ['weed_quitprocess'] = 'appuyez sur [E] pour arrêter la tranformation du Cannabis.',

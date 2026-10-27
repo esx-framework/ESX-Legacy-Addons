@@ -1,4 +1,4 @@
-Locales["hu"] = {
+return {
     radial_title = "Kiegészítők",
     radial_watches = "Óra",
     radial_glasses = "Szemüveg",

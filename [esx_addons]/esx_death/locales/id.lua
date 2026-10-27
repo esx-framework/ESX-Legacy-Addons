@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['id'] = {
+return {
     distress_sent = "Sinyal darurat telah terkirim ke unit yang tersedia!",
     revive_help = "Sadarkan player",
     player_id = "Id Server Player",

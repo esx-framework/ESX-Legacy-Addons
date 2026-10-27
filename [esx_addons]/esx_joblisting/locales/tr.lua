@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['tr'] = {
+return {
     ['new_job'] = 'Yeni mesleğin: ~b~%s~s~!',
     ['access_job_center'] = 'Meslek seçmek için ~b~[%s]~s~ tuşuna bas.',
     ['job_center'] = 'Meslekler',

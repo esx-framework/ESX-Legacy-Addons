@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['sr'] = {
+return {
     distress_sent = "Signal je poslat svim aktivnim jedinicama EMS",
     revive_help = "Oživi osobu",
     player_id = "Igračev server ID",

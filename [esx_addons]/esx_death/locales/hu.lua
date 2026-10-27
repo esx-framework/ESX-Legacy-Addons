@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
     too_early = "A kórházi átszállítás még nem elérhető.",
     insufficient_funds = "Nincs elegendő pénz a bankszámládon. Várd meg az automatikus átszállítást.",
     cooldown = "Már küldtél egy segélyhívást. Várj, mielőtt újra elküldenéd.",

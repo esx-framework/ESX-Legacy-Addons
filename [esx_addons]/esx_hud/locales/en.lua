@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["en"] = {
+return {
     toggleHud = "Turn HUD on / off",
     indicatorLeft = "Left indicator",
     indicatorRight = "Right indicator",

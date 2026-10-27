@@ -2,7 +2,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales["hu"] = {
+return {
 	-- Általános felületi szövegek
 	["admin_menu"] = "Admin menü",
 	["admin_dashboard"] = "Admin vezérlőpult",

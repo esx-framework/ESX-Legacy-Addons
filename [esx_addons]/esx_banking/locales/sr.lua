@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['sr'] = {
+return {
   ['invalid_amount'] = 'Nevazeci iznos novca',
   ['deposit_money']  = 'Uplatili ste $%s',
   ['withdraw_money'] = 'Podigli ste $%s',

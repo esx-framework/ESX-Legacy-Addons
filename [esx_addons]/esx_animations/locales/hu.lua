@@ -2,7 +2,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['hu'] = {
+return {
     -- Felhasználói felület szövegei
     ['ui_title'] = 'Animációk',
     ['ui_category_placeholder'] = 'Válassz kategóriát',

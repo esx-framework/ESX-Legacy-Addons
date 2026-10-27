@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['de'] = {
+return {
     distress_sent = "Notsignal wurde an alle verfügbaren Einheiten gesendet!",
     revive_help = "Person wiederbeleben",
     player_id = "Spieler ID",

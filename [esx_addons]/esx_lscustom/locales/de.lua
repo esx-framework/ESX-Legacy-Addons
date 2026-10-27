@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['de'] = {
+return {
   ['by_default'] = 'Standard',
   ['installed'] = 'Installiert',
   ['already_own'] = 'Sie besitzen bereits: %s',

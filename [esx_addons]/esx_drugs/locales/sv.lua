@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales ['sv'] = {
+return {
     -- weed
     ['weed_pickupprompt'] = 'Tryck [E] för att skörda cannabis plantan.',
     ['weed_quitprocess'] = 'Tryck [E] för att avsluta processera cannabisen.',
