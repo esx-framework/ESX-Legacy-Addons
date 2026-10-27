@@ -110,24 +110,35 @@ function IsNUIReady()
 end
 
 -- Purchase callback
-xLib.nui.register('purchaseItems', function(data, reply)
-	if not currentShop then
-		reply({
-			ok = false,
-			error = { code = 'CLIENT', message = _U('no_shop_selected') }
-		})
-		return
-	end
+xLib.nui.register('purchaseItems', function(data)
+    local shop = currentShop
 
-	xLib.callback('esx_shops:purchaseItems', false, function(success, message)
-		if success then
-			reply({ ok = true, data = { message = message } })
-		else
-			reply({ ok = false, error = { code = 'SERVER', message = message } })
-		end
-	end, data, currentShop)
+    if not shop or type(data) ~= 'table' then
+        return {
+            ok = false,
+            error = { code = 'CLIENT', message = _U('no_shop_selected') },
+        }
+    end
 
-	return xLib.nui.defer
+    xLib.nui.send({ type = 'paymentGateway', active = true })
+    xLib.nui.focus(false, false)
+
+    local success, message = PaymentGateway.Await({
+        quote = 'esx_shops:quotePurchase',
+        title = shop,
+    }, 'esx_shops:purchaseItemsGateway', data, shop)
+
+    xLib.nui.send({ type = 'paymentGateway', active = false })
+
+    if currentShop == shop and uiOpen then
+        xLib.nui.focus(true, true)
+    end
+
+    if success then
+        return { ok = true, data = { message = message } }
+    end
+
+    return { ok = false, error = { code = 'PAYMENT', message = message } }
 end)
 
 -- Close UI callback

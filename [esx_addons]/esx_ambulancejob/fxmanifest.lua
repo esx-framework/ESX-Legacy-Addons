@@ -12,6 +12,7 @@ lua54 'yes'
 shared_scripts {
     '@esx_lib/imports.lua',
     '@es_extended/imports.lua',
+    '@esx_paymentgateway/imports.lua',
     '@es_extended/locale.lua',
     'locales/*.lua',
     'config.lua',
@@ -31,6 +32,7 @@ dependencies {
     'esx_lib',
     'esx_death',
     'es_extended',
+    'esx_paymentgateway',
     'esx_skin',
     'esx_vehicleshop',
 }

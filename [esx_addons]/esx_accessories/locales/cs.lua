@@ -2,9 +2,6 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales ['cs'] = {
-  ['valid_purchase'] = 'ověřit nákup?',
-  ['yes'] = 'ano (<span style="color: green;">$%s</span>)',
-  ['no'] = 'ne',
   ['helmet'] = 'helma / Čepice',
   ['glasses'] = 'brýle',
   ['mask'] = 'maska',

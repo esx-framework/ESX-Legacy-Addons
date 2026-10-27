@@ -214,7 +214,7 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 				DeleteSpawnedVehicles()
 				WaitForVehicleToLoad(data.current.model)
 
-				xLib.game.spawnLocalVehicle(data.current.model, shopCoords, 0.0, function(vehicle)
+				xLib.game.spawnLocalVehicle(data.current.model, shopCoords.xyz, shopCoords.w, function(vehicle)
 					table.insert(spawnedVehicles, vehicle)
 					TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
 					FreezeEntityPosition(vehicle, true)
@@ -232,6 +232,8 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 					if data3.current.value == 'stop' then
 						isInShopMenu = false
 						menu3.close()
+						menu2.close()
+						menu.close()
 
 						DeleteSpawnedVehicles()
 						FreezeEntityPosition(playerPed, false)
@@ -244,7 +246,13 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 						local props    = xLib.game.getVehicleProperties(vehicle)
 						props.plate    = newPlate
 
-						xLib.callback('esx_policejob:buyJobVehicle', false, function (bought)
+                        PaymentGateway.Pay(
+                            {
+                                amount = data.current.price,
+                                title = data.current.name,
+                            },
+                            'esx_policejob:buyJobVehicle',
+                            function (bought, paymentFailure)
 							if bought then
 								ESX.ShowNotification(TranslateCap('vehicleshop_bought', data.current.name, ESX.Math.GroupDigits(data.current.price)))
 
@@ -258,7 +266,9 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 
 								xLib.entity.Teleport(playerPed, restoreCoords)
 							else
-								ESX.ShowNotification(TranslateCap('vehicleshop_money'))
+                                PaymentGateway.NotifyFailure(
+                                    paymentFailure,
+                                    TranslateCap('vehicleshop_money'))
 								menu3.close()
 							end
 						end, props, data.current.type)
@@ -266,6 +276,8 @@ function OpenShopMenu(elements, restoreCoords, shopCoords)
 				end, function(data3, menu3)
 					isInShopMenu = false
 					menu3.close()
+					menu2.close()
+					menu.close()
 
 					DeleteSpawnedVehicles()
 					FreezeEntityPosition(playerPed, false)

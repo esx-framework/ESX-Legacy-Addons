@@ -35,7 +35,7 @@ function CalculateTax(xPlayer, grossTotal)
 		actualTax = grossTotal - (grossTotal / (1 + Config.TaxRate))
 	end
 
-	return actualTotal, actualTax
+	return ESX.Math.Round(actualTotal), ESX.Math.Round(actualTax)
 end
 
 ---Deposits tax amount to society account

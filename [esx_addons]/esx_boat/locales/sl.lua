@@ -23,8 +23,6 @@ Locales['sl'] = {
 
   -- licenca
   ['license_menu'] = 'Kupi licenco za Čolne',
-  ['license_buy_no'] = 'Ne',
-  ['license_buy_yes'] = 'Kupi licenco za čolne <span style="color: green;">$%s</span>',
   ['license_bought'] = 'Vi ste kupili  $%s',
   ['license_nomoney'] = 'you cannot ~r~afford the Boat License!',
 

@@ -2,14 +2,17 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales['nl'] = {
-  ['valid_this_purchase'] = 'Wil je deze outfit kopen?',
-  ['yes'] = 'ja',
-  ['no'] = 'nee',
-  ['not_enough_money'] = 'je hebt niet genoeg geld',
-  ['press_menu'] = 'klik op [E] om de kleding winkel te bezoeken.',
-  ['clothes'] = 'kleding winkel',
-  ['you_paid'] = 'je betaalde $%s',
-  ['save_in_dressing'] = 'wil je deze outfit opslaan in je kledingkast?',
-  ['name_outfit'] = 'geef je outfit een naam',
-  ['saved_outfit'] = 'je outfit is opgeslagen.',
+    ['save_failed'] = 'Je kleding kon niet worden opgeslagen. De aankoop is geannuleerd. Probeer het opnieuw.',
+    ['yes'] = 'Ja',
+    ['no'] = 'Nee',
+    ['not_enough_money'] = 'Je hebt niet genoeg geld.',
+    ['press_menu'] = 'Druk op [E] om de kledingwinkel te openen.',
+    ['clothes'] = 'Kledingwinkel',
+    ['you_paid'] = 'Je hebt $%s betaald.',
+    ['save_in_dressing'] = 'Wil je deze outfit in je kledingkast opslaan?',
+    ['name_outfit'] = 'Geef je outfit een naam',
+    ['saved_outfit'] = 'De outfit is opgeslagen!',
+    ['outfit_name'] = 'Outfitnaam',
+    ['outfit_placeholder'] = 'Naam van de outfit in de kledingkast...',
+    ['confirm'] = 'Bevestigen',
 }

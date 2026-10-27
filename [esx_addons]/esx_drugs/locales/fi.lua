@@ -1,20 +1,34 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales ['fi'] = {
-  ["license_shop_title"] = "Lisenssikauppa",
-  ["weapon_shop_menu_title"] = "Asekauppa",
-  ["weapon_shop_menu_description"] = "Osta aseita",
-  ["menu_cancel"] = "Peruuta",
-  ['buy_license'] = 'Osta lisenssi?',
-  ['yes'] = '%s',
-  ['no'] = 'Ei',
-  ['weapon_bought'] = 'Osta hintaan %s EUR',
-  ['not_enough_black'] = 'Ei tarpeeksi likaista rahaa',
-  ['not_enough'] = 'Ei tarpeeksi rahaa',
-  ['already_owned'] = 'Sinulla on jo tämä ase!',
-  ['shop_menu_title'] = 'Kauppa',
-  ['shop_menu_prompt'] = 'Paina [E] avataksesi kauppa valikko.',
-  ['shop_menu_item'] = '%s EUR',
-  ['map_blip'] = 'Asekauppa',
+Locales['fi'] = {
+  -- weed
+  ['weed_pickupprompt'] = 'Paina [E] kerätäksesi kannabiskasvin.',
+  ['weed_quitprocess'] = 'Paina [E] keskeyttääksesi kannabiksen käsittelyn.',
+  ['weed_inventoryfull'] = 'Inventaarioosi ei mahdu enempää kannabista.',
+  ['weed_processprompt'] = 'Paina [E] aloittaaksesi kannabiksen käsittelyn.',
+  ['weed_processingstarted'] = 'Käsitellään kannabista marihuanaksi...',
+  ['weed_processingfull'] = 'Käsittely ~r~peruutettu, koska inventaario on täynnä!',
+  ['weed_processingenough'] = 'Tarvitset 3x kannabista voidaksesi käsitellä sen.',
+  ['weed_processed'] = 'Olet käsitellyt 3x kannabista ja saanut 1x marihuanaa.',
+  ['weed_processingtoofar'] = 'Käsittely on ~r~peruutettu, koska poistuit alueelta.',
+
+  -- drug dealer
+  ['dealer_prompt'] = 'Paina [E] puhuaksesi ~r~huumekauppiaan kanssa.',
+  ['dealer_title'] = 'Huumekauppias',
+  ['dealer_item'] = '$%s',
+  ['dealer_notenough'] = 'Sinulla ei ole tarpeeksi myytävää!',
+  ['dealer_sold'] = 'Myit %sx %s hintaan $%s',
+
+  -- license
+  ['license_title'] = 'Tarvitset käsittelyluvan tämän tuotteen käsittelyyn. Voit ostaa sen täältä.',
+  ['license_no'] = 'Ei',
+  ['license_bought'] = 'Ostit luvan %s hintaan ~r~$%s',
+  ['license_bought_fail'] = 'Sinulla ei ole varaa lupaan: %s!',
+  ['license_weed'] = 'Kannabiksen käsittelylupa',
+
+  -- blips
+  ['blip_weedfield'] = 'Kannabispelto',
+  ['blip_weedprocessing'] = 'Kannabiksen käsittely',
+  ['blip_drugdealer'] = 'Huumekauppias',
 }

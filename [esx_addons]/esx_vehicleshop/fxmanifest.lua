@@ -11,6 +11,7 @@ legacyversion '1.16.3'
 shared_scripts {
     '@esx_lib/imports.lua',
     '@es_extended/imports.lua',
+    '@esx_paymentgateway/imports.lua',
 }
 
 server_scripts {
@@ -32,6 +33,7 @@ client_scripts {
 dependencies {
     'esx_lib',
     'es_extended',
+    'esx_paymentgateway',
 }
 
 export 'GeneratePlate'

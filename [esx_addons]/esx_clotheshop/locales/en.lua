@@ -3,7 +3,6 @@
 
 Locales['en'] = {
     ['save_failed'] = 'Your clothes could not be saved. The purchase was cancelled. Please try again.',
-    ['valid_this_purchase'] = 'validate this purchase?',
     ['yes'] = 'yes',
     ['no'] = 'no',
     ['not_enough_money'] = 'you do not have enough money',

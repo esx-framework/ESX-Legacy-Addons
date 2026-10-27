@@ -23,8 +23,6 @@ Locales['sv'] = {
   
     -- license
     ['license_menu'] = 'Köp båtlicens?',
-    ['license_buy_no'] = 'Nej',
-    ['license_buy_yes'] = 'Köp båtlicens <span style="color: green;">%skr</span>',
     ['license_bought'] = 'Du har köpt båtlicens för %skr',
     ['license_nomoney'] = 'Du har inte ~r~råd med båtlicens!',
   

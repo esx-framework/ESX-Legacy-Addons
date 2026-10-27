@@ -142,27 +142,36 @@ RegisterNetEvent('esx_property:syncProperty', function(propertyId, property)
     RefreshBlips()
 end)
 
-RegisterNetEvent('esx_property:receivePropertyOffer', function(token, sellerName, propertyName, price)
-    local Elements = {
-        { unselectable = true, title = propertyName, description = ('Offer from %s for $%s'):format(sellerName, ESX.Math.GroupDigits(ESX.Round(price))) },
-        { title = 'Accept', icon = 'fas fa-check', value = 'accept' },
-        { title = 'Decline', icon = 'fas fa-times', value = 'decline' },
-    }
-
-    ESX.OpenContext('right', Elements, function(menu, element)
-        if element.value == 'accept' or element.value == 'decline' then
-            ESX.CloseContext()
-
-            xLib.callback('esx_property:respondToSaleOffer', false, function(Success)
-                if Success then
+RegisterNetEvent(
+    'esx_property:receivePropertyOffer',
+    function(token, sellerName, propertyName, price)
+        PaymentGateway.Pay(
+            {
+                amount = price,
+                title = propertyName,
+                description = sellerName,
+            },
+            'esx_property:respondToSaleOffer',
+            function(success, reason)
+                if success then
                     ESX.ShowNotification('Property purchased.', 'success')
-                elseif element.value == 'accept' then
+                elseif reason == 'cancelled' then
+                    xLib.callback(
+                        'esx_property:respondToSaleOffer',
+                        false,
+                        function() end,
+                        token,
+                        false
+                    )
+                else
                     ESX.ShowNotification(TranslateCap('cannot_sell'), 'error')
                 end
-            end, token, element.value == 'accept')
-        end
-    end)
-end)
+            end,
+            token,
+            true
+        )
+    end
+)
 
 RegisterNetEvent('esx_property:giveKeyAccess', function(Property)
     xLib.callback('esx_property:ShouldHaveKey', false, function(Should)
@@ -577,13 +586,16 @@ function OpenPropertyMenu(PropertyId)
         end
 
         if element.value == 'property_buy' then
-            xLib.callback('esx_property:buyProperty', false, function(IsBought)
+            PaymentGateway.Pay({
+                amount = tonumber(Properties[PropertyId].Price),
+                title = Properties[PropertyId].Name,
+            }, 'esx_property:buyProperty', function(IsBought, paymentFailure)
                 if IsBought then
                     local eles = PropertyMenuElements(PropertyId)
 
                     exports['esx_context']:Refresh(eles)
                 else
-                    ESX.ShowNotification(TranslateCap('cannot_afford'), 'error')
+                    PaymentGateway.NotifyFailure(paymentFailure, TranslateCap('cannot_afford'))
                 end
             end, PropertyId)
         end

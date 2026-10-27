@@ -57,6 +57,10 @@
           }
           break;
 
+        case 'paymentGateway':
+            document.body.style.visibility = data['active'] === true ? 'hidden' : '';
+            break;
+
         case 'closeShop':
           isVisible = false;
           shopStore.reset();

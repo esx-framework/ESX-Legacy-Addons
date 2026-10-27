@@ -14,6 +14,7 @@ legacyversion '1.16.3'
 shared_scripts {
 	'@esx_lib/imports.lua',
 	'@es_extended/imports.lua',
+    '@esx_paymentgateway/imports.lua',
 	'shared/locale.lua',
 	'shared/config/main.lua',
 	'shared/config/shops.lua',
@@ -46,5 +47,6 @@ files {
 
 dependencies {
 	'esx_lib',
-	'es_extended'
+	'es_extended',
+	'esx_paymentgateway'
 }

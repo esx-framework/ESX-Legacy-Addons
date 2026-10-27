@@ -356,20 +356,13 @@ end
 ---@param xPlayer table
 ---@param amount integer
 ---@return boolean, string?
-local function charge(xPlayer, amount)
+local function charge(xPlayer, amount, account)
     if amount <= 0 then
         return true
     end
 
-    if xPlayer.getMoney() >= amount then
-        xPlayer.removeMoney(amount, "Impound fee")
-        return true, "money"
-    end
-
-    local bank = xPlayer.getAccount("bank")
-    if bank and bank.money >= amount then
-        xPlayer.removeAccountMoney("bank", amount, "Impound fee")
-        return true, "bank"
+    if PaymentGateway.Charge(xPlayer, account, amount, "Impound fee") then
+        return true, account
     end
 
     return false
@@ -1023,7 +1016,7 @@ xLib.callback.registerCompat("esx_garage:retrieveVehicle", function(source, cb, 
             return { success = false, error = "spawn_failed" }
         end
 
-        local chargedOk, charged, chargeAccount = pcall(charge, xPlayer, fee)
+        local chargedOk, charged, chargeAccount = pcall(charge, xPlayer, fee, data.paymentAccount)
         if not chargedOk or not charged then
             deleteRetrievedVehicle(xVehicle)
             if transitionApplied then

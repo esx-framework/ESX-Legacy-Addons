@@ -55,7 +55,10 @@ function OpenBoatShop(shop)
 							local props = xLib.game.getVehicleProperties(vehicle)
 							props.plate = plate
 
-							xLib.callback('esx_boat:buyBoat', false, function(bought)
+                            PaymentGateway.Pay({
+                                amount = element.price,
+                                title = element.name,
+                            }, 'esx_boat:buyBoat', function(bought, paymentFailure)
 								if bought then
 									ESX.ShowNotification(TranslateCap('boat_shop_bought', element.name, ESX.Math.GroupDigits(element.price)))
 
@@ -70,7 +73,9 @@ function OpenBoatShop(shop)
 									SetEntityVisible(playerPed, true)
 									SetEntityCoords(playerPed, shop.Outside.x, shop.Outside.y, shop.Outside.z)
 								else
-									ESX.ShowNotification(TranslateCap('boat_shop_nomoney'))
+                                    PaymentGateway.NotifyFailure(
+                                        paymentFailure,
+                                        TranslateCap('boat_shop_nomoney'))
 								end
 							end, props)
 						elseif element3.value == "stop" then
@@ -138,43 +143,27 @@ function OpenBoatGarage(garage)
 end
 
 function OpenLicenceMenu(shop)
-	local elements = {
-		{unselectable = true, icon = "fas fa-ship", title = TranslateCap('license_menu')},
-		{icon = "fas fa-ship", title = "Purchase Boat License"}
-	}
+    PaymentGateway.Pay({
+        amount = Config.LicensePrice,
+        title = TranslateCap('license_menu'),
+    }, 'esx_boat:buyBoatLicense', function(boughtLicense, paymentFailure)
+        if boughtLicense then
+            ESX.ShowNotification(TranslateCap(
+                'license_bought',
+                ESX.Math.GroupDigits(Config.LicensePrice)
+            ))
 
-	ESX.OpenContext("right", elements, function(menu,element)
-		local elements2 = {
-			{unselectable = true, icon = "fas fa-ship", title = element.title},
-			{icon = "fas fa-check-double", title = TranslateCap('license_buy_yes', Config.LicensePrice), val = "yes"},
-			{icon = "fas fa-window-close", title = TranslateCap('license_buy_no'), val = "no"}
-		}
+            OpenBoatShop(shop)
+        else
+            PaymentGateway.NotifyFailure(
+                paymentFailure,
+                TranslateCap('license_nomoney')
+            )
 
-		ESX.OpenContext("right", elements2, function(menu2,element2)
-			-- If the value is no, close the menu and stop the script. 
-			if element2.val == "no" then
-                ESX.CloseContext()
-                return;
-            end
-
-			xLib.callback('esx_boat:buyBoatLicense', false, function (boughtLicense)
-				if boughtLicense then
-					ESX.ShowNotification(TranslateCap('license_bought', ESX.Math.GroupDigits(Config.LicensePrice)))
-					ESX.CloseContext()
-
-					OpenBoatShop(shop) -- parse current shop
-				else
-					ESX.ShowNotification(TranslateCap('license_nomoney'))
-				end
-			end)
-		end, function(menu)
-			CurrentAction = 'boat_shop'
-			CurrentActionMsg = TranslateCap('boat_shop_open')
-		end)
-	end, function(menu)
-		CurrentAction = 'boat_shop'	
-		CurrentActionMsg = TranslateCap('boat_shop_open')
-	end)
+            CurrentAction = 'boat_shop'
+            CurrentActionMsg = TranslateCap('boat_shop_open')
+        end
+    end)
 end
 
 function StoreBoatInGarage(vehicle, teleportCoords)

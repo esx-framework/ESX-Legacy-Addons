@@ -568,7 +568,7 @@ xLib.callback.registerCompat('esx_policejob:removeArmoryWeapon', function(source
     end)
 end)
 
-xLib.callback.registerCompat('esx_policejob:buyWeapon', function(source, cb, weaponName, type, componentNum)
+xLib.callback.registerCompat('esx_policejob:buyWeapon', function(source, cb, weaponName, type, componentNum, account)
     local xPlayer = ESX.Player(source)
 
     if not isPoliceOnDuty(xPlayer) or not isNearPoliceArmory(source) then
@@ -600,10 +600,7 @@ xLib.callback.registerCompat('esx_policejob:buyWeapon', function(source, cb, wea
                 return cb(false)
             end
 
-            if xPlayer.getMoney() >= price then
-                if price > 0 then
-                    xPlayer.removeMoney(price, 'Weapon Bought')
-                end
+            if PaymentGateway.Charge(xPlayer, account, price, 'Weapon Bought') then
 
                 xPlayer.addWeapon(weaponName, 100)
 
@@ -619,10 +616,7 @@ xLib.callback.registerCompat('esx_policejob:buyWeapon', function(source, cb, wea
             local component = weapon and weapon.components and weapon.components[componentNum]
 
             if component and price and price >= 0 then
-                if xPlayer.getMoney() >= price then
-                    if price > 0 then
-                        xPlayer.removeMoney(price, 'Weapon Component Bought')
-                    end
+                if PaymentGateway.Charge(xPlayer, account, price, 'Weapon Component Bought') then
 
                     xPlayer.addWeaponComponent(weaponName, component.name)
 
@@ -638,8 +632,8 @@ xLib.callback.registerCompat('esx_policejob:buyWeapon', function(source, cb, wea
     end
 end)
 
-xLib.callback.registerCompat('esx_policejob:buyJobVehicle', function(source, cb, vehicleProps, type)
-    local xPlayer = ESX.Player(source)
+xLib.callback.registerCompat('esx_policejob:buyJobVehicle', function(source, cb, vehicleProps, type, account)
+    local xPlayer = ESX.GetPlayerFromId(source)
     local job = xPlayer and xPlayer.getJob()
     local model = _G.type(vehicleProps) == 'table' and tonumber(vehicleProps.model)
     local authorizedVehicle = job and model and getAuthorizedVehicle(model, job.grade_name, type)
@@ -651,10 +645,6 @@ xLib.callback.registerCompat('esx_policejob:buyJobVehicle', function(source, cb,
             print(('[^3WARNING^7] Player ^5%s^7 Attempted To Buy Invalid Vehicle - ^5%s^7!'):format(source, tostring(model)))
         end
 
-        return cb(false)
-    end
-
-    if xPlayer.getMoney() < price then
         return cb(false)
     end
 
@@ -672,14 +662,19 @@ xLib.callback.registerCompat('esx_policejob:buyJobVehicle', function(source, cb,
         end
     end
 
-    xPlayer.removeMoney(price, 'Job Vehicle Bought')
+    local charged, failure =
+        PaymentGateway.Charge(xPlayer, account, price, 'Job Vehicle Bought')
+
+    if not charged then
+        return cb(false, failure)
+    end
 
     MySQL.insert(
         'INSERT INTO owned_vehicles (owner, vehicle, plate, type, job, `stored`) VALUES (?, ?, ?, ?, ?, ?)',
         { xPlayer.getIdentifier(), json.encode(storedProps), plate, type, job.name, true },
         function(insertId)
             if not insertId then
-                xPlayer.addMoney(price, 'Job Vehicle Refund')
+                PaymentGateway.Refund(xPlayer, account, price, 'Job Vehicle Refund')
                 return cb(false)
             end
 

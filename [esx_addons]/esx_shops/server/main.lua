@@ -45,3 +45,35 @@ RegisterConfiguredShopItems()
 xLib.callback.registerCompat('esx_shops:purchaseItems', function(source, cb, purchaseData, zone)
 	ProcessPurchase(source, purchaseData, zone, cb)
 end)
+
+xLib.callback.registerCompat('esx_shops:quotePurchase', function(source, cb, data, zone)
+    local player = ValidatePlayer(source)
+
+    if not player or type(data) ~= 'table' or not ValidateZone(zone, source) then
+        return cb(false)
+    end
+
+    if not ValidatePlayerDistance(source, zone) then
+        return cb(false)
+    end
+
+    local valid, total = ValidateAndCalculateItems(data.items, zone, source)
+
+    if not valid then
+        return cb(false)
+    end
+
+    cb(CalculateTax(player, total))
+end)
+
+xLib.callback.registerCompat(
+    'esx_shops:purchaseItemsGateway',
+    function(source, cb, data, zone, account)
+        if type(data) ~= 'table' or (account ~= 'money' and account ~= 'bank') then
+            return cb(false, _U('invalid_payment'))
+        end
+
+        data.paymentMethod = account
+        ProcessPurchase(source, data, zone, cb)
+    end
+)

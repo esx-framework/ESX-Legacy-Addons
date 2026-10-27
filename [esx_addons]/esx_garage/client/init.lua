@@ -628,7 +628,30 @@ xLib.nui.register("garage:retrieveVehicle", function(data)
         return { success = false, error = "blocked" }
     end
 
+    local account = 'money'
+    local location = currentLocation
+
+    if location.action == 'impound' then
+        local lot = impoundsById[location.id]
+        local fee = (lot and lot.cost) or Config.Settings.defaultImpoundFee
+
+        xLib.nui.focus(false, false)
+        account = PaymentGateway.Select({
+            amount = fee,
+            title = location.garage.label,
+        })
+
+        if currentLocation == location then
+            xLib.nui.focus(true, true)
+        end
+
+        if not account or currentLocation ~= location then
+            return { success = false, error = 'cancelled' }
+        end
+    end
+
     local result = serverCall("esx_garage:retrieveVehicle", {
+        paymentAccount = account,
         plate = data.vehicleId,
         garageId = currentLocation.id,
         spawn = { x = spawn.x, y = spawn.y, z = spawn.z, w = spawn.w },

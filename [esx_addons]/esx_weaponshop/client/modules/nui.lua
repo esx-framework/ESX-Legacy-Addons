@@ -3,6 +3,7 @@
 
 local currentShop = nil
 local uiOpen = false
+local payAtShop
 
 local function NormalizeUiInteger(value)
 	value = tonumber(value)
@@ -241,7 +242,18 @@ end
 ---Opens the weapon license purchase view
 ---@param zone string Shop zone name
 function OpenBuyLicenseMenu(zone)
-	OpenNui(zone, 'license')
+	currentShop = zone
+	uiOpen = false
+
+	local bought = payAtShop(
+		Config.LicensePrice,
+		TranslateCap('shop_menu_title'),
+		'esx_weaponshop:buyLicense'
+	)
+
+	if bought then
+		OpenShop(zone)
+	end
 end
 
 function CloseShop()
@@ -267,78 +279,141 @@ xLib.nui.register('ready', function()
 	return { theme = GetESXThemeColors() }
 end)
 
+local function upgradePrice(data)
+    local upgrades = BuildWeaponUpgrades(data.weaponName)
+
+    if data.action == 'ammo' then
+        return upgrades.ammo and upgrades.ammo.pricePerRound * (tonumber(data.amount) or 0)
+    end
+
+    if data.action == 'component' then
+        local component = GetWeaponShopComponentUpgrade(data.weaponName, data.componentName)
+
+        return component and component.price
+    end
+
+    if data.action == 'tint' then
+        local tint = GetWeaponShopTintUpgrade(data.weaponName, tonumber(data.tintIndex))
+
+        return tint and tint.price
+    end
+end
+
+payAtShop = function(amount, title, callbackName, ...)
+    local shop = currentShop
+    local zone = shop and Config.Zones[shop]
+
+    if not zone then
+        return false
+    end
+
+    if zone.Legal == false then
+        local arguments = table.pack(...)
+
+        arguments.n = arguments.n + 1
+        arguments[arguments.n] = 'black_money'
+
+        return xLib.callback.await(callbackName, false, table.unpack(arguments, 1, arguments.n))
+    end
+
+    xLib.nui.send({ type = 'paymentGateway', active = true })
+    xLib.nui.focus(false, false)
+
+    local result = PaymentGateway.Await({
+        amount = amount,
+        title = title,
+    }, callbackName, ...)
+
+    xLib.nui.send({ type = 'paymentGateway', active = false })
+
+    if currentShop == shop and uiOpen then
+        xLib.nui.focus(true, true)
+    end
+
+    return result
+end
+
 -- Purchase callback
 xLib.nui.register('buyWeapon', function(data, reply)
-	if type(data) ~= 'table' or type(data.weaponName) ~= 'string' or not currentShop then
-		reply({ ok = false })
-		return
-	end
+    if type(data) ~= 'table' or type(data.weaponName) ~= 'string' or not currentShop then
+        reply({ ok = false })
+        return
+    end
 
-	local shop = currentShop
+    local shop = currentShop
 
-	xLib.callback('esx_weaponshop:buyWeapon', false, function(bought)
-		if bought then
-			local price = GetZoneWeaponPrice(shop, data.weaponName)
-			DisplayBoughtScaleform(data.weaponName, price)
-			SyncBoughtWeaponToPed(data.weaponName)
+    local bought = payAtShop(
+        GetZoneWeaponPrice(shop, data.weaponName),
+        ESX.GetWeaponLabel(data.weaponName),
+        'esx_weaponshop:buyWeapon',
+        data.weaponName,
+        shop
+    )
+    if bought then
+        local price = GetZoneWeaponPrice(shop, data.weaponName)
+        DisplayBoughtScaleform(data.weaponName, price)
+        SyncBoughtWeaponToPed(data.weaponName)
 
-			if currentShop == shop then
-				OpenNui(shop, 'shop', data.weaponName, {
-					[data.weaponName] = BuildBoughtWeaponState(data.weaponName)
-				})
-			end
-		else
-			PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
-		end
+        if currentShop == shop then
+            OpenNui(shop, 'shop', data.weaponName, {
+                [data.weaponName] = BuildBoughtWeaponState(data.weaponName),
+            })
+        end
+    else
+        PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
+    end
 
-		reply({ ok = bought and true or false })
-	end, data.weaponName, shop)
-
-	return xLib.nui.defer
+    reply({ ok = bought and true or false })
 end)
 
 -- Upgrade purchase callback
 xLib.nui.register('buyUpgrade', function(data, reply)
-	if type(data) ~= 'table' or type(data.weaponName) ~= 'string' or type(data.action) ~= 'string' or not currentShop then
-		reply({ ok = false })
-		return
-	end
+    if
+        type(data) ~= 'table'
+        or type(data.weaponName) ~= 'string'
+        or type(data.action) ~= 'string'
+        or not currentShop
+    then
+        reply({ ok = false })
+        return
+    end
 
-	local shop = currentShop
+    local shop = currentShop
 
-	xLib.callback('esx_weaponshop:buyUpgrade', false, function(bought)
-		if bought then
-			PlaySoundFrontend(-1, 'WEAPON_PURCHASE', 'HUD_AMMO_SHOP_SOUNDSET', false)
-			ESX.ShowNotification(TranslateCap('upgrade_bought'))
-			SyncBoughtUpgradeToPed(data)
+    local bought = payAtShop(
+        upgradePrice(data),
+        ESX.GetWeaponLabel(data.weaponName),
+        'esx_weaponshop:buyUpgrade',
+        data,
+        shop
+    )
+    if bought then
+        PlaySoundFrontend(-1, 'WEAPON_PURCHASE', 'HUD_AMMO_SHOP_SOUNDSET', false)
+        ESX.ShowNotification(TranslateCap('upgrade_bought'))
+        SyncBoughtUpgradeToPed(data)
 
-			if currentShop == shop then
-				local state = BuildBoughtUpgradeState(data)
-				OpenNui(shop, 'shop', data.weaponName, state and {
-					[data.weaponName] = state
-				} or nil)
-			end
-		else
-			PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
-		end
+        if currentShop == shop then
+            local state = BuildBoughtUpgradeState(data)
+            OpenNui(shop, 'shop', data.weaponName, state and {
+                [data.weaponName] = state,
+            } or nil)
+        end
+    else
+        PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
+    end
 
-		reply({ ok = bought and true or false })
-	end, data, shop)
-
-	return xLib.nui.defer
+    reply({ ok = bought and true or false })
 end)
 
 -- License callback
 xLib.nui.register('buyLicense', function(_, reply)
-	xLib.callback('esx_weaponshop:buyLicense', false, function(bought)
-		reply({ ok = bought and true or false })
+    local bought =
+        payAtShop(Config.LicensePrice, TranslateCap('shop_menu_title'), 'esx_weaponshop:buyLicense')
+    reply({ ok = bought and true or false })
 
-		if bought and currentShop then
-			OpenShop(currentShop)
-		end
-	end)
-
-	return xLib.nui.defer
+    if bought and currentShop then
+        OpenShop(currentShop)
+    end
 end)
 
 -- Close UI callback

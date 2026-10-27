@@ -23,8 +23,6 @@ Locales['nl'] = {
 
   -- license
   ['license_menu'] = 'Koop Vaarbewijs',
-  ['license_buy_no'] = 'nee',
-  ['license_buy_yes'] = 'Koop vaarbewijs <span style="color: green;">€%s</span>',
   ['license_bought'] = 'je kocht een vaarbewijs voor €%s',
   ['license_nomoney'] = 'je hebt niet genoeg geld voor een vaarbewijs ! ',
 

@@ -1,15 +1,19 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2022-2026 ESX Framework
 
-Locales['sv'] = {
-    ['valid_this_purchase'] = 'Vill du köpa detta?',
-    ['yes'] = 'Ja',
-    ['no'] = 'Nej',
-    ['not_enough_money'] = 'Du har inte tillräckligt med pengar',
-    ['press_menu'] = 'Tryck [E] för att öppna klädaffären.',
-    ['clothes'] = 'Klädaffär',
-    ['you_paid'] = 'Du betalade %skr',
-    ['save_in_dressing'] = 'Vill du spara denna outfit till din fastighet?',
-    ['name_outfit'] = 'Outfit namn',
-    ['saved_outfit'] = 'Outfiten är sparad!',
-  }
+
+Locales['tr'] = {
+    ['save_failed'] = 'Kıyafetlerin kaydedilemedi. Satın alma iptal edildi. Lütfen tekrar dene.',
+    ['yes'] = 'Evet',
+    ['no'] = 'Hayır',
+    ['not_enough_money'] = 'Yeterli paran yok.',
+    ['press_menu'] = 'Kıyafet mağazasına erişmek için [E] tuşuna bas.',
+    ['clothes'] = 'Kıyafet mağazası',
+    ['you_paid'] = '$%s ödedin.',
+    ['save_in_dressing'] = 'Bu kıyafeti gardırobuna kaydetmek istiyor musun?',
+    ['name_outfit'] = 'Kıyafetine bir isim ver',
+    ['saved_outfit'] = 'Kıyafet kaydedildi!',
+    ['outfit_name'] = 'Kıyafet adı',
+    ['outfit_placeholder'] = 'Gardıroptaki kıyafetin adı...',
+    ['confirm'] = 'Onayla',
+}

@@ -72,7 +72,7 @@ local function NormalizeUpgradePrice(price)
 	return integerValue
 end
 
-local function CanPayForUpgrade(xPlayer, isBlackMarket, price)
+local function CanPayForUpgrade(xPlayer, isBlackMarket, price, account)
 	price = NormalizeUpgradePrice(price)
 	if not price then
 		return false
@@ -82,10 +82,10 @@ local function CanPayForUpgrade(xPlayer, isBlackMarket, price)
 		return true
 	end
 
-	return CanPayForWeapon(xPlayer, isBlackMarket, price)
+	return CanPayForWeapon(xPlayer, isBlackMarket, price, account)
 end
 
-local function TakeUpgradePayment(xPlayer, isBlackMarket, price)
+local function TakeUpgradePayment(xPlayer, isBlackMarket, price, account)
 	price = NormalizeUpgradePrice(price)
 	if not price then
 		return false
@@ -95,16 +95,16 @@ local function TakeUpgradePayment(xPlayer, isBlackMarket, price)
 		return true
 	end
 
-	return TakeWeaponPayment(xPlayer, isBlackMarket, price)
+	return TakeWeaponPayment(xPlayer, isBlackMarket, price, nil, account)
 end
 
-local function RefundUpgradePayment(xPlayer, isBlackMarket, price)
+local function RefundUpgradePayment(xPlayer, isBlackMarket, price, account)
 	price = NormalizeUpgradePrice(price)
 	if not price or price == 0 then
 		return
 	end
 
-	RefundWeaponPayment(xPlayer, isBlackMarket, price)
+	RefundWeaponPayment(xPlayer, isBlackMarket, price, nil, account)
 end
 
 local function CompleteAmmoStateRequest(requestId, ammoState)
@@ -173,7 +173,7 @@ end)
 ---Handles weapon license purchase requests
 ---@param source number Player source
 ---@param cb function Callback function(success)
-function ProcessLicensePurchase(source, cb)
+function ProcessLicensePurchase(source, cb, account)
 	local requestKey = BeginRequest(source, 'license')
 	if not requestKey then
 		cb(false)
@@ -219,7 +219,7 @@ function ProcessLicensePurchase(source, cb)
 		return
 	end
 
-	if not CanPayForWeapon(xPlayer, false, licensePrice) then
+	if not CanPayForWeapon(xPlayer, false, licensePrice, account) then
 		finish(false)
 		return
 	end
@@ -241,12 +241,12 @@ function ProcessLicensePurchase(source, cb)
 			return
 		end
 
-		if not CanPayForWeapon(xPlayer, false, licensePrice) then
+		if not CanPayForWeapon(xPlayer, false, licensePrice, account) then
 			finish(false)
 			return
 		end
 
-		if not TakeWeaponPayment(xPlayer, false, licensePrice, 'Weapon License') then
+		if not TakeWeaponPayment(xPlayer, false, licensePrice, 'Weapon License', account) then
 			finish(false)
 			return
 		end
@@ -262,7 +262,7 @@ function ProcessLicensePurchase(source, cb)
 			end
 
 			if reason ~= 'timeout' and xPlayer then
-				RefundWeaponPayment(xPlayer, false, licensePrice, 'Weapon License Refund')
+				RefundWeaponPayment(xPlayer, false, licensePrice, 'Weapon License Refund', account)
 			end
 
 			finish(false)
@@ -275,7 +275,7 @@ end
 ---@param weaponName string
 ---@param zone string Shop zone
 ---@param cb function Callback function(success)
-function ProcessWeaponPurchase(source, weaponName, zone, cb)
+function ProcessWeaponPurchase(source, weaponName, zone, cb, account)
 	local requestKey = BeginRequest(source, 'weapon')
 	if not requestKey then
 		cb(false)
@@ -346,12 +346,12 @@ function ProcessWeaponPurchase(source, weaponName, zone, cb)
 			return
 		end
 
-		if not CanPayForWeapon(xPlayer, isBlackMarket, price) then
+		if not CanPayForWeapon(xPlayer, isBlackMarket, price, account) then
 			finish(false)
 			return
 		end
 
-		if not TakeWeaponPayment(xPlayer, isBlackMarket, price) then
+		if not TakeWeaponPayment(xPlayer, isBlackMarket, price, nil, account) then
 			finish(false)
 			return
 		end
@@ -359,7 +359,7 @@ function ProcessWeaponPurchase(source, weaponName, zone, cb)
 		if not AddWeapon(source, xPlayer, weaponName) then
 			xPlayer = ValidateSamePlayer(source, identifier)
 			if xPlayer then
-				RefundWeaponPayment(xPlayer, isBlackMarket, price)
+				RefundWeaponPayment(xPlayer, isBlackMarket, price, nil, account)
 			end
 
 			finish(false)
@@ -370,7 +370,9 @@ function ProcessWeaponPurchase(source, weaponName, zone, cb)
 	end)
 end
 
-local function ProcessAmmoPurchase(source, xPlayer, weaponName, isBlackMarket, data, zone, identifier, cb)
+local function ProcessAmmoPurchase(source, xPlayer, weaponName, isBlackMarket, data, zone, identifier, cb,
+    account
+)
 	local upgrades = BuildWeaponUpgrades(weaponName)
 	local ammo = upgrades.ammo
 	local amount = NormalizeAmmoAmount(data.amount)
@@ -411,12 +413,12 @@ local function ProcessAmmoPurchase(source, xPlayer, weaponName, isBlackMarket, d
 			return
 		end
 
-		if not CanPayForUpgrade(xPlayer, isBlackMarket, price) then
+		if not CanPayForUpgrade(xPlayer, isBlackMarket, price, account) then
 			cb(false)
 			return
 		end
 
-		if not TakeUpgradePayment(xPlayer, isBlackMarket, price) then
+		if not TakeUpgradePayment(xPlayer, isBlackMarket, price, account) then
 			cb(false)
 			return
 		end
@@ -428,14 +430,14 @@ local function ProcessAmmoPurchase(source, xPlayer, weaponName, isBlackMarket, d
 
 		xPlayer = ValidatePlayer(source)
 		if xPlayer then
-			RefundUpgradePayment(xPlayer, isBlackMarket, price)
+			RefundUpgradePayment(xPlayer, isBlackMarket, price, account)
 		end
 
 		cb(false)
 	end)
 end
 
-local function ProcessComponentPurchase(source, xPlayer, weaponName, isBlackMarket, data)
+local function ProcessComponentPurchase(source, xPlayer, weaponName, isBlackMarket, data, account)
 	if not ValidateUpgradeIdentifier(data.componentName, 'component', source) then
 		return false
 	end
@@ -460,11 +462,11 @@ local function ProcessComponentPurchase(source, xPlayer, weaponName, isBlackMark
 		return false
 	end
 
-	if not CanPayForUpgrade(xPlayer, isBlackMarket, price) then
+	if not CanPayForUpgrade(xPlayer, isBlackMarket, price, account) then
 		return false
 	end
 
-	if not TakeUpgradePayment(xPlayer, isBlackMarket, price) then
+	if not TakeUpgradePayment(xPlayer, isBlackMarket, price, account) then
 		return false
 	end
 
@@ -474,13 +476,13 @@ local function ProcessComponentPurchase(source, xPlayer, weaponName, isBlackMark
 
 	xPlayer = ValidatePlayer(source)
 	if xPlayer then
-		RefundUpgradePayment(xPlayer, isBlackMarket, price)
+		RefundUpgradePayment(xPlayer, isBlackMarket, price, account)
 	end
 
 	return false
 end
 
-local function ProcessTintPurchase(source, xPlayer, weaponName, isBlackMarket, data)
+local function ProcessTintPurchase(source, xPlayer, weaponName, isBlackMarket, data, account)
 	local tintIndex = tonumber(data.tintIndex)
 
 	if not tintIndex or tintIndex ~= math.floor(tintIndex) then
@@ -507,11 +509,11 @@ local function ProcessTintPurchase(source, xPlayer, weaponName, isBlackMarket, d
 		return false
 	end
 
-	if not CanPayForUpgrade(xPlayer, isBlackMarket, price) then
+	if not CanPayForUpgrade(xPlayer, isBlackMarket, price, account) then
 		return false
 	end
 
-	if not TakeUpgradePayment(xPlayer, isBlackMarket, price) then
+	if not TakeUpgradePayment(xPlayer, isBlackMarket, price, account) then
 		return false
 	end
 
@@ -521,7 +523,7 @@ local function ProcessTintPurchase(source, xPlayer, weaponName, isBlackMarket, d
 
 	xPlayer = ValidatePlayer(source)
 	if xPlayer then
-		RefundUpgradePayment(xPlayer, isBlackMarket, price)
+		RefundUpgradePayment(xPlayer, isBlackMarket, price, account)
 	end
 
 	return false
@@ -532,7 +534,7 @@ end
 ---@param data table Purchase payload
 ---@param zone string Shop zone
 ---@param cb function Callback function(success)
-function ProcessWeaponUpgradePurchase(source, data, zone, cb)
+function ProcessWeaponUpgradePurchase(source, data, zone, cb, account)
 	local requestKey = BeginRequest(source, 'upgrade')
 	if not requestKey then
 		cb(false)
@@ -622,17 +624,19 @@ function ProcessWeaponUpgradePurchase(source, data, zone, cb)
 		end
 
 		if action == 'ammo' then
-			ProcessAmmoPurchase(source, xPlayer, weaponName, isBlackMarket, data, zone, identifier, finish)
+			ProcessAmmoPurchase(source, xPlayer, weaponName, isBlackMarket, data, zone, identifier, finish,
+                account
+            )
 			return
 		end
 
 		if action == 'component' then
-			finish(ProcessComponentPurchase(source, xPlayer, weaponName, isBlackMarket, data))
+			finish(ProcessComponentPurchase(source, xPlayer, weaponName, isBlackMarket, data, account))
 			return
 		end
 
 		if action == 'tint' then
-			finish(ProcessTintPurchase(source, xPlayer, weaponName, isBlackMarket, data))
+			finish(ProcessTintPurchase(source, xPlayer, weaponName, isBlackMarket, data, account))
 			return
 		end
 

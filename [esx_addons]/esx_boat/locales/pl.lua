@@ -23,8 +23,6 @@ Locales['pl'] = {
 
   -- license
   ['license_menu'] = 'kup licencje na płwanie łodziami?',
-  ['license_buy_no'] = 'nie',
-  ['license_buy_yes'] = 'kup licencje na pływanie łodziami <span style="color: green;">$%s</span>',
   ['license_bought'] = 'zakupiłeś/aś licencje na pływanie łodziami za $%s',
   ['license_nomoney'] = 'nie posiadasz  ~r~wystarczająco pieniędzy aby zakupić licencje na pływanie łodziami!',
 

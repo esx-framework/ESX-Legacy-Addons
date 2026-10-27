@@ -6,137 +6,125 @@
 // question variables
 var questionNumber = 1;
 var userAnswer = [];
-var goodAnswer = [];
-var questionUsed = [];
+var questionOrder = [];
+var submitting = false;
 var nbQuestionToAnswer = 10; // don't forget to change the progress bar max value in html
-var nbAnswerNeeded = 5; // out of nbQuestionToAnswer
-var nbPossibleQuestions = 10; // number of questions in database questions.js
-var lastClick = 0;
-
-function getRandomQuestion() {
-	var random = Math.floor(Math.random() * nbPossibleQuestions);
-
-	while (true) {
-		if (questionUsed.indexOf(random) === -1) {
-			break;
-		}
-
-		random = Math.floor(Math.random() * nbPossibleQuestions);
-	}
-
-	questionUsed.push(random);
-
-	return random;
-}
 
 // Partial Functions
 function closeMain() {
-	$(".home").css("display", "none");
+    $(".home").css("display", "none");
 }
 function openMain() {
-	$(".home").css("display", "block");
+    $(".home").css("display", "block");
 }
 function closeAll() {
-	$(".body").css("display", "none");
+    $(".body").css("display", "none");
 }
 function openQuestionnaire() {
-	$(".questionnaire-container").css("display", "block");
-	var randomQuestion = getRandomQuestion();
+    $(".questionnaire-container").css("display", "block");
+    var randomQuestion = questionOrder[questionNumber - 1];
 
-	$("#questionNumero").html("Question: " + questionNumber);
-	$("#question").html(tableauQuestion[randomQuestion].question);
-	$(".answerA").html(tableauQuestion[randomQuestion].propositionA);
-	$(".answerB").html(tableauQuestion[randomQuestion].propositionB);
-	$(".answerC").html(tableauQuestion[randomQuestion].propositionC);
-	$(".answerD").html(tableauQuestion[randomQuestion].propositionD);
-	$('input[name=question]').attr('checked', false);
+    $("#questionNumero").html("Question: " + questionNumber);
+    $("#question").html(tableauQuestion[randomQuestion].question);
+    $(".answerA").html(tableauQuestion[randomQuestion].propositionA);
+    $(".answerB").html(tableauQuestion[randomQuestion].propositionB);
+    $(".answerC").html(tableauQuestion[randomQuestion].propositionC);
+    $(".answerD").html(tableauQuestion[randomQuestion].propositionD);
+    $('input[name=question]').attr('checked', false);
 
-	goodAnswer.push(tableauQuestion[randomQuestion].reponse);
-	$(".questionnaire-container .progression").val(questionNumber - 1);
+    $(".questionnaire-container .progression").val(questionNumber - 1);
 }
 function openResultGood() {
-	$(".resultGood").css("display", "block");
+    $(".resultGood").css("display", "block");
 }
 function openResultBad() {
-	$(".resultBad").css("display", "block");
+    $(".resultBad").css("display", "block");
 }
 function openContainer() {
-	$(".question-container").css("display", "block");
+    $(".question-container").css("display", "block");
 }
 function closeContainer() {
-	$(".question-container").css("display", "none");
+    $(".question-container").css("display", "none");
 }
 
 // Listen for NUI Events
 window.addEventListener('message', function (event) {
-	var item = event.data;
+    var item = event.data;
 
-	// Open & Close main window
-	if (item.openQuestion == true) {
-		openContainer();
-		openMain();
-	}
+    // Open & Close main window
+    if (item.openQuestion == true) {
+        questionOrder = item.questions;
+        userAnswer = [];
+        questionNumber = 1;
+        submitting = false;
 
-	if (item.openQuestion == false) {
-		closeContainer();
-		closeMain();
-	}
+        openContainer();
+        openMain();
+    }
 
-	// Open sub-windows / partials
-	if (item.openSection == "question") {
-		closeAll();
-		openQuestionnaire();
-	}
+    if (item.openQuestion == false) {
+        closeContainer();
+        closeMain();
+    }
+
+    // Open sub-windows / partials
+    if (item.openSection == "question") {
+        closeAll();
+        openQuestionnaire();
+    }
 });
 
 // Handle Button Presses
 $(".btnQuestion").click(function () {
-	$.post(`https://${GetParentResourceName()}/question`, JSON.stringify({}));
+    $.post(`https://${GetParentResourceName()}/question`, JSON.stringify({}));
 });
 
 $(".btnClose").click(function () {
-	$.post(`https://${GetParentResourceName()}/close`, JSON.stringify({}));
-	userAnswer = [];
-	goodAnswer = [];
-	questionUsed = [];
-	questionNumber = 1;
+    $.post(`https://${GetParentResourceName()}/close`, JSON.stringify({}));
+    userAnswer = [];
+    questionNumber = 1;
 });
 
 $(".btnKick").click(function () {
-	$.post(`https://${GetParentResourceName()}/kick`, JSON.stringify({}));
-	userAnswer = [];
-	goodAnswer = [];
-	questionUsed = [];
-	questionNumber = 1;
+    $.post(`https://${GetParentResourceName()}/kick`, JSON.stringify({}));
+    userAnswer = [];
+    questionNumber = 1;
 });
 
 // Handle Form Submits
 $("#question-form").submit(function (e) {
-	e.preventDefault();
+    e.preventDefault();
 
-	if (questionNumber != nbQuestionToAnswer) {
-		//question 1 to 9: pushing answer in array
-		closeAll();
-		userAnswer.push($('input[name="question"]:checked').val());
-		questionNumber++;
-		openQuestionnaire();
-	} else {
-		// question 10: comparing arrays and sending number of good answers
-		userAnswer.push($('input[name="question"]:checked').val());
-		var nbGoodAnswer = 0;
-		for (i = 0; i < nbQuestionToAnswer; i++) {
-			if (userAnswer[i] == goodAnswer[i]) {
-				nbGoodAnswer++;
-			}
-		}
+    var answer = $('input[name="question"]:checked').val();
 
-		closeAll();
-		if (nbGoodAnswer >= nbAnswerNeeded) {
-			openResultGood();
-		} else {
-			openResultBad();
-		}
-	}
+    if (submitting || !answer) {
+        return false;
+    }
 
-	return false;
+    userAnswer.push(answer);
+
+    if (questionNumber < nbQuestionToAnswer) {
+        closeAll();
+        questionNumber++;
+        openQuestionnaire();
+    } else {
+        submitting = true;
+
+        $.post(`https://${GetParentResourceName()}/submitTheory`, JSON.stringify({
+            answers: userAnswer
+        }), function (result) {
+            closeAll();
+
+            if (result && result.passed === true) {
+                openResultGood();
+            } else {
+                openResultBad();
+            }
+        }, "json").fail(function () {
+            closeAll();
+            openResultBad();
+        });
+    }
+
+    return false;
 });

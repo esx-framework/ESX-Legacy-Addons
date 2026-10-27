@@ -23,8 +23,6 @@ Locales['it'] = {
 
   -- license
   ['license_menu'] = 'acquistare la patente nautica?',
-  ['license_buy_no'] = 'no',
-  ['license_buy_yes'] = 'acquista patente nautica <span style="color: green;">$%s</span>',
   ['license_bought'] = 'hai acquistato la patente nautica per $%s',
   ['license_nomoney'] = 'non puoi ~r~permetterti la patente nautica',
 

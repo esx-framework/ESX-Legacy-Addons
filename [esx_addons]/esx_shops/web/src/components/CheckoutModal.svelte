@@ -11,7 +11,6 @@
   import { shopStore } from '@stores/shopStore.svelte';
   import { fetchNui } from '@utils/nui';
   import CheckoutModalItem from './CheckoutModalItem.svelte';
-  import type { PaymentMethod } from '@/types/shop';
 
   interface Props {
     onClose: () => void;
@@ -25,7 +24,7 @@
   /**
    * Processes purchase with specified payment method
    */
-  async function handlePurchase(paymentMethod: PaymentMethod): Promise<void> {
+  async function handlePurchase(): Promise<void> {
     if (isProcessing) return;
 
     isProcessing = true;
@@ -34,11 +33,10 @@
       const purchaseData = {
         items: shopStore.getCartData(),
         total: shopStore.cartTotal,
-        paymentMethod
       };
 
       const response = await fetchNui('purchaseItems', purchaseData, {
-        timeout: 10000
+        timeout: 0
       });
 
       if (!response.ok) {
@@ -137,7 +135,7 @@
       <button
         class="payment-button cash"
         class:shake={shakeError}
-        onclick={() => handlePurchase('cash')}
+        onclick={handlePurchase}
         disabled={isProcessing}
       >
         {#if isProcessing}
@@ -145,20 +143,7 @@
         {:else}
           <i class="fa-solid fa-dollar-sign"></i>
         {/if}
-        <span>PAY CASH</span>
-      </button>
-      <button
-        class="payment-button bank"
-        class:shake={shakeError}
-        onclick={() => handlePurchase('bank')}
-        disabled={isProcessing}
-      >
-        {#if isProcessing}
-          <i class="fa-solid fa-spinner fa-spin"></i>
-        {:else}
-          <i class="fa-solid fa-building-columns"></i>
-        {/if}
-        <span>PAY BANK</span>
+        <span>PAY</span>
       </button>
     </div>
   </div>

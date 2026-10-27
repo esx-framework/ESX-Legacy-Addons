@@ -2,9 +2,6 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales ['fi'] = {
-  ['valid_purchase'] = 'varmista ostos?',
-  ['yes'] = 'kyllä (<span style="color: green;">$%s</span>)',
-  ['no'] = 'ei',
   ['helmet'] = 'kypärä / Hattu',
   ['glasses'] = 'lasit',
   ['mask'] = 'maskit',

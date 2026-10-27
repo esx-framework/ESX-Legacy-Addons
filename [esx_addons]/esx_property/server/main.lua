@@ -835,7 +835,7 @@ ESX.RegisterCommand(_('admin_name'), Config.AllowedGroups, function(xPlayer)
 end, false, { help = TranslateCap('admin_desc') })
 
 -- Buy Property
-registerPropertyCallback('esx_property:buyProperty', function(source, cb, PropertyId)
+registerPropertyCallback('esx_property:buyProperty', function(source, cb, PropertyId, account)
     local xPlayer = ESX.GetPlayerFromId(source)
 
     PropertyId = normalizePropertyId(PropertyId)
@@ -859,7 +859,8 @@ registerPropertyCallback('esx_property:buyProperty', function(source, cb, Proper
         return cb(false)
     end
 
-    local canAfford = getBankMoney(xPlayer) >= Price
+    local selected = (account == 'money' or account == 'bank') and xPlayer.getAccount(account)
+    local canAfford = selected and selected.money >= Price
 
     if not canAfford then
         return cb(false)
@@ -872,7 +873,7 @@ registerPropertyCallback('esx_property:buyProperty', function(source, cb, Proper
         return cb(false)
     end
 
-    if xPlayer.removeAccountMoney('bank', Price, 'Bought Property') == false then
+    if PaymentGateway.Charge(xPlayer, account, Price, 'Bought Property') ~= true then
         PropertyLocks[PropertyId] = nil
         return cb(false)
     end
@@ -930,7 +931,7 @@ registerPropertyCallback('esx_property:attemptSellToPlayer', function(source, cb
 
     local Price = tonumber(Property.Price)
 
-    if not Price or Price <= 0 or getBankMoney(xTarget) < Price then
+    if not Price or Price <= 0 or (account ~= 'money' and account ~= 'bank') then
         return cb(false)
     end
 
@@ -973,7 +974,7 @@ registerPropertyCallback('esx_property:attemptSellToPlayer', function(source, cb
     cb(true)
 end)
 
-registerPropertyCallback('esx_property:respondToSaleOffer', function(source, cb, token, accepted)
+registerPropertyCallback('esx_property:respondToSaleOffer', function(source, cb, token, accepted, account)
     if type(token) ~= 'string' then
         return cb(false)
     end
@@ -1048,7 +1049,8 @@ registerPropertyCallback('esx_property:respondToSaleOffer', function(source, cb,
 
     PropertyLocks[PropertyId] = true
 
-    if Property.Owned or xTarget.removeAccountMoney('bank', Price, 'Sold Property') == false then
+    if Property.Owned or PaymentGateway.Charge(xTarget, account, Price, 'Sold Property') ~= true
+    then
         PropertyLocks[PropertyId] = nil
         return cb(false)
     end
@@ -1090,7 +1092,7 @@ registerPropertyCallback('esx_property:respondToSaleOffer', function(source, cb,
 end)
 
 -- Buy Property
-registerPropertyCallback('esx_property:buyFurniture', function(source, cb, PropertyId, PropName, PropIndex, PropCatagory, pos, heading)
+registerPropertyCallback('esx_property:buyFurniture', function(source, cb, PropertyId, PropName, PropIndex, PropCatagory, pos, heading, account)
     local xPlayer = ESX.GetPlayerFromId(source)
 
     PropertyId = normalizePropertyId(PropertyId)
@@ -1124,12 +1126,7 @@ registerPropertyCallback('esx_property:buyFurniture', function(source, cb, Prope
     for _ in pairs(Property.furniture or {}) do furnitureCount = furnitureCount + 1 end
     if furnitureCount >= (Config.MaxFurniturePerProperty or 500) then return cb(false) end
 
-    if getBankMoney(xPlayer) < Price then
-        xPlayer.showNotification(TranslateCap('furni_cannot_afford'))
-        return cb(false)
-    end
-
-    if xPlayer.removeAccountMoney('bank', Price, 'Furniture') == false then
+    if PaymentGateway.Charge(xPlayer, account, Price, 'Furniture') ~= true then
         return cb(false)
     end
 

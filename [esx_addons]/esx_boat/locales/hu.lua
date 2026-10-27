@@ -23,8 +23,6 @@ Locales['hu'] = {
 
   -- license
   ['license_menu'] = 'Szeretnél venni hajó engedélyt?',
-  ['license_buy_no'] = 'Nem',
-  ['license_buy_yes'] = 'Vegyél hajó engedélyt <span style="color: green;">$%s</span>-ért',
   ['license_bought'] = 'Vettél hajó engedélyt $%s-ért',
   ['license_nomoney'] = '~r~nem engedheted meg magadnak, hogy vegyél hajó engedélyt!',
 

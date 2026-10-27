@@ -2,14 +2,17 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales['fi'] = {
-  ['valid_this_purchase'] = 'Vahvista tämä ostos?',
-  ['yes'] = 'Kyllä',
-  ['no'] = 'Ei',
-  ['not_enough_money'] = 'Sinulla ei ole tarpeeksi rahaa',
-  ['press_menu'] = 'Paina [E] avataksesi vaatekauppa',
-  ['clothes'] = 'Vaatekauppa',
-  ['you_paid'] = 'Sinä maksoit $%s',
-  ['save_in_dressing'] = 'Haluatko antaa asulle nimen?',
-  ['name_outfit'] = 'Asun nimi',
-  ['saved_outfit'] = 'Asu on tallennettu!',
+    ['save_failed'] = 'Vaatteitasi ei voitu tallentaa. Ostos peruutettiin. Yritä uudelleen.',
+    ['yes'] = 'Kyllä',
+    ['no'] = 'Ei',
+    ['not_enough_money'] = 'Sinulla ei ole tarpeeksi rahaa',
+    ['press_menu'] = 'Paina [E] avataksesi vaatekaupan.',
+    ['clothes'] = 'Vaatekauppa',
+    ['you_paid'] = 'Maksoit $%s',
+    ['save_in_dressing'] = 'Haluatko tallentaa asun vaatekaappiisi?',
+    ['name_outfit'] = 'Anna asullesi nimi',
+    ['saved_outfit'] = 'Asu on tallennettu!',
+    ['outfit_name'] = 'Asun nimi',
+    ['outfit_placeholder'] = 'Asun nimi vaatekaapissa...',
+    ['confirm'] = 'Vahvista',
 }

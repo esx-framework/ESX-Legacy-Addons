@@ -391,7 +391,7 @@ xLib.callback.registerCompat('esx_billing:getTargetBills', function(source, cb, 
     cb(result, hasNext)
 end)
 
-xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId)
+xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId, selectedAccount)
     local xPlayer = ESX.GetPlayerFromId(source)
     billId = tonumber(billId)
 
@@ -462,7 +462,7 @@ xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId)
 
         if
             not result
-            or ESX.GetPlayerFromId(source) ~= xPlayer
+            or xPlayer.isCurrent() ~= true
             or not BillingRecovery.isHeld(identifier)
         then
             return false
@@ -474,7 +474,11 @@ xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId)
             return false
         end
 
-        paymentAccount = xPlayer.getMoney() >= amount and 'money' or 'bank'
+        if selectedAccount ~= 'money' and selectedAccount ~= 'bank' then
+            return false
+        end
+
+        paymentAccount = selectedAccount
 
         if result.target_type == 'player' then
             receiverPlayer = ESX.GetPlayerFromIdentifier(result.sender)
@@ -500,7 +504,7 @@ xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId)
             return false
         end
 
-        if xPlayer.removeAccountMoney(paymentAccount, amount, 'Bill reservation') ~= true then
+        if PaymentGateway.Charge(xPlayer, paymentAccount, amount, 'Bill reservation') ~= true then
             return false
         end
 
@@ -584,7 +588,7 @@ xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId)
         reserved = false
 
         local function savePlayer(player)
-            if ESX.GetPlayerFromId(player.source) ~= player then
+            if player.isCurrent() ~= true then
                 return false
             end
 
@@ -652,7 +656,7 @@ xLib.callback.registerCompat('esx_billing:payBill', function(source, cb, billId)
             confirm = function()
                 TriggerEvent('esx_billing:paidBill', source, billId)
 
-                if ESX.GetPlayerFromId(source) == xPlayer then
+                if xPlayer.isCurrent() == true then
                     xPlayer.showNotification(
                         TranslateCap('paid_invoice', ESX.Math.GroupDigits(amount))
                     )

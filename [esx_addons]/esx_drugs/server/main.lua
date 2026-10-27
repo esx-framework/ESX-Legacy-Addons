@@ -158,24 +158,29 @@ AddEventHandler('esx_drugs:sellDrug', function(itemName, amount)
 	playersSellingDrugs[src] = nil
 end)
 
-xLib.callback.registerCompat('esx_drugs:buyLicense', function(source, cb, licenseName)
-	local xPlayer = ESX.Player(source)
-	local license = Config.LicensePrices[licenseName]
+xLib.callback.registerCompat('esx_drugs:buyLicense', function(source, cb, licenseName, account)
+    local player = ESX.GetPlayerFromId(source)
+    local license = type(licenseName) == 'string' and Config.LicensePrices[licenseName]
 
-	if license then
-		if xPlayer.getMoney() >= license.price then
-			xPlayer.removeMoney(license.price)
+    if not player or not license then
+        return cb(false)
+    end
 
-			TriggerEvent('esx_license:addLicense', source, licenseName, function()
-				cb(true)
-			end)
-		else
-			cb(false)
-		end
-	else
-		print(('esx_drugs: %s attempted to buy an invalid license!'):format(xPlayer.getIdentifier()))
-		cb(false)
-	end
+    local charged, failure =
+        PaymentGateway.Charge(player, account, license.price, 'Drug License Purchase')
+
+    if not charged then
+        return cb(false, failure)
+    end
+
+    TriggerEvent('esx_license:addLicense', source, licenseName, function(added)
+        if added == false then
+            PaymentGateway.Refund(player, account, license.price, 'Drug License Refund')
+            return cb(false)
+        end
+
+        cb(true)
+    end)
 end)
 
 RegisterServerEvent('esx_drugs:pickedUpCannabis')

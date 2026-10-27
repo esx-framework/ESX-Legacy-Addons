@@ -2,9 +2,6 @@
 -- Copyright (C) 2022-2026 ESX Framework
 
 Locales ['hu'] = {
-  ['valid_purchase'] = 'Biztosan megveszed?',
-  ['yes'] = 'Igen (<span style="color: green;">$%s</span>)',
-  ['no'] = 'Nem',
   ['helmet'] = 'sisak / kalap',
   ['glasses'] = 'szemüveg',
   ['mask'] = 'maszk',
