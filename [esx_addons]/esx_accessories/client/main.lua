@@ -193,20 +193,30 @@ end)
 
 -- Key controls
 CreateThread(function()
-	while true do
-		local Sleep = 1500
-		
-		if CurrentAction then
-			Sleep = 0
-			ESX.ShowHelpNotification(CurrentActionMsg)
+    local TextUI = false
 
-			if IsControlJustReleased(0, 38) and CurrentActionData.accessory then
-				OpenShopMenu(CurrentActionData.accessory)
-				CurrentAction = nil
-			end
-		end
-		Wait(Sleep)
-	end
+    while true do
+        local Sleep = 1500
+
+        if CurrentAction then
+            Sleep = 0
+
+            if not TextUI then
+                ESX.TextUI(CurrentActionMsg)
+                TextUI = true
+            end
+
+            if IsControlJustReleased(0, 38) and CurrentActionData.accessory then
+                OpenShopMenu(CurrentActionData.accessory)
+                CurrentAction = nil
+            end
+        elseif TextUI then
+            ESX.HideUI()
+            TextUI = false
+        end
+
+        Wait(Sleep)
+    end
 end)
 
 if Config.EnableControls then
