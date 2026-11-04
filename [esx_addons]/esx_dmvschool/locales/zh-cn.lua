@@ -1,4 +1,7 @@
-Locales['zh-cn'] = {
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+return {
   ['you_paid'] = '成功支付驾考学费：$%s',
   ['go_next_point'] = '请小心驾驶前往下一考试点!',
   ['in_town_speed'] = '请注意进入城区, 请减速! 注意限速: %s km/h',
@@ -27,8 +30,4 @@ Locales['zh-cn'] = {
   ['errors'] = '失误: ~r~%s~s~/~g~%s~s~',
   ['you_damaged_veh'] = '载具出现受损！',
   ['not_enough_money'] = '您暂无足够现金',
-  ['yourVersion'] = "你的版本：",
-  ['latestVersion'] = "你正在使用最新版本！",
-  ['needUpdateResource'] = "你需要下载最新版本！你当前使用的是旧版本！",
-  ['errorGetCurrentVersion'] = "尝试获取当前版本时发生错误！"
 }
