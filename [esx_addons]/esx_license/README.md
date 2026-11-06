@@ -26,7 +26,7 @@ start esx_license
 ```
 
 ### Available triggers
-- `'esx_license:addLicense', function(target, type, cb)`
+- `'esx_license:addLicense', function(target, type, cb)` (server-side `TriggerEvent`)
 - `'esx_license:removeLicense', function(target, type, cb)`
 - `'esx_license:getLicense', function(source, cb, type)` (callback)
 - `'esx_license:getLicenses', function(source, cb, target)` (callback)
