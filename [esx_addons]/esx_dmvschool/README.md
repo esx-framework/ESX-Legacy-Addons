@@ -17,6 +17,7 @@ the fence with its cab toward the aisle.
 
 - ESX Legacy 1.16.3 with `esx_lib`
 - `esx_license`, `esx_textui`, `oxmysql` and OneSync
+- An FXServer artifact with `serverEntityCreated` support for spawn clearance
 
 Start the database, ESX core and `esx_license` before `esx_dmvschool`. The license
 catalog is prepared additively. Existing `dmv`, `drive`, `drive_bike` and
@@ -73,6 +74,14 @@ ambient traffic lights.
 Payment and prerequisites are checked on the server. Examination vehicles are
 created by the server and leased to one session. Practical progression is bound
 to that vehicle, driver, ordered tasks and server-observed movement.
+Spawn clearance uses live positions and routing buckets from a vehicle registry
+maintained by entity creation and removal events.
+The server compares displacement with observed speed and elapsed time across the
+whole route. Implausible movement blocks progression. An interruption clears
+the current hold and reverse entry evidence. A sustained movement rejection
+ends the attempt and releases the exam vehicle.
+School callbacks and network events share a per-player `esx_lib` request limit.
+Keep `esx_license:addLicense` restricted to server-side `TriggerEvent` calls.
 The license is shown as confirmed only after `esx_license` reports ownership.
 
 ## Configuration and migration

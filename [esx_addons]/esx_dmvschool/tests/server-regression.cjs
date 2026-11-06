@@ -12,10 +12,13 @@ function luaLiteral(value) {
 }
 const questionSources='QuestionSources={'+fs.readdirSync(path.join(resourceRoot,'server/questions'))
  .filter(name=>name.endsWith('.lua')).map(name=>'[ '+luaLiteral(name.slice(0,-4))+' ]='+luaLiteral(fs.readFileSync(path.join(resourceRoot,'server/questions',name),'utf8'))).join(',')+'}\n';
+const limiterPath=process.env.ESX_QA_RATE_LIMITER;
+const limiterSource=limiterPath?fs.readFileSync(limiterPath,'utf8'):null;
 const results=[];
-function run(name, tests, {fallback=false}={}) {
+function run(name, tests, {fallback=false,rateLimiter=false}={}) {
  const L=f.lauxlib.luaL_newstate();f.lualib.luaL_openlibs(L);
- const program=mock+questionSources+(fallback?'\nxLib=nil;ESXCatalog=nil\n':'\n')+theory+evaluator+source+'\n'+tests+'\nreturn Checks';
+ const program=mock+questionSources+(fallback?'\nxLib.callback=nil;ESXCatalog=nil\n':'\n')+
+  (rateLimiter?'\nxLib.rateLimiter=assert(load('+luaLiteral(limiterSource)+'))()\n':'')+theory+evaluator+source+'\n'+tests+'\nreturn Checks';
  let status=f.lauxlib.luaL_loadstring(L,f.to_luastring(program));
  if(status===0)status=f.lua.lua_pcall(L,0,f.lua.LUA_MULTRET,0);
  if(status!==0)throw Error(name+': '+f.to_jsstring(f.lua.lua_tostring(L,-1)));
@@ -28,6 +31,7 @@ Clock=1000
 function GetGameTimer() return Clock end
 function GetCurrentResourceName() return 'esx_dmvschool' end
 function GetConvar() return 'es' end
+function GetConvarInt(_,fallback) return fallback end
 function Translate(key,...) return key end
 TheoryBanksAvailable=true
 function LoadResourceFile(resource,name)
@@ -110,7 +114,10 @@ ESXDMVVehicles={
 ESXDMVVehicles.Cancel=ESXDMVVehicles.Remove
 local xPlayer={getIdentifier=function() return Identifier end,getMoney=function() return Money end,removeMoney=function(amount) Money=Money-amount;RemovedMoney=RemovedMoney+amount end}
 ESX={Player=function(id) if Present and id==1 then return xPlayer end end,GetPlayerFromId=function(id) if Present and id==1 then return xPlayer end end,RegisterServerCallback=function(name,fn) Callbacks[name]=fn end}
-xLib={callback={registerCompat=ESX.RegisterServerCallback}}
+xLib={
+ callback={registerCompat=ESX.RegisterServerCallback},
+ rateLimiter=function() return {consume=function() return true end,reset=function() end} end,
+}
 ESXCatalog={awaitReady=function() end}
 MySQL={ready=function(fn) fn() end,query={await=function(query,params) Queries[#Queries+1]=query;Catalog[#Catalog+1]={type=params[1],label=params[2]} end}}
 function licenseList() local t={};for name,exists in pairs(Owned) do if exists then t[#t+1]={type=name} end end;return t end
@@ -150,19 +157,39 @@ function answersFor(session,correctCount)
  end
  return answers
 end
-function tick(ms) Clock=Clock+(ms or 200);stepThread(2) end
+function tick(ms)
+ local remaining=ms or 200
+ while remaining>0 do
+  local elapsed=math.min(remaining,250)
+  Clock=Clock+elapsed;stepThread(2);remaining=remaining-elapsed
+ end
+end
 function setpos(x,y,z) Pos={x=x or 0,y=y or 0,z=z or 0} end
 function vel(x,y,z) Velocity={x=x or 0,y=y or 0,z=z or 0} end
+function driveTo(x,y,z)
+ local from=Pos
+ local dx,dy,dz=x-from.x,(y or 0)-from.y,(z or 0)-from.z
+ local distance=math.sqrt(dx*dx+dy*dy+dz*dz)
+ if distance>0 then
+  local steps=math.ceil(distance/2)
+  vel(dx*5/steps,dy*5/steps,dz*5/steps)
+  for step=1,steps do
+   setpos(from.x+dx*step/steps,from.y+dy*step/steps,from.z+dz*step/steps)
+   tick(200)
+  end
+ end
+ vel()
+end
 function lastState() for i=#ClientEvents,1,-1 do local e=ClientEvents[i];if e.name=='esx_dmvschool:practicalState' then return e.data end end end
 function start(license) setpos(0);Owned.dmv=license~='dmv';local p=pay(license);check(p and p[1],'fixture purchase '..license);return p[2].session end
-function stopReady(session) setpos(10);vel();advance(session,2);tick(500);tick(500);return advance(session,2) end
+function stopReady(session) driveTo(10);advance(session,2);tick(500);tick(500);return advance(session,2) end
 function parkReady(session)
- setpos(20,2.25);vel();advance(session,3);vel(0,-1)
+ driveTo(20,2.25);advance(session,3);vel(0,-1)
  for i=1,9 do setpos(20,2.25-i*0.25);tick(250) end
  vel();advance(session,3);tick(500);tick(500);return advance(session,3)
 end
 function finishReady(session)
- setpos(30);vel();check(advance(session,4).ok,'fixture navigation');setpos(40);EngineRunning=false;advance(session,5);tick(500);tick(500);return advance(session,5)
+ driveTo(30);check(advance(session,4).ok,'fixture navigation');driveTo(40);EngineRunning=false;advance(session,5);tick(500);tick(500);return advance(session,5)
 end
 Config={Locale='es',SpeedMultiplier=3.6,MaxErrors=5,ExamTimeout=1200000,SpeedTolerance=5,SpeedingGrace=2500,DamageThreshold=20,DamageCooldown=2000,AbandonTimeout=20000,
  School={menu={x=0,y=0,z=0}},SchoolResources={'esx_dmvschool','esx_boatschool'},
@@ -232,27 +259,85 @@ EngineRunning=false;check(advance(session,1).error=='step_not_ready','actual eng
 check(advance(session,1).ok,'engine task accepted')
 check(advance(session,1).duplicate,'duplicate task does not advance again')
 check(advance(session,2).error=='step_not_ready','cannot pass stop from wrong position')
-setpos(10);vel(2,0);check(advance(session,2).error=='step_not_ready','moving stop rejected')
+driveTo(10);vel(2,0);check(advance(session,2).error=='step_not_ready','moving stop rejected')
 vel();check(advance(session,2).error=='step_not_ready','hold starts, not instant')
 tick(500);setpos(15);tick(200);setpos(10);tick(200);tick(500)
 check(advance(session,2).error=='step_not_ready','leaving resets continuous hold');tick(500)
 check(advance(session,2).ok,'continuous stationary stop')
-setpos(20);vel();tick(1500);check(advance(session,3).error=='step_not_ready','parking requires actual reverse history')
+driveTo(20);tick(1500);check(advance(session,3).error=='step_not_ready','parking requires actual reverse history')
 setpos(20,2.25);advance(session,3);vel(0,-1);for i=1,9 do setpos(20,2.25-i*0.25);tick(250) end;vel();Heading=90;tick(1200)
 check(advance(session,3).error=='step_not_ready','parking wrong orientation rejected')
 Heading=0;setpos(22);tick(1200);check(advance(session,3).error=='step_not_ready','whole footprint must fit, not center distance')
 setpos(20);advance(session,3);tick(500);tick(500);check(advance(session,3).ok,'parking geometry and hold accepted')
 check(complete(session).error=='incomplete_route','remaining road tasks required')
 check(finishReady(session).ok,'return stopping task accepted')
-setpos(50);check(complete(session).error=='step_not_ready','cannot leave finish before confirmation');setpos(40);advance(session,5);tick(1000)
+driveTo(50);check(complete(session).error=='step_not_ready','cannot leave finish before confirmation');driveTo(40);advance(session,5);tick(1000)
 local result=complete(session)
 check(result.ok and result.passed and result.confirmed and Owned.drive and result.error==nil,'completion confirmed from actual grant without error')
 check(GrantCount==1,'one practical grant')
 check(complete(session).confirmed and GrantCount==1,'repeated complete returns prior result')
 check(Exported.IsExamActive(1)==false,'completed releases active state')
 `);
+run('checkpoint jumps cannot earn distance by waiting, callback replay or leaving the seat',`
+stepThread(1)
+local checkpoint=Config.Routes.car[2]
+checkpoint.pos,checkpoint.type,checkpoint.hold={x=100,y=0,z=0},'navigate',0
+local session=start('drive');begin(session);advance(session,1)
+tick(3000)
+setpos(100)
+check(advance(session,2).error=='step_not_ready','teleport to the next checkpoint is rejected after an idle period')
+for i=1,15 do advance(session,2) end
+check(advance(session,2).error=='step_not_ready','same-timestamp callback replay creates no movement credit')
+tick(1400)
+check(advance(session,2).error=='step_not_ready','waiting at the rejected checkpoint cannot establish a new baseline')
+Driver=false;tick(250);Driver=true;tick(250)
+check(advance(session,2).error=='step_not_ready' and GrantCount==0,'waiting and changing seat cannot adopt the teleported position')
+setpos(0);tick(200)
+check(Exported.IsExamActive(1),'a transient jump can recover at the last trusted position')
+driveTo(100)
+check(advance(session,2).ok,'the recovered session accepts observed travel to the same checkpoint')
+`);
+run('non-finite and persistent impossible movement fail closed',`
+stepThread(1)
+local session=start('drive');createVehicle(session)
+setpos(0/0)
+check(call('beginPractical',session,10)[1].error=='invalid_vehicle','non-finite spawn position cannot initialize the baseline')
+setpos(0);vel(math.huge)
+check(call('beginPractical',session,10)[1].error=='vehicle_not_ready','non-finite velocity cannot initialize the baseline')
+vel(100)
+check(call('beginPractical',session,10)[1].error=='vehicle_not_ready','implausible native speed cannot initialize the baseline')
+vel();check(begin(session).ok and advance(session,1).ok,'valid native snapshot can bind after an invalid one')
+setpos(1000)
+check(advance(session,2).error=='step_not_ready','large displacement blocks the current task')
+tick(2200);Driver=false;tick(1000);Driver=true
+setpos(0/0);tick(1000);setpos(1000);Heading=math.huge;tick(1000)
+check(lastState().aborted and lastState().reason=='server_rejected','missing driver and malformed samples cannot reset a persistent rejection')
+check(VehicleLeases[session]==nil and Deleted==1 and not Exported.IsExamActive(1) and GrantCount==0,
+ 'terminal movement rejection removes the leased vehicle without granting')
+`);
+run('normal batched updates pass and long observation gaps restart a hold',`
+stepThread(1)
+local session=start('drive');begin(session);advance(session,1)
+vel(25,0);tick(200);setpos(10);tick(200);vel()
+check(advance(session,2).error=='step_not_ready','a batched position update reaches the stop but does not skip its hold')
+tick(400)
+Clock=Clock+1300;stepThread(2)
+check(advance(session,2).error=='step_not_ready' and Exported.IsExamActive(1),
+ 'a valid stationary sample after a long observation gap resets the hold without rejecting the attempt')
+tick(1000)
+check(advance(session,2).ok,'normal hold completes after the observation gap')
+`);
+run('driver loss clears the current reverse proof',`
+stepThread(1)
+local session=start('drive');begin(session);advance(session,1);stopReady(session)
+driveTo(20,2.25);advance(session,3);vel(0,-1)
+for i=1,9 do setpos(20,2.25-i*0.25);tick(250) end
+vel();tick(250);Driver=false;tick(250);Driver=true;tick(1250)
+check(advance(session,3).error=='step_not_ready','old reverse travel cannot survive losing the driver seat')
+check(parkReady(session).ok,'a newly observed reverse manoeuvre can complete the parking task')
+`);
 run('independent incidents, grace, deduplication and strict threshold',`
-stepThread(1);local session=start('drive');begin(session);advance(session,1);setpos(10);vel(0,20)
+stepThread(1);local session=start('drive');begin(session);advance(session,1);driveTo(10);vel(0,20)
 tick(200);tick(2000);check((lastState() or {}).errors==nil,'short overspeed grace')
 tick(600);check(lastState().errors==1 and lastState().incidents[1].reason=='speeding','sustained speeding recorded')
 tick(6000);check(lastState().errors==1,'continuous overspeed is one incident')
@@ -267,7 +352,7 @@ check(stopReady(session).ok,'route can proceed with four errors');check(parkRead
 check(complete(session).passed and GrantCount==1,'four errors passes strict <5')
 `);
 run('fifth error denies license, binding/identity/timeout cleanup',`
-stepThread(1);local session=start('drive');begin(session);advance(session,1);setpos(10)
+stepThread(1);local session=start('drive');begin(session);advance(session,1);driveTo(10)
 for i=1,5 do BodyHealth=BodyHealth-30;tick(2100) end
 check(lastState().failed and lastState().errors==5,'fifth error fails')
 check(stopReady(session).ok,'return task still physically testable');check(parkReady(session).ok,'parking testable');check(finishReady(session).ok,'return finish')
@@ -299,7 +384,7 @@ check(first.confirmed and second.confirmed and Owned.drive,'both completions req
 check(GrantCount==1,'grant still once')
 `);
 run('gradual damage episode baseline and cooldown',`
-stepThread(1);local session=start('drive');begin(session);advance(session,1);setpos(10)
+stepThread(1);local session=start('drive');begin(session);advance(session,1);driveTo(10)
 BodyHealth=990;tick(200);check(call('reportIncident',session,'damage',2)[1].errors==0,'10 damage below threshold')
 BodyHealth=980;tick(200);check(lastState().errors==1,'two gradual 10-point losses accumulate to incident')
 BodyHealth=970;tick(200);BodyHealth=960;tick(200);check(lastState().errors==1,'same impact does not stack during cooldown')
@@ -475,7 +560,26 @@ check(VehicleLeases[session] and Exported.IsExamActive(1) and Deleted==1,'the ne
 fire('esx:playerLogout',1)
 check(VehicleLeases[session]==nil and Deleted==2,'logout still cleans the replacement lease')
 `);
-run('ESX callback fallback without xLib/catalog dependency',`
+if(limiterSource)run('ESX request budget applies before payments, callbacks and network events',`
+stepThread(1)
+local session=start('drive')
+check(createVehicle(session).ok,'normal purchase and vehicle allocation fit the budget')
+check(call('beginPractical',session,10)[1].ok,'normal driver binding fits the budget')
+for i=1,7 do check(type(call('getLicenses')[1])=='table','read uses one budget token') end
+check(call('getLicenses')[1]==false,'exhausted budget denies licence reads')
+check(pay('drive')[2].error=='busy' and RemovedMoney==2500,'exhausted budget cannot debit')
+check(createVehicle(session).error=='busy' and VehicleSpawnCount==1,'exhausted budget cannot allocate')
+check(advance(session,1).error=='busy','exhausted budget cannot advance')
+net('cancelTest','drive',session)
+check(Exported.IsExamActive(1),'network cancel uses the shared budget')
+Clock=Clock+1000
+check(cancelRequest('drive',session).ok and not Exported.IsExamActive(1),'refilled budget allows cancellation')
+for i=1,5 do check(type(call('getLicenses')[1])=='table','remaining budget can be used') end
+check(call('getLicenses')[1]==false,'budget is empty before disconnect')
+source=1;fire('playerDropped');source=nil
+check(type(call('getLicenses')[1])=='table','disconnect clears the former player budget')
+`,{rateLimiter:true});
+run('ESX callback fallback without xLib callback registration',`
 stepThread(1);check(Callbacks['esx_dmvschool:canYouPay']~=nil,'ESX.RegisterServerCallback fallback');check(pay('dmv')[1],'compatible purchase with server ESX API')
 `,{fallback:true});
 console.log('Server regression: '+results.reduce((n,r)=>n+r.assertions,0)+' assertions passed.');

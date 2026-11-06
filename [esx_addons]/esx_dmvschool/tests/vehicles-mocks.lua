@@ -5,17 +5,22 @@ local function check(value, label)
   assert(value, label)
 end
 
-local function fixture()
+local function fixture(existingVehicle)
   local world = {
     entities = {},
     requests = {},
     responses = {},
     timers = {},
     deleted = {},
+    vehicleEnumerations = 0,
     bucketWrites = 0,
     players = { [1] = { bucket = 0, health = 200 }, [2] = { bucket = 0, health = 200 } },
   }
+  local handlers = {}
   local env = setmetatable({}, { __index = _G })
+  env.AddEventHandler = function(event, handler)
+    handlers[event] = handler
+  end
   env.GetCurrentResourceName = function()
     return 'esx_dmvschool'
   end
@@ -59,6 +64,7 @@ local function fixture()
     return 0
   end
   env.GetAllVehicles = function()
+    world.vehicleEnumerations = world.vehicleEnumerations + 1
     local result = {}
     for entity in pairs(world.entities) do
       result[#result + 1] = entity
@@ -68,7 +74,7 @@ local function fixture()
   end
   env.DeleteEntity = function(entity)
     world.deleted[#world.deleted + 1] = entity
-    world.entities[entity] = nil
+    world.remove(entity)
   end
   env.joaat = function(model)
     return ({ blista = 123, sanchez = 456, mule3 = 789 })[model] or 999
@@ -129,7 +135,15 @@ local function fixture()
       state = {},
       replication = {},
     }
+    local event = options.serverCreated and 'serverEntityCreated' or 'entityCreated'
+    if handlers[event] then
+      handlers[event](entity)
+    end
     return entity
+  end
+  function world.remove(entity)
+    handlers.entityRemoved(entity)
+    world.entities[entity] = nil
   end
   function world.resolve(index, options)
     local request = world.requests[index]
@@ -154,6 +168,9 @@ local function fixture()
     for _, timer in ipairs(timers) do
       timer.callback()
     end
+  end
+  if existingVehicle then
+    world.vehicle(60, 600)
   end
   assert(load(VehiclesSource, '@server/vehicles.lua', 't', env))()
   world.api = env.ESXDMVVehicles
@@ -209,17 +226,27 @@ check(world.api.Matches('one', 1, netId) and #world.responses == 2, 'resolved le
 check(world.api.Remove('one') and world.entities[entity] == nil, 'cleanup removes the assigned server entity')
 check(not world.api.Remove('one') and #world.deleted == 1, 'cleanup is idempotent')
 
-world = fixture()
-world.vehicle(60, 600, { occupied = true })
+world = fixture(true)
 world.api.Create(1, license(), 'blocked', world.reply)
 check(
   #world.requests == 0 and world.responses[1].value == 'spawn_blocked',
-  'occupied spawn area blocks before creation'
+  'vehicles already present at resource start block the spawn area'
 )
 check(world.entities[60] and #world.deleted == 0, 'blocking non-assigned vehicle is never removed')
 world.entities[60].bucket = 8
 world.api.Create(1, license(), 'clear-other-bucket', world.reply)
 check(#world.requests == 1, 'a vehicle in another bucket does not block the departure')
+entity = world.resolve(1)
+world.api.Remove('clear-other-bucket')
+world.vehicle(61, 601, { serverCreated = true })
+world.api.Create(1, license(), 'server-blocker', world.reply)
+check(world.responses[3].value == 'spawn_blocked', 'new server-created vehicles block the spawn area')
+world.remove(61)
+world.vehicle(61, 601, { type = 1 })
+world.api.Create(1, license(), 'after-removal', world.reply)
+entity = world.resolve(2)
+check(world.responses[4].value == entity, 'removed vehicle handle reused by a ped does not block creation')
+check(world.vehicleEnumerations == 1, 'spawn requests and completion checks share one initial vehicle enumeration')
 
 world = fixture()
 world.api.Create(1, license(), 'pending', world.reply)
@@ -327,15 +354,16 @@ check(
 )
 
 world = fixture()
+world.vehicle(79, 799, { pos = { x = 100, y = 0, z = 0 } })
 world.api.Create(1, license(), 'arriving-blocker', world.reply)
-world.vehicle(80, 800, { occupied = true })
+world.entities[79].pos.x = 0
 entity = world.resolve(1)
 check(
   world.responses[1].value == 'spawn_blocked' and not world.entities[entity],
   'arrival collision rejects and removes only the new examination vehicle'
 )
 check(
-  world.entities[80] and #world.deleted == 1 and world.deleted[1] == entity,
+  world.entities[79] and #world.deleted == 1 and world.deleted[1] == entity,
   'late blocking vehicle remains untouched'
 )
 

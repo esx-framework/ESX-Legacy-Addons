@@ -4,8 +4,56 @@
 local RESOURCE_NAME = GetCurrentResourceName()
 local tickets, pendingPayments, pendingGrants, completed = {}, {}, {}, {}
 local licenses, catalogReady, stopping, sequence = {}, false, false, 0
-local TERMINAL_REASONS = { abandoned = true, timeout = true, death = true, vehicle_destroyed = true }
-local registerCallback = xLib and xLib.callback and xLib.callback.registerCompat or ESX.RegisterServerCallback
+local TERMINAL_REASONS = {
+  abandoned = true,
+  timeout = true,
+  death = true,
+  vehicle_destroyed = true,
+  server_rejected = true,
+}
+local MOVEMENT_MAX_SPEED = 90.0 -- metres per second
+local MOVEMENT_SPEED_MARGIN = 8.0 -- acceleration and velocity replication tolerance, in metres per second
+local MOVEMENT_JITTER = 8.0 -- metres that can carry over between updates
+local MOVEMENT_RECOVERY_RADIUS = 2.0 -- metres from the last trusted position
+local MOVEMENT_CREDIT_WINDOW = 1500 -- milliseconds
+local MOVEMENT_HOLD_GAP = 1000 -- milliseconds without an observed sample breaks a continuous hold
+local MOVEMENT_REJECTION_TIMEOUT = 5000 -- milliseconds before ending an unresolved invalid movement
+local registerCompat = xLib.callback and xLib.callback.registerCompat or ESX.RegisterServerCallback
+local requestLimiter = xLib.rateLimiter({ capacity = 16, refill = 6, interval = 1000 })
+local requestCost = {
+  canYouPay = 4,
+  createVehicle = 4,
+  submitTheory = 2,
+  completePractical = 2,
+}
+
+local function allowRequest(playerId, name)
+  return type(playerId) == 'number' and playerId > 0 and requestLimiter:consume(playerId, requestCost[name] or 1)
+end
+
+local function registerCallback(name, handler)
+  registerCompat(RESOURCE_NAME .. ':' .. name, function(playerId, cb, ...)
+    if allowRequest(playerId, name) then
+      return handler(playerId, cb, ...)
+    end
+    if name == 'canYouPay' then
+      return cb(false, { error = 'busy' })
+    end
+    if name == 'getLicenses' then
+      return cb(false)
+    end
+    return cb({ ok = false, error = 'busy' })
+  end)
+end
+
+local function registerRequestEvent(name, handler)
+  RegisterNetEvent(RESOURCE_NAME .. ':' .. name, function(...)
+    local playerId = source
+    if allowRequest(playerId, name) then
+      handler(playerId, ...)
+    end
+  end)
+end
 
 if ESXCatalog and ESXCatalog.awaitReady then
   ESXCatalog.awaitReady()
@@ -197,7 +245,15 @@ local function getTicket(playerId, session, practical)
   return ticket
 end
 
-local function snapshot(playerId, ticket, step)
+local function finite(value)
+  return type(value) == 'number' and value == value and value > -math.huge and value < math.huge
+end
+
+local function finiteVector(vector)
+  return vector and finite(vector.x) and finite(vector.y) and finite(vector.z)
+end
+
+local function snapshot(playerId, ticket)
   local ped, vehicle = GetPlayerPed(playerId), ticket.vehicle
   if not ped or ped <= 0 or GetEntityHealth(ped) <= 0 then
     return nil, 'death'
@@ -215,6 +271,13 @@ local function snapshot(playerId, ticket, step)
     return nil, 'not_driver'
   end
   local pos, heading, velocity = GetEntityCoords(vehicle), GetEntityHeading(vehicle), GetEntityVelocity(vehicle)
+  if not finiteVector(pos) or not finite(heading) or not finiteVector(velocity) then
+    return nil, 'invalid_movement'
+  end
+  local speed = math.sqrt(velocity.x ^ 2 + velocity.y ^ 2 + velocity.z ^ 2)
+  if speed > MOVEMENT_MAX_SPEED then
+    return nil, 'invalid_movement'
+  end
   local dimensions = ticket.license.dimensions or { width = 2.5, length = 5.0 }
   local radians = math.rad(heading)
   return {
@@ -222,7 +285,8 @@ local function snapshot(playerId, ticket, step)
     y = pos.y,
     z = pos.z,
     heading = heading,
-    speed = math.sqrt(velocity.x ^ 2 + velocity.y ^ 2 + velocity.z ^ 2) * Config.SpeedMultiplier,
+    speed = speed * Config.SpeedMultiplier,
+    speedMps = speed,
     driving = true,
     engine = nativeBoolean(GetIsVehicleEngineRunning(vehicle)),
     vehicleWidth = dimensions.width,
@@ -230,6 +294,45 @@ local function snapshot(playerId, ticket, step)
     footprintOffset = dimensions.offset,
     forwardSpeed = -math.sin(radians) * velocity.x + math.cos(radians) * velocity.y,
   }
+end
+
+local function resetTracking(ticket)
+  ticket.tracking, ticket.ready = {}, false
+  if ticket.lastTracking then
+    ticket.lastTracking = {}
+  end
+end
+
+local function verifyMovement(ticket, data, now)
+  local movement = ticket.movement
+  if not movement then
+    ticket.movement = { position = data, sampledAt = now, allowance = MOVEMENT_JITTER }
+    return true
+  end
+
+  local elapsed = math.max(0, now - movement.sampledAt)
+  local travelled = distance(movement.position, data)
+  local allowance = movement.allowance
+  if movement.interrupted then
+    -- A missing driver or rejected position cannot establish a new baseline at a checkpoint.
+    if travelled > math.min(allowance, MOVEMENT_RECOVERY_RADIUS) then
+      return false
+    end
+  else
+    local speed = math.max(movement.position.speedMps, data.speedMps) + MOVEMENT_SPEED_MARGIN
+    allowance = allowance + math.min(elapsed, MOVEMENT_CREDIT_WINDOW) / 1000 * math.min(speed, MOVEMENT_MAX_SPEED)
+    if travelled > allowance then
+      return false
+    end
+  end
+
+  if elapsed > MOVEMENT_HOLD_GAP then
+    resetTracking(ticket)
+  end
+  movement.position, movement.sampledAt = data, now
+  movement.allowance = math.min(MOVEMENT_JITTER, allowance - travelled)
+  movement.interrupted, movement.invalidSince = nil, nil
+  return true
 end
 
 local function sample(playerId, ticket)
@@ -243,24 +346,37 @@ local function sample(playerId, ticket)
     return
   end
   local step = ticket.route[math.min(ticket.index, #ticket.route)]
-  local data, errorCode = snapshot(playerId, ticket, step)
+  local now = GetGameTimer()
+  local data, errorCode = snapshot(playerId, ticket)
+  if data then
+    ticket.leftAt = nil
+    if not verifyMovement(ticket, data, now) then
+      data, errorCode = nil, 'invalid_movement'
+    end
+  end
   if not data then
-    ticket.tracking.holdSince, ticket.ready = nil, false
-    ticket.tracking.lastPos = nil
-    if ticket.lastTracking then
-      ticket.lastTracking.holdSince = nil
+    resetTracking(ticket)
+    if errorCode == 'death' or errorCode == 'vehicle_destroyed' then
+      return abort(playerId, ticket, errorCode)
+    end
+    local movement = ticket.movement
+    if movement then
+      movement.sampledAt, movement.interrupted = now, true
+      if errorCode == 'invalid_movement' then
+        movement.invalidSince = movement.invalidSince or now
+      end
+      if movement.invalidSince and now - movement.invalidSince >= MOVEMENT_REJECTION_TIMEOUT then
+        return abort(playerId, ticket, 'server_rejected')
+      end
     end
     if errorCode == 'not_driver' then
-      ticket.leftAt = ticket.leftAt or GetGameTimer()
-      if GetGameTimer() - ticket.leftAt >= (Config.AbandonTimeout or 20000) then
+      ticket.leftAt = ticket.leftAt or now
+      if now - ticket.leftAt >= (Config.AbandonTimeout or 20000) then
         abort(playerId, ticket, 'abandoned')
       end
-    elseif errorCode == 'death' or errorCode == 'vehicle_destroyed' then
-      abort(playerId, ticket, errorCode)
     end
     return
   end
-  ticket.leftAt = nil
   local health = GetVehicleBodyHealth(ticket.vehicle)
   if health <= 0 or GetVehicleEngineHealth(ticket.vehicle) <= -4000 then
     return abort(playerId, ticket, 'vehicle_destroyed')
@@ -290,7 +406,7 @@ local function sample(playerId, ticket)
   return data
 end
 
-registerCallback(RESOURCE_NAME .. ':getLicenses', function(playerId, cb)
+registerCallback('getLicenses', function(playerId, cb)
   local xPlayer = player(playerId)
   if not xPlayer then
     return cb(false)
@@ -298,7 +414,7 @@ registerCallback(RESOURCE_NAME .. ':getLicenses', function(playerId, cb)
   sendLicenses(playerId, xPlayer.getIdentifier(), cb)
 end)
 
-registerCallback(RESOURCE_NAME .. ':canYouPay', function(playerId, cb, licenseId, requestId)
+registerCallback('canYouPay', function(playerId, cb, licenseId, requestId)
   local xPlayer, license = player(playerId), licenses[licenseId]
   local function reject(reason)
     cb(false, { error = reason })
@@ -407,7 +523,7 @@ registerCallback(RESOURCE_NAME .. ':canYouPay', function(playerId, cb, licenseId
   end)
 end)
 
-registerCallback(RESOURCE_NAME .. ':createVehicle', function(playerId, cb, session)
+registerCallback('createVehicle', function(playerId, cb, session)
   local ticket, errorCode = getTicket(playerId, session, true)
   if not ticket then
     return cb({ ok = false, error = errorCode })
@@ -427,7 +543,7 @@ registerCallback(RESOURCE_NAME .. ':createVehicle', function(playerId, cb, sessi
   end)
 end)
 
-registerCallback(RESOURCE_NAME .. ':beginPractical', function(playerId, cb, session, netId)
+registerCallback('beginPractical', function(playerId, cb, session, netId)
   local ticket, errorCode = getTicket(playerId, session, true)
   if not ticket then
     return cb({ ok = false, error = errorCode })
@@ -452,20 +568,24 @@ registerCallback(RESOURCE_NAME .. ':beginPractical', function(playerId, cb, sess
   if GetEntityType(entity) ~= 2 or GetEntityModel(entity) ~= joaat(ticket.license.model) then
     return cb({ ok = false, error = 'invalid_vehicle' })
   end
-  if distance(GetEntityCoords(entity), ticket.license.spawn) > 25.0 then
+  local position = GetEntityCoords(entity)
+  if not finiteVector(position) or distance(position, ticket.license.spawn) > 25.0 then
     return cb({ ok = false, error = 'invalid_vehicle' })
   end
   if GetVehiclePedIsIn(ped, false) ~= entity or GetPedInVehicleSeat(entity, -1) ~= ped then
     return cb({ ok = false, error = 'vehicle_not_ready' })
   end
   ticket.netId, ticket.vehicle, ticket.lastHealth = netId, entity, GetVehicleBodyHealth(entity)
-  sample(playerId, ticket)
+  if not sample(playerId, ticket) then
+    ticket.netId, ticket.vehicle, ticket.lastHealth = nil, nil, nil
+    return cb({ ok = false, error = tickets[playerId] == ticket and 'vehicle_not_ready' or 'invalid_session' })
+  end
   local result = state(ticket)
   result.ok = true
   cb(result)
 end)
 
-registerCallback(RESOURCE_NAME .. ':advancePractical', function(playerId, cb, session, index)
+registerCallback('advancePractical', function(playerId, cb, session, index)
   local ticket, errorCode = getTicket(playerId, session, true)
   if not ticket then
     return cb({ ok = false, error = errorCode })
@@ -553,7 +673,7 @@ local function grant(playerId, ticket, cb)
   end)
 end
 
-registerCallback(RESOURCE_NAME .. ':submitTheory', function(playerId, cb, session, answers)
+registerCallback('submitTheory', function(playerId, cb, session, answers)
   local previous = previousResult(playerId, session)
   if previous then
     return cb(previous.kind == 'theory' and previous or { ok = false, error = 'invalid_license' })
@@ -597,7 +717,7 @@ registerCallback(RESOURCE_NAME .. ':submitTheory', function(playerId, cb, sessio
   }))
 end)
 
-registerCallback(RESOURCE_NAME .. ':completePractical', function(playerId, cb, session)
+registerCallback('completePractical', function(playerId, cb, session)
   local previous = previousResult(playerId, session)
   if previous then
     return cb(previous.kind == 'practical' and previous or { ok = false, error = 'invalid_license' })
@@ -662,12 +782,10 @@ local function cancel(playerId, licenseId, session, requestId)
   return { ok = false, error = 'invalid_session' }
 end
 
-registerCallback(RESOURCE_NAME .. ':cancelTest', function(playerId, cb, licenseId, session, requestId)
+registerCallback('cancelTest', function(playerId, cb, licenseId, session, requestId)
   cb(cancel(playerId, licenseId, session, requestId))
 end)
-RegisterNetEvent(RESOURCE_NAME .. ':cancelTest', function(licenseId, session, requestId)
-  cancel(source, licenseId, session, requestId)
-end)
+registerRequestEvent('cancelTest', cancel)
 
 local function reportIncident(playerId, session, reason, index)
   local ticket, errorCode = getTicket(playerId, session, true)
@@ -684,15 +802,12 @@ local function reportIncident(playerId, session, reason, index)
   result.ok = true
   return result
 end
-registerCallback(RESOURCE_NAME .. ':reportIncident', function(playerId, cb, session, reason, index)
+registerCallback('reportIncident', function(playerId, cb, session, reason, index)
   cb(reportIncident(playerId, session, reason, index))
 end)
-RegisterNetEvent(RESOURCE_NAME .. ':reportIncident', function(session, reason, index)
-  reportIncident(source, session, reason, index)
-end)
+registerRequestEvent('reportIncident', reportIncident)
 
-RegisterNetEvent(RESOURCE_NAME .. ':releaseVehicle', function(session)
-  local playerId = source
+registerRequestEvent('releaseVehicle', function(playerId, session)
   local previous = completed[playerId]
   if previous and previous.result.session == session and player(playerId, previous.identifier) then
     deleteVehicle(previous.ticket)
@@ -712,7 +827,9 @@ end
 AddEventHandler('esx:playerDropped', clearPlayer)
 AddEventHandler('esx:playerLogout', clearPlayer)
 AddEventHandler('playerDropped', function()
-  clearPlayer(source)
+  local playerId = source
+  requestLimiter:reset(playerId)
+  clearPlayer(playerId)
 end)
 AddEventHandler('esx:playerLoaded', function(playerId)
   clearPlayer(playerId)

@@ -4,8 +4,26 @@
 ESXDMVVehicles = {}
 local vehicles = ESXDMVVehicles
 local leases = {}
+local worldVehicles = {}
 local LEASE_KEY = GetCurrentResourceName() .. ':vehicleLease'
 local SPAWN_TIMEOUT = 10000
+
+local function trackVehicle(entity)
+  if DoesEntityExist(entity) and GetEntityType(entity) == 2 then
+    worldVehicles[entity] = true
+  end
+end
+
+AddEventHandler('entityCreated', trackVehicle)
+AddEventHandler('serverEntityCreated', trackVehicle)
+AddEventHandler('entityRemoved', function(entity)
+  worldVehicles[entity] = nil
+end)
+
+-- Include existing vehicles after a resource restart. Entity events maintain the set thereafter.
+for _, entity in ipairs(GetAllVehicles()) do
+  worldVehicles[entity] = true
+end
 
 local function finite(value)
   return type(value) == 'number' and value == value and value > -math.huge and value < math.huge
@@ -31,21 +49,23 @@ local function distanceSquared(first, second)
 end
 
 local function spawnClear(spawn, bucket, clearance, exclude)
-  for _, entity in ipairs(GetAllVehicles()) do
-    if
-      entity ~= exclude
-      and DoesEntityExist(entity)
-      and GetEntityRoutingBucket(entity) == bucket
-      and distanceSquared(GetEntityCoords(entity), spawn) <= clearance ^ 2
-    then
-      return false
-    end
-  end
   for _, lease in pairs(leases) do
     if
       not lease.entity
       and lease.bucket == bucket
       and distanceSquared(lease.spawn, spawn) <= (lease.clearance + clearance) ^ 2
+    then
+      return false
+    end
+  end
+  -- Read live positions and buckets so vehicles can move into or out of the departure area.
+  local clearanceSquared = clearance * clearance
+  for entity in pairs(worldVehicles) do
+    if
+      entity ~= exclude
+      and DoesEntityExist(entity)
+      and GetEntityRoutingBucket(entity) == bucket
+      and distanceSquared(GetEntityCoords(entity), spawn) <= clearanceSquared
     then
       return false
     end
@@ -181,6 +201,7 @@ function vehicles.Create(playerId, license, session, callback)
         return finish(lease, nil, 'spawn_failed')
       end
       lease.entity, lease.netId = entity, netId
+      worldVehicles[entity] = true
       local identified = pcall(function()
         Entity(entity).state:set(LEASE_KEY, lease.identity, false)
       end)

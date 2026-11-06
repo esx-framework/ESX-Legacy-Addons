@@ -1137,7 +1137,7 @@ CreateThread(function()
         local current, step = snapshot(a), a.steps[a.index]
         if not current.driving then
           a.abandonSince = a.abandonSince or now
-          a.tracking.holdSince, a.holdProgress, a.taskStatus = nil, 0, 'driver'
+          a.tracking, a.holdProgress, a.taskStatus = {}, 0, 'driver'
           if now - a.abandonSince >= Config.AbandonTimeout then
             abortPractical('abandoned')
           end
@@ -1146,6 +1146,9 @@ CreateThread(function()
           if a.errors >= Config.MaxErrors then
             abortPractical('server_rejected')
           else
+            if a.tracking.lastAt and now - a.tracking.lastAt > 1000 then
+              a.tracking = {}
+            end
             local passed, progress, detail = ESXDMVEvaluation.Evaluate(step, current, a.tracking, now)
             a.holdProgress, a.taskStatus = progress, detail.reason
             if passed then
