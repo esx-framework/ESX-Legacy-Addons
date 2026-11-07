@@ -25,6 +25,10 @@ git clone https://github.com/esx-framework/esx_license [esx]/esx_license
 start esx_license
 ```
 
+### Updating an existing database
+
+With your ESX database selected, run [`migrations/add_user_licenses_owner_index.sql`](migrations/add_user_licenses_owner_index.sql) during maintenance. It adds a non-unique index for owner lookups if no full-column index already starts with `owner`. Existing licence rows are preserved.
+
 ### Available triggers
 - `'esx_license:addLicense', function(target, type, cb)` (server-side `TriggerEvent`)
 - `'esx_license:removeLicense', function(target, type, cb)`

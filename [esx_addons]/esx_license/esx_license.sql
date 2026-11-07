@@ -13,6 +13,7 @@ CREATE TABLE `user_licenses` (
 	`type` varchar(60) NOT NULL,
 	`owner` VARCHAR(60) NOT NULL,
 
-	PRIMARY KEY (`id`)
+	PRIMARY KEY (`id`),
+	KEY `esx_user_licenses_owner` (`owner`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
