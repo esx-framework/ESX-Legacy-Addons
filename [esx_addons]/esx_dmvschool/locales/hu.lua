@@ -1,4 +1,7 @@
-Locales['hu'] = {
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+return {
   ['you_paid'] = 'Fizettél $%s az autósiskolának iskolának!',
   ['go_next_point'] = 'Menj a kövtkező ponthoz!',
   ['in_town_speed'] = 'Beértél a városba, figyelj a sebességedre! A sebesség határ: %s km/h',
@@ -27,8 +30,4 @@ Locales['hu'] = {
   ['errors'] = 'Hibapontok: ~r~%s/%s',
   ['you_damaged_veh'] = 'Összetörted az autót, ez drága lesz.',
   ['not_enough_money'] = 'Nincs elég pénzed!',
-  ['yourVersion'] = "A verziód: ",
-  ['latestVersion'] = "A legújabb verziót használod!",
-  ['needUpdateResource'] = "Le kell töltened a legújabb verziót! Jelenleg egy régi verziót használsz!",
-  ['errorGetCurrentVersion'] = "Hiba történt az aktuális verzió lekérése közben!"
 }

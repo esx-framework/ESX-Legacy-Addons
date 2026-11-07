@@ -1,13 +1,39 @@
 local licenses = {}
+local databaseReady, catalogRefreshing, catalogRefreshPending = false, false, false
+
+local function refreshLicenseCatalog()
+	catalogRefreshPending = true
+	if not databaseReady or catalogRefreshing then
+		return
+	end
+
+	catalogRefreshing = true
+	local ok, err = pcall(function()
+		repeat
+			catalogRefreshPending = false
+			local result = MySQL.query.await('SELECT type, label FROM licenses')
+			assert(type(result) == 'table', 'License catalog query did not return rows')
+			licenses = result
+		until not catalogRefreshPending
+	end)
+	catalogRefreshing = false
+	if not ok then
+		print(('[esx_license] Catalog refresh failed: %s'):format(tostring(err)))
+	end
+	return ok
+end
+
+AddEventHandler('esx:sqlCatalogReady', function(tables)
+	if type(tables) == 'table' and tables.licenses then
+		refreshLicenseCatalog()
+	end
+end)
 
 MySQL.ready(function()
-	local p = promise.new()
-	MySQL.query('SELECT type, label FROM licenses', function(result)
-		licenses = result
-		p:resolve(true)
-	end)
-	Citizen.Await(p)
-	ESX.Trace('[esx_license] : ' .. #licenses .. ' Loaded.')
+	databaseReady = true
+	if refreshLicenseCatalog() then
+		ESX.Trace('[esx_license] : ' .. #licenses .. ' Loaded.')
+	end
 end)
 
 ---@param identifier target identifier
@@ -83,7 +109,6 @@ local function isValidLicense(licenseType)
 	return flag
 end
 
-RegisterNetEvent('esx_license:addLicense')
 AddEventHandler('esx_license:addLicense', function(target, licenseType, cb)
 	local xPlayer = ESX.Player(target)
 	if xPlayer then

@@ -1,4 +1,7 @@
-Locales['sr'] = {
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+return {
   ['you_paid'] = 'Platili ste $%s AutoŠkoli',
   ['go_next_point'] = 'Idite do sledeće tačke!',
   ['in_town_speed'] = 'Ušli ste u grad, obratite pažnju na brzinu! Ograničenje Brzine: %s km/h',
@@ -27,8 +30,4 @@ Locales['sr'] = {
   ['errors'] = 'Greške: ~r~%s/%s',
   ['you_damaged_veh'] = 'Oštetili ste vozilo',
   ['not_enough_money'] = 'Nemate dovoljno novca',
-  ['yourVersion'] = "Vaša verzija: ",
-  ['latestVersion'] = "Koristite najnoviju verziju!",
-  ['needUpdateResource'] = "Morate preuzeti najnoviju verziju! Trenutno koristite staru verziju!",
-  ['errorGetCurrentVersion'] = "Došlo je do greške prilikom pokušaja dobavljanja trenutne verzije!"
 }

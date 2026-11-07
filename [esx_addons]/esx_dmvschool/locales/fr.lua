@@ -1,4 +1,7 @@
-Locales['fr'] = {
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+return {
   ['you_paid'] = 'Vous avez payé $%s',
   ['go_next_point'] = 'Allez vers le prochain passage!',
   ['in_town_speed'] = 'Entrée en ville, attention à votre vitesse! Vitesse limite: %s km/h',
@@ -9,7 +12,7 @@ Locales['fr'] = {
   ['good_turn_right'] = 'Bien! prenez à droite et suivez votre file',
   ['watch_traffic_lightson'] = 'Observez le traffic allumez vos feux!',
   ['stop_for_passing'] = 'Arrêtez-vous pour laisser passer les véhicules!',
-  ['hway_time'] = 'Il est temps d\'aller sur l\'autoroute! Vitesse limite: %s km/h',
+  ['hway_time'] = "Il est temps d'aller sur l'autoroute! Vitesse limite: %s km/h",
   ['gratz_stay_alert'] = 'Bravo, restez vigiliant!',
   ['passed_test'] = 'Vous avez réussi le test',
   ['failed_test'] = 'Vous avez ~r~raté le test',
@@ -26,9 +29,5 @@ Locales['fr'] = {
   ['test_failed_go_to_start_point'] = '~r~Go to the starting point, because you failed the test!',
   ['errors'] = 'erreurs: ~r~%s/%s',
   ['you_damaged_veh'] = 'Vous avez endommagé votre véhicule',
-  ['not_enough_money'] = 'Tu n\'as pas assez d\'argent',
-  ['yourVersion'] = "Votre version : ",
-  ['latestVersion'] = "Vous utilisez la dernière version !",
-  ['needUpdateResource'] = "Vous devez télécharger la dernière version ! Vous utilisez actuellement une ancienne version !",
-  ['errorGetCurrentVersion'] = "Une erreur s'est produite lors de la récupération de la version actuelle !"
+  ['not_enough_money'] = "Tu n'as pas assez d'argent",
 }

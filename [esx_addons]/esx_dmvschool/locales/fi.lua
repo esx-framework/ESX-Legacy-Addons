@@ -1,4 +1,7 @@
-Locales['fi'] = {
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+return {
   ['you_paid'] = 'Sinä maksoit $%s autokoululle',
   ['go_next_point'] = 'Mene seuraavaan pisteeseen.',
   ['in_town_speed'] = 'Saavuit kaupunkiin! Seuraa nopeuttasi Nopeusrajoitus: %s km/h',
@@ -27,8 +30,4 @@ Locales['fi'] = {
   ['errors'] = 'mistakes: ~r~%s/%s',
   ['you_damaged_veh'] = 'Vahingoitit ajoneuvoa. Aja varovaisemmin...',
   ['not_enough_money'] = 'Sinulla ei ole tarpeeksi rahaa',
-  ['yourVersion'] = "Versiosi: ",
-  ['latestVersion'] = "Käytät uusinta versiota!",
-  ['needUpdateResource'] = "Sinun täytyy ladata uusin versio! Käytät tällä hetkellä vanhaa versiota!",
-  ['errorGetCurrentVersion'] = "Virhe tapahtui haettaessa nykyistä versiota!"
 }

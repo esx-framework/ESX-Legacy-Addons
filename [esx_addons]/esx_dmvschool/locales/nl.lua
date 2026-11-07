@@ -1,4 +1,7 @@
-Locales['nl'] = {
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+return {
   ['you_paid'] = 'je betaalde €%s aan het CBR',
   ['go_next_point'] = 'ga naar het volgende punt!',
   ['in_town_speed'] = 'We zitten in de stad, let op je snelheid! Snelheids limiet: %s km/h',
@@ -27,8 +30,4 @@ Locales['nl'] = {
   ['errors'] = 'Fouten: ~r~%s/%s',
   ['you_damaged_veh'] = 'Je hebt het voertuig beschadigd',
   ['not_enough_money'] = 'Je hebt niet genoeg geld',
-  ['yourVersion'] = "Jouw versie: ",
-  ['latestVersion'] = "Je gebruikt de nieuwste versie!",
-  ['needUpdateResource'] = "Je moet de nieuwste versie downloaden! Je gebruikt momenteel een oude versie!",
-  ['errorGetCurrentVersion'] = "Er is een fout opgetreden bij het ophalen van de huidige versie!"
 }

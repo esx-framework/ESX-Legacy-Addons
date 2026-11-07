@@ -1,4 +1,7 @@
-Locales['it'] = {
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Copyright (C) 2022-2026 ESX Framework
+
+return {
   ['you_paid'] = 'hai pagato $%s alla scuola guida',
   ['go_next_point'] = 'vai al punto successivo!',
   ['in_town_speed'] = 'sei entrato in città, fai attenzione alla tua velocità! Limite di velocità: %s km/h',
@@ -27,8 +30,4 @@ Locales['it'] = {
   ['errors'] = 'errori: ~r~%s/%s',
   ['you_damaged_veh'] = 'hai danneggiato il veicolo',
   ['not_enough_money'] = 'non hai abbastanza soldi',
-  ['yourVersion'] = "La tua versione: ",
-  ['latestVersion'] = "Stai usando l'ultima versione!",
-  ['needUpdateResource'] = "Devi scaricare l'ultima versione! Stai usando una versione vecchia!",
-  ['errorGetCurrentVersion'] = "Si è verificato un errore durante il recupero della versione corrente!"
 }

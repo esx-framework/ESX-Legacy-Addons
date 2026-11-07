@@ -1,0 +1,12 @@
+{
+  "name": "esx-dmvschool-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline regression tests for esx_dmvschool",
+  "scripts": {
+    "test:server": "node server-regression.cjs"
+  },
+  "devDependencies": {
+    "fengari": "0.1.4"
+  }
+}
