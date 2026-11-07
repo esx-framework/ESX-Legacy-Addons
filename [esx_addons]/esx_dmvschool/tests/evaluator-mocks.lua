@@ -60,6 +60,19 @@ for i = 0,30 do evaluation.Evaluate(reverse, car({y = 3-i*.1,forwardSpeed = -1})
 evaluation.Evaluate(reverse,car({y = 4,forwardSpeed = 1}),tracking,3200)
 passed = evaluation.Evaluate(reverse,car(),tracking,3300)
 check(not passed, 'leaving forwards resets reverse entry evidence')
+tracking = {}
+for i = 0, 25 do evaluation.Evaluate(reverse, car({y = -5-i*.1, forwardSpeed = -1}), tracking, i*100) end
+check(tracking.reverseDistance >= 2 and not tracking.reverseEntry, 'reverse approach has distance but no bay entry')
+for i = 1, 75 do evaluation.Evaluate(reverse, car({y = -7.5+i*.1, forwardSpeed = 1}), tracking, 2500+i*100) end
+evaluation.Evaluate(reverse, car({y = -.05, forwardSpeed = -.5}), tracking, 10100)
+check(not evaluation.Evaluate(reverse, car({y = -.05}), tracking, 10200),
+  'a reverse tap after forward entry cannot reuse earlier reverse travel')
+tracking = {}
+for i = 0, 30 do evaluation.Evaluate(reverse, car({y = 3-i*.1, forwardSpeed = -1}), tracking, i*100) end
+evaluation.Evaluate(reverse, car({y = .1, speed = 3.6, forwardSpeed = 1}), tracking, 3100)
+check(evaluation.Evaluate(reverse, car({y = .1}), tracking, 3200), 'small forward corrections inside retain valid entry')
+for i = 1, 32 do evaluation.Evaluate(reverse, car({y = .1-i*.1, forwardSpeed = -1}), tracking, 3200+i*100) end
+check(not tracking.reverseEntry and (tracking.reverseDistance or 0) < 2, 'reversing out of the bay clears prior entry')
 local stop = {type = 'stop',pos = {x = 0,y = 0,z = 0},radius = 5,hold = 0}
 check(evaluation.Evaluate(stop, car(), {}, 0), 'stopped vehicle passes immediate stop')
 check(not evaluation.Evaluate(stop, car({speed = 1.1}), {}, 0), 'stop speed threshold enforced')

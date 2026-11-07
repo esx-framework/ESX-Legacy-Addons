@@ -5,7 +5,7 @@ ESXDMVVehicles = {}
 local vehicles = ESXDMVVehicles
 local leases = {}
 local worldVehicles = {}
-local LEASE_KEY = GetCurrentResourceName() .. ':vehicleLease'
+local entityLeases = {}
 local SPAWN_TIMEOUT = 10000
 
 local function trackVehicle(entity)
@@ -18,6 +18,7 @@ AddEventHandler('entityCreated', trackVehicle)
 AddEventHandler('serverEntityCreated', trackVehicle)
 AddEventHandler('entityRemoved', function(entity)
   worldVehicles[entity] = nil
+  entityLeases[entity] = nil
 end)
 
 -- Include existing vehicles after a resource restart. Entity events maintain the set thereafter.
@@ -78,29 +79,15 @@ local function playerAvailable(lease)
   return ped and ped > 0 and GetEntityHealth(ped) > 0 and GetPlayerRoutingBucket(lease.playerId) == lease.bucket
 end
 
-local function sameHandle(lease)
-  if
-    not lease.entity
-    or not lease.netId
-    or not DoesEntityExist(lease.entity)
-    or NetworkGetEntityFromNetworkId(lease.netId) ~= lease.entity
-    or GetEntityType(lease.entity) ~= 2
-    or GetEntityModel(lease.entity) ~= lease.model
-  then
-    return false
-  end
-  return true
-end
-
 local function sameEntity(lease)
-  if not sameHandle(lease) then
-    return false
-  end
-  -- Keep the identity local to the server so recycled handles cannot become cleanup targets.
-  local ok, identity = pcall(function()
-    return Entity(lease.entity).state[LEASE_KEY]
-  end)
-  return ok and identity == lease.identity
+  local entity = lease.entity
+  -- Removal clears the server-owned binding before the handle can be reused.
+  return entity ~= nil
+    and entityLeases[entity] == lease
+    and DoesEntityExist(entity)
+    and NetworkGetEntityFromNetworkId(lease.netId) == entity
+    and GetEntityType(entity) == 2
+    and GetEntityModel(entity) == lease.model
 end
 
 local function removeEntity(lease)
@@ -166,7 +153,6 @@ function vehicles.Create(playerId, license, session, callback)
     clearance = radius(license),
     model = type(license.model) == 'number' and license.model or joaat(license.model),
     callback = callback,
-    identity = ('%08x%08x'):format(math.random(0, 2147483647), math.random(0, 2147483647)),
   }
   if not playerAvailable(lease) then
     return callback(nil, 'invalid_session')
@@ -187,10 +173,15 @@ function vehicles.Create(playerId, license, session, callback)
     license.spawn.w or 0,
     { plate = 'EXAM' },
     function(netId)
+      if lease.spawnResolved then
+        return
+      end
+      lease.spawnResolved = true
       local entity = finite(netId) and netId > 0 and NetworkGetEntityFromNetworkId(netId) or 0
       if
         not entity
         or entity == 0
+        or entityLeases[entity] ~= nil
         or not DoesEntityExist(entity)
         or GetEntityType(entity) ~= 2
         or GetEntityModel(entity) ~= lease.model
@@ -202,18 +193,7 @@ function vehicles.Create(playerId, license, session, callback)
       end
       lease.entity, lease.netId = entity, netId
       worldVehicles[entity] = true
-      local identified = pcall(function()
-        Entity(entity).state:set(LEASE_KEY, lease.identity, false)
-      end)
-      if not identified then
-        if leases[session] == lease then
-          leases[session] = nil
-        end
-        if sameHandle(lease) then
-          DeleteEntity(entity)
-        end
-        return finish(lease, nil, 'spawn_failed')
-      end
+      entityLeases[entity] = lease
       if leases[session] ~= lease or lease.cancelled or not playerAvailable(lease) then
         if leases[session] == lease then
           leases[session] = nil

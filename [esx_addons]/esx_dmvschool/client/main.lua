@@ -284,7 +284,8 @@ local function uiData()
   }
 end
 local function nearSchool(radius)
-  return ESXDMVEvaluation.Distance(GetEntityCoords(PlayerPedId()), Config.School.menu) <= (radius or 20)
+  local ped = PlayerPedId()
+  return not IsEntityDead(ped) and ESXDMVEvaluation.Distance(GetEntityCoords(ped), Config.School.menu) <= (radius or 20)
 end
 local function otherSchoolBusy()
   for _, resource in ipairs(Config.SchoolResources or {}) do
@@ -366,6 +367,7 @@ local function removeRoute(keepMarkers)
     ESXDMVMarkers.Clear()
   end
 end
+local lifecycle = 0
 local function cleanupEntities(a, confirmedReturn)
   removeRoute()
   if a.examiner and DoesEntityExist(a.examiner) then
@@ -374,6 +376,7 @@ local function cleanupEntities(a, confirmedReturn)
   local vehicle = a.vehicle
   a.vehicle, a.examiner = nil, nil
   local ped = PlayerPedId()
+  local generation = lifecycle
   local function release()
     TriggerServerEvent(event('releaseVehicle'), a.session)
   end
@@ -397,7 +400,7 @@ local function cleanupEntities(a, confirmedReturn)
         Wait(25)
       end
       release()
-      if not stopping and not IsEntityDead(ped) then
+      if not stopping and lifecycle == generation and PlayerPedId() == ped and not IsEntityDead(ped) then
         SetEntityCoords(ped, p.x, p.y, p.z, false, false, false, false)
         SetEntityHeading(ped, p.w or 0)
       end
@@ -688,15 +691,77 @@ local function createExamVehicle(a, ready)
   end, a.session)
 end
 
+local function monitorPractical(a)
+  CreateThread(function()
+    local nextHud = GetGameTimer() + 200
+    while not stopping and attempt == a do
+      Wait(100)
+      if stopping or attempt ~= a then
+        break
+      end
+      local now = GetGameTimer()
+      if a.status == 'active' then
+        local ped = PlayerPedId()
+        if IsEntityDead(ped) then
+          abortPractical('death')
+        elseif not a.vehicle or not DoesEntityExist(a.vehicle) or GetEntityHealth(a.vehicle) <= 0 then
+          abortPractical('vehicle_destroyed')
+        elseif now - a.createdAt >= Config.ExamTimeout then
+          abortPractical('timeout')
+        else
+          local current, step = snapshot(a), a.steps[a.index]
+          if not current.driving then
+            a.abandonSince = a.abandonSince or now
+            a.tracking, a.holdProgress, a.taskStatus = {}, 0, 'driver'
+            if now - a.abandonSince >= Config.AbandonTimeout then
+              abortPractical('abandoned')
+            end
+          else
+            a.abandonSince = nil
+            if a.errors >= Config.MaxErrors then
+              abortPractical('server_rejected')
+            else
+              if a.tracking.lastAt and now - a.tracking.lastAt > 1000 then
+                a.tracking = {}
+              end
+              local passed, progress, detail = ESXDMVEvaluation.Evaluate(step, current, a.tracking, now)
+              a.holdProgress, a.taskStatus = progress, detail.reason
+              if passed then
+                advance(a)
+              end
+              if step.limit and current.speed > step.limit + Config.SpeedTolerance then
+                a.speedingSince = a.speedingSince or now
+                if now - a.speedingSince >= Config.SpeedingGrace and now >= (a.speedingNext or 0) then
+                  reportIncident(a, 'speeding')
+                  a.speedingNext = now + Config.SpeedingGrace
+                end
+              else
+                a.speedingSince = nil
+              end
+              local health = GetVehicleBodyHealth(a.vehicle)
+              if health < a.health - Config.DamageThreshold and now - a.damageAt >= Config.DamageCooldown then
+                reportIncident(a, 'damage')
+                a.damageAt, a.health = now, health
+              elseif health > a.health then
+                a.health = health
+              end
+            end
+          end
+        end
+      end
+      if attempt == a and now >= nextHud then
+        sendPractical()
+        nextHud = now + 200
+      end
+    end
+  end)
+end
+
 local function startPractical(a)
   if attempt ~= a then
     return false
   end
   a.status, a.steps, a.index, a.tracking = 'spawning', Config.Routes[a.license.route], 1, {}
-  if not spawnClear(a.license) then
-    abortPractical('spawn_blocked')
-    return false
-  end
   screen, menuOpen = 'practical', false
   hideInteraction()
   xLib.nui.focus(false, false, false)
@@ -782,6 +847,7 @@ local function startPractical(a)
         end
         setRoute(a)
         sendPractical()
+        monitorPractical(a)
       end, a.session, netId)
     end
     -- Enter the assigned vehicle through the driver's door.
@@ -837,16 +903,6 @@ local function startPractical(a)
   end)
   return true
 end
-local function startTheory(a)
-  hideInteraction()
-  screen, menuOpen, a.status = 'theory', true, 'active'
-  local data = uiData()
-  data.session, data.questionCount, data.answersNeeded = a.session, a.theory.questionCount, a.theory.answersNeeded
-  data.questions = a.theory.questions
-  data.theory.id, data.theory.bank = a.license.id, a.license.bank or 'road'
-  xLib.nui.send('dmv:theory', data)
-  xLib.nui.focus(true, true, false)
-end
 local function cancelTheory(reason)
   local a = attempt
   if not a or a.kind ~= 'theory' then
@@ -865,6 +921,22 @@ local function cancelTheory(reason)
     license = a.license.id,
   })
   return true
+end
+local function startTheory(a)
+  hideInteraction()
+  screen, menuOpen, a.status = 'theory', true, 'active'
+  local data = uiData()
+  data.session, data.questionCount, data.answersNeeded = a.session, a.theory.questionCount, a.theory.answersNeeded
+  data.questions = a.theory.questions
+  data.theory.id, data.theory.bank = a.license.id, a.license.bank or 'road'
+  xLib.nui.send('dmv:theory', data)
+  xLib.nui.focus(true, true, false)
+  local session = a.session
+  SetTimeout(math.max(0, Config.ExamTimeout - (GetGameTimer() - a.createdAt)), function()
+    if attempt and attempt.session == session then
+      cancelTheory('timeout')
+    end
+  end)
 end
 function OpenDMVSchoolMenu()
   if stopping or attempt or startRequest or openRequested or not nearSchool() or otherSchoolBusy() then
@@ -1082,16 +1154,22 @@ end)
 RegisterNetEvent('esx:playerLoaded', function()
   refreshLicenses()
 end)
-local function resetPlayer()
+local function closeAttempt()
+  lifecycle = lifecycle + 1
   hideInteraction()
   cancelStart()
   local a = attempt
-  attempt, playerLicenses, lastResult = nil, {}, nil
+  attempt, lastResult = nil, nil
   if a then
     TriggerServerEvent(event('cancelTest'), a.license.id, a.session, a.requestId)
     cleanupEntities(a, false)
   end
   closeUI()
+end
+AddEventHandler('esx:onPlayerDeath', closeAttempt)
+local function resetPlayer()
+  playerLicenses = {}
+  closeAttempt()
 end
 RegisterNetEvent('esx:onPlayerLogout', resetPlayer)
 RegisterNetEvent('esx:playerDropped', resetPlayer)
@@ -1120,71 +1198,6 @@ CreateThread(function()
   end
   if not stopping then
     refreshLicenses()
-  end
-end)
-CreateThread(function()
-  while not stopping do
-    local a, now = attempt, GetGameTimer()
-    if a and a.kind == 'practical' and a.status == 'active' then
-      local ped = PlayerPedId()
-      if IsEntityDead(ped) then
-        abortPractical('death')
-      elseif not a.vehicle or not DoesEntityExist(a.vehicle) or GetEntityHealth(a.vehicle) <= 0 then
-        abortPractical('vehicle_destroyed')
-      elseif now - a.createdAt >= Config.ExamTimeout then
-        abortPractical('timeout')
-      else
-        local current, step = snapshot(a), a.steps[a.index]
-        if not current.driving then
-          a.abandonSince = a.abandonSince or now
-          a.tracking, a.holdProgress, a.taskStatus = {}, 0, 'driver'
-          if now - a.abandonSince >= Config.AbandonTimeout then
-            abortPractical('abandoned')
-          end
-        else
-          a.abandonSince = nil
-          if a.errors >= Config.MaxErrors then
-            abortPractical('server_rejected')
-          else
-            if a.tracking.lastAt and now - a.tracking.lastAt > 1000 then
-              a.tracking = {}
-            end
-            local passed, progress, detail = ESXDMVEvaluation.Evaluate(step, current, a.tracking, now)
-            a.holdProgress, a.taskStatus = progress, detail.reason
-            if passed then
-              advance(a)
-            end
-            if step.limit and current.speed > step.limit + Config.SpeedTolerance then
-              a.speedingSince = a.speedingSince or now
-              if now - a.speedingSince >= Config.SpeedingGrace and now >= (a.speedingNext or 0) then
-                reportIncident(a, 'speeding')
-                a.speedingNext = now + Config.SpeedingGrace
-              end
-            else
-              a.speedingSince = nil
-            end
-            local health = GetVehicleBodyHealth(a.vehicle)
-            if health < a.health - Config.DamageThreshold and now - a.damageAt >= Config.DamageCooldown then
-              reportIncident(a, 'damage')
-              a.damageAt, a.health = now, health
-            elseif health > a.health then
-              a.health = health
-            end
-          end
-        end
-      end
-    elseif a and a.kind == 'theory' and now - a.createdAt >= Config.ExamTimeout then
-      cancelTheory('timeout')
-    end
-    Wait(100)
-  end
-end)
-CreateThread(function()
-  while not stopping do
-    if attempt and attempt.kind == 'practical' then
-      sendPractical()
-    end
-    Wait(200)
   end
 end)
 CreateThread(function()

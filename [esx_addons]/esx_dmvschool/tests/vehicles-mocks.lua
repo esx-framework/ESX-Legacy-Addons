@@ -89,9 +89,6 @@ local function fixture(existingVehicle)
     return {
       state = setmetatable({
         set = function(_, key, value, replicated)
-          if world.failIdentity and key == 'esx_dmvschool:vehicleLease' then
-            error('identity state unavailable')
-          end
           if world.failFuel and key == 'fuel' then
             error('fuel state unavailable')
           end
@@ -144,6 +141,10 @@ local function fixture(existingVehicle)
   function world.remove(entity)
     handlers.entityRemoved(entity)
     world.entities[entity] = nil
+  end
+  function world.repeatCreationEvents(entity)
+    handlers.serverEntityCreated(entity)
+    handlers.entityCreated(entity)
   end
   function world.resolve(index, options)
     local request = world.requests[index]
@@ -200,9 +201,8 @@ check(
   'callback reports only the created entity'
 )
 check(
-  world.entities[entity].replication['esx_dmvschool:vehicleLease'] == false
-    and type(world.entities[entity].state['esx_dmvschool:vehicleLease']) == 'string',
-  'entity identity remains a non-replicated server value'
+  world.entities[entity].state['esx_dmvschool:vehicleLease'] == nil,
+  'no ownership marker is stored in entity state'
 )
 check(
   world.entities[entity].state.fuel == 100.0 and math.type(world.entities[entity].state.fuel) == 'float',
@@ -223,6 +223,10 @@ check(
 )
 world.timeout()
 check(world.api.Matches('one', 1, netId) and #world.responses == 2, 'resolved lease ignores the pending-spawn timeout')
+world.repeatCreationEvents(entity)
+check(world.api.Matches('one', 1, netId), 'duplicate entity creation events do not invalidate the lease')
+world.entities[entity].state['esx_dmvschool:vehicleLease'] = 'client overwrite'
+check(world.api.Matches('one', 1, netId), 'owner state writes do not invalidate the lease')
 check(world.api.Remove('one') and world.entities[entity] == nil, 'cleanup removes the assigned server entity')
 check(not world.api.Remove('one') and #world.deleted == 1, 'cleanup is idempotent')
 
@@ -326,7 +330,9 @@ check(not world.api.Matches('bucket-bound', 1, netId), 'the vehicle must also re
 world = fixture()
 world.api.Create(1, license(), 'reuse', world.reply)
 entity, netId = world.resolve(1)
+world.remove(entity)
 world.vehicle(entity, netId, { occupied = true })
+world.requests[1].callback(netId)
 check(
   not world.api.Matches('reuse', 1, netId),
   'fresh entity with recycled handle/network ID has no matching server identity'
@@ -412,15 +418,6 @@ check(
   'unavailable initial fuel state cleans the assigned entity and fails preparation'
 )
 world = fixture()
-world.failIdentity = true
-world.api.Create(1, license(), 'identity-failure', world.reply)
-entity = world.resolve(1)
-check(
-  not world.entities[entity] and world.responses[1].value == 'spawn_failed',
-  'initial identity-state failure removes only the just-created entity'
-)
-
-world = fixture()
 world.api.Create(1, license(), 'disconnect', world.reply)
 world.players[1] = nil
 entity = world.resolve(1)
@@ -437,6 +434,17 @@ entity = world.resolve(1)
 check(
   not world.entities[entity] and world.entities[replacement] and world.api.Matches('reused-session', 1, replacementId),
   'late cancelled request cannot remove a later lease that reused the session string'
+)
+
+world = fixture()
+world.api.Create(1, license(), 'cancelled-before-creation', world.reply)
+world.api.Cancel('cancelled-before-creation')
+world.api.Create(1, license(), 'new-lease', world.reply)
+replacement, replacementId = world.resolve(2)
+world.requests[1].callback(replacementId)
+check(
+  #world.deleted == 0 and world.api.Matches('new-lease', 1, replacementId),
+  'a late response cannot adopt or delete a vehicle already bound to another lease'
 )
 
 print(('server vehicle leases: %d assertions passed'):format(checks))

@@ -110,27 +110,30 @@ function evaluation.Evaluate(step, snapshot, tracking, now)
   tracking.lastAt = now
   local reverseSpeed = -(snapshot.forwardSpeed or 0)
   local travelled = tracking.lastPos and evaluation.Distance(currentPos, tracking.lastPos) or 0
-  if
-    snapshot.driving == true
-    and step.requireReverse
-    and distance <= math.max(step.length or 7, step.width or 4) + 8
-    and reverseSpeed > 0
-    and reverseSpeed <= (step.maxReverseSpeed or 5)
-    and travelled <= math.max(2, reverseSpeed * deltaSeconds * 2)
-  then
-    -- Both displacement and elapsed time bound accepted reverse travel.
-    -- A passenger, stale timer, warp or high-speed pass cannot satisfy parking.
-    tracking.reverseDistance = (tracking.reverseDistance or 0) + math.min(reverseSpeed * deltaSeconds, travelled)
+  local fitsBay = (kind == 'park' or step.requireReverse) and evaluation.FootprintFits(step, snapshot)
+  if step.requireReverse then
+    local inApproach = distance <= math.max(step.length or 7, step.width or 4) + 8
+    -- Earlier reverse travel cannot count after a forward approach or after exiting the bay.
     if
-      travelled > 0
-      and (tracking.reverseDistance or 0) >= (step.reverseDistance or 2)
-      and evaluation.FootprintFits(step, snapshot)
+      not inApproach
+      or (tracking.reverseEntry and not fitsBay)
+      or (not tracking.reverseEntry and reverseSpeed < 0 and travelled > 0)
     then
-      tracking.reverseEntry = true
+      tracking.reverseDistance, tracking.reverseEntry = nil, nil
     end
-  end
-  if step.requireReverse and (snapshot.forwardSpeed or 0) > 0.2 and not evaluation.FootprintFits(step, snapshot) then
-    tracking.reverseEntry = nil
+    if
+      snapshot.driving == true
+      and inApproach
+      and reverseSpeed > 0
+      and reverseSpeed <= (step.maxReverseSpeed or 5)
+      and travelled <= math.max(2, reverseSpeed * deltaSeconds * 2)
+    then
+      -- Both displacement and elapsed time bound accepted reverse travel.
+      tracking.reverseDistance = (tracking.reverseDistance or 0) + math.min(reverseSpeed * deltaSeconds, travelled)
+      if fitsBay and travelled > 0 and tracking.reverseDistance >= (step.reverseDistance or 2) then
+        tracking.reverseEntry = true
+      end
+    end
   end
   tracking.lastPos = { x = currentPos.x, y = currentPos.y, z = currentPos.z }
   local function requireCondition(ok, why)
@@ -149,7 +152,7 @@ function evaluation.Evaluate(step, snapshot, tracking, now)
   if kind == 'engine' then
     requireCondition(snapshot.engine == true, 'engine')
   elseif kind == 'park' then
-    requireCondition(evaluation.FootprintFits(step, snapshot), 'footprint')
+    requireCondition(fitsBay, 'footprint')
     requireHeading()
     requireCondition(speed <= (step.maxSpeed or 1), 'speed')
     if step.requireReverse then

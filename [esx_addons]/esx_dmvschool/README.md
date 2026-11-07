@@ -80,6 +80,10 @@ The server compares displacement with observed speed and elapsed time across the
 whole route. Implausible movement blocks progression. An interruption clears
 the current hold and reverse entry evidence. A sustained movement rejection
 ends the attempt and releases the exam vehicle.
+The server samples only practical exams with a bound driver and stops the
+monitor when the last one ends. Theory and vehicle setup expire on timers.
+If the server reports a blocked or failed spawn before assigning the vehicle,
+it refunds the charged fee.
 School callbacks and network events share a per-player `esx_lib` request limit.
 Keep `esx_license:addLicense` restricted to server-side `TriggerEvent` calls.
 The license is shown as confirmed only after `esx_license` reports ownership.

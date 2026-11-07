@@ -825,6 +825,43 @@ deaths.dead = true
 deaths.run(100)
 check(deaths.completed == 0 and deaths.last('dmv:result').passed == false, 'death cancels without completion')
 check(deaths.returned == 0, 'dead player is never teleported')
+local theoryDeath = fixture()
+theoryDeath.licenses = {}
+theoryDeath.open()
+theoryDeath.start('dmv')
+theoryDeath.dead = true
+theoryDeath.events['esx:onPlayerDeath']()
+check(
+  not theoryDeath.registrations.HasActiveExam() and not theoryDeath.focus[1],
+  'death closes theory and releases NUI focus'
+)
+check(theoryDeath.last('dmv:close') ~= nil, 'death hides the theory interface')
+
+local spawnDeath = fixture()
+spawnDeath.stallEntry = true
+spawnDeath.open()
+spawnDeath.start('drive')
+spawnDeath.run(150)
+spawnDeath.dead = true
+spawnDeath.events['esx:onPlayerDeath']()
+spawnDeath.run(8500)
+check(
+  not spawnDeath.registrations.HasActiveExam() and not spawnDeath.focus[1],
+  'death closes the practical during vehicle entry'
+)
+check(spawnDeath.began == 0 and spawnDeath.returned == 0, 'late entry cannot bind or move a dead player')
+
+local logout = fixture()
+logout.open()
+logout.start('drive')
+logout.run(400)
+logout.events['esx:onPlayerLogout']()
+check(
+  not logout.registrations.HasActiveExam() and not logout.focus[1],
+  'logout closes the practical and releases NUI focus'
+)
+check(logout.deletedPed == 201 and logout.removedBlips > 0, 'logout removes the passenger examiner and route')
+
 local stop, sEnv = fixture()
 stop.open()
 stop.start('drive')

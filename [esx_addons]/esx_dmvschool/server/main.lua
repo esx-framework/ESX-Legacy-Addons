@@ -3,6 +3,7 @@
 
 local RESOURCE_NAME = GetCurrentResourceName()
 local tickets, pendingPayments, pendingGrants, completed = {}, {}, {}, {}
+local activePractical, monitoring = {}, false
 local licenses, catalogReady, stopping, sequence = {}, false, false, 0
 local TERMINAL_REASONS = {
   abandoned = true,
@@ -18,6 +19,7 @@ local MOVEMENT_RECOVERY_RADIUS = 2.0 -- metres from the last trusted position
 local MOVEMENT_CREDIT_WINDOW = 1500 -- milliseconds
 local MOVEMENT_HOLD_GAP = 1000 -- milliseconds without an observed sample breaks a continuous hold
 local MOVEMENT_REJECTION_TIMEOUT = 5000 -- milliseconds before ending an unresolved invalid movement
+local PRACTICAL_SETUP_TIMEOUT = 30000
 local registerCompat = xLib.callback and xLib.callback.registerCompat or ESX.RegisterServerCallback
 local requestLimiter = xLib.rateLimiter({ capacity = 16, refill = 6, interval = 1000 })
 local requestCost = {
@@ -66,7 +68,10 @@ for _, license in ipairs(Config.Licenses) do
   )
   assert(not licenses[license.id], 'Duplicate school license ID')
   assert(license.kind == 'theory' or license.kind == 'practical', 'Invalid school license kind')
-  assert(type(license.price) == 'number' and license.price >= 0 and license.price < math.huge, 'Invalid school price')
+  assert(
+    type(license.price) == 'number' and license.price >= 0 and license.price < math.huge and license.price % 1 == 0,
+    'Invalid school price'
+  )
   if license.kind == 'practical' then
     assert(
       license.model and license.spawn and Config.Routes[license.route] and #Config.Routes[license.route] >= 5,
@@ -94,7 +99,11 @@ end
 
 local function near(playerId, position, radius)
   local ped = GetPlayerPed(playerId)
-  return ped and ped > 0 and position and distance(GetEntityCoords(ped), position) <= radius
+  return ped
+    and ped > 0
+    and GetEntityHealth(ped) > 0
+    and position
+    and distance(GetEntityCoords(ped), position) <= radius
 end
 
 local function owns(licenses, licenseId)
@@ -137,7 +146,7 @@ local function active(playerId)
   local ticket = tickets[playerId]
   return pendingPayments[playerId] ~= nil
     or pendingGrants[playerId] ~= nil
-    or (ticket ~= nil and ticket.expiresAt >= GetGameTimer())
+    or (ticket ~= nil and ticket.expiresAt > GetGameTimer())
 end
 
 exports('IsExamActive', active)
@@ -201,7 +210,7 @@ end
 local function incident(playerId, ticket, reason)
   local now = GetGameTimer()
   if reason == 'damage' and now - (ticket.lastDamageAt or -100000) < (Config.DamageCooldown or 2000) then
-    return
+    return false
   end
   if reason == 'damage' then
     ticket.lastDamageAt = now
@@ -213,6 +222,17 @@ local function incident(playerId, ticket, reason)
     ticket.errors = ticket.errors + 1
   end
   pushState(playerId, ticket, reason)
+  return ticket.errors >= Config.MaxErrors
+end
+
+local function removeTicket(playerId)
+  tickets[playerId], activePractical[playerId] = nil, nil
+end
+
+local function finishFailed(playerId, ticket, reason)
+  removeTicket(playerId)
+  deleteVehicle(ticket)
+  return remember(playerId, ticket, { ok = true, passed = false, confirmed = false, cancelled = true, reason = reason })
 end
 
 local function abort(playerId, ticket, reason)
@@ -220,9 +240,7 @@ local function abort(playerId, ticket, reason)
     return
   end
   incident(playerId, ticket, reason)
-  tickets[playerId] = nil
-  deleteVehicle(ticket)
-  remember(playerId, ticket, { ok = true, passed = false, confirmed = false, cancelled = true, reason = reason })
+  finishFailed(playerId, ticket, reason)
 end
 
 local function getTicket(playerId, session, practical)
@@ -235,7 +253,7 @@ local function getTicket(playerId, session, practical)
   then
     return nil, 'invalid_session'
   end
-  if ticket.expiresAt < GetGameTimer() then
+  if ticket.expiresAt <= GetGameTimer() then
     abort(playerId, ticket, 'timeout')
     return nil, 'timeout'
   end
@@ -339,7 +357,7 @@ local function sample(playerId, ticket)
   if not player(playerId, ticket.identifier) then
     return abort(playerId, ticket, 'abandoned')
   end
-  if GetGameTimer() > ticket.expiresAt then
+  if GetGameTimer() >= ticket.expiresAt then
     return abort(playerId, ticket, 'timeout')
   end
   if not ticket.vehicle then
@@ -385,7 +403,10 @@ local function sample(playerId, ticket)
   if not ticket.lastHealth or health > ticket.lastHealth or damageCooling then
     ticket.lastHealth = health
   elseif ticket.lastHealth - health >= (Config.DamageThreshold or 20) then
-    incident(playerId, ticket, 'damage')
+    if incident(playerId, ticket, 'damage') then
+      finishFailed(playerId, ticket, 'damage')
+      return
+    end
     ticket.lastHealth = health
   end
   local limit = step.limit
@@ -393,7 +414,10 @@ local function sample(playerId, ticket)
     ticket.speedingSince = ticket.speedingSince or GetGameTimer()
     if not ticket.speedingReported and GetGameTimer() - ticket.speedingSince >= (Config.SpeedingGrace or 2500) then
       ticket.speedingReported = true
-      incident(playerId, ticket, 'speeding')
+      if incident(playerId, ticket, 'speeding') then
+        finishFailed(playerId, ticket, 'speeding')
+        return
+      end
     end
   else
     ticket.speedingSince, ticket.speedingReported = nil, false
@@ -404,6 +428,23 @@ local function sample(playerId, ticket)
     ESXDMVEvaluation.Evaluate(step, data, ticket.lastTracking or {}, GetGameTimer())
   end
   return data
+end
+
+local function monitorPractical(playerId, ticket)
+  activePractical[playerId] = ticket
+  if monitoring then
+    return
+  end
+  monitoring = true
+  CreateThread(function()
+    while not stopping and next(activePractical) do
+      Wait(200)
+      for driverId, exam in pairs(activePractical) do
+        sample(driverId, exam)
+      end
+    end
+    monitoring = false
+  end)
 end
 
 registerCallback('getLicenses', function(playerId, cb)
@@ -429,7 +470,7 @@ registerCallback('canYouPay', function(playerId, cb, licenseId, requestId)
     return reject('not_near_school')
   end
   local previous = tickets[playerId]
-  if previous and previous.expiresAt < GetGameTimer() then
+  if previous and previous.expiresAt <= GetGameTimer() then
     abort(playerId, previous, 'timeout')
   end
   if active(playerId) or anotherSchoolActive(playerId) then
@@ -489,20 +530,23 @@ registerCallback('canYouPay', function(playerId, cb, licenseId, requestId)
       end
     end
 
+    if license.price > 0 and currentPlayer.removeMoney(license.price, 'School exam purchase') == false then
+      return finish(false, { error = 'not_enough_money' })
+    end
     sequence = sequence + 1
     local session = ('%s:%s:%s:%s'):format(RESOURCE_NAME, playerId, GetGameTimer(), sequence)
-    currentPlayer.removeMoney(license.price, 'School exam purchase')
     if completed[playerId] then
       deleteVehicle(completed[playerId].ticket)
     end
     completed[playerId] = nil
-    tickets[playerId] = {
+    local startedAt, timeout = GetGameTimer(), Config.ExamTimeout or 1200000
+    local ticket = {
       license = license,
       identifier = pending.identifier,
       session = session,
       requestId = requestId,
-      startedAt = GetGameTimer(),
-      expiresAt = GetGameTimer() + (Config.ExamTimeout or 1200000),
+      startedAt = startedAt,
+      expiresAt = startedAt + timeout,
       errors = 0,
       incidents = {},
       index = 1,
@@ -510,6 +554,21 @@ registerCallback('canYouPay', function(playerId, cb, licenseId, requestId)
       route = license.kind == 'practical' and Config.Routes[license.route] or nil,
       theory = theory,
     }
+    tickets[playerId] = ticket
+    SetTimeout(timeout, function()
+      local current = tickets[playerId]
+      if not stopping and current and current.session == session then
+        abort(playerId, current, 'timeout')
+      end
+    end)
+    if license.kind == 'practical' then
+      SetTimeout(PRACTICAL_SETUP_TIMEOUT, function()
+        local current = tickets[playerId]
+        if not stopping and current and current.session == session and not current.vehicle then
+          abort(playerId, current, 'timeout')
+        end
+      end)
+    end
     local response = { session = session }
     if theory then
       response.theory = {
@@ -532,13 +591,22 @@ registerCallback('createVehicle', function(playerId, cb, session)
     return cb({ ok = false, error = 'not_near_school' })
   end
   ESXDMVVehicles.Create(playerId, ticket.license, ticket.session, function(netId, entityOrError)
-    if stopping or tickets[playerId] ~= ticket or not player(playerId, ticket.identifier) then
+    local currentPlayer = player(playerId, ticket.identifier)
+    if stopping or tickets[playerId] ~= ticket or not currentPlayer then
       ESXDMVVehicles.Remove(ticket.session)
       return cb({ ok = false, error = 'invalid_session' })
     end
     if not netId then
-      return cb({ ok = false, error = entityOrError or 'spawn_failed' })
+      local reason = entityOrError or 'spawn_failed'
+      if not ticket.vehicleAllocated and (reason == 'spawn_blocked' or reason == 'spawn_failed') then
+        finishFailed(playerId, ticket, reason)
+        if ticket.license.price > 0 then
+          currentPlayer.addMoney(ticket.license.price, 'School exam vehicle unavailable')
+        end
+      end
+      return cb({ ok = false, error = reason })
     end
+    ticket.vehicleAllocated = true
     cb({ ok = true, netId = netId })
   end)
 end)
@@ -575,11 +643,17 @@ registerCallback('beginPractical', function(playerId, cb, session, netId)
   if GetVehiclePedIsIn(ped, false) ~= entity or GetPedInVehicleSeat(entity, -1) ~= ped then
     return cb({ ok = false, error = 'vehicle_not_ready' })
   end
-  ticket.netId, ticket.vehicle, ticket.lastHealth = netId, entity, GetVehicleBodyHealth(entity)
+  -- The server reports zero until the vehicle health node has replicated.
+  local health = GetVehicleBodyHealth(entity)
+  if not finite(health) or health <= 0 then
+    return cb({ ok = false, error = 'vehicle_not_ready' })
+  end
+  ticket.netId, ticket.vehicle, ticket.lastHealth = netId, entity, health
   if not sample(playerId, ticket) then
     ticket.netId, ticket.vehicle, ticket.lastHealth = nil, nil, nil
     return cb({ ok = false, error = tickets[playerId] == ticket and 'vehicle_not_ready' or 'invalid_session' })
   end
+  monitorPractical(playerId, ticket)
   local result = state(ticket)
   result.ok = true
   cb(result)
@@ -626,7 +700,7 @@ local function grant(playerId, ticket, cb)
   if pendingGrants[playerId] then
     return cb({ ok = false, error = 'busy' })
   end
-  tickets[playerId] = nil
+  removeTicket(playerId)
   pendingGrants[playerId] = ticket
   ticket.grantWaiters = { cb }
   local finished = false
@@ -706,7 +780,7 @@ registerCallback('submitTheory', function(playerId, cb, session, answers)
   if graded.passed then
     return grant(playerId, ticket, cb)
   end
-  tickets[playerId] = nil
+  removeTicket(playerId)
   cb(remember(playerId, ticket, {
     ok = true,
     passed = false,
@@ -749,7 +823,7 @@ registerCallback('completePractical', function(playerId, cb, session)
     return cb({ ok = false, error = 'step_not_ready' })
   end
   if ticket.errors >= Config.MaxErrors then
-    tickets[playerId] = nil
+    removeTicket(playerId)
     deleteVehicle(ticket)
     return cb(remember(playerId, ticket, { ok = true, passed = false, confirmed = false }))
   end
@@ -768,7 +842,7 @@ local function cancel(playerId, licenseId, session, requestId)
     and ticket.license.id == licenseId
     and ((session and ticket.session == session) or (requestId and ticket.requestId == requestId))
   then
-    tickets[playerId] = nil
+    removeTicket(playerId)
     deleteVehicle(ticket)
     return remember(playerId, ticket, { ok = true, cancelled = true, passed = false, confirmed = false })
   end
@@ -798,6 +872,9 @@ local function reportIncident(playerId, session, reason, index)
   end
   -- Reports prompt an independent sample; they never trust a client error count.
   sample(playerId, ticket)
+  if tickets[playerId] ~= ticket then
+    return previousResult(playerId, session) or { ok = false, error = 'invalid_session' }
+  end
   local result = state(ticket)
   result.ok = true
   return result
@@ -814,12 +891,33 @@ registerRequestEvent('releaseVehicle', function(playerId, session)
   end
 end)
 
+RegisterNetEvent('esx:onPlayerDeath', function()
+  local playerId = source
+  local ticket, payment, grantTicket = tickets[playerId], pendingPayments[playerId], pendingGrants[playerId]
+  if not (ticket or payment or grantTicket) or not allowRequest(playerId, 'death') then
+    return
+  end
+  local ped = GetPlayerPed(playerId)
+  if not ped or ped <= 0 or GetEntityHealth(ped) > 0 then
+    return
+  end
+  if payment then
+    payment.cancel()
+  end
+  if ticket then
+    abort(playerId, ticket, 'death')
+  end
+  -- A grant already submitted to the database can settle, but its vehicle is no longer needed.
+  deleteVehicle(grantTicket)
+end)
+
 local function clearPlayer(playerId)
   local ticket = tickets[playerId] or pendingGrants[playerId] or (completed[playerId] and completed[playerId].ticket)
   if ticket then
     deleteVehicle(ticket)
   end
-  tickets[playerId], completed[playerId], pendingGrants[playerId] = nil, nil, nil
+  removeTicket(playerId)
+  completed[playerId], pendingGrants[playerId] = nil, nil
   if pendingPayments[playerId] then
     pendingPayments[playerId].cancel()
   end
@@ -868,7 +966,10 @@ CreateThread(function()
         { license.id, Translate(license.label) }
       )
     end
-    while not stopping and not catalogReady do
+    for attempt = 1, 10 do
+      if stopping then
+        return
+      end
       TriggerEvent('esx:sqlCatalogReady', { licenses = true })
       TriggerEvent('esx_license:getLicensesList', function(catalog)
         local found = {}
@@ -883,21 +984,14 @@ CreateThread(function()
           end
         end
       end)
-      if not catalogReady then
+      if catalogReady then
+        print(('[%s] License catalog ready.'):format(RESOURCE_NAME))
+        return
+      end
+      if attempt < 10 then
         Wait(1000)
       end
     end
-    if catalogReady then
-      print(('[%s] License catalog ready.'):format(RESOURCE_NAME))
-    end
+    print(('[%s] License catalog unavailable. Verify esx_license and restart this resource.'):format(RESOURCE_NAME))
   end)
-end)
-
-CreateThread(function()
-  while not stopping do
-    for playerId, ticket in pairs(tickets) do
-      sample(playerId, ticket)
-    end
-    Wait(200)
-  end
 end)

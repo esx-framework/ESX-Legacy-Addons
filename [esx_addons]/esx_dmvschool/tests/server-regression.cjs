@@ -43,9 +43,17 @@ end
 Timers,Threads,Handlers,Callbacks,ClientEvents,Queries,Catalog={}, {}, {}, {}, {}, {}, {}
 function SetTimeout(ms,fn) Timers[#Timers+1]={ms=ms,fn=fn} end
 function runTimer(ms) for i=#Timers,1,-1 do if Timers[i].ms==ms then local t=table.remove(Timers,i);t.fn();return end end error('missing timer '..ms) end
-function CreateThread(fn) Threads[#Threads+1]=coroutine.create(fn) end
+CatalogRows,CatalogRefreshes,SuppressCatalogRefresh={},0,false
+function CreateThread(fn)
+ Threads[#Threads+1]=coroutine.create(fn)
+ if #Threads>1 then local ok,err=coroutine.resume(Threads[#Threads]);assert(ok,err) end
+end
 function Wait(ms) coroutine.yield(ms) end
-function stepThread(index) local ok,err=coroutine.resume(Threads[index]);assert(ok,err) end
+function stepThread(index)
+ local thread=index==2 and Threads[#Threads] or Threads[index]
+ if not thread or (index==2 and #Threads<2) or coroutine.status(thread)=='dead' then return end
+ local ok,err=coroutine.resume(thread);assert(ok,err)
+end
 function AddEventHandler(name,fn) Handlers[name]=Handlers[name] or {};table.insert(Handlers[name],fn) end
 function RegisterNetEvent(name,fn) if fn then AddEventHandler(name,fn) end end
 function fire(name,...) for _,fn in ipairs(Handlers[name] or {}) do fn(...) end end
@@ -112,20 +120,37 @@ ESXDMVVehicles={
  end
 }
 ESXDMVVehicles.Cancel=ESXDMVVehicles.Remove
-local xPlayer={getIdentifier=function() return Identifier end,getMoney=function() return Money end,removeMoney=function(amount) Money=Money-amount;RemovedMoney=RemovedMoney+amount end}
+RejectDebit,DebitCalls,RefundedMoney=false,0,0
+local xPlayer={
+ getIdentifier=function() return Identifier end,
+ getMoney=function() return Money end,
+ removeMoney=function(amount)
+  assert(amount>0,'zero debit is invalid in ESX')
+  DebitCalls=DebitCalls+1
+  if RejectDebit then return false end
+  Money=Money-amount;RemovedMoney=RemovedMoney+amount
+  return true
+ end,
+ addMoney=function(amount)
+  Money=Money+amount;RefundedMoney=RefundedMoney+amount
+  return true
+ end
+}
 ESX={Player=function(id) if Present and id==1 then return xPlayer end end,GetPlayerFromId=function(id) if Present and id==1 then return xPlayer end end,RegisterServerCallback=function(name,fn) Callbacks[name]=fn end}
 xLib={
  callback={registerCompat=ESX.RegisterServerCallback},
  rateLimiter=function() return {consume=function() return true end,reset=function() end} end,
 }
 ESXCatalog={awaitReady=function() end}
-MySQL={ready=function(fn) fn() end,query={await=function(query,params) Queries[#Queries+1]=query;Catalog[#Catalog+1]={type=params[1],label=params[2]} end}}
+MySQL={ready=function(fn) fn() end,query={await=function(query,params) Queries[#Queries+1]=query;CatalogRows[#CatalogRows+1]={type=params[1],label=params[2]} end}}
 function licenseList() local t={};for name,exists in pairs(Owned) do if exists then t[#t+1]={type=name} end end;return t end
 function TriggerEvent(name,id,licenseType,cb)
  if name=='esx_license:getLicenses' then local fn=function() licenseType(licenseList()) end;if DeferLicenses then PendingLicenseQueries[#PendingLicenseQueries+1]=fn else fn() end
  elseif name=='esx_license:addLicense' then GrantCount=GrantCount+1;local fn=function() if not GrantFailure then Owned[licenseType]=true end;cb(not GrantFailure) end;if DeferGrant then PendingGrantQueries[#PendingGrantQueries+1]=fn else fn() end
  elseif name=='esx_license:getLicensesList' then id(Catalog)
  elseif name=='esx:sqlCatalogReady' then
+  CatalogRefreshes=CatalogRefreshes+1
+  if not SuppressCatalogRefresh then Catalog=CatalogRows end
  else fire(name,id,licenseType,cb) end
 end
 function call(name,...) local response;Callbacks['esx_dmvschool:'..name](1,function(a,b) response={a,b} end,...);return response end
@@ -268,7 +293,7 @@ driveTo(20);tick(1500);check(advance(session,3).error=='step_not_ready','parking
 setpos(20,2.25);advance(session,3);vel(0,-1);for i=1,9 do setpos(20,2.25-i*0.25);tick(250) end;vel();Heading=90;tick(1200)
 check(advance(session,3).error=='step_not_ready','parking wrong orientation rejected')
 Heading=0;setpos(22);tick(1200);check(advance(session,3).error=='step_not_ready','whole footprint must fit, not center distance')
-setpos(20);advance(session,3);tick(500);tick(500);check(advance(session,3).ok,'parking geometry and hold accepted')
+check(parkReady(session).ok,'parking geometry and hold accepted after a new reverse manoeuvre')
 check(complete(session).error=='incomplete_route','remaining road tasks required')
 check(finishReady(session).ok,'return stopping task accepted')
 driveTo(50);check(complete(session).error=='step_not_ready','cannot leave finish before confirmation');driveTo(40);advance(session,5);tick(1000)
@@ -355,8 +380,12 @@ run('fifth error denies license, binding/identity/timeout cleanup',`
 stepThread(1);local session=start('drive');begin(session);advance(session,1);driveTo(10)
 for i=1,5 do BodyHealth=BodyHealth-30;tick(2100) end
 check(lastState().failed and lastState().errors==5,'fifth error fails')
-check(stopReady(session).ok,'return task still physically testable');check(parkReady(session).ok,'parking testable');check(finishReady(session).ok,'return finish')
-local result=complete(session);check(result.ok and not result.passed and not result.confirmed and GrantCount==0,'five errors never grants')
+check(not Exported.IsExamActive(1) and not VehicleLeases[session],'the server ends a failed attempt and removes its lease')
+check(coroutine.status(Threads[2])=='dead','terminal failure stops practical monitoring')
+check(advance(session,2).error=='invalid_session','failed attempt cannot advance')
+local result=complete(session)
+check(result.ok and not result.passed and not result.confirmed and result.reason=='damage'
+ and result.errors==5 and #result.incidents==5 and GrantCount==0,'terminal failure retains the five incidents without a grant')
 EngineRunning=true;EntityExists=true;session=start('drive');begin(session);Identifier='char2:account'
 check(advance(session,1).error=='invalid_session','cannot transfer ticket to another character');Identifier='char1:account';cancelRequest('drive',session)
 session=start('drive');begin(session);Driver=false;tick(200);tick(20001)
@@ -559,6 +588,120 @@ tick(200)
 check(VehicleLeases[session] and Exported.IsExamActive(1) and Deleted==1,'the next sampler preserves the new active lease')
 fire('esx:playerLogout',1)
 check(VehicleLeases[session]==nil and Deleted==2,'logout still cleans the replacement lease')
+`);
+run('free exams and failed ESX debits cannot create unpaid paid attempts',`
+stepThread(1)
+Config.Licenses[1].price=0
+local free=pay('dmv')
+check(free[1] and DebitCalls==0 and Money==50000,'free theory does not call the cash adapter')
+cancelRequest('dmv',free[2].session)
+Config.Licenses[1].price=500
+RejectDebit=true
+local rejected=pay('dmv')
+check(not rejected[1] and rejected[2].error=='not_enough_money','adapter rejection blocks purchase')
+check(DebitCalls==1 and Money==50000 and not Exported.IsExamActive(1),'failed debit creates no session')
+`);
+run('server-confirmed spawn failure refunds one charged fee',`
+stepThread(1)
+local first=start('drive')
+SpawnBlocked=true
+check(createVehicle(first).error=='spawn_blocked' and Money==50000 and RefundedMoney==2500,'blocked reservation refunds the charged fee')
+check(createVehicle(first).error=='invalid_session' and RefundedMoney==2500,'replay cannot refund twice')
+check(cancelRequest('drive',first).cancelled and not Exported.IsExamActive(1),'failed attempt can acknowledge cancellation')
+SpawnBlocked=false
+local second=start('drive')
+check(begin(second).ok,'a later successful attempt binds normally')
+check(cancelRequest('drive',second).cancelled and Money==47500 and RefundedMoney==2500,'voluntary cancellation retains the fee')
+`);
+run('death cleans pending payment, theory, and bound and unbound practical attempts',`
+stepThread(1)
+local function die()
+ PedHealth=0;source=1;fire('esx:onPlayerDeath');source=nil
+end
+DeferLicenses=true
+check(pay('dmv')==nil and Exported.IsExamActive(1),'pending payment fixture')
+die();table.remove(PendingLicenseQueries,1)()
+check(Money==50000 and not Exported.IsExamActive(1),'death cancels pending payment before debit')
+DeferLicenses=false;PedHealth=200
+local theory=start('dmv')
+source=1;fire('esx:onPlayerDeath');source=nil
+check(Exported.IsExamActive(1),'alive player cannot trigger a server death cleanup')
+die()
+check(not Exported.IsExamActive(1) and submit(theory,{}).reason=='death' and GrantCount==0,'death consumes theory without grant')
+check(pay('dmv')[2].error=='not_near_school','dead player cannot buy a new exam')
+PedHealth=200
+local unbound=start('drive');check(createVehicle(unbound).ok,'unbound vehicle fixture')
+die()
+check(not VehicleLeases[unbound] and not Exported.IsExamActive(1) and #Threads==1,'death frees unbound vehicle without starting a monitor')
+PedHealth=200
+local bound=start('drive');check(begin(bound).ok,'bound vehicle fixture')
+die();tick(200)
+check(not VehicleLeases[bound] and not Exported.IsExamActive(1) and coroutine.status(Threads[2])=='dead','death removes driver and vehicle and stops monitoring')
+check(complete(bound).reason=='death' and GrantCount==0,'death result cannot grant')
+`);
+run('disconnect invalidates old requests, vehicle leases and the practical monitor',`
+stepThread(1)
+local function drop() source=1;fire('playerDropped');source=nil end
+DeferLicenses=true
+check(pay('dmv')==nil and Exported.IsExamActive(1),'pending payment fixture')
+drop();table.remove(PendingLicenseQueries,1)()
+check(Money==50000 and not Exported.IsExamActive(1),'late payment reply cannot charge after disconnect')
+DeferLicenses=false;DeferVehicle=true
+local unbound=start('drive')
+local result
+Callbacks['esx_dmvschool:createVehicle'](1,function(reply) result=reply end,unbound)
+drop();table.remove(PendingVehicleCallbacks,1)()
+check(result.error=='invalid_session' and not VehicleLeases[unbound],'late allocation cannot retain disconnected lease')
+DeferVehicle=false
+local bound=start('drive');check(begin(bound).ok,'bound vehicle fixture')
+drop();tick(200)
+check(not VehicleLeases[bound] and not Exported.IsExamActive(1) and coroutine.status(Threads[2])=='dead','disconnect removes bound lease and stops monitor')
+check(advance(bound,1).error=='invalid_session','disconnected attempt cannot be resumed')
+`);
+run('catalog startup waits for provider cache and stops retrying when it cannot load',`
+SuppressCatalogRefresh=true
+for i=1,10 do stepThread(1) end
+check(#CatalogRows==2 and #Catalog==0,'database inserts alone do not mark the catalogue ready')
+check(CatalogRefreshes==10 and coroutine.status(Threads[1])=='dead','catalogue retry has a finite lifetime')
+check(pay('dmv')[2].error=='unavailable' and RemovedMoney==0,'a failed catalogue refresh never charges')
+`);
+run('practical monitoring follows driver binding and expires idle tickets independently',`
+stepThread(1)
+check(#Threads==1,'resource startup has no exam monitor')
+local theory=start('dmv')
+check(#Threads==1,'theory does not start the practical monitor')
+runTimer(Config.ExamTimeout)
+check(not Exported.IsExamActive(1),'theory expires without a polling thread')
+local unbound=start('drive')
+check(createVehicle(unbound).ok and #Threads==1,'vehicle allocation does not start monitoring before binding')
+runTimer(30000)
+check(not Exported.IsExamActive(1) and VehicleLeases[unbound]==nil,'unbound setup expires and releases its vehicle after 30 seconds')
+local first=start('drive')
+check(begin(first).ok and #Threads==2,'first bound driver starts one monitor')
+runTimer(30000)
+check(Exported.IsExamActive(1),'setup timeout leaves a bound driver active')
+check(begin(first).ok and #Threads==2,'duplicate binding keeps the same monitor')
+check(cancelRequest('drive',first).ok,'bound attempt can cancel')
+local second=start('drive')
+check(begin(second).ok and #Threads==2,'replacement before worker exits reuses the existing monitor')
+tick(200);check(advance(second,1).ok,'monitor continues to observe the new bound attempt')
+check(cancelRequest('drive',second).ok,'last driving attempt can cancel')
+tick(200)
+check(coroutine.status(Threads[2])=='dead','last cancellation stops the monitor')
+local third=start('drive')
+check(begin(third).ok and #Threads==3,'a later practical restarts the monitor')
+fire('esx:playerLogout',1);tick(200)
+check(coroutine.status(Threads[3])=='dead','logout removes the last driver and ends the monitor')
+`);
+run('vehicle binding waits for OneSync health before starting the monitor',`
+stepThread(1);local session=start('drive')
+check(createVehicle(session).ok,'vehicle allocated')
+BodyHealth=0
+check(call('beginPractical',session,10)[1].error=='vehicle_not_ready' and Deleted==0 and VehicleLeases[session]~=nil,
+ 'uninitialized health does not destroy the assigned vehicle')
+check(#Threads==1,'uninitialized vehicle is not monitored')
+BodyHealth=1000
+check(call('beginPractical',session,10)[1].ok and #Threads==2,'replicated vehicle starts monitoring on retry')
 `);
 if(limiterSource)run('ESX request budget applies before payments, callbacks and network events',`
 stepThread(1)
