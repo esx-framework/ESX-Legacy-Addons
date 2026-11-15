@@ -634,14 +634,20 @@ xLib.nui.register("garage:retrieveVehicle", function(data)
         spawn = { x = spawn.x, y = spawn.y, z = spawn.z, w = spawn.w },
     })
 
-    if result and result.success and result.data and result.data.netId then
-        local vehicle = NetworkGetEntityFromNetworkId(result.data.netId)
-        local tries = 0
+    if result and result.success and result.data then
+        local vehicle
+        local netId = tonumber(result.data.netId)
 
-        while not DoesEntityExist(vehicle) and tries < 50 do
-            Wait(10)
-            vehicle = NetworkGetEntityFromNetworkId(result.data.netId)
-            tries = tries + 1
+        if netId and netId > 0 and NetworkDoesNetworkIdExist(netId) then
+            vehicle = NetworkGetEntityFromNetworkId(netId)
+
+            local tries = 0
+            while (not vehicle or vehicle == 0 or not DoesEntityExist(vehicle))
+                and tries < 50 do
+                Wait(100)
+                vehicle = NetworkGetEntityFromNetworkId(netId)
+                tries = tries + 1
+            end
         end
 
         if DoesEntityExist(vehicle) then
