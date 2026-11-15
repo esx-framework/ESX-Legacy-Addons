@@ -638,7 +638,7 @@ xLib.nui.register("garage:retrieveVehicle", function(data)
         local vehicle
         local netId = tonumber(result.data.netId)
 
-        if netId and netId > 0 and netId < 65533 then
+        if netId and netId > 0 and NetworkDoesNetworkIdExist(netId) then
             vehicle = NetworkGetEntityFromNetworkId(netId)
 
             local tries = 0
