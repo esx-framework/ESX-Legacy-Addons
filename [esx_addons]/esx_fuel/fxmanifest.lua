@@ -10,7 +10,7 @@ name 'esx_fuel'
 author 'ESX Framework'
 description 'Fuel system with pumps, fuel types and consumption'
 version '1.0.0'
-legacyversion '1.16.0'
+legacyversion '1.17.0'
 
 shared_scripts {
     '@es_extended/imports.lua',

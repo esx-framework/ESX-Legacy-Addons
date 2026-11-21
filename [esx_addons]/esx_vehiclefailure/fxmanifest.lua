@@ -7,10 +7,10 @@ lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
 name 'esx_vehiclefailure'
-author 'ESX Framework'
+author 'ESX-Framework'
 description 'Configurable vehicle damage and engine failure'
 version '1.0.0'
-legacyversion '1.16.0'
+legacyversion '1.17.0'
 
 shared_scripts {
     '@es_extended/imports.lua',

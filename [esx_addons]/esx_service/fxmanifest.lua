@@ -9,7 +9,7 @@ lua54 'yes'
 author 'ESX-Framework'
 description 'A basic duty system for Jobs'
 version '1.0'
-legacyversion '1.16.3'
+legacyversion '1.17.0'
 
 shared_script '@es_extended/imports.lua'
 

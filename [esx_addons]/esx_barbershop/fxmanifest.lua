@@ -9,7 +9,7 @@ author 'ESX-Framework'
 description 'Allows Players to pay to change their hairstyle'
 lua54 'yes'
 version '1.0'
-legacyversion '1.16.3'
+legacyversion '1.17.0'
 
 shared_script '@es_extended/imports.lua'
 shared_script '@esx_paymentgateway/imports.lua'

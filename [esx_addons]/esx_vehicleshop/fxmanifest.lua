@@ -4,9 +4,10 @@
 fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
+author 'ESX-Framework'
 description 'Allows Players to buy & sell vehicles'
 version '1.0'
-legacyversion '1.16.3'
+legacyversion '1.17.0'
 
 shared_scripts {
     '@esx_lib/imports.lua',

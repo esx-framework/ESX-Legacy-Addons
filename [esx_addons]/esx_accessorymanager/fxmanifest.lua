@@ -8,7 +8,7 @@ lua54 'yes'
 author 'ESX-Framework'
 description 'Standalone ESX radial accessory and clothing manager'
 version '1.0.0'
-legacyversion '1.16.3'
+legacyversion '1.17.0'
 
 shared_scripts {
     '@esx_lib/imports.lua',

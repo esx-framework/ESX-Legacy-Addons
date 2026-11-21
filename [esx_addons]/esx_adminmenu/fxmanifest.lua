@@ -8,7 +8,7 @@ lua54 'yes'
 author 'ESX Framework'
 description 'ESX Admin Menu'
 version '1.0.0'
-legacyversion '1.16.0'
+legacyversion '1.17.0'
 
 shared_scripts {
     '@esx_lib/imports.lua',

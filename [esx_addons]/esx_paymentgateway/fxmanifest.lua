@@ -9,7 +9,7 @@ use_fxv2_oal 'yes'
 author 'ESX-Framework'
 description 'Payment gateway: a cash or card payment dialog, opened by other resources on the client'
 version '1.0.0'
-legacyversion '1.16.3'
+legacyversion '1.17.0'
 
 ui_page 'web/dist/index.html'
 

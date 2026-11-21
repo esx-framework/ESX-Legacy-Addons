@@ -8,7 +8,7 @@ name 'esx_chat'
 author 'ESX Framework'
 description 'Standalone ESX chat with OOC, RP, Job, PM, slash suggestions and emoji picker.'
 version '1.1.0'
-
+legacyversion '1.17.0'
 lua54 'yes'
 
 provide 'chat'

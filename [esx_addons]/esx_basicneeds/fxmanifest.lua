@@ -9,7 +9,7 @@ author 'ESX-Framework'
 description 'Hunger, thirst, consumables and alcohol effects'
 lua54 'yes'
 version '1.0'
-legacyversion '1.16.3'
+legacyversion '1.17.0'
 
 provide 'esx_optionalneeds'
 

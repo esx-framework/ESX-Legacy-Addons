@@ -8,9 +8,9 @@ lua54 'yes'
 use_fxv2_oal 'yes'
 
 description 'ESX Legacy pause menu'
-author 'ESX Legacy'
+author 'ESX-Framework'
 version '1.0.0'
-legacyversion '1.16.0'
+legacyversion '1.17.0'
 
 shared_scripts {
     '@esx_lib/imports.lua',

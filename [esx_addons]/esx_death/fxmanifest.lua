@@ -8,6 +8,7 @@ author 'ESX-Framework'
 description 'Global ESX death lifecycle, persistence, respawn and branded NUI'
 version '1.0.0'
 lua54 'yes'
+legacyversion '1.17.0'
 
 shared_scripts {
     '@es_extended/imports.lua',

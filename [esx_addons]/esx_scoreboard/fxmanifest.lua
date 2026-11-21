@@ -11,7 +11,7 @@ lua54 'yes'
 description 'ESX Scoreboard with active jobs, robberies and activities'
 author 'ESX-Framework'
 version '1.0.0'
-legacyversion '1.16.0'
+legacyversion '1.17.0'
 
 shared_scripts {
     '@esx_lib/imports.lua',
