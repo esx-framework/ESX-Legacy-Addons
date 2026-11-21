@@ -82,6 +82,7 @@ local function refresh()
                     sprite = shop.blip.sprite,
                     scale = shop.blip.scale or 0.8,
                     color = shop.blip.color or 3,
+                    shortRange = true,
                     label = shop.name,
                 })
             end
