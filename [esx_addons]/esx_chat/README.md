@@ -1,55 +1,80 @@
-# Chat y comandos de rol unificados
+# ESX CHAT
 
-`esx_chat` reúne la interfaz de chat, los comandos de rol y los mensajes privados.
-Incluye `/me`, `/do`, `/environment`, `/dice`, `/try`, `/ooc`, `/twt`, `/anontwt`,
-`/job`, `/pm`, `/msg`, `/report` y `/help`. `/msg` es un alias de `/pm` y comparte
-su límite de envío. Los comandos, permisos y canales se configuran en `config.lua`.
+`esx_chat` combines the chat interface, roleplay commands, and private messaging into one unified resource.
 
-## Instalación y actualización
+It includes the following commands:
 
-1. Guarda tus configuraciones personalizadas.
-2. Detén y retira `esx_rpchat` y quita su entrada `ensure` del servidor.
-3. Detén el chat predeterminado de FiveM y sustituye `ensure chat` por
-   `ensure esx_chat`. Despliega el recurso completo, incluidos los idiomas.
-4. Inicia `esx_chat` después de `es_extended` y `esx_lib`.
+`/me`, `/do`, `/environment`, `/dice`, `/try`, `/ooc`, `/twt`, `/anontwt`, `/job`, `/pm`, `/msg`, `/report`, and `/help`.
+
+`/msg` is an alias for `/pm` and shares the same sending rate limit. Commands, permissions, and channels can be configured in `config.lua`.
+
+## Installation and Upgrade
+
+1. Back up your custom configurations.
+2. Stop and remove `esx_rpchat`, then remove its `ensure` entry from your server configuration.
+3. Stop the default FiveM chat resource and replace `ensure chat` with `ensure esx_chat`. Install the complete resource, including all language files.
+4. Ensure `esx_chat` starts after `es_extended` and `esx_lib`.
+
+Add the following to your `server.cfg`:
+
+cfg
 
 ```cfg
 ensure esx_chat
 ```
 
-Este recurso proporciona `chat` y `esx_rpchat` mediante la
-[sustitución de recursos de FiveM](https://docs.fivem.net/docs/scripting-reference/resource-manifest/#provide).
-Solo se necesita esta interfaz; `esx_chat_theme` corresponde al antiguo chat.
-No hay cambios SQL ni una compilación nueva de la interfaz para esta integración.
+This resource provides both `chat` and `esx_rpchat` through FiveM resource replacement.
 
-## Opciones trasladadas
+Only this resource is required for the chat interface. `esx_chat_theme` belongs to the legacy chat system and is no longer needed.
 
-- `EnableESXIdentity` y `OnlyFirstname` controlan el nombre mostrado.
-- `ProximityDistance` limita los mensajes de rol a los jugadores cercanos en
-  la misma instancia; el emisor también recibe su mensaje.
-- `ProximityMaxLength` limita las acciones de proximidad por caracteres Unicode.
-- `CommandCooldowns` conserva los tiempos por comando del chat de rol. El
-  límite global `RateLimit` continúa protegiendo el conjunto de mensajes.
-- Las preferencias de visibilidad conservan la clave `esx_chat:displayMode`.
+No SQL changes or additional UI builds are required for this integration.
 
-El servidor valida destinatarios y permisos. Los mensajes privados se entregan
-solo al emisor y al destinatario. Los tweets anónimos ocultan el autor al público,
-pero mantienen su identidad en los registros de moderación existentes.
+## Migrated Configuration Options
 
-## Compatibilidad
+- `EnableESXIdentity` and `OnlyFirstname` control the displayed player name.
+- `ProximityDistance` limits roleplay messages to nearby players within the same instance. The sender also receives their own message.
+- `ProximityMaxLength` limits proximity actions based on Unicode character count.
+- `CommandCooldowns` preserves individual cooldowns for roleplay chat commands.
+- `RateLimit` continues to provide global rate limiting across all messages.
+- Visibility preferences retain the existing `esx_chat:displayMode` key.
 
-El área de mensajes reserva una altura predeterminada de `calc(var(--u) * 470)`
-en `web/style.css`, aunque haya pocos mensajes o esté vacía. La escala y el ancho
-conservan su adaptación a la resolución. La altura solo se reduce cuando falta
-espacio en pantalla; las sugerencias permiten desplazarse. Las cajas no usan sombras
-ni desenfoque de fondo.
+## Security and Validation
 
-Se mantienen `chat:addMessage`, `chatMessage`, las sugerencias, las plantillas y
-`chat:clear`, además de las dos firmas de `esx_rpchat:sendProximityMessage`.
-Los exports básicos `chat:addMessage` de cliente y servidor y `chat:addSuggestion`
-de cliente llegan a la misma interfaz que sus equivalentes en `esx_chat`.
-`_chat:messageEntered` pasa por la validación del servidor y la cancelación de
-`chatMessage`; los nombres suministrados por el cliente no sustituyen su identidad.
+- The server validates message recipients and permissions.
+- Private messages are delivered exclusively to the sender and intended recipient.
+- Anonymous tweets hide the author's identity from the public while preserving it in existing moderation logs.
+- Client-provided names cannot override the player's actual server-side identity.
+- `_chat:messageEntered` passes through server-side validation and `chatMessage` cancellation.
 
-Las personalizaciones de configuraciones antiguas se trasladan a `config.lua`;
-el recurso no lee archivos de las carpetas retiradas.
+## Compatibility
+
+The message area reserves a default height of `calc(var(--u) * 470)` in `web/style.css`, even when there are few messages or the chat is empty.
+
+- Scaling and width remain responsive to screen resolution.
+- Height is reduced only when available screen space is insufficient.
+- Suggestions support scrolling.
+- Chat boxes do not use shadows or background blur.
+
+### Preserved Events and Features
+
+The following existing events and features remain supported:
+
+- `chat:addMessage`
+- `chatMessage`
+- Chat suggestions
+- Chat templates
+- `chat:clear`
+- Both signatures of `esx_rpchat:sendProximityMessage`
+
+### Export Compatibility
+
+The following exports are supported and routed to the same interface as their `esx_chat` equivalents:
+
+- Client and server `chat:addMessage`
+- Client `chat:addSuggestion`
+
+## Migration Notes
+
+Customizations from older configurations must be manually transferred to `config.lua`.
+
+The resource does not read configuration files from the previously removed resource folders.
